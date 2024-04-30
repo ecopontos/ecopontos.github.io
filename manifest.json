@@ -1,0 +1,21 @@
+{
+  "name": "Atedimentos em Ecopontos",
+  "short_name": "Ecopontos",
+  "description": "Um aplicativo para registrar atendimentos de ecoponto a fim de relatório",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/ecopontos/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50"
+}

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimentos de Ecoponto</title>
+<link rel="manifest" href="/ecopontos/manifest.json">
+<style>
+        /* Estilos para o logotipo */
+        .logo {
+            max-width: 250px; /* Define a largura máxima do logotipo */
+            height: auto; /* Mantém a proporção da altura */
+        }
+    </style>
+
+</head>
+<body>
+    <img class="logo" src="/ecopontos/logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Atendimentos de Ecoponto</h1>
+    <form id="form-atendimento">
+        <label for="ecoponto">Ecoponto:</label><br>
+	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi"><br><br>
+
+        <label for="placa_veiculo">Placa do Veículo:</label><br>
+        <input type="text" id="placa_veiculo" name="placa_veiculo"><br><br>
+
+        <label for="data">Data:</label><br>
+	<input type="date" id="data" name="data"><br><br>
+
+	<label for="hora">Hora:</label><br>
+	<input type="time" id="hora" name="hora"><br><br>
+
+        <label for="tipo_residuo">Tipo de Resíduo:</label><br>
+
+        <input type="checkbox" id="amianto" name="tipo_residuo" value="Amianto">
+        <label for="amianto">Amianto</label><br>
+        
+        <input type="checkbox" id="animal" name="tipo_residuo" value="Animal">
+        <label for="animal">Animal</label><br>
+        
+	<input type="checkbox" id="cápsuladecafe" name="tipo_residuo" value="Cápsula de Café">
+        <label for="capsula_cafe">Cápsula de Café</label><br>
+
+        <input type="checkbox" id="eletronico" name="tipo_residuo" value="Eletrônico">
+        <label for="capsula_cafe">Eletrônico</label><br>
+
+	<input type="checkbox" id="entulhos" name="tipo_residuo" value="Entulhos">
+        <label for="capsula_cafe">Entulhos</label><br>
+
+        <input type="checkbox" id="esponja" name="tipo_residuo" value="Esponja">
+        <label for="capsula_cafe">Esponja</label><br>
+
+        <input type="checkbox" id="gesso" name="tipo_residuo" value=" Gesso">
+        <label for="capsula_cafe">Gesso</label><br>
+
+        <input type="checkbox" id="isopor" name="tipo_residuo" value="Isopor">
+        <label for="capsula_cafe">Isopor</label><br>
+
+        <input type="checkbox" id="lampadas" name="tipo_residuo" value="Lâmpadas">
+        <label for="capsula_cafe">Lâmpadas</label><br>
+
+        <input type="checkbox" id="livro_revista" name="tipo_residuo" value="Livro/Revista">
+        <label for="capsula_cafe">Livro/Revista</label><br>
+
+        <input type="checkbox" id="madeiras" name="tipo_residuo" value="Madeiras">
+        <label for="capsula_cafe">Madeiras</label><br>
+
+        <input type="checkbox" id="material_escrita" name="tipo_residuo" value="Material de Escrita">
+        <label for="capsula_cafe">Material de Escrita</label><br>
+
+        <input type="checkbox" id="oleo_cozinha" name="tipo_residuo" value="Óleo de Cozinha">
+        <label for="capsula_cafe">Óleo de Cozinha</label><br>
+
+        <input type="checkbox" id="organico" name="tipo_residuo" value="Orgânico">
+        <label for="capsula_cafe">Orgânico</label><br>
+
+        <input type="checkbox" id="pilhas_baterias" name="tipo_residuo" value="Pilhas/Baterias">
+        <label for="capsula_cafe">Pilhas/Baterias</label><br>
+
+        <input type="checkbox" id="pneus" name="tipo_residuo" value="Pneus">
+        <label for="capsula_cafe">Pneus</label><br>
+
+        <input type="checkbox" id="podas" name="tipo_residuo" value="Podas">
+        <label for="capsula_cafe">Podas</label><br>
+
+        <input type="checkbox" id="reciclavel" name="tipo_residuo" value="Reciclável">
+        <label for="capsula_cafe">Reciclável</label><br>
+
+        <input type="checkbox" id="roupas_calçados" name="tipo_residuo" value="Roupas/Calçados">
+        <label for="capsula_cafe">Roupas/Calçados</label><br>
+
+        <input type="checkbox" id="sucata_metal" name="tipo_residuo" value="Sucata/Metal">
+        <label for="capsula_cafe">Sucata/Metal</label><br>
+
+        <input type="checkbox" id="vidros" name="tipo_residuo" value="Vidros">
+        <label for="capsula_cafe">Vidros</label><br>
+
+        <input type="checkbox" id="volumosos" name="tipo_residuo" value="Volumosos">
+        <label for="capsula_cafe">Volumosos</label><br>
+
+        <br><br>
+        <button type="button" onclick="adicionarAtendimento()">Enviar Registro</button>
+        <button id="btnExportarCSV">Exportar para CSV</button>
+    </form>
+
+    <script>
+        var db;
+        var request = indexedDB.open("ecoponto", 1);
+
+        request.onerror = function(event) {
+            console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
+        };
+
+        request.onupgradeneeded = function(event) {
+            db = event.target.result;
+            var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement:true });
+            objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+            objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
+            objectStore.createIndex("data", "data", { unique: false });
+            objectStore.createIndex("hora", "hora", { unique: false });
+            objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
+        };
+
+        request.onsuccess = function(event) {
+            console.log("Banco de dados aberto com sucesso");
+            db = event.target.result;
+        };
+
+        function adicionarAtendimento() {
+            var transaction = db.transaction(["atendimentos"], "readwrite");
+            var objectStore = transaction.objectStore("atendimentos");
+
+            var ecoponto = document.getElementById("ecoponto").value;
+            var placaVeiculo = document.getElementById("placa_veiculo").value;
+            var data = document.getElementById("data").value;
+            var hora = document.getElementById("hora").value;
+            var tipoResiduo = [];
+
+            var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
+            for (var i = 0; i < checkboxes.length; i++) {
+                tipoResiduo.push(checkboxes[i].value);
+            }
+
+            var newAtendimento = {
+                ecoponto: ecoponto,
+                placa_veiculo: placaVeiculo,
+                data: data,
+                hora: hora,
+                tipo_residuo: tipoResiduo
+            };
+
+            var request = objectStore.add(newAtendimento);
+
+            request.onsuccess = function(event) {
+                console.log("Atendimento adicionado com sucesso");
+                document.getElementById("form-atendimento").reset();
+            };
+
+            request.onerror = function(event) {
+                console.log("Erro ao adicionar atendimento:", event.target.errorCode);
+            };
+        }
+
+// Exportar CSV
+
+document.getElementById("btnExportarCSV").addEventListener("click", exportarParaCSV);
+
+function exportarParaCSV() {
+    var transaction = db.transaction(["atendimentos"], "readonly");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
+
+    request.onsuccess = function(event) {
+        var data = event.target.result;
+        var csvContent = "data:text/csv;charset=utf-8,";
+
+        // Cabeçalhos CSV
+        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo\n";
+
+        // Adicionar dados ao CSV
+        data.forEach(function(atendimento) {
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '"\n';
+            csvContent += linha;
+        });
+
+        // Criar um link para download do CSV
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "atendimentos.csv");
+        document.body.appendChild(link);
+
+        // Clicar no link para iniciar o download
+        link.click();
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao exportar para CSV:", event.target.errorCode);
+    };
+}
+
+    </script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/ecopontos/service-worker.js')
+            .then(function(registration) {
+                console.log('Service Worker registrado com sucesso:', registration.scope);
+            })
+            .catch(function(err) {
+                console.error('Falha ao registrar Service Worker:', err);
+            });
+        });
+    }
+
+</script>
+
+<script>
+    // Captura a data atual
+    var dataAtual = new Date();
+    var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
+    
+    // Captura a hora atual
+    var horaAtual = dataAtual.toTimeString().split(' ')[0]; // Formata para o formato de hora (HH:MM:SS)
+    
+    // Preenche o campo de data com a data atual
+    document.getElementById('data').value = dataFormatada;
+    
+    // Preenche o campo de hora com a hora atual
+    document.getElementById('hora').value = horaAtual;
+</script>
+</body>
+</html>
