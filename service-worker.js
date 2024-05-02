@@ -1,7 +1,7 @@
 const CACHE_NAME = 'meu-pwa-cache-v2';
 const urlsToCache = [
- 'ecopontos/index.html',
- 'ecopontos/offline.html' // Uma página offline customizada
+ 'index.html',
+ 'offline.html' // Uma página offline customizada
 ];
 
 self.addEventListener('install', function(event) {
@@ -25,7 +25,7 @@ self.addEventListener('fetch', function(event) {
             }
 
             // Senão, retorna a página offline customizada
-            return caches.match('ecopontos/offline.html');
+            return caches.match('offline.html');
         })
     );
 });
