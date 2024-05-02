@@ -1,9 +1,7 @@
-// service-worker.js
-
-const CACHE_NAME = 'meu-pwa-cache-v1';
+const CACHE_NAME = 'meu-pwa-cache-v2';
 const urlsToCache = [
-    '/ecopontos/',
-    '/offline.html' // Uma página offline customizada
+ 'ecopontos/index.html',
+ 'ecopontos/offline.html' // Uma página offline customizada
 ];
 
 self.addEventListener('install', function(event) {
@@ -26,12 +24,8 @@ self.addEventListener('fetch', function(event) {
                 return response;
             }
 
-            // Senão, faz uma solicitação de rede
-            return fetch(event.request)
-            .catch(function() {
-                // Se falhar, retorna a página offline customizada
-                return caches.match('/offline.html');
-            });
+            // Senão, retorna a página offline customizada
+            return caches.match('ecopontos/offline.html');
         })
     );
 });

@@ -19,16 +19,83 @@
     <h1>Atendimentos de Ecoponto</h1>
     <form id="form-atendimento">
         <label for="ecoponto">Ecoponto:</label><br>
-	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi"><br><br>
+	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi" required><br><br>
 
         <label for="placa_veiculo">Placa do Veículo:</label><br>
-        <input type="text" id="placa_veiculo" name="placa_veiculo"><br><br>
+        <input type="text" id="placa_veiculo" name="placa_veiculo" required><br><br>
+
+	<label for="bairro">Bairro:</label><br>
+	<select id="bairro" name="bairro">
+	    <option value="Abraão">Abraão</option>
+<option value="Agronômica">Agronômica</option>
+<option value="Armação do Pântano do Sul">Armação do Pântano do Sul</option>
+<option value="Balneário">Balneário</option>
+<option value="Barra da Lagoa">Barra da Lagoa</option>
+<option value="Bom Abrigo">Bom Abrigo</option>
+<option value="Cachoeira do Bom Jesus">Cachoeira do Bom Jesus</option>
+<option value="Cacupé">Cacupé</option>
+<option value="Campeche">Campeche</option>
+<option value="Canasvieiras">Canasvieiras</option>
+<option value="Canto">Canto</option>
+<option value="Caieira">Caieira</option>
+<option value="Capoeiras">Capoeiras</option>
+<option value="Carianos">Carianos</option>
+<option value="Carvoeira">Carvoeira</option>
+<option value="Centro">Centro</option>
+<option value="Coloninha">Coloninha</option>
+<option value="Coqueiros">Coqueiros</option>
+<option value="Córrego Grande">Córrego Grande</option>
+<option value="Costa de Dentro">Costa de Dentro</option>
+<option value="Costeira do Pirajubaé">Costeira do Pirajubaé</option>
+<option value="Daniela">Daniela</option>
+<option value="Estreito">Estreito</option>
+<option value="Ingleses">Ingleses</option>
+<option value="Itacorubi">Itacorubi</option>
+<option value="Itaguaçu">Itaguaçu</option>
+<option value="Jardim Atlântico">Jardim Atlântico</option>
+<option value="João Paulo">João Paulo</option>
+<option value="José Mendes">José Mendes</option>
+<option value="Jurerê">Jurerê</option>
+<option value="Jurerê Internacional">Jurerê Internacional</option>
+<option value="Lagoa da Conceição">Lagoa da Conceição</option>
+<option value="Bairro - Região">Bairro - Região</option>
+<option value="Monte Cristo">Monte Cristo</option>
+<option value="Monte Verde">Monte Verde</option>
+<option value="Morro das Pedras">Morro das Pedras</option>
+<option value="Pantanal">Pantanal</option>
+<option value="Pântano do Sul">Pântano do Sul</option>
+<option value="Ponta das Canas">Ponta das Canas</option>
+<option value="Praia Brava">Praia Brava</option>
+<option value="Ratones">Ratones</option>
+<option value="Ribeirão da Ilha">Ribeirão da Ilha</option>
+<option value="Rio Tavares">Rio Tavares</option>
+<option value="Saco dos Limões">Saco dos Limões</option>
+<option value="Saco Grande">Saco Grande</option>
+<option value="Sambaqui">Sambaqui</option>
+<option value="Santa Mônica">Santa Mônica</option>
+<option value="Santinho">Santinho</option>
+<option value="Santo Antônio de Lisboa">Santo Antônio de Lisboa</option>
+<option value="Tapera">Tapera</option>
+<option value="Trindade">Trindade</option>
+<option value="Vargem Pequena">Vargem Pequena</option>
+<option value="Vargem Grande">Vargem Grande</option>
+<option value="Vargem do Bom Jesus">Vargem do Bom Jesus</option>
+<option value="Rio Vermelho">Rio Vermelho</option>
+<option value="NÃO INFORMADO">NÃO INFORMADO</option>
+<option value="Morro do 25">Morro do 25</option>
+<option value="Serrinha">Serrinha</option>
+<option value="Morro da Cruz">Morro da Cruz</option>
+<option value="Morro do Horácio">Morro do Horácio</option>
+<option value="Morro do Quilombo">Morro do Quilombo</option>
+<option value="Monte Serrat">Monte Serrat</option>
+<option value="Morro da Queimada">Morro da Queimada</option>
+</select><br><br>
 
         <label for="data">Data:</label><br>
-	<input type="date" id="data" name="data"><br><br>
+	<input type="date" id="data" name="data" required><br><br>
 
 	<label for="hora">Hora:</label><br>
-	<input type="time" id="hora" name="hora"><br><br>
+	<input type="time" id="hora" name="hora" required><br><br>
 
         <label for="tipo_residuo">Tipo de Resíduo:</label><br>
 
@@ -42,61 +109,61 @@
         <label for="capsula_cafe">Cápsula de Café</label><br>
 
         <input type="checkbox" id="eletronico" name="tipo_residuo" value="Eletrônico">
-        <label for="capsula_cafe">Eletrônico</label><br>
+        <label for="eletronico">Eletrônico</label><br>
 
 	<input type="checkbox" id="entulhos" name="tipo_residuo" value="Entulhos">
-        <label for="capsula_cafe">Entulhos</label><br>
+        <label for="entulhos">Entulhos</label><br>
 
         <input type="checkbox" id="esponja" name="tipo_residuo" value="Esponja">
-        <label for="capsula_cafe">Esponja</label><br>
+        <label for="esponja">Esponja</label><br>
 
         <input type="checkbox" id="gesso" name="tipo_residuo" value=" Gesso">
-        <label for="capsula_cafe">Gesso</label><br>
+        <label for="gesso">Gesso</label><br>
 
         <input type="checkbox" id="isopor" name="tipo_residuo" value="Isopor">
-        <label for="capsula_cafe">Isopor</label><br>
+        <label for="isopor">Isopor</label><br>
 
         <input type="checkbox" id="lampadas" name="tipo_residuo" value="Lâmpadas">
-        <label for="capsula_cafe">Lâmpadas</label><br>
+        <label for="lampadas">Lâmpadas</label><br>
 
         <input type="checkbox" id="livro_revista" name="tipo_residuo" value="Livro/Revista">
-        <label for="capsula_cafe">Livro/Revista</label><br>
+        <label for="livro_revista">Livro/Revista</label><br>
 
         <input type="checkbox" id="madeiras" name="tipo_residuo" value="Madeiras">
-        <label for="capsula_cafe">Madeiras</label><br>
+        <label for="madeiras">Madeiras</label><br>
 
         <input type="checkbox" id="material_escrita" name="tipo_residuo" value="Material de Escrita">
-        <label for="capsula_cafe">Material de Escrita</label><br>
+        <label for="material_escrita">Material de Escrita</label><br>
 
         <input type="checkbox" id="oleo_cozinha" name="tipo_residuo" value="Óleo de Cozinha">
-        <label for="capsula_cafe">Óleo de Cozinha</label><br>
+        <label for="oleo_cozinha">Óleo de Cozinha</label><br>
 
         <input type="checkbox" id="organico" name="tipo_residuo" value="Orgânico">
-        <label for="capsula_cafe">Orgânico</label><br>
+        <label for="organico">Orgânico</label><br>
 
         <input type="checkbox" id="pilhas_baterias" name="tipo_residuo" value="Pilhas/Baterias">
-        <label for="capsula_cafe">Pilhas/Baterias</label><br>
+        <label for="pilhas_baterias">Pilhas/Baterias</label><br>
 
         <input type="checkbox" id="pneus" name="tipo_residuo" value="Pneus">
-        <label for="capsula_cafe">Pneus</label><br>
+        <label for="pneus">Pneus</label><br>
 
         <input type="checkbox" id="podas" name="tipo_residuo" value="Podas">
-        <label for="capsula_cafe">Podas</label><br>
+        <label for="podas">Podas</label><br>
 
         <input type="checkbox" id="reciclavel" name="tipo_residuo" value="Reciclável">
-        <label for="capsula_cafe">Reciclável</label><br>
+        <label for="reciclavel">Reciclável</label><br>
 
         <input type="checkbox" id="roupas_calçados" name="tipo_residuo" value="Roupas/Calçados">
-        <label for="capsula_cafe">Roupas/Calçados</label><br>
+        <label for="roupas_calçados">Roupas/Calçados</label><br>
 
         <input type="checkbox" id="sucata_metal" name="tipo_residuo" value="Sucata/Metal">
-        <label for="capsula_cafe">Sucata/Metal</label><br>
+        <label for="sucata_metal">Sucata/Metal</label><br>
 
         <input type="checkbox" id="vidros" name="tipo_residuo" value="Vidros">
-        <label for="capsula_cafe">Vidros</label><br>
+        <label for="vidros">Vidros</label><br>
 
         <input type="checkbox" id="volumosos" name="tipo_residuo" value="Volumosos">
-        <label for="capsula_cafe">Volumosos</label><br>
+        <label for="volumosos">Volumosos</label><br>
 
         <br><br>
         <button type="button" onclick="adicionarAtendimento()">Enviar Registro</button>
@@ -104,62 +171,73 @@
     </form>
 
     <script>
-        var db;
-        var request = indexedDB.open("ecoponto", 1);
+      var db;
+var request = indexedDB.open("ecoponto", 1);
 
-        request.onerror = function(event) {
-            console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
-        };
+request.onerror = function(event) {
+    console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
+};
 
-        request.onupgradeneeded = function(event) {
-            db = event.target.result;
-            var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement:true });
-            objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-            objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
-            objectStore.createIndex("data", "data", { unique: false });
-            objectStore.createIndex("hora", "hora", { unique: false });
-            objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
-        };
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement:true });
+    objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+    objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
+    objectStore.createIndex("data", "data", { unique: false });
+    objectStore.createIndex("hora", "hora", { unique: false });
+    objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
+};
 
-        request.onsuccess = function(event) {
-            console.log("Banco de dados aberto com sucesso");
-            db = event.target.result;
-        };
+request.onsuccess = function(event) {
+    console.log("Banco de dados aberto com sucesso");
+    db = event.target.result;
+};
 
-        function adicionarAtendimento() {
-            var transaction = db.transaction(["atendimentos"], "readwrite");
-            var objectStore = transaction.objectStore("atendimentos");
+function adicionarAtendimento() {
+    // Validação do formulário
+    var ecoponto = document.getElementById("ecoponto").value;
+    var placaVeiculo = document.getElementById("placa_veiculo").value;
+    var data = document.getElementById("data").value;
+    var hora = document.getElementById("hora").value;
+    var bairro = document.getElementById("bairro").value;
+    var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
 
-            var ecoponto = document.getElementById("ecoponto").value;
-            var placaVeiculo = document.getElementById("placa_veiculo").value;
-            var data = document.getElementById("data").value;
-            var hora = document.getElementById("hora").value;
-            var tipoResiduo = [];
+    if (ecoponto === "" || placaVeiculo === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+        alert("Por favor, preencha todos os campos.");
+        return; // Impede a execução do restante do código se algum campo estiver vazio
+    }
 
-            var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
-            for (var i = 0; i < checkboxes.length; i++) {
-                tipoResiduo.push(checkboxes[i].value);
-            }
+    // Preparar dados para adicionar ao banco de dados
+    var tipoResiduo = [];
+    checkboxes.forEach(function(checkbox) {
+        tipoResiduo.push(checkbox.value);
+    });
 
-            var newAtendimento = {
-                ecoponto: ecoponto,
-                placa_veiculo: placaVeiculo,
-                data: data,
-                hora: hora,
-                tipo_residuo: tipoResiduo
-            };
+    var newAtendimento = {
+        ecoponto: ecoponto,
+        placa_veiculo: placaVeiculo,
+        data: data,
+        hora: hora,
+        tipo_residuo: tipoResiduo,
+        bairro: bairro
+    };
 
-            var request = objectStore.add(newAtendimento);
+    // Adicionar atendimento ao banco de dados
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
 
-            request.onsuccess = function(event) {
-                console.log("Atendimento adicionado com sucesso");
-                document.getElementById("form-atendimento").reset();
-            };
+    var request = objectStore.add(newAtendimento);
 
-            request.onerror = function(event) {
-                console.log("Erro ao adicionar atendimento:", event.target.errorCode);
-            };
-        }
+    request.onsuccess = function(event) {
+        console.log("Atendimento adicionado com sucesso");
+        document.getElementById("form-atendimento").reset();
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao adicionar atendimento:", event.target.errorCode);
+    };
+}
+
 
 // Exportar CSV
 
@@ -175,13 +253,15 @@ function exportarParaCSV() {
         var csvContent = "data:text/csv;charset=utf-8,";
 
         // Cabeçalhos CSV
-        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo\n";
+        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
 
         // Adicionar dados ao CSV
-        data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '"\n';
-            csvContent += linha;
-        });
+        // Adicionar dados ao CSV
+data.forEach(function(atendimento) {
+    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+    csvContent += linha;
+});
+
 
         // Criar um link para download do CSV
         var encodedUri = encodeURI(csvContent);
@@ -204,7 +284,7 @@ function exportarParaCSV() {
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/ecopontos/service-worker.js')
+            navigator.serviceWorker.register('ecopontos/service-worker.js')
             .then(function(registration) {
                 console.log('Service Worker registrado com sucesso:', registration.scope);
             })
@@ -230,5 +310,7 @@ function exportarParaCSV() {
     // Preenche o campo de hora com a hora atual
     document.getElementById('hora').value = horaAtual;
 </script>
+
+
 </body>
 </html>
