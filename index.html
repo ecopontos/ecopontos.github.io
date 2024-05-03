@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atendimentos de Ecoponto</title>
-<link rel="manifest" href="/ecopontos/manifest.json">
+<link rel="manifest" href="/manifest.json">
 <style>
         /* Estilos para o logotipo */
         .logo {
@@ -170,6 +170,12 @@
     </form>
 
     <script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
+	
+	<script>
       var db;
 var request = indexedDB.open("ecoponto", 1);
 
@@ -279,12 +285,6 @@ data.forEach(function(atendimento) {
 }
 
     </script>
-
-<script>
-  if (typeof navigator.serviceWorker !== 'undefined') {
-    navigator.serviceWorker.register('sw.js')
-  }
-</script>
 
 <script>
     // Captura a data atual
