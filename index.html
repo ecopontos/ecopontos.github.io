@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atendimentos de Ecoponto</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/ecopontos/manifest.json">
 <style>
         /* Estilos para o logotipo */
         .logo {
@@ -15,8 +15,8 @@
 
 </head>
 <body>
-    <img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
-    <h3>Atendimentos de Ecoponto</h3>
+    <img class="logo" src="/ecopontos/logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Atendimentos de Ecoponto</h1>
     <form id="form-atendimento">
         <label for="ecoponto">Ecoponto:</label><br>
 	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi" required><br><br>
@@ -58,7 +58,6 @@
 <option value="Jurerê">Jurerê</option>
 <option value="Jurerê Internacional">Jurerê Internacional</option>
 <option value="Lagoa da Conceição">Lagoa da Conceição</option>
-<option value="Bairro - Região">Bairro - Região</option>
 <option value="Monte Cristo">Monte Cristo</option>
 <option value="Monte Verde">Monte Verde</option>
 <option value="Morro das Pedras">Morro das Pedras</option>
@@ -127,7 +126,7 @@
         <label for="lampadas">Lâmpadas</label><br>
 
         <input type="checkbox" id="livro_revista" name="tipo_residuo" value="Livro/Revista">
-        <label for="livro_revista">Livro/Revista</label><br>
+        <label for="capsula_cafe">Livro/Revista</label><br>
 
         <input type="checkbox" id="madeiras" name="tipo_residuo" value="Madeiras">
         <label for="madeiras">Madeiras</label><br>
@@ -136,10 +135,10 @@
         <label for="material_escrita">Material de Escrita</label><br>
 
         <input type="checkbox" id="oleo_cozinha" name="tipo_residuo" value="Óleo de Cozinha">
-        <label for="oleo_cozinha">Óleo de Cozinha</label><br>
+        <label for="oleo_cozinhae">Óleo de Cozinha</label><br>
 
         <input type="checkbox" id="organico" name="tipo_residuo" value="Orgânico">
-        <label for="organico">Orgânico</label><br>
+        <label for="organic">Orgânico</label><br>
 
         <input type="checkbox" id="pilhas_baterias" name="tipo_residuo" value="Pilhas/Baterias">
         <label for="pilhas_baterias">Pilhas/Baterias</label><br>
@@ -157,7 +156,7 @@
         <label for="roupas_calçados">Roupas/Calçados</label><br>
 
         <input type="checkbox" id="sucata_metal" name="tipo_residuo" value="Sucata/Metal">
-        <label for="sucata_metal">Sucata/Metal</label><br>
+        <label for="sucata_meta">Sucata/Metal</label><br>
 
         <input type="checkbox" id="vidros" name="tipo_residuo" value="Vidros">
         <label for="vidros">Vidros</label><br>
@@ -282,17 +281,17 @@ data.forEach(function(atendimento) {
     </script>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('ecopontos/service-worker.js')
-            .then(function(registration) {
-                console.log('Service Worker registrado com sucesso:', registration.scope);
-            })
-            .catch(function(err) {
-                console.error('Falha ao registrar Service Worker:', err);
-            });
-        });
-    }
+
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+      .then(function(registration) {
+        console.log('Service Worker registrado com sucesso:', registration);
+      })
+      .catch(function(error) {
+        console.error('Falha ao registrar Service Worker:', error);
+      });
+  }
+
 
 </script>
 
@@ -314,3 +313,4 @@ data.forEach(function(atendimento) {
 
 </body>
 </html>
+

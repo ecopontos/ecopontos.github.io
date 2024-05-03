@@ -14,8 +14,13 @@
       "type": "image/png"
     }
   ],
-  "start_url": "./index.html",
-  "display": "standalone",
+  "start_url": "/index.html",
+  "display": "fullscreen",
   "background_color": "#ffffff",
-  "theme_color": "#4CAF50"
+  "theme_color": "#006b97",
+  "id": "ecopontopmf",
+  "dir": "auto",
+  "lang": "pt",
+  "orientation": "portrait",
+  "scope": "/offline.html"
 }
