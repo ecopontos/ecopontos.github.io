@@ -169,11 +169,18 @@
         <button id="btnExportarCSV">Exportar para CSV</button>
     </form>
 
-    <script>
-  if (typeof navigator.serviceWorker !== 'undefined') {
-    navigator.serviceWorker.register('sw.js')
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registrado com sucesso:', registration);
+      })
+      .catch(error => {
+        console.error('Erro ao registrar o Service Worker:', error);
+      });
   }
 </script>
+
 	
 	<script>
       var db;
