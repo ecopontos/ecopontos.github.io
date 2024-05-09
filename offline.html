@@ -3,26 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Offline</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            text-align: center;
-            padding: 50px;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        p {
-            color: #666;
+    <title>Atendimentos de Ecoponto Offline</title>
+<link rel="manifest" href="/ecopontos/manifest.json">
+<style>
+        /* Estilos para o logotipo */
+        .logo {
+            max-width: 250px; /* Define a largura máxima do logotipo */
+            height: auto; /* Mantém a proporção da altura */
         }
     </style>
+
 </head>
 <body>
-    <h1>Ops, parece que você está offline!</h1>
-    <p>Verifique sua conexão com a internet e tente novamente.</p>
+    <img class="logo" src="/logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Atendimentos de Ecoponto</h1>
+    <form id="form-atendimento">
+        <label for="ecoponto">Ecoponto:</label><br>
+	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi" required><br><br>
+
+        <label for="placa_veiculo">Placa do Veículo:</label><br>
+        <input type="text" id="placa_veiculo" name="placa_veiculo" required><br><br>
+
+	<label for="bairro">Bairro:</label><br>
+	<select id="bairro" name="bairro">
+	    <option value="Abraão">Abraão</option>
+<option value="Agronômica">Agronômica</option>
+<option value="Armação do Pântano do Sul">Armação do Pântano do Sul</option>
+<option value="Balneário">Balneário</option>
+<option value="Barra da Lagoa">Barra da Lagoa</option>
+<option value="Bom Abrigo">Bom Abrigo</option>
+<option value="Cachoeira do Bom Jesus">Cachoeira do Bom Jesus</option>
+<option value="Cacupé">Cacupé</option>
+<option value="Campeche">Campeche</option>
+<option value="Canasvieiras">Canasvieiras</option>
+<option value="Canto">Canto</option>
+<option value="Caieira">Caieira</option>
+<option value="Capoeiras">Capoeiras</option>
+<option value="Carianos">Carianos</option>
+<option value="Carvoeira">Carvoeira</option>
+<option value="Centro">Centro</option>
+<option value="Coloninha">Coloninha</option>
+<option value="Coqueiros">Coqueiros</option>
+<option value="Córrego Grande">Córrego Grande</option>
+<option value="Costa de Dentro">Costa de Dentro</option>
+<option value="Costeira do Pirajubaé">Costeira do Pirajubaé</option>
+<option value="Daniela">Daniela</option>
+<option value="Estreito">Estreito</option>
+<option value="Ingleses">Ingleses</option>
+<option value="Itacorubi">Itacorubi</option>
+<option value="Itaguaçu">Itaguaçu</option>
+<option value="Jardim Atlântico">Jardim Atlântico</option>
+<option value="João Paulo">João Paulo</option>
+<option value="José Mendes">José Mendes</option>
+<option value="Jurerê">Jurerê</option>
+<option value="Jurerê Internacional">Jurerê Internacional</option>
+<option value="Lagoa da Conceição">Lagoa da Conceição</option>
+<option value="Monte Cristo">Monte Cristo</option>
+<option value="Monte Verde">Monte Verde</option>
+<option value="Morro das Pedras">Morro das Pedras</option>
+<option value="Pantanal">Pantanal</option>
+<option value="Pântano do Sul">Pântano do Sul</option>
+<option value="Ponta das Canas">Ponta das Canas</option>
+<option value="Praia Brava">Praia Brava</option>
+<option value="Ratones">Ratones</option>
+<option value="Ribeirão da Ilha">Ribeirão da Ilha</option>
+<option value="Rio Tavares">Rio Tavares</option>
+<option value="Saco dos Limões">Saco dos Limões</option>
+<option value="Saco Grande">Saco Grande</option>
+<option value="Sambaqui">Sambaqui</option>
+<option value="Santa Mônica">Santa Mônica</option>
+<option value="Santinho">Santinho</option>
+<option value="Santo Antônio de Lisboa">Santo Antônio de Lisboa</option>
+<option value="Tapera">Tapera</option>
+<option value="Trindade">Trindade</option>
+<option value="Vargem Pequena">Vargem Pequena</option>
+<option value="Vargem Grande">Vargem Grande</option>
+<option value="Vargem do Bom Jesus">Vargem do Bom Jesus</option>
+<option value="Rio Vermelho">Rio Vermelho</option>
+<option value="NÃO INFORMADO">NÃO INFORMADO</option>
+<option value="Morro do 25">Morro do 25</option>
+<option value="Serrinha">Serrinha</option>
+<option value="Morro da Cruz">Morro da Cruz</option>
+<option value="Morro do Horácio">Morro do Horácio</option>
+<option value="Morro do Quilombo">Morro do Quilombo</option>
+<option value="Monte Serrat">Monte Serrat</option>
+<option value="Morro da Queimada">Morro da Queimada</option>
+</select><br><br>
+
+        <label for="data">Data:</label><br>
+	<input type="date" id="data" name="data" required><br><br>
+
+	<label for="hora">Hora:</label><br>
+	<input type="time" id="hora" name="hora" required><br><br>
+
+        <label for="tipo_residuo">Tipo de Resíduo:</label><br>
+
+        <input type="checkbox" id="amianto" name="tipo_residuo" value="Amianto">
+        <label for="amianto">Amianto</label><br>
+        
+        <input type="checkbox" id="animal" name="tipo_residuo" value="Animal">
+        <label for="animal">Animal</label><br>
+        
+	<input type="checkbox" id="cápsuladecafe" name="tipo_residuo" value="Cápsula de Café">
+        <label for="capsula_cafe">Cápsula de Café</label><br>
+
+        <input type="checkbox" id="eletronico" name="tipo_residuo" value="Eletrônico">
+        <label for="eletronico">Eletrônico</label><br>
+
+	<input type="checkbox" id="entulhos" name="tipo_residuo" value="Entulhos">
+        <label for="entulhos">Entulhos</label><br>
+
+        <input type="checkbox" id="esponja" name="tipo_residuo" value="Esponja">
+        <label for="esponja">Esponja</label><br>
+
+        <input type="checkbox" id="gesso" name="tipo_residuo" value=" Gesso">
+        <label for="gesso">Gesso</label><br>
+
+        <input type="checkbox" id="isopor" name="tipo_residuo" value="Isopor">
+        <label for="isopor">Isopor</label><br>
+
+        <input type="checkbox" id="lampadas" name="tipo_residuo" value="Lâmpadas">
+        <label for="lampadas">Lâmpadas</label><br>
+
+        <input type="checkbox" id="livro_revista" name="tipo_residuo" value="Livro/Revista">
+        <label for="capsula_cafe">Livro/Revista</label><br>
+
+        <input type="checkbox" id="madeiras" name="tipo_residuo" value="Madeiras">
+        <label for="madeiras">Madeiras</label><br>
+
+        <input type="checkbox" id="material_escrita" name="tipo_residuo" value="Material de Escrita">
+        <label for="material_escrita">Material de Escrita</label><br>
+
+        <input type="checkbox" id="oleo_cozinha" name="tipo_residuo" value="Óleo de Cozinha">
+        <label for="oleo_cozinhae">Óleo de Cozinha</label><br>
+
+        <input type="checkbox" id="organico" name="tipo_residuo" value="Orgânico">
+        <label for="organic">Orgânico</label><br>
+
+        <input type="checkbox" id="pilhas_baterias" name="tipo_residuo" value="Pilhas/Baterias">
+        <label for="pilhas_baterias">Pilhas/Baterias</label><br>
+
+        <input type="checkbox" id="pneus" name="tipo_residuo" value="Pneus">
+        <label for="pneus">Pneus</label><br>
+
+        <input type="checkbox" id="podas" name="tipo_residuo" value="Podas">
+        <label for="podas">Podas</label><br>
+
+        <input type="checkbox" id="reciclavel" name="tipo_residuo" value="Reciclável">
+        <label for="reciclavel">Reciclável</label><br>
+
+        <input type="checkbox" id="roupas_calçados" name="tipo_residuo" value="Roupas/Calçados">
+        <label for="roupas_calçados">Roupas/Calçados</label><br>
+
+        <input type="checkbox" id="sucata_metal" name="tipo_residuo" value="Sucata/Metal">
+        <label for="sucata_meta">Sucata/Metal</label><br>
+
+        <input type="checkbox" id="vidros" name="tipo_residuo" value="Vidros">
+        <label for="vidros">Vidros</label><br>
+
+        <input type="checkbox" id="volumosos" name="tipo_residuo" value="Volumosos">
+        <label for="volumosos">Volumosos</label><br>
+
+        <br><br>
+        <button type="button" onclick="adicionarAtendimento()">Enviar Registro</button>
+        <button id="btnExportarCSV">Exportar para CSV</button>
+    </form>
+
+    <script>
+      var db;
+var request = indexedDB.open("ecoponto", 1);
+
+request.onerror = function(event) {
+    console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
+};
+
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement:true });
+    objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+    objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
+    objectStore.createIndex("data", "data", { unique: false });
+    objectStore.createIndex("hora", "hora", { unique: false });
+    objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
+};
+
+request.onsuccess = function(event) {
+    console.log("Banco de dados aberto com sucesso");
+    db = event.target.result;
+};
+
+function adicionarAtendimento() {
+    // Validação do formulário
+    var ecoponto = document.getElementById("ecoponto").value;
+    var placaVeiculo = document.getElementById("placa_veiculo").value;
+    var data = document.getElementById("data").value;
+    var hora = document.getElementById("hora").value;
+    var bairro = document.getElementById("bairro").value;
+    var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
+
+    if (ecoponto === "" || placaVeiculo === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+        alert("Por favor, preencha todos os campos.");
+        return; // Impede a execução do restante do código se algum campo estiver vazio
+    }
+
+    // Preparar dados para adicionar ao banco de dados
+    var tipoResiduo = [];
+    checkboxes.forEach(function(checkbox) {
+        tipoResiduo.push(checkbox.value);
+    });
+
+    var newAtendimento = {
+        ecoponto: ecoponto,
+        placa_veiculo: placaVeiculo,
+        data: data,
+        hora: hora,
+        tipo_residuo: tipoResiduo,
+        bairro: bairro
+    };
+
+    // Adicionar atendimento ao banco de dados
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
+
+    var request = objectStore.add(newAtendimento);
+
+    request.onsuccess = function(event) {
+        console.log("Atendimento adicionado com sucesso");
+        document.getElementById("form-atendimento").reset();
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao adicionar atendimento:", event.target.errorCode);
+    };
+}
+
+
+// Exportar CSV
+
+document.getElementById("btnExportarCSV").addEventListener("click", exportarParaCSV);
+
+function exportarParaCSV() {
+    var transaction = db.transaction(["atendimentos"], "readonly");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
+
+    request.onsuccess = function(event) {
+        var data = event.target.result;
+        var csvContent = "data:text/csv;charset=utf-8,";
+
+        // Cabeçalhos CSV
+        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
+
+        // Adicionar dados ao CSV
+        // Adicionar dados ao CSV
+data.forEach(function(atendimento) {
+    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+    csvContent += linha;
+});
+
+
+        // Criar um link para download do CSV
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "atendimentos.csv");
+        document.body.appendChild(link);
+
+        // Clicar no link para iniciar o download
+        link.click();
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao exportar para CSV:", event.target.errorCode);
+    };
+}
+
+    </script>
+
+<script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
+
+<script>
+    // Captura a data atual
+    var dataAtual = new Date();
+    var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
+    
+    // Captura a hora atual
+    var horaAtual = dataAtual.toTimeString().split(' ')[0]; // Formata para o formato de hora (HH:MM:SS)
+    
+    // Preenche o campo de data com a data atual
+    document.getElementById('data').value = dataFormatada;
+    
+    // Preenche o campo de hora com a hora atual
+    document.getElementById('hora').value = horaAtual;
+</script>
+
+
 </body>
 </html>
+
