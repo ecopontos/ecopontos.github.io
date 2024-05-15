@@ -34,7 +34,7 @@ self.addEventListener('fetch', function(event) {
       })
       .catch(function(error) {
         // Se falhar, retorna a página offline
-        return caches.match('/offline.html');
+        return caches.match('/transbordo/offline.html');
       })
   );
 });
