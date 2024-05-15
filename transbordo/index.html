@@ -12,9 +12,9 @@
 }
 
 /* Estilo para os selects */
-select {
+select, input[type="time"], textarea {
   display: block;
-  margin-bottom: 10px; /* Espaçamento entre os selects */
+  margin-bottom: 10px; /* Espaçamento entre os campos */
 }
 </style>
 </head>
@@ -35,20 +35,22 @@ select {
   <label for="funcionario">Funcionário:</label>
   <input type="text" id="funcionario" name="funcionario"><br><br>
 
-  <fieldset>
+  <fieldset id="checklist">
     <legend>CheckList:</legend>
     
     <!-- Repita este bloco para cada ocorrência -->
-    <select name="ocorrencia1">
-      <option value="">Selecione uma ocorrência</option>
-      <option value="1">Acidente</option>
-      <option value="2">Ausência do supervisor</option>
-      <!-- Adicione outras opções conforme necessário -->
-    </select>
+    <div class="ocorrencia">
+      <select name="ocorrencia1">
+        <option value="">Selecione uma ocorrência</option>
+        <option value="1">Acidente</option>
+        <option value="2">Ausência do supervisor</option>
+        <!-- Adicione outras opções conforme necessário -->
+      </select>
        
-    <input type="time" name="horaOcorrencia1">
+      <input type="time" name="horaOcorrencia1">
        
-    <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
+      <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
+    </div>
     <!-- Repita este bloco para até 5 ocorrências -->
     
   </fieldset>
