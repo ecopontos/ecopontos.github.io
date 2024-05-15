@@ -200,10 +200,21 @@ function exportarCSV() {
 
 <!-- Service Worker -->
  <script>
-  if (typeof navigator.serviceWorker !== 'undefined') {
-    navigator.serviceWorker.register('/transbordo/serviceworker.js')
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/transbordo/serviceworker.js')
+        .then(function(registration) {
+          console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch(function(error) {
+          console.log('Falha ao registrar o Service Worker:', error);
+        });
+    });
+  } else {
+    console.log('Service Worker não suportado neste navegador.');
   }
 </script>
+
 
 </body>
 </html>
