@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Formulário de Checklist</title>
+
+<style>
+/* Estilos para tabela */
+td {
+  display: block;
+}
+
+/* Estilos para o logotipo */
+.logo {
+  max-width: 250px; /* Define a largura máxima do logotipo */
+  height: auto; /* Mantém a proporção da altura */
+}
+</style>
+</head>
+<body>
+<img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Monitoramento Transbordo</h1>
+<form method="post" onsubmit="enviarDados(event)">
+  <label for="data">Data:</label>
+  <input type="date" id="data" name="data"><br><br>
+
+  <label for="horaInicial">Hora Inicial:</label>
+  <input type="time" id="horaInicial" name="horaInicial"><br><br>
+
+  <label for="horaFinal">Hora Final:</label>
+  <input type="time" id="horaFinal" name="horaFinal"><br><br>
+
+  <label for="funcionario">Funcionário:</label>
+  <input type="text" id="funcionario" name="funcionario"><br><br>
+
+  <fieldset>
+    <legend>CheckList:</legend>
+    <table>
+      <!-- Repita este bloco para cada ocorrência -->
+      <tr>
+        <td>
+          <select name="ocorrencia1">
+            <option value="">Selecione uma ocorrência</option>
+            <option value="1">Acidente</option>
+            <option value="2">Ausência do supervisor</option>
+            <!-- Adicione outras opções conforme necessário -->
+          </select>
+        </td>
+        <td>
+          <input type="time" name="horaOcorrencia1">
+        </td>
+        <td>
+          <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
+        </td>
+      </tr>
+      <!-- Repita este bloco para até 5 ocorrências -->
+
+    </table>
+  </fieldset>
+
+   <!-- Aqui você pode adicionar o botão Exportar CSV -->
+   <button onclick="exportarCSV()">Exportar CSV</button>
+
+  <input type="submit" value="Enviar">
+</form>
+
+<!-- Banco de dados -->
+<script>
+
+var db;
+
+function abrirBancoDeDados() {
+    var request = window.indexedDB.open("ChecklistDB", 1);
+
+    request.onerror = function(event) {
+        console.log("Erro ao abrir o banco de dados.");
+    };
+
+    request.onupgradeneeded = function(event) {
+        db = event.target.result;
+        var objectStore = db.createObjectStore("checklist", { keyPath: "id", autoIncrement: true });
+        objectStore.createIndex("data", "data", { unique: false });
+        objectStore.createIndex("horaInicial", "horaInicial", { unique: false });
+        objectStore.createIndex("horaFinal", "horaFinal", { unique: false });
+        objectStore.createIndex("funcionario", "funcionario", { unique: false });
+        objectStore.createIndex("ocorrencias", "ocorrencias", { unique: false });
+    };
+
+    request.onsuccess = function(event) {
+        db = event.target.result;
+        console.log("Banco de dados aberto com sucesso.");
+    };
+}
+
+function salvarDadosNoBanco(dados) {
+    var transaction = db.transaction(["checklist"], "readwrite");
+    var objectStore = transaction.objectStore("checklist");
+
+    var request = objectStore.add(dados);
+
+    request.onsuccess = function(event) {
+        console.log("Dados armazenados com sucesso.");
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao armazenar os dados.");
+    };
+}
+
+function enviarDados(event) {
+    event.preventDefault();
+
+    // Salvar os dados no banco de dados
+    var data = document.getElementById("data").value;
+    var horaInicial = document.getElementById("horaInicial").value;
+    var horaFinal = document.getElementById("horaFinal").value;
+    var funcionario = document.getElementById("funcionario").value;
+    var ocorrencias = [];
+
+    var trs = document.querySelectorAll("table tr");
+
+    for (var i = 0; i < trs.length; i++) {
+    var select = trs[i].querySelector("select");
+    var selectedOption = select.options[select.selectedIndex]; // Captura a opção selecionada
+    var time = trs[i].querySelector("input[type='time']");
+    var textarea = trs[i].querySelector("textarea");
+
+    var ocorrencia = {
+        tipo: selectedOption.text, // Agora estamos usando selectedOption.text para obter o texto da opção selecionada
+        hora: time.value,
+        observacao: textarea.value
+    };
+
+    ocorrencias.push(ocorrencia);
+}
+
+    var dados = {
+        data: data,
+        horaInicial: horaInicial,
+        horaFinal: horaFinal,
+        funcionario: funcionario,
+        ocorrencias: ocorrencias
+    };
+
+    salvarDadosNoBanco(dados);
+
+    // Feedback para o usuário
+    alert("Dados enviados com sucesso!");
+
+    // Limpar formulário
+    document.getElementById("data").value = "";
+    document.getElementById("horaInicial").value = "";
+    document.getElementById("horaFinal").value = "";
+    document.getElementById("funcionario").value = "";
+    var textareaElements = document.querySelectorAll("textarea");
+    for (var i = 0; i < textareaElements.length; i++) {
+        textareaElements[i].value = "";
+    }
+}
+
+// Abrir banco de dados quando a página é carregada
+abrirBancoDeDados();
+
+function exportarCSV() {
+    // Gerar o arquivo CSV cumulativo
+    var transaction = db.transaction(["checklist"], "readonly");
+    var objectStore = transaction.objectStore("checklist");
+    var request = objectStore.openCursor();
+    var csvContent = "Data,Hora Inicial,Hora Final,Funcionário,Ocorrência,Hora da Ocorrência,Observação\n";
+
+    request.onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+            var data = cursor.value.data;
+            var horaInicial = cursor.value.horaInicial;
+            var horaFinal = cursor.value.horaFinal;
+            var funcionario = cursor.value.funcionario;
+
+            cursor.value.ocorrencias.forEach(function(ocorrencia) {
+                csvContent += data + "," + horaInicial + "," + horaFinal + "," + funcionario + ",";
+                csvContent += ocorrencia.tipo + "," + ocorrencia.hora + "," + ocorrencia.observacao + "\n";
+            });
+
+            cursor.continue();
+        } else {
+            var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+            var url = window.URL.createObjectURL(blob);
+
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "checklist.csv";
+            document.body.appendChild(a);
+            a.click();
+        }
+    };
+}
+
+</script>
+
+</body>
+</html>
