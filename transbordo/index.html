@@ -198,11 +198,11 @@ function exportarCSV() {
  
 </script>
 
-  // Registra o Service Worker
+<!-- Service Worker -->
  <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/transbordo/service-worker.js')
+                navigator.serviceWorker.register('transbordo/serviceworker.js')
                     .then((registration) => {
                         console.log('Service Worker registrado com sucesso:', registration);
                     })
