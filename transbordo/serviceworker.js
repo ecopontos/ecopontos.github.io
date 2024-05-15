@@ -1,54 +1,58 @@
-// This is the service worker with the combined offline experience (Offline page + Offline copy of pages)
+// Nome do cache
+const CACHE_NAME = 'transbordo-v1';
 
-const CACHE = "pwabuilder-offline-page";
+// Arquivos a serem armazenados em cache
+const urlsToCache = [
+  '/transbordo/',
+  '/transbordo/logo.png',
+  '/transbordo/offline.html'
+];
 
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
-
-// TODO: replace the following with the correct offline fallback page i.e.: const offlineFallbackPage = "transbordo/offline.html";
-const offlineFallbackPage = "transbordo/offline.html";
-
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
-self.addEventListener('install', async (event) => {
+// Instalação do Service Worker
+self.addEventListener('install', function(event) {
+  // Perform install steps
   event.waitUntil(
-    caches.open(CACHE)
-      .then((cache) => cache.add(offlineFallbackPage))
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
   );
 });
 
-if (workbox.navigationPreload.isSupported()) {
-  workbox.navigationPreload.enable();
-}
-
-workbox.routing.registerRoute(
-  new RegExp('/*'),
-  new workbox.strategies.StaleWhileRevalidate({
-    cacheName: CACHE
-  })
-);
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const preloadResp = await event.preloadResponse;
-
-        if (preloadResp) {
-          return preloadResp;
+// Intercepta as solicitações e serve o conteúdo em cache, se disponível
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        // Cache hit - return response
+        if (response) {
+          return response;
         }
+        // Não encontrou no cache - busca na rede
+        return fetch(event.request);
+      })
+      .catch(function(error) {
+        // Se falhar, retorna a página offline
+        return caches.match('/offline.html');
+      })
+  );
+});
 
-        const networkResp = await fetch(event.request);
-        return networkResp;
-      } catch (error) {
+// Atualiza o cache quando o Service Worker é ativado
+self.addEventListener('activate', function(event) {
 
-        const cache = await caches.open(CACHE);
-        const cachedResp = await cache.match(offlineFallbackPage);
-        return cachedResp;
-      }
-    })());
-  }
+  var cacheWhitelist = ['transbordo-v1'];
+
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
 });
