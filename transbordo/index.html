@@ -5,14 +5,16 @@
 <title>Formulário de Checklist</title>
 <link rel="manifest" href="/transbordo/manifest.json">
 <style>
-/* Estilos para tabela */
-td {
-  display: block;
-}
 /* Estilos para o logotipo */
 .logo {
   max-width: 250px; /* Define a largura máxima do logotipo */
   height: auto; /* Mantém a proporção da altura */
+}
+
+/* Estilo para os selects */
+select {
+  display: block;
+  margin-bottom: 10px; /* Espaçamento entre os selects */
 }
 </style>
 </head>
@@ -33,7 +35,7 @@ td {
   <label for="funcionario">Funcionário:</label>
   <input type="text" id="funcionario" name="funcionario"><br><br>
 
- 
+  <fieldset>
     <legend>CheckList:</legend>
     
     <!-- Repita este bloco para cada ocorrência -->
@@ -49,7 +51,7 @@ td {
     <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
     <!-- Repita este bloco para até 5 ocorrências -->
     
- 
+  </fieldset>
 
    <!-- Aqui você pode adicionar o botão Exportar CSV -->
    <button onclick="exportarCSV()">Exportar CSV</button>
