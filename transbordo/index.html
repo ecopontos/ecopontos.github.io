@@ -16,6 +16,7 @@
 <body>
 <img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
     <h1>Monitoramento Transbordo</h1>
+
 <form method="post" onsubmit="enviarDados(event)">
   <label for="data">Data:</label>
   <input type="date" id="data" name="data"><br><br>
@@ -31,27 +32,20 @@
 
   <fieldset>
     <legend>CheckList:</legend>
-    <table>
-      <!-- Repita este bloco para cada ocorrência -->
-      <tr>
-        <td>
-          <select name="ocorrencia1">
-            <option value="">Selecione uma ocorrência</option>
-            <option value="1">Acidente</option>
-            <option value="2">Ausência do supervisor</option>
-            <!-- Adicione outras opções conforme necessário -->
-          </select>
-        </td>
-        <td>
-          <input type="time" name="horaOcorrencia1">
-        </td>
-        <td>
-          <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
-        </td>
-      </tr>
-      <!-- Repita este bloco para até 5 ocorrências -->
-
-    </table>
+    
+    <!-- Repita este bloco para cada ocorrência -->
+    <select name="ocorrencia1">
+      <option value="">Selecione uma ocorrência</option>
+      <option value="1">Acidente</option>
+      <option value="2">Ausência do supervisor</option>
+      <!-- Adicione outras opções conforme necessário -->
+    </select>
+       
+    <input type="time" name="horaOcorrencia1">
+       
+    <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
+    <!-- Repita este bloco para até 5 ocorrências -->
+    
   </fieldset>
 
    <!-- Aqui você pode adicionar o botão Exportar CSV -->
