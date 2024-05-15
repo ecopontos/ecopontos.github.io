@@ -4,17 +4,17 @@
   "description": "Um aplicativo para registrar eventos de problemas em transbordo do CVR",
   "icons": [
     {
-      "src": "transbordo/icon.png",
+      "src": "/transbordo/icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "transbordo/icon-512.png",
+      "src": "/transbordo/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "start_url": "transbordo/",
+  "start_url": "/transbordo/",
   "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#006b97",
@@ -22,5 +22,5 @@
   "dir": "auto",
   "lang": "pt",
   "orientation": "portrait",
-  "scope": "transbordo/"
+  "scope": "/transbordo/"
 }
