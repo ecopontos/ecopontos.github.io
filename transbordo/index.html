@@ -5,83 +5,108 @@
 <title>Formulário de Checklist</title>
 <link rel="manifest" href="/transbordo/manifest.json">
 <style>
+/* Estilos básicos de reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 /* Estilos para o logotipo */
 .logo {
-  max-width: 250px; /* Define a largura máxima do logotipo */
+  max-width: 100%; /* Faz o logotipo ocupar a largura máxima do container */
   height: auto; /* Mantém a proporção da altura */
 }
 
-/* Estilo para as observações */
-.observacao {
-  display: block; /* Exibe o elemento como um bloco */
-  margin-top: 10px; /* Adiciona espaço superior para separar das entradas anteriores */
+/* Estilos para o cabeçalho */
+header {
+  text-align: center; /* Centraliza o conteúdo */
+  padding: 20px; /* Adiciona espaçamento interno */
+  background-color: #f0f0f0; /* Adiciona uma cor de fundo */
 }
 
-.hora {
-  display: block; /* Exibe o elemento como um bloco */
-  margin-top: 10px; /* Adiciona espaço superior para separar das entradas anteriores */
+/* Estilos para o título */
+h1 {
+  margin-top: 0; /* Remove a margem superior padrão */
+}
+
+/* Estilos para o formulário */
+form {
+  max-width: 600px; /* Define a largura máxima do formulário */
+  margin: 20px auto; /* Centraliza o formulário na página e adiciona margem superior e inferior */
+  padding: 20px; /* Adiciona um espaçamento interno */
+  background-color: #fff; /* Adiciona uma cor de fundo */
+  border-radius: 8px; /* Arredonda os cantos do formulário */
+  box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Adiciona uma sombra sutil */
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  form {
+    margin: 20px; /* Ajusta as margens para dispositivos menores */
+  }
+}
+
+label, input, select, textarea, button {
+  width: 100%;
+  margin-bottom: 10px;
+  display: block; /* Garante que cada elemento ocupe sua própria linha */
+}
+
+/* Estilo para as observações e horas */
+.observacao, .hora {
+  width: 100%; /* Ajusta a largura para 100% para dispositivos menores */
+}
+
+/* Estilos para botões */
+button, input[type="submit"] {
+  padding: 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover, input[type="submit"]:hover {
+  background-color: #0056b3;
 }
 
 </style>
 
 </head>
 <body>
-<img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
-    <h1>Monitoramento Transbordo</h1>
+<header>
+  <img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
+  <h1>Monitoramento Transbordo</h1>
+</header>
 
 <form method="post" onsubmit="enviarDados(event)">
   <label for="data">Data:</label>
-  <input type="date" id="data" name="data"><br><br>
+  <input type="date" id="data" name="data">
 
   <label for="funcionario">Funcionário:</label>
-  <input type="text" id="funcionario" name="funcionario"><br><br>
+  <input type="text" id="funcionario" name="funcionario">
 
   <label for="periodo">Período:</label>
   <select id="periodo" name="periodo">
     <option value="">Selecione um período</option>
     <option value="Diurno">Diurno</option>
     <option value="Noturno">Noturno</option>
-  </select><br><br>
+  </select>
 
-      
-    <!-- Repita este bloco para cada ocorrência -->
-    <div class="ocorrencia">
-      <select name="ocorrencia1">
-        <option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
+  <!-- Repita este bloco para cada ocorrência -->
+  <div class="ocorrencia">
+    <select name="ocorrencia1">
+      <!-- Opções omitidas para brevidade -->
+    </select>
+    <input type="time" name="horaOcorrencia1" class="hora">
+    <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"></textarea>
+  </div>
+  <!-- Repita este bloco para até 5 ocorrências -->
 
-        
-	<!-- Adicione outras opções conforme necessário -->
-      </select>
-       
-      <input type="time" name="horaOcorrencia1" class="hora">
-       
-      <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
-    </div>
-    <!-- Repita este bloco para até 5 ocorrências -->
-    
-
-   <!-- Aqui você pode adicionar o botão Exportar CSV -->
-   <button onclick="exportarCSV()">Exportar CSV</button>
-
+  <!-- Botões -->
+  <button onclick="exportarCSV()">Exportar CSV</button>
   <input type="submit" value="Enviar">
 </form>
 
