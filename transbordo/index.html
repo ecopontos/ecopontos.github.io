@@ -1,85 +1,90 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<title>Formulário de Checklist</title>
-<link rel="manifest" href="/transbordo/manifest.json">
-<style>
-/* Estilos básicos de reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulário de Checklist</title>
+  <link rel="manifest" href="/transbordo/manifest.json">
+  <style>
+    /* Estilos básicos de reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-/* Estilos para o logotipo */
-.logo {
-  max-width: 100%; /* Faz o logotipo ocupar a largura máxima do container */
-  height: auto; /* Mantém a proporção da altura */
-}
+    /* Estilos para o logotipo */
+    .logo {
+      max-width: 100%;
+      height: auto;
+    }
 
-/* Estilos para o cabeçalho */
-header {
-  text-align: center; /* Centraliza o conteúdo */
-  padding: 20px; /* Adiciona espaçamento interno */
-  background-color: #f0f0f0; /* Adiciona uma cor de fundo */
-}
+    /* Estilos para o cabeçalho */
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
 
-/* Estilos para o título */
-h1 {
-  margin-top: 0; /* Remove a margem superior padrão */
-}
+    /* Estilos para o título */
+    h1 {
+      margin-top: 0;
+    }
 
-/* Estilos para o formulário */
-form {
-  max-width: 600px; /* Define a largura máxima do formulário */
-  margin: 20px auto; /* Centraliza o formulário na página e adiciona margem superior e inferior */
-  padding: 20px; /* Adiciona um espaçamento interno */
-  background-color: #fff; /* Adiciona uma cor de fundo */
-  border-radius: 8px; /* Arredonda os cantos do formulário */
-  box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Adiciona uma sombra sutil */
-}
+    /* Estilos para o formulário */
+    form {
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-/* Estilos responsivos */
-@media (max-width: 768px) {
-  form {
-    margin: 20px; /* Ajusta as margens para dispositivos menores */
-  }
-}
+    /* Estilos responsivos */
+    @media (max-width: 768px) {
+      form {
+        margin: 20px;
+      }
+    }
 
-label, input, select, textarea, button {
-  width: 100%;
-  margin-bottom: 10px;
-  display: block; /* Garante que cada elemento ocupe sua própria linha */
-}
+    label,
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      margin-bottom: 10px;
+      display: block;
+    }
 
-/* Estilo para as observações e horas */
-.observacao, .hora {
-  width: 100%; /* Ajusta a largura para 100% para dispositivos menores */
-}
+    .observacao,
+    .hora {
+      width: 100%;
+    }
 
-/* Estilos para botões */
-button, input[type="submit"] {
-  padding: 10px;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-}
+    button,
+    input[type="submit"] {
+      padding: 10px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-button:hover, input[type="submit"]:hover {
-  background-color: #0056b3;
-}
-
-</style>
-
+    button:hover,
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-<header>
-  <img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
-  <h1>Monitoramento Transbordo</h1>
-</header>
+  <header>
+    <img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Monitoramento Transbordo</h1>
+  </header>
+
 
 <form method="post" onsubmit="enviarDados(event)">
   <label for="data">Data:</label>
