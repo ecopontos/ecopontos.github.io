@@ -1,1 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Formulário de Checklist</title>
+<link rel="manifest" href="/transbordo/manifest.json">
+<style>
+/* Estilos para o logotipo */
+.logo {
+  max-width: 250px; /* Define a largura máxima do logotipo */
+  height: auto; /* Mantém a proporção da altura */
+}
 
+/* Estilo para as observações */
+.observacao {
+  display: block; /* Exibe o elemento como um bloco */
+  margin-top: 10px; /* Adiciona espaço superior para separar das entradas anteriores */
+}
+
+
+</style>
+
+</head>
+<body>
+<img class="logo" src="logotipo.png" alt="Logotipo da sua empresa">
+    <h1>Monitoramento Transbordo</h1>
+
+<form method="post" onsubmit="enviarDados(event)">
+  <label for="data">Data:</label>
+  <input type="date" id="data" name="data"><br><br>
+
+  <label for="funcionario">Funcionário:</label>
+  <input type="text" id="funcionario" name="funcionario"><br><br>
+
+  <label for="periodo">Período:</label>
+  <select id="periodo" name="periodo">
+    <option value="">Selecione um período</option>
+    <option value="Diurno">Diurno</option>
+    <option value="Noturno">Noturno</option>
+  </select><br><br>
+
+      
+    <!-- Repita este bloco para cada ocorrência -->
+    <div class="ocorrencia">
+      <select name="ocorrencia1">
+        <option value="Acidente">Acidente</option>
+<option value="Ausência do supervisor">Ausência do supervisor</option>
+<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
+<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
+<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
+<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
+<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
+<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
+<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
+<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
+<option value="Falta de carreta">Falta de carreta</option>
+<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
+<option value="Funcionários sem EPI">Funcionários sem EPI</option>
+<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
+<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
+<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
+<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
+<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
+<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
+
+        
+	<!-- Adicione outras opções conforme necessário -->
+      </select>
+       
+      <input type="time" name="horaOcorrencia1">
+       
+      <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
+    </div>
+    <!-- Repita este bloco para até 5 ocorrências -->
+    
+
+   <!-- Aqui você pode adicionar o botão Exportar CSV -->
+   <button onclick="exportarCSV()">Exportar CSV</button>
+
+  <input type="submit" value="Enviar">
+</form>
+
+<!-- Banco de dados -->
+<script>
+
+var db;
+
+function abrirBancoDeDados() {
+    var request = window.indexedDB.open("ChecklistDB", 1);
+
+    request.onerror = function(event) {
+        console.log("Erro ao abrir o banco de dados.");
+    };
+
+    request.onupgradeneeded = function(event) {
+        db = event.target.result;
+        var objectStore = db.createObjectStore("checklist", { keyPath: "id", autoIncrement: true });
+        objectStore.createIndex("data", "data", { unique: false });
+        objectStore.createIndex("funcionario", "funcionario", { unique: false });
+        objectStore.createIndex("periodo", "periodo", { unique: false });
+        objectStore.createIndex("ocorrencias", "ocorrencias", { unique: false });
+    };
+
+    request.onsuccess = function(event) {
+        db = event.target.result;
+        console.log("Banco de dados aberto com sucesso.");
+    };
+}
+
+function salvarDadosNoBanco(dados) {
+    var transaction = db.transaction(["checklist"], "readwrite");
+    var objectStore = transaction.objectStore("checklist");
+
+    var request = objectStore.add(dados);
+
+    request.onsuccess = function(event) {
+        console.log("Dados armazenados com sucesso.");
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao armazenar os dados.");
+    };
+}
+
+function enviarDados(event) {
+    event.preventDefault();
+
+    // Salvar os dados no banco de dados
+    var data = document.getElementById("data").value;
+    var funcionario = document.getElementById("funcionario").value;
+    var periodo = document.getElementById("periodo").value;
+    var ocorrencias = [];
+
+    var divs = document.querySelectorAll(".ocorrencia");
+
+    for (var i = 0; i < divs.length; i++) {
+    var select = divs[i].querySelector("select");
+    var selectedOption = select.options[select.selectedIndex]; // Captura a opção selecionada
+    var time = divs[i].querySelector("input[type='time']");
+    var textarea = divs[i].querySelector("textarea");
+
+    var ocorrencia = {
+        tipo: selectedOption.text, // Agora estamos usando selectedOption.text para obter o texto da opção selecionada
+        hora: time.value,
+        observacao: textarea.value
+    };
+
+    ocorrencias.push(ocorrencia);
+}
+
+    var dados = {
+        data: data,
+        funcionario: funcionario,
+        periodo: periodo,
+        ocorrencias: ocorrencias
+    };
+
+    salvarDadosNoBanco(dados);
+
+    // Feedback para o usuário
+    alert("Dados enviados com sucesso!");
+
+    // Limpar formulário
+    document.getElementById("data").value = "";
+    document.getElementById("funcionario").value = "";
+    document.getElementById("periodo").value = "";
+    var textareaElements = document.querySelectorAll("textarea");
+    for (var i = 0; i < textareaElements.length; i++) {
+        textareaElements[i].value = "";
+    }
+}
+
+// Abrir banco de dados quando a página é carregada
+abrirBancoDeDados();
+
+function exportarCSV() {
+    // Gerar o arquivo CSV cumulativo
+    var transaction = db.transaction(["checklist"], "readonly");
+    var objectStore = transaction.objectStore("checklist");
+    var request = objectStore.openCursor();
+    var csvContent = "Data,Funcionário,Período,Ocorrência,Hora da Ocorrência,Observação\n";
+
+    request.onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+            var data = cursor.value.data;
+            var funcionario = cursor.value.funcionario;
+            var periodo = cursor.value.periodo;
+
+            cursor.value.ocorrencias.forEach(function(ocorrencia) {
+                csvContent += data + "," + funcionario + "," + periodo + ",";
+                csvContent += ocorrencia.tipo + "," + ocorrencia.hora + "," + ocorrencia.observacao + "\n";
+            });
+
+            cursor.continue();
+        } else {
+            var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+            var url = window.URL.createObjectURL(blob);
+
+            var a = document
+
+.createElement("a");
+            a.href = url;
+            a.download = "checklist.csv";
+            document.body.appendChild(a);
+            a.click();
+        }
+    };
+}
+
+ 
+</script>
+
+<!-- Service Worker -->
+ <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/transbordo/serviceworker.js')
+        .then(function(registration) {
+          console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch(function(error) {
+          console.log('Falha ao registrar o Service Worker:', error);
+        });
+    });
+  } else {
+    console.log('Service Worker não suportado neste navegador.');
+  }
+</script>
+
+
+</body>
+</html>
