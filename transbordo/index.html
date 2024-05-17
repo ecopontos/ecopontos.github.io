@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Formulário de Checklist</title>
-  <link rel="manifest" href="/transbordo/manifest.json">
+
+<!-- Manifest -->
+<link rel="manifest" href="/transbordo/manifest.json">
+
   <style>
     /* Estilos básicos de reset */
     * {
@@ -85,7 +88,6 @@
     <h1>Monitoramento do Transbordo</h1>
   </header>
 
-
 <form method="post" onsubmit="enviarDados(event)">
   <label for="data">Data:</label>
   <input type="date" id="data" name="data">
@@ -100,7 +102,7 @@
     <option value="Noturno">Noturno</option>
   </select>
 
-  <!-- Repita este bloco para cada ocorrência -->
+<!-- Repita este bloco para cada ocorrência -->
     <div class="ocorrencia">
  <h3>Ocorrência 1</h3>
       <select name="ocorrencia1">
@@ -273,7 +275,7 @@
 
   <!-- Botões -->
   <input type="submit" value="Enviar">
-<button onclick="exportarCSV()">Exportar CSV</button>
+<button onclick="exportarCSVPorData()">Exportar CSV</button>
 </form>
 
 <!-- Banco de dados -->
@@ -380,59 +382,65 @@ function enviarDados(event) {
         time.value = ""; // Limpar o campo de tempo
         textarea.value = ""; // Limpar a área de texto
     });
-}
-
     } else {
         // Se nenhuma ocorrência preenchida for encontrada, exiba uma mensagem de erro
         alert("Por favor, preencha pelo menos uma ocorrência antes de enviar.");
     }
 }
 
+function exportarCSVPorData() {
+    // Obter a data selecionada pelo usuário
+    var dataSelecionada = document.getElementById("data").value;
 
-// Abrir banco de dados quando a página é carregada
-abrirBancoDeDados();
+    // Verificar se a data foi selecionada
+    if (dataSelecionada) {
+        // Gerar o arquivo CSV para a data selecionada
+        var transaction = db.transaction(["checklist"], "readonly");
+        var objectStore = transaction.objectStore("checklist");
+        var index = objectStore.index("data");
+        var range = IDBKeyRange.only(dataSelecionada);
+        var request = index.openCursor(range);
+        var csvContent = "Data,Funcionário,Período,Ocorrência,Hora da Ocorrência,Observação\n";
 
+        request.onsuccess = function(event) {
+            var cursor = event.target.result;
+            if (cursor) {
+                var data = cursor.value.data;
+                var funcionario = cursor.value.funcionario;
+                var periodo = cursor.value.periodo;
 
-function exportarCSV() {
-    // Gerar o arquivo CSV cumulativo
-    var transaction = db.transaction(["checklist"], "readonly");
-    var objectStore = transaction.objectStore("checklist");
-    var request = objectStore.openCursor();
-    var csvContent = "Data,Funcionário,Período,Ocorrência,Hora da Ocorrência,Observação\n";
+                cursor.value.ocorrencias.forEach(function(ocorrencia) {
+                    csvContent += data + "," + funcionario + "," + periodo + ",";
+                    csvContent += ocorrencia.tipo + "," + ocorrencia.hora + "," + ocorrencia.observacao + "\n";
+                });
 
-    request.onsuccess = function(event) {
-        var cursor = event.target.result;
-        if (cursor) {
-            var data = cursor.value.data;
-            var funcionario = cursor.value.funcionario;
-            var periodo = cursor.value.periodo;
+                cursor.continue();
+            } else {
+                // Se não houver mais dados para exportar, criar e baixar o arquivo CSV
+                var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+                var url = window.URL.createObjectURL(blob);
 
-            cursor.value.ocorrencias.forEach(function(ocorrencia) {
-                csvContent += data + "," + funcionario + "," + periodo + ",";
-                csvContent += ocorrencia.tipo + "," + ocorrencia.hora + "," + ocorrencia.observacao + "\n";
-            });
-
-            cursor.continue();
-        } else {
-            var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-            var url = window.URL.createObjectURL(blob);
-
-            var a = document
-
-.createElement("a");
-            a.href = url;
-            a.download = "checklist.csv";
-            document.body.appendChild(a);
-            a.click();
-        }
-    };
+                var a = document.createElement("a");
+                a.href = url;
+                a.download = "checklist_" + dataSelecionada + ".csv";
+                document.body.appendChild(a);
+                a.click();
+            }
+        };
+    } else {
+        // Se nenhuma data for selecionada, exibir uma mensagem de erro
+        alert("Por favor, selecione uma data antes de exportar.");
+    }
 }
 
- 
+
+
+abrirBancoDeDados();
 </script>
 
-<!-- Service Worker -->
- <script>
+
+<!-- No final do body do seu HTML -->
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('/transbordo/serviceworker.js')
@@ -447,7 +455,6 @@ function exportarCSV() {
     console.log('Service Worker não suportado neste navegador.');
   }
 </script>
-
 
 </body>
 </html>
