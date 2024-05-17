@@ -354,6 +354,9 @@ function enviarDados(event) {
             time.value = ""; // Limpar o campo de tempo
             textarea.value = ""; // Limpar a área de texto
         }
+	  
+    // Recarregar a página após o processamento dos dados
+    location.reload();
     }
 
     if (ocorrencias.length > 0) {
