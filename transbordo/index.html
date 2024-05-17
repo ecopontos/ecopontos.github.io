@@ -463,15 +463,10 @@ abrirBancoDeDados();
     // Captura a data atual
     var dataAtual = new Date();
     var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
-    
-    // Captura a hora atual
-    var horaAtual = dataAtual.toTimeString().split(' ')[0]; // Formata para o formato de hora (HH:MM:SS)
-    
+          
     // Preenche o campo de data com a data atual
     document.getElementById('data').value = dataFormatada;
-    
-    // Preenche o campo de hora com a hora atual
-    document.getElementById('hora').value = horaAtual;
+        
 </script>
 
 </body>
