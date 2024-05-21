@@ -238,7 +238,7 @@ function adicionarAtendimento() {
 }
 
 
-/ Exportar CSV
+// Exportar CSV
 document.getElementById("btnExportarCSV").addEventListener("click", exportarParaCSV);
 
 function exportarParaCSV() {
@@ -256,8 +256,7 @@ function exportarParaCSV() {
         // Encontrar a data mais recente no campo "data"
         var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
 
-        // Adicionar BOM para UTF-8
-        var csvContent = "\uFEFF";
+        var csvContent = "data:text/csv;charset=utf-8,";
 
         // Cabeçalhos CSV
         csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
@@ -269,7 +268,7 @@ function exportarParaCSV() {
         });
 
         // Criar um link para download do CSV
-        var encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+        var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
 
         // Nome do arquivo com base no nome do Ecoponto e data mais recente
