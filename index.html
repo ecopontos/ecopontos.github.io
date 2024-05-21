@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atendimentos de Ecoponto</title>
-<link rel="manifest" href="/manifest.json">
+    <title>Atendimentos de Ecoponto Offline</title>
+<link rel="manifest" href="/ecopontos/manifest.json">
 <style>
         /* Estilos para o logotipo */
         .logo {
@@ -12,11 +12,11 @@
             height: auto; /* Mantém a proporção da altura */
         }
     </style>
-<meta name="interest-cohort" content="()"/>
+
 </head>
 <body>
     <img class="logo" src="/logotipo.png" alt="Logotipo da sua empresa">
-    <h3>Atendimentos em Ecoponto</h3>
+    <h1>Atendimentos de Ecoponto</h1>
     <form id="form-atendimento">
         <label for="ecoponto">Ecoponto:</label><br>
 	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi" required><br><br>
@@ -167,26 +167,9 @@
         <br><br>
         <button type="button" onclick="adicionarAtendimento()">Enviar Registro</button>
         <button id="btnExportarCSV">Exportar para CSV</button>
-            <br><br>
-	            <br><br>
-	            <br><br>
-    
     </form>
 
-  <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('Service Worker registrado com sucesso:', registration);
-      })
-      .catch(error => {
-        console.error('Erro ao registrar o Service Worker:', error);
-      });
-  }
-</script>
-
-	
-	<script>
+    <script>
       var db;
 var request = indexedDB.open("ecoponto", 1);
 
@@ -256,6 +239,7 @@ function adicionarAtendimento() {
 
 
 // Exportar CSV
+
 document.getElementById("btnExportarCSV").addEventListener("click", exportarParaCSV);
 
 function exportarParaCSV() {
@@ -271,27 +255,18 @@ function exportarParaCSV() {
         csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
 
         // Adicionar dados ao CSV
-        data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-            csvContent += linha;
-        });
+        // Adicionar dados ao CSV
+data.forEach(function(atendimento) {
+    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+    csvContent += linha;
+});
 
-        // Obtendo a data mais recente dos registros
-        var dataMaisRecente = new Date(Math.max.apply(null, data.map(function(atendimento) {
-            return new Date(atendimento.data);
-        })));
-
-        // Formatando a data para incluir no nome do arquivo
-        var dataFormatada = dataMaisRecente.getFullYear() + '-' + (dataMaisRecente.getMonth() + 1) + '-' + dataMaisRecente.getDate();
-
-        // Obtendo o valor do campo Ecoponto
-        var ecoponto = document.getElementById("ecoponto").value;
 
         // Criar um link para download do CSV
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "atendimentos_" + ecoponto + "-" + dataFormatada + ".csv");
+        link.setAttribute("download", "atendimentos.csv");
         document.body.appendChild(link);
 
         // Clicar no link para iniciar o download
@@ -303,6 +278,13 @@ function exportarParaCSV() {
     };
 }
 
+    </script>
+
+<script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
 
 <script>
     // Captura a data atual
@@ -322,4 +304,3 @@ function exportarParaCSV() {
 
 </body>
 </html>
-
