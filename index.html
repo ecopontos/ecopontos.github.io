@@ -249,7 +249,7 @@ function exportarParaCSV() {
 
     request.onsuccess = function(event) {
         var data = event.target.result;
-        var csvContent = "data:text/csv;charset=utf-8,";
+        var csvContent = "data:text/csv;charset=ANSI,";
 
         // Cabeçalhos CSV
         csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
