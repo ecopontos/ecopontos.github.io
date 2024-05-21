@@ -249,34 +249,35 @@ function exportarParaCSV() {
 
     request.onsuccess = function(event) {
         var data = event.target.result;
-        var csvContent = "data:text/csv;charset=ANSI,";
+        var csvContent = "data:text/csv;charset=utf-8,";
 
         // Cabeçalhos CSV
         csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
 
         // Adicionar dados ao CSV
-        data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-            csvContent += linha;
-        });
+        // Adicionar dados ao CSV
+data.forEach(function(atendimento) {
+    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+    csvContent += linha;
+});
 
-        // Criar URL para download
+
+        // Criar um link para download do CSV
         var encodedUri = encodeURI(csvContent);
-
-        // Criar link para download
         var link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "dados.csv");
+        link.setAttribute("download", "atendimentos.csv");
         document.body.appendChild(link);
 
-        // Simular clique no link para iniciar o download
+        // Clicar no link para iniciar o download
         link.click();
     };
 
     request.onerror = function(event) {
-        console.error("Erro ao exportar dados para CSV:", event.target.error);
+        console.log("Erro ao exportar para CSV:", event.target.errorCode);
     };
 }
+
     </script>
 
 <script>
