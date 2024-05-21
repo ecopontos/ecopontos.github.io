@@ -256,7 +256,6 @@ function adicionarAtendimento() {
 
 
 // Exportar CSV
-
 document.getElementById("btnExportarCSV").addEventListener("click", exportarParaCSV);
 
 function exportarParaCSV() {
@@ -272,18 +271,24 @@ function exportarParaCSV() {
         csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
 
         // Adicionar dados ao CSV
-        // Adicionar dados ao CSV
-data.forEach(function(atendimento) {
-    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-    csvContent += linha;
-});
+        data.forEach(function(atendimento) {
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+            csvContent += linha;
+        });
 
+        // Obtendo a data mais recente dos registros
+        var dataMaisRecente = new Date(Math.max.apply(null, data.map(function(atendimento) {
+            return new Date(atendimento.data);
+        })));
+
+        // Formatando a data para incluir no nome do arquivo
+        var dataFormatada = dataMaisRecente.getFullYear() + '-' + (dataMaisRecente.getMonth() + 1) + '-' + dataMaisRecente.getDate();
 
         // Criar um link para download do CSV
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "atendimentos.csv");
+        link.setAttribute("download", "atendimentos_" + dataFormatada + ".csv");
         document.body.appendChild(link);
 
         // Clicar no link para iniciar o download
@@ -295,7 +300,6 @@ data.forEach(function(atendimento) {
     };
 }
 
-    </script>
 
 <script>
     // Captura a data atual
