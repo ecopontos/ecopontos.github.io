@@ -284,11 +284,14 @@ function exportarParaCSV() {
         // Formatando a data para incluir no nome do arquivo
         var dataFormatada = dataMaisRecente.getFullYear() + '-' + (dataMaisRecente.getMonth() + 1) + '-' + dataMaisRecente.getDate();
 
+        // Obtendo o valor do campo Ecoponto
+        var ecoponto = document.getElementById("ecoponto").value;
+
         // Criar um link para download do CSV
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "atendimentos_" + dataFormatada + ".csv");
+        link.setAttribute("download", "atendimentos_" + ecoponto + "-" + dataFormatada + ".csv");
         document.body.appendChild(link);
 
         // Clicar no link para iniciar o download
