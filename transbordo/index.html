@@ -4,83 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Formulário de Checklist</title>
-
-<!-- Manifest -->
-<link rel="manifest" href="/transbordo/manifest.json">
-
-  <style>
-    /* Estilos básicos de reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    /* Estilos para o logotipo */
-    .logo {
-      max-width: 100%;
-      height: auto;
-    }
-
-    /* Estilos para o cabeçalho */
-    header {
-      text-align: center;
-      padding: 20px;
-      background-color: #f0f0f0;
-    }
-
-    /* Estilos para o título */
-    h1 {
-      margin-top: 0;
-    }
-
-    /* Estilos para o formulário */
-    form {
-      max-width: 400px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Estilos responsivos */
-    @media (max-width: 768px) {
-      form {
-        margin: 20px;
-      }
-    }
-
-    label,
-    input,
-    select,
-    textarea,
-    button {
-      width: 100%;
-      margin-bottom: 10px;
-      display: block;
-    }
-
-    .observacao,
-    .hora {
-      width: 100%;
-    }
-
-    button,
-    input[type="submit"] {
-      padding: 10px;
-      border: none;
-      background-color: #007bff;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover,
-    input[type="submit"]:hover {
-      background-color: #0056b3;
-    }
-  </style>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
@@ -88,401 +13,176 @@
     <h3>Monitoramento da Veolia</h3>
   </header>
 
-<form method="post" onsubmit="enviarDados(event)">
-  <label for="data">Data:</label>
-  <input type="date" id="data" name="data">
+  <form method="post" onsubmit="enviarDados(event)">
+    <label for="data">Data:</label>
+    <input type="date" id="data" name="data">
 
-  <label for="funcionario">Funcionário:</label>
-  <input type="text" id="funcionario" name="funcionario">
+    <label for="funcionario">Funcionário:</label>
+    <input type="text" id="funcionario" name="funcionario">
 
-  <label for="periodo">Período:</label>
-  <select id="periodo" name="periodo">
-    <option value="">Selecione um período</option>
-    <option value="Diurno">Diurno</option>
-    <option value="Noturno">Noturno</option>
-  </select>
+    <label for="periodo">Período:</label>
+    <select id="periodo" name="periodo">
+      <option value="">Selecione um período</option>
+      <option value="Diurno">Diurno</option>
+      <option value="Noturno">Noturno</option>
+    </select>
 
-<!-- Repita este bloco para cada ocorrência -->
+    <!-- Ocorrências -->
     <div class="ocorrencia">
- <h3>Ocorrência 1</h3>
-      <select name="ocorrencia1">
-<option value="Selecione a Ocorrência"</option>
-<option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
-      
-	<!-- Adicione outras opções conforme necessário -->
+      <h3>Ocorrência 1</h3>
+      <select name="ocorrencia1" onchange="atualizarPlaceholder(this.value, 'observacaoOcorrencia1')">
+        <option value="">Selecione a Ocorrência</option>
+	<option value="1">Acidente</option>
+	<option value="2">Ausência do supervisor</option>
+	<option value="3">Braço mecânico em manutenção</option>
+	<option value="4">Braço mecânico operado por não habilitado</option>
+	<option value="5">Caminhão operado por não habilitado</option>
+	<option value="6">Caminhão trafegando sem lona</option>
+	<option value="7">Carreta estacionada em local não permitido</option>
+	<option value="8">Carretas com carga livre abaixo no mínimo</option>
+	<option value="9">Desrespeito à velocidade máxima permitida</option>
+	<option value="10">Desrespeito ao sentido do trânsito</option>
+	<option value="11">Falta de carreta</option>
+	<option value="12">Falta de motorista habilitado</option>
+	<option value="13">Funcionários sem EPI</option>
+	<option value="14">Imperícia, imprudência ou negligência de operador</option>
+	<option value="15">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+	<option value="16">Inadequadas condições mecânicas</option>
+	<option value="17">Má conduta dos funcionários</option>
+	<option value="18">Manutenção realizada em veículo no local</option>
+	<option value="19">Menos de dois operadores do braço mecânico</option>
+	<option value="20">Saída do transbordo sem utilização de cinto de segurança</option>
+	<option value="21">Funcionário fora da escala de trabalho</option>
       </select>
-       
       <input type="time" name="horaOcorrencia1" class="hora">
-       
-      <textarea name="observacaoOcorrencia1" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
+       <textarea name="observacaoOcorrencia1" id="observacaoOcorrencia1" class="observacao" placeholder="Observação" style="width: 100%; height: 75px;"></textarea>
     </div>
-    <!-- Repita este bloco para até 5 ocorrências -->
 
- <div class="ocorrencia">
- <h3>Ocorrência 2</h3>
-      <select name="ocorrencia2">
-<option value="Selecione a Ocorrência"</option>
-<option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
-      
-	<!-- Adicione outras opções conforme necessário -->
-      </select>
-       
-      <input type="time" name="horaOcorrencia2" class="hora">
-       
-      <textarea name="observacaoOcorrencia2" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
-    </div>
-    <!-- Repita este bloco para até 5 ocorrências -->
-
-<!-- Repita este bloco para cada ocorrência -->
     <div class="ocorrencia">
- <h3>Ocorrência 3</h3>
-      <select name="ocorrencia3">
-<option value="Selecione a Ocorrência"</option>
-<option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
-      
-	<!-- Adicione outras opções conforme necessário -->
+      <h3>Ocorrência 2</h3>
+      <select name="ocorrencia2" onchange="atualizarPlaceholder(this.value, 'observacaoOcorrencia2')">
+        <option value="">Selecione a Ocorrência</option>
+	<option value="1">Acidente</option>
+	<option value="2">Ausência do supervisor</option>
+	<option value="3">Braço mecânico em manutenção</option>
+	<option value="4">Braço mecânico operado por não habilitado</option>
+	<option value="5">Caminhão operado por não habilitado</option>
+	<option value="6">Caminhão trafegando sem lona</option>
+	<option value="7">Carreta estacionada em local não permitido</option>
+	<option value="8">Carretas com carga livre abaixo no mínimo</option>
+	<option value="9">Desrespeito à velocidade máxima permitida</option>
+	<option value="10">Desrespeito ao sentido do trânsito</option>
+	<option value="11">Falta de carreta</option>
+	<option value="12">Falta de motorista habilitado</option>
+	<option value="13">Funcionários sem EPI</option>
+	<option value="14">Imperícia, imprudência ou negligência de operador</option>
+	<option value="15">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+	<option value="16">Inadequadas condições mecânicas</option>
+	<option value="17">Má conduta dos funcionários</option>
+	<option value="18">Manutenção realizada em veículo no local</option>
+	<option value="19">Menos de dois operadores do braço mecânico</option>
+	<option value="20">Saída do transbordo sem utilização de cinto de segurança</option>
+	<option value="21">Funcionário fora da escala de trabalho</option>
       </select>
-       
-      <input type="time" name="horaOcorrencia3" class="hora">
-       
-      <textarea name="observacaoOcorrencia3" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
+      <input type="time" name="horaOcorrencia2" class="hora">
+       <textarea name="observacaoOcorrencia2" id="observacaoOcorrencia2" class="observacao" placeholder="Observação" style="width: 100%; height: 75px;"></textarea>
     </div>
-    <!-- Repita este bloco para até 5 ocorrências -->
 
  <div class="ocorrencia">
- <h3>Ocorrência 4</h3>
-      <select name="ocorrencia4">
-<option value="Selecione a Ocorrência"</option>
-<option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
-      
-	<!-- Adicione outras opções conforme necessário -->
+      <h3>Ocorrência 3</h3>
+      <select name="ocorrencia3" onchange="atualizarPlaceholder(this.value, 'observacaoOcorrencia3')">
+        <option value="">Selecione a Ocorrência</option>
+	<option value="1">Acidente</option>
+	<option value="2">Ausência do supervisor</option>
+	<option value="3">Braço mecânico em manutenção</option>
+	<option value="4">Braço mecânico operado por não habilitado</option>
+	<option value="5">Caminhão operado por não habilitado</option>
+	<option value="6">Caminhão trafegando sem lona</option>
+	<option value="7">Carreta estacionada em local não permitido</option>
+	<option value="8">Carretas com carga livre abaixo no mínimo</option>
+	<option value="9">Desrespeito à velocidade máxima permitida</option>
+	<option value="10">Desrespeito ao sentido do trânsito</option>
+	<option value="11">Falta de carreta</option>
+	<option value="12">Falta de motorista habilitado</option>
+	<option value="13">Funcionários sem EPI</option>
+	<option value="14">Imperícia, imprudência ou negligência de operador</option>
+	<option value="15">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+	<option value="16">Inadequadas condições mecânicas</option>
+	<option value="17">Má conduta dos funcionários</option>
+	<option value="18">Manutenção realizada em veículo no local</option>
+	<option value="19">Menos de dois operadores do braço mecânico</option>
+	<option value="20">Saída do transbordo sem utilização de cinto de segurança</option>
+	<option value="21">Funcionário fora da escala de trabalho</option>
       </select>
-       
-      <input type="time" name="horaOcorrencia4" class="hora">
-       
-      <textarea name="observacaoOcorrencia4" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
+      <input type="time" name="horaOcorrencia3" class="hora">
+       <textarea name="observacaoOcorrencia3" id="observacaoOcorrencia3" class="observacao" placeholder="Observação" style="width: 100%; height: 75px;"></textarea>
     </div>
-    <!-- Repita este bloco para até 5 ocorrências -->
 
 <div class="ocorrencia">
- <h3>Ocorrência 5</h3>
-      <select name="ocorrencia5">
-<option value="Selecione a Ocorrência"</option>
-<option value="Acidente">Acidente</option>
-<option value="Ausência do supervisor">Ausência do supervisor</option>
-<option value="Braço mecânico em manutenção">Braço mecânico em manutenção</option>
-<option value="Braço mecânico operado por não habilitado">Braço mecânico operado por não habilitado</option>
-<option value="Caminhão operado por não habilitado">Caminhão operado por não habilitado</option>
-<option value="Caminhão trafegando sem lona">Caminhão trafegando sem lona</option>
-<option value="Carreta estacionada em local não permitido">Carreta estacionada em local não permitido</option>
-<option value="Carretas com carga livre abaixo no mínimo">Carretas com carga livre abaixo no mínimo</option>
-<option value="Desrespeito à velocidade máxima permitida">Desrespeito à velocidade máxima permitida</option>
-<option value="Desrespeito ao sentido do trânsito">Desrespeito ao sentido do trânsito</option>
-<option value="Falta de carreta">Falta de carreta</option>
-<option value="Falta de motorista habilitado">Falta de motorista habilitado</option>
-<option value="Funcionários sem EPI">Funcionários sem EPI</option>
-<option value="Imperícia, imprudência ou negligência de operador">Imperícia, imprudência ou negligência de operador</option>
-<option value="Inadequadas condições de limpeza, sinalização e manutenção da área de atividades">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
-<option value="Inadequadas condições mecânicas">Inadequadas condições mecânicas</option>
-<option value="Má conduta dos funcionários">Má conduta dos funcionários</option>
-<option value="Manutenção realizada em veículo no local">Manutenção realizada em veículo no local</option>
-<option value="Menos de dois operadores do braço mecânico">Menos de dois operadores do braço mecânico</option>
-<option value="Saída do transbordo sem utilização de cinto de segurança">Saída do transbordo sem utilização de cinto de segurança</option>
-      
-	<!-- Adicione outras opções conforme necessário -->
+      <h3>Ocorrência 4</h3>
+      <select name="ocorrencia4" onchange="atualizarPlaceholder(this.value, 'observacaoOcorrencia4')">
+        <option value="">Selecione a Ocorrência</option>
+	<option value="1">Acidente</option>
+	<option value="2">Ausência do supervisor</option>
+	<option value="3">Braço mecânico em manutenção</option>
+	<option value="4">Braço mecânico operado por não habilitado</option>
+	<option value="5">Caminhão operado por não habilitado</option>
+	<option value="6">Caminhão trafegando sem lona</option>
+	<option value="7">Carreta estacionada em local não permitido</option>
+	<option value="8">Carretas com carga livre abaixo no mínimo</option>
+	<option value="9">Desrespeito à velocidade máxima permitida</option>
+	<option value="10">Desrespeito ao sentido do trânsito</option>
+	<option value="11">Falta de carreta</option>
+	<option value="12">Falta de motorista habilitado</option>
+	<option value="13">Funcionários sem EPI</option>
+	<option value="14">Imperícia, imprudência ou negligência de operador</option>
+	<option value="15">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+	<option value="16">Inadequadas condições mecânicas</option>
+	<option value="17">Má conduta dos funcionários</option>
+	<option value="18">Manutenção realizada em veículo no local</option>
+	<option value="19">Menos de dois operadores do braço mecânico</option>
+	<option value="20">Saída do transbordo sem utilização de cinto de segurança</option>
+	<option value="21">Funcionário fora da escala de trabalho</option>
       </select>
-       
-      <input type="time" name="horaOcorrencia5" class="hora">
-       
-      <textarea name="observacaoOcorrencia5" class="observacao" placeholder="Observação"style="width: 80%;"></textarea>
+      <input type="time" name="horaOcorrencia4" class="hora">
+       <textarea name="observacaoOcorrencia4" id="observacaoOcorrencia4" class="observacao" placeholder="Observação" style="width: 100%; height: 75px;"></textarea>
     </div>
 
-  <!-- Botões -->
-  <input type="submit" value="Enviar">
-<button onclick="exportarCSVPorData()">Exportar CSV</button>
-</form>
+<div class="ocorrencia">
+      <h3>Ocorrência 5</h3>
+      <select name="ocorrencia5" onchange="atualizarPlaceholder(this.value, 'observacaoOcorrencia4')">
+        <option value="">Selecione a Ocorrência</option>
+	<option value="1">Acidente</option>
+	<option value="2">Ausência do supervisor</option>
+	<option value="3">Braço mecânico em manutenção</option>
+	<option value="4">Braço mecânico operado por não habilitado</option>
+	<option value="5">Caminhão operado por não habilitado</option>
+	<option value="6">Caminhão trafegando sem lona</option>
+	<option value="7">Carreta estacionada em local não permitido</option>
+	<option value="8">Carretas com carga livre abaixo no mínimo</option>
+	<option value="9">Desrespeito à velocidade máxima permitida</option>
+	<option value="10">Desrespeito ao sentido do trânsito</option>
+	<option value="11">Falta de carreta</option>
+	<option value="12">Falta de motorista habilitado</option>
+	<option value="13">Funcionários sem EPI</option>
+	<option value="14">Imperícia, imprudência ou negligência de operador</option>
+	<option value="15">Inadequadas condições de limpeza, sinalização e manutenção da área de atividades</option>
+	<option value="16">Inadequadas condições mecânicas</option>
+	<option value="17">Má conduta dos funcionários</option>
+	<option value="18">Manutenção realizada em veículo no local</option>
+	<option value="19">Menos de dois operadores do braço mecânico</option>
+	<option value="20">Saída do transbordo sem utilização de cinto de segurança</option>
+	<option value="21">Funcionário fora da escala de trabalho</option>
+      </select>
+      <input type="time" name="horaOcorrencia5" class="hora">
+       <textarea name="observacaoOcorrencia5" id="observacaoOcorrencia5" class="observacao" placeholder="Observação" style="width: 100%; height: 75px;"></textarea>
+    </div>
 
+    <!-- Botões -->
+    <input type="submit" value="Enviar">
+    <button type="button" onclick="exportarCSVPorData()">Exportar CSV</button>
+  </form>
 
-
-<!-- Banco de dados -->
-<script>
-
-var db;
-
-function abrirBancoDeDados() {
-    var request = window.indexedDB.open("ChecklistDB", 1);
-
-    request.onerror = function(event) {
-        console.log("Erro ao abrir o banco de dados.");
-    };
-
-    request.onupgradeneeded = function(event) {
-        db = event.target.result;
-        var objectStore = db.createObjectStore("checklist", { keyPath: "id", autoIncrement: true });
-        objectStore.createIndex("data", "data", { unique: false });
-        objectStore.createIndex("funcionario", "funcionario", { unique: false });
-        objectStore.createIndex("periodo", "periodo", { unique: false });
-        // Não é necessário criar um índice para o array de ocorrências
-    };
-
-    request.onsuccess = function(event) {
-        db = event.target.result;
-        console.log("Banco de dados aberto com sucesso.");
-    };
-}
-
-function salvarDadosNoBanco(dados) {
-    var transaction = db.transaction(["checklist"], "readwrite");
-    var objectStore = transaction.objectStore("checklist");
-
-    var request = objectStore.add(dados);
-
-    request.onsuccess = function(event) {
-        console.log("Dados armazenados com sucesso.");
-    };
-
-    request.onerror = function(event) {
-        console.log("Erro ao armazenar os dados.");
-    };
-}
-
-function enviarDados(event) {
-    event.preventDefault();
-
-    // Salvar os dados no banco de dados
-    var data = document.getElementById("data").value;
-    var funcionario = document.getElementById("funcionario").value;
-    var periodo = document.getElementById("periodo").value;
-    var ocorrencias = [];
-
-    var divs = document.querySelectorAll(".ocorrencia");
-
-    for (var i = 0; i < divs.length; i++) {
-        var select = divs[i].querySelector("select");
-        var selectedOption = select.options[select.selectedIndex];
-        var time = divs[i].querySelector("input[type='time']");
-        var textarea = divs[i].querySelector("textarea");
-
-        // Verificar se a ocorrência está preenchida
-        if (selectedOption.value !== "" && time.value !== "" && textarea.value !== "") {
-            var ocorrencia = {
-                tipo: selectedOption.text,
-                hora: time.value,
-                observacao: textarea.value
-            };
-
-            ocorrencias.push(ocorrencia);
-            
-            // Limpar campos da ocorrência atual
-            select.selectedIndex = 0; // Resetar para a primeira opção
-            time.value = ""; // Limpar o campo de tempo
-            textarea.value = ""; // Limpar a área de texto
-        }
-	  
-    // Recarregar a página após o processamento dos dados
-    location.reload();
-    }
-
-    if (ocorrencias.length > 0) {
-        var dados = {
-            data: data,
-            funcionario: funcionario,
-            periodo: periodo,
-            ocorrencias: ocorrencias
-        };
-
-        salvarDadosNoBanco(dados);
-
-        // Feedback para o usuário
-        alert("Dados enviados com sucesso!");
-
-        // Limpar campos principais do formulário
-    document.getElementById("data").value = "";
-    document.getElementById("funcionario").value = "";
-    document.getElementById("periodo").value = "";
-
-    // Limpar campos das ocorrências
-    divs.forEach(function(div) {
-        var select = div.querySelector("select");
-        var time = div.querySelector("input[type='time']");
-        var textarea = div.querySelector("textarea");
-
-        select.selectedIndex = 0; // Resetar para a primeira opção
-        time.value = ""; // Limpar o campo de tempo
-        textarea.value = ""; // Limpar a área de texto
-    });
-    } else {
-        // Se nenhuma ocorrência preenchida for encontrada, exiba uma mensagem de erro
-        alert("Por favor, preencha pelo menos uma ocorrência antes de enviar.");
-    }
-}
-
-function exportarCSVPorData() {
-    // Obter a data selecionada pelo usuário
-    var dataSelecionada = document.getElementById("data").value;
-
-    // Verificar se a data foi selecionada
-    if (dataSelecionada) {
-        // Gerar o arquivo CSV para a data selecionada
-        var transaction = db.transaction(["checklist"], "readonly");
-        var objectStore = transaction.objectStore("checklist");
-        var index = objectStore.index("data");
-        var range = IDBKeyRange.only(dataSelecionada);
-        var request = index.openCursor(range);
-        var csvContent = "Data,Funcionário,Período,Ocorrência,Hora da Ocorrência,Observação\n";
-
-        request.onsuccess = function(event) {
-            var cursor = event.target.result;
-            if (cursor) {
-                var data = cursor.value.data;
-                var funcionario = cursor.value.funcionario;
-                var periodo = cursor.value.periodo;
-
-                cursor.value.ocorrencias.forEach(function(ocorrencia) {
-                    csvContent += data + "," + funcionario + "," + periodo + ",";
-                    csvContent += ocorrencia.tipo + "," + ocorrencia.hora + "," + ocorrencia.observacao + "\n";
-                });
-
-                cursor.continue();
-            } else {
-                // Se não houver mais dados para exportar, verificar se csvContent só tem cabeçalho
-                if (csvContent === "Data,Funcionário,Período,Ocorrência,Hora da Ocorrência,Observação\n") {
-                    alert("Nenhum dado encontrado para a data selecionada.");
-                    return;
-                }
-                
-                // Criar e baixar o arquivo CSV
-                var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-                var url = window.URL.createObjectURL(blob);
-
-                var a = document.createElement("a");
-                a.href = url;
-                a.download = "checklist_" + dataSelecionada + ".csv";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }
-        };
-
-        request.onerror = function(event) {
-            console.log("Erro ao exportar os dados.");
-        };
-    } else {
-        // Se nenhuma data for selecionada, exibir uma mensagem de erro
-        alert("Por favor, selecione uma data antes de exportar.");
-    }
-}
-
-
-
-abrirBancoDeDados();
-</script>
-
-
-<!-- No final do body do seu HTML -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/transbordo/serviceworker.js')
-        .then(function(registration) {
-          console.log('Service Worker registrado com sucesso:', registration);
-        })
-        .catch(function(error) {
-          console.log('Falha ao registrar o Service Worker:', error);
-        });
-    });
-  } else {
-    console.log('Service Worker não suportado neste navegador.');
-  }
-</script>
-
-<!-- Data atual -->
-<script>
-    // Captura a data atual
-    var dataAtual = new Date();
-    var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
-          
-    // Preenche o campo de data com a data atual
-    document.getElementById('data').value = dataFormatada;
-        
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
