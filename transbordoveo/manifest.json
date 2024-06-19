@@ -1,0 +1,26 @@
+{
+  "name": "Medicação de Transbordo do CVR",
+  "short_name": "Transbordo",
+  "description": "Um aplicativo para registrar eventos de problemas em transbordo do CVR",
+  "icons": [
+    {
+      "src": "/transbordo/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/transbordo/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/transbordo/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#006b97",
+  "id": "ecopontopmf",
+  "dir": "auto",
+  "lang": "pt",
+  "orientation": "portrait",
+  "scope": "/transbordo/"
+}
