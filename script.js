@@ -65,33 +65,7 @@ function adicionarAtendimento() {
     };
 }
 
-function exportarParaCSV() {
-    var transaction = db.transaction(["atendimentos"], "readonly");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.getAll();
-
-    request.onsuccess = function(event) {
-        var data = event.target.result;
-        if (data.length === 0) {
-            alert("Nenhum atendimento encontrado para exportar.");
-            return;
-        }
-
-        // Encontrar a data mais recente no campo "data"
-        var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
-
-        var csvContent = "data:text/csv;charset=utf-8,";
-
-        // Cabeçalhos CSV
-        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
-
-        // Adicionar dados ao CSV
-        data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-            csvContent += linha;
-        });
-
-       // Função para exportar para CSV e limpar banco de dados após exportação
+      // Função para exportar para CSV e limpar banco de dados após exportação
 function exportarParaCSV() {
     // ... código para gerar o CSV ...
 
