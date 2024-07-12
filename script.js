@@ -97,8 +97,8 @@ function exportarParaCSV() {
         var link = document.createElement("a");
 
         // Nome do arquivo com base no nome do Ecoponto e data mais recente
-        var nomeEcoponto = data[0].ecoponto; // Supondo que todos os registros são do mesmo Ecoponto
-        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv"; // Concatena o nome do Ecoponto com a data mais recente
+        var nomeEcoponto = data[0] ? data[0].ecoponto : "ecoponto";
+        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv";
 
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", nomeArquivo);
