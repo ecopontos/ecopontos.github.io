@@ -65,9 +65,9 @@ function adicionarAtendimento() {
     };
 }
 
-      // Função para exportar para CSV e limpar banco de dados após exportação
+     // Função para exportar para CSV e limpar banco de dados após exportação
 function exportarParaCSV() {
-    var transaction = db.transaction(["atendimentos"], "readonly");
+    var transaction = db.transaction(["atendimentos"], "readwrite"); // Alterado para "readwrite"
     var objectStore = transaction.objectStore("atendimentos");
     var request = objectStore.getAll();
 
@@ -104,15 +104,27 @@ function exportarParaCSV() {
         link.setAttribute("download", nomeArquivo);
         document.body.appendChild(link);
 
-        // Clicar no link para iniciar o download
-        link.click();
-
         // Evento para limpar banco de dados após a exportação
         link.addEventListener("click", function() {
-            limparBancoDeDados();
+            // Limpar o banco de dados dentro do evento click
+            var deleteTransaction = db.transaction(["atendimentos"], "readwrite"); // Alterado para "readwrite"
+            var deleteObjectStore = deleteTransaction.objectStore("atendimentos");
+            var deleteRequest = deleteObjectStore.clear();
+
+            deleteRequest.onsuccess = function() {
+                console.log("Banco de dados limpo após exportação.");
+            };
+
+            deleteRequest.onerror = function(event) {
+                console.error("Erro ao limpar banco de dados:", event.target.error);
+            };
         });
+
+        // Clicar no link para iniciar o download
+        link.click();
     };
 }
+
 
 // Registro do Service Worker
 if (typeof navigator.serviceWorker !== 'undefined') {
