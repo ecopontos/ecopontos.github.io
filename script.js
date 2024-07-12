@@ -67,40 +67,50 @@ function adicionarAtendimento() {
 
       // Função para exportar para CSV e limpar banco de dados após exportação
 function exportarParaCSV() {
-    // ... código para gerar o CSV ...
-
-    // Criar um link para download do CSV
-    var encodedUri = encodeURI(csvContent);
-    var link = document.createElement("a");
-
-    // Nome do arquivo com base no nome do Ecoponto e data mais recente
-    var nomeEcoponto = data[0].ecoponto; // Supondo que todos os registros são do mesmo Ecoponto
-    var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv"; // Concatena o nome do Ecoponto com a data mais recente
-
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", nomeArquivo);
-    document.body.appendChild(link);
-
-    // Clicar no link para iniciar o download
-    link.click();
-
-    // Evento para limpar banco de dados após a exportação
-    link.addEventListener("click", function() {
-        limparBancoDeDados();
-    });
-}
-
-function limparBancoDeDados() {
-    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var transaction = db.transaction(["atendimentos"], "readonly");
     var objectStore = transaction.objectStore("atendimentos");
-    var clearRequest = objectStore.clear();
+    var request = objectStore.getAll();
 
-    clearRequest.onsuccess = function(event) {
-        console.log("Registros removidos do banco de dados após exportação para CSV.");
-    };
+    request.onsuccess = function(event) {
+        var data = event.target.result;
+        if (data.length === 0) {
+            alert("Nenhum atendimento encontrado para exportar.");
+            return;
+        }
 
-    clearRequest.onerror = function(event) {
-        console.error("Erro ao limpar registros do banco de dados:", event.target.error);
+        // Encontrar a data mais recente no campo "data"
+        var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
+
+        var csvContent = "data:text/csv;charset=utf-8,";
+
+        // Cabeçalhos CSV
+        csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
+
+        // Adicionar dados ao CSV
+        data.forEach(function(atendimento) {
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+            csvContent += linha;
+        });
+
+        // Criar um link para download do CSV
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+
+        // Nome do arquivo com base no nome do Ecoponto e data mais recente
+        var nomeEcoponto = data[0].ecoponto; // Supondo que todos os registros são do mesmo Ecoponto
+        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv"; // Concatena o nome do Ecoponto com a data mais recente
+
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", nomeArquivo);
+        document.body.appendChild(link);
+
+        // Clicar no link para iniciar o download
+        link.click();
+
+        // Evento para limpar banco de dados após a exportação
+        link.addEventListener("click", function() {
+            limparBancoDeDados();
+        });
     };
 }
 
