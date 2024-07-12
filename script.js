@@ -1,27 +1,27 @@
-  var db;
-  var request = indexedDB.open("ecoponto", 1);
+var db;
+var request = indexedDB.open("ecoponto", 1);
 
-  request.onerror = function(event) {
-      console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
-  };
+request.onerror = function(event) {
+    console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
+};
 
-  request.onupgradeneeded = function(event) {
-      db = event.target.result;
-      var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement:true });
-      objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-      objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
-      objectStore.createIndex("data", "data", { unique: false });
-      objectStore.createIndex("hora", "hora", { unique: false });
-      objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
-  };
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+    objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+    objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
+    objectStore.createIndex("data", "data", { unique: false });
+    objectStore.createIndex("hora", "hora", { unique: false });
+    objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
+};
 
-  request.onsuccess = function(event) {
-      console.log("Banco de dados aberto com sucesso");
-      db = event.target.result;
-  };
+request.onsuccess = function(event) {
+    console.log("Banco de dados aberto com sucesso");
+    db = event.target.result;
+};
 
-  function adicionarAtendimento() {
-      // Validação do formulário
+function adicionarAtendimento() {
+    // Validação do formulário
     var ecoponto = document.getElementById("ecoponto").value;
     var placaVeiculo = document.getElementById("placa_veiculo").value;
     var data = document.getElementById("data").value;
@@ -64,10 +64,7 @@
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
     };
 }
-  }
 
-  function exportarParaCSV() {
-      // Função para exportar dados para CSV
 function exportarParaCSV() {
     var transaction = db.transaction(["atendimentos"], "readonly");
     var objectStore = transaction.objectStore("atendimentos");
@@ -117,10 +114,7 @@ function exportarParaCSV() {
         console.log("Erro ao exportar para CSV:", event.target.errorCode);
     };
 }
-  }
 
-  function limparBancoDeDados() {
-     // Função para limpar o banco de dados após exportar para CSV
 function limparBancoDeDados() {
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
@@ -134,20 +128,19 @@ function limparBancoDeDados() {
         console.error("Erro ao limpar registros do banco de dados:", event.target.error);
     };
 }
-  }
 
-  // Registro do Service Worker
-  if (typeof navigator.serviceWorker !== 'undefined') {
-      navigator.serviceWorker.register('service-worker.js')
-          .then(function(registration) {
-              console.log('Service Worker registrado com sucesso:', registration);
-          })
-          .catch(function(error) {
-              console.error('Falha ao registrar Service Worker:', error);
-          });
-  }
+// Registro do Service Worker
+if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('service-worker.js')
+        .then(function(registration) {
+            console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch(function(error) {
+            console.error('Falha ao registrar Service Worker:', error);
+        });
+}
 
-  // Captura a data atual
+// Captura a data atual
 var dataAtual = new Date();
 var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
 
