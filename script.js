@@ -91,28 +91,29 @@ function exportarParaCSV() {
             csvContent += linha;
         });
 
-        // Criar um link para download do CSV
-        var encodedUri = encodeURI(csvContent);
-        var link = document.createElement("a");
+       // Função para exportar para CSV e limpar banco de dados após exportação
+function exportarParaCSV() {
+    // ... código para gerar o CSV ...
 
-        // Nome do arquivo com base no nome do Ecoponto e data mais recente
-        var nomeEcoponto = data[0].ecoponto; // Supondo que todos os registros são do mesmo Ecoponto
-        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv"; // Concatena o nome do Ecoponto com a data mais recente
+    // Criar um link para download do CSV
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
 
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", nomeArquivo);
-        document.body.appendChild(link);
+    // Nome do arquivo com base no nome do Ecoponto e data mais recente
+    var nomeEcoponto = data[0].ecoponto; // Supondo que todos os registros são do mesmo Ecoponto
+    var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv"; // Concatena o nome do Ecoponto com a data mais recente
 
-        // Clicar no link para iniciar o download
-        link.click();
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", nomeArquivo);
+    document.body.appendChild(link);
 
-        // Após exportar para CSV com sucesso, limpar o banco de dados
+    // Clicar no link para iniciar o download
+    link.click();
+
+    // Evento para limpar banco de dados após a exportação
+    link.addEventListener("click", function() {
         limparBancoDeDados();
-    };
-
-    request.onerror = function(event) {
-        console.log("Erro ao exportar para CSV:", event.target.errorCode);
-    };
+    });
 }
 
 function limparBancoDeDados() {
