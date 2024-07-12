@@ -1,4 +1,3 @@
-<script>
   var db;
   var request = indexedDB.open("ecoponto", 1);
 
@@ -174,4 +173,3 @@ document.getElementById('hora').value = horaAtual;
 // Armazena os valores atuais no localStorage para persistência
 localStorage.setItem('dataAtual', dataFormatada);
 localStorage.setItem('horaAtual', horaAtual);
-</script>
