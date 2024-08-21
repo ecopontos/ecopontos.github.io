@@ -174,6 +174,3 @@
             salvarSelecaoEcoponto();
             // Aqui você pode adicionar código para enviar o formulário via AJAX ou similar
         });
-    </script>
-</body>
-</html>
