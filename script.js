@@ -184,5 +184,3 @@ window.onload = carregarSelecaoEcoponto;
 
 // Salvar a seleção sempre que o usuário alterar o dropdown
 document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
-
-
