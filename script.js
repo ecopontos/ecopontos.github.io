@@ -22,33 +22,40 @@ var db;
             carregarSelecaoEcoponto(); // Carregar seleção ao abrir o banco de dados
         };
 
-        function adicionarAtendimento() {
    function adicionarAtendimento() {
-    // Validação do formulário
-    var ecoponto = document.getElementById("ecoponto").value;
+    // Coletar dados dos campos
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    // Verificar se todos os campos estão preenchidos e se há pelo menos um checkbox selecionado
+    // Verificar os valores
+    console.log("Placa:", placa);
+    console.log("Data:", data);
+    console.log("Hora:", hora);
+    console.log("Bairro:", bairro);
+    console.log("Checkboxes selecionados:", checkboxes.length);
+    console.log("Checkboxes valores:", Array.from(checkboxes).map(cb => cb.value));
+
+    // Validação do formulário (excluindo o ecoponto)
     if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos.");
         return; // Impede a execução do restante do código se algum campo estiver vazio
     }
+
     // Preparar dados para adicionar ao banco de dados
-    var residuo = [];
+    var residuos = [];
     checkboxes.forEach(function(checkbox) {
-        tipoResiduo.push(checkbox.value);
+        residuos.push(checkbox.value);
     });
 
     var newAtendimento = {
-        ecoponto: ecoponto,
+        ecoponto: localStorage.getItem('ecoponto') || "", // Usar o valor armazenado do ecoponto
         placa_veiculo: placa,
         data: data,
         hora: hora,
-        residuo: residuo,
+        residuo: residuos,
         bairro: bairro
     };
 
@@ -58,18 +65,19 @@ var db;
 
     var request = objectStore.add(newAtendimento);
 
-request.onsuccess = function(event) {
-    console.log("Atendimento adicionado com sucesso");
+    request.onsuccess = function(event) {
+        console.log("Atendimento adicionado com sucesso");
 
-   // Limpar o formulário inteiro
+        // Limpar o formulário inteiro
         document.getElementById("formularioAtendimento").reset();
+        // Recarregar o ecoponto do localStorage
+        carregarEcoponto();
     };
 
     request.onerror = function(event) {
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
     };
 }
-
         function exportarParaCSV() {
             var transaction = db.transaction(["atendimentos"], "readwrite");
             var objectStore = transaction.objectStore("atendimentos");
