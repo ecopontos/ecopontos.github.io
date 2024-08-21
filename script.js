@@ -23,47 +23,57 @@ var db;
         };
 
         function adicionarAtendimento() {
-            var ecoponto = document.getElementById("ecoponto").value;
-            var placaVeiculo = document.getElementById("placa_veiculo").value;
-            var data = document.getElementById("data").value;
-            var hora = document.getElementById("hora").value;
-            var bairro = document.getElementById("bairro").value;
-            var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
+    // Validação do formulário
+    var ecoponto = document.getElementById("ecoponto").value;
+    var placaVeiculo = document.getElementById("placa_veiculo").value;
+    var data = document.getElementById("data").value;
+    var hora = document.getElementById("hora").value;
+    var bairro = document.getElementById("bairro").value;
+    var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
 
-            if (ecoponto === "" || placaVeiculo === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
-                alert("Por favor, preencha todos os campos.");
-                return;
-            }
+    if (ecoponto === "" || placaVeiculo === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+        alert("Por favor, preencha todos os campos.");
+        return; // Impede a execução do restante do código se algum campo estiver vazio
+    }
 
-            var tipoResiduo = [];
-            checkboxes.forEach(function(checkbox) {
-                tipoResiduo.push(checkbox.value);
-            });
+    // Preparar dados para adicionar ao banco de dados
+    var tipoResiduo = [];
+    checkboxes.forEach(function(checkbox) {
+        tipoResiduo.push(checkbox.value);
+    });
 
-            var newAtendimento = {
-                ecoponto: ecoponto,
-                placa_veiculo: placaVeiculo,
-                data: data,
-                hora: hora,
-                tipo_residuo: tipoResiduo,
-                bairro: bairro
-            };
+    var newAtendimento = {
+        ecoponto: ecoponto,
+        placa_veiculo: placaVeiculo,
+        data: data,
+        hora: hora,
+        tipo_residuo: tipoResiduo,
+        bairro: bairro
+    };
 
-            var transaction = db.transaction(["atendimentos"], "readwrite");
-            var objectStore = transaction.objectStore("atendimentos");
+    // Adicionar atendimento ao banco de dados
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
 
-            var request = objectStore.add(newAtendimento);
+    var request = objectStore.add(newAtendimento);
 
-            request.onsuccess = function(event) {
-                console.log("Atendimento adicionado com sucesso");
-                document.getElementById("form-atendimento").reset();
-                salvarSelecaoEcoponto(); // Salvar seleção após adicionar atendimento
-            };
+    request.onsuccess = function(event) {
+        console.log("Atendimento adicionado com sucesso");
 
-            request.onerror = function(event) {
-                console.log("Erro ao adicionar atendimento:", event.target.errorCode);
-            };
-        }
+        // Limpar apenas os campos, preservando o Ecoponto
+        document.getElementById("placa_veiculo").value = "";
+        document.getElementById("data").value = "";
+        document.getElementById("hora").value = "";
+        document.getElementById("bairro").value = "";
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+    };
+
+    request.onerror = function(event) {
+        console.log("Erro ao adicionar atendimento:", event.target.errorCode);
+    };
+}
 
         function exportarParaCSV() {
             var transaction = db.transaction(["atendimentos"], "readwrite");
