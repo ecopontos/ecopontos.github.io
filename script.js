@@ -174,3 +174,18 @@ var db;
 document.getElementById('placa_veiculo').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
 });
+
+// Carrega as configurações do sistema
+function carregarConfiguracoesPWA() {
+    var ecoponto = localStorage.getItem('ecoponto');
+    var nomeFuncionario = localStorage.getItem('nomeFuncionario');
+    var matricula = localStorage.getItem('matricula');
+
+    // Use esses valores conforme necessário no seu aplicativo
+    console.log('Ecoponto:', ecoponto);
+    console.log('Nome do Funcionário:', nomeFuncionario);
+    console.log('Matrícula:', matricula);
+}
+
+// Chame a função quando necessário
+carregarConfiguracoesPWA();
