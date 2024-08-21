@@ -71,8 +71,14 @@ var db;
         // Limpar o formulário inteiro
         document.getElementById("formularioAtendimento").reset();
         // Recarregar o ecoponto do localStorage
-        carregarEcoponto();
-    };
+        function carregarEcoponto() {
+    var ecoponto = localStorage.getItem('ecoponto');
+    if (ecoponto) {
+        document.getElementById('ecoponto').value = ecoponto;
+    } else {
+        console.log("Ecoponto não encontrado no localStorage.");
+    }
+}
 
     request.onerror = function(event) {
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
