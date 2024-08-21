@@ -1,6 +1,6 @@
-// Inicializa o IndexedDB e configura as transações
+var db;
+
 function inicializarBancoDeDados() {
-    var db;
     var request = indexedDB.open("ecoponto", 1);
 
     request.onerror = function(event) {
@@ -18,12 +18,11 @@ function inicializarBancoDeDados() {
     };
 
     request.onsuccess = function(event) {
-        console.log("Banco de dados aberto com sucesso");
         db = event.target.result;
-        carregarSelecaoEcoponto(); // Carregar seleção ao abrir o banco de dados
+        console.log("Banco de dados aberto com sucesso");
+        carregarSelecaoEcoponto();
     };
 }
-
 // Adiciona um atendimento ao banco de dados
 function adicionarAtendimento() {
     var placa = document.getElementById("placa").value;
