@@ -23,35 +23,31 @@ var db;
         };
 
    function adicionarAtendimento() {
-    // Coletar dados dos campos
+    // Coletar dados dos campos preenchidos pelo usuário
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    // Verificar os valores
-    console.log("Placa:", placa);
-    console.log("Data:", data);
-    console.log("Hora:", hora);
-    console.log("Bairro:", bairro);
-    console.log("Checkboxes selecionados:", checkboxes.length);
-    console.log("Checkboxes valores:", Array.from(checkboxes).map(cb => cb.value));
+    // Recuperar o ecoponto do localStorage
+    var ecoponto = localStorage.getItem('ecoponto') || ""; // Usar uma string vazia se não houver valor
 
-    // Validação do formulário (excluindo o ecoponto)
+    // Verificação para garantir que os campos obrigatórios preenchidos pelo usuário estejam corretos
     if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
-        alert("Por favor, preencha todos os campos.");
-        return; // Impede a execução do restante do código se algum campo estiver vazio
+        alert("Por favor, preencha todos os campos obrigatórios.");
+        return; // Impede a execução do restante do código se algum campo obrigatório estiver vazio
     }
 
-    // Preparar dados para adicionar ao banco de dados
+    // Preparar os resíduos selecionados
     var residuos = [];
     checkboxes.forEach(function(checkbox) {
         residuos.push(checkbox.value);
     });
 
+    // Criar o objeto com todos os dados, incluindo o ecoponto
     var newAtendimento = {
-        ecoponto: localStorage.getItem('ecoponto') || "", // Usar o valor armazenado do ecoponto
+        ecoponto: ecoponto, // Inclui o ecoponto recuperado
         placa_veiculo: placa,
         data: data,
         hora: hora,
@@ -59,7 +55,7 @@ var db;
         bairro: bairro
     };
 
-    // Adicionar atendimento ao banco de dados
+    // Adicionar o atendimento ao banco de dados
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
 
@@ -70,69 +66,65 @@ var db;
 
         // Limpar o formulário inteiro
         document.getElementById("formularioAtendimento").reset();
-        // Recarregar o ecoponto do localStorage
-        function carregarEcoponto() {
-    var ecoponto = localStorage.getItem('ecoponto');
-    if (ecoponto) {
-        document.getElementById('ecoponto').value = ecoponto;
-    } else {
-        console.log("Ecoponto não encontrado no localStorage.");
-    }
-}
+        // Recarregar o ecoponto (caso haja necessidade)
+        carregarEcoponto();
+    };
 
     request.onerror = function(event) {
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
     };
 }
-        function exportarParaCSV() {
-            var transaction = db.transaction(["atendimentos"], "readwrite");
-            var objectStore = transaction.objectStore("atendimentos");
-            var request = objectStore.getAll();
+// Exporta para CSV
+       function exportarParaCSV() {
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
 
-            request.onsuccess = function(event) {
-                var data = event.target.result;
-                if (data.length === 0) {
-                    alert("Nenhum atendimento encontrado para exportar.");
-                    return;
-                }
-
-                var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
-
-                var csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
-
-                data.forEach(function(atendimento) {
-                    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-                    csvContent += linha;
-                });
-
-                var encodedUri = encodeURI(csvContent);
-                var link = document.createElement("a");
-
-                var nomeEcoponto = data[0] ? data[0].ecoponto : "ecoponto";
-                var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv";
-
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", nomeArquivo);
-                document.body.appendChild(link);
-
-                link.addEventListener("click", function() {
-                    var deleteTransaction = db.transaction(["atendimentos"], "readwrite");
-                    var deleteObjectStore = deleteTransaction.objectStore("atendimentos");
-                    var deleteRequest = deleteObjectStore.clear();
-
-                    deleteRequest.onsuccess = function() {
-                        console.log("Banco de dados limpo após exportação.");
-                    };
-
-                    deleteRequest.onerror = function(event) {
-                        console.error("Erro ao limpar banco de dados:", event.target.error);
-                    };
-                });
-
-                link.click();
-            };
+    request.onsuccess = function(event) {
+        var data = event.target.result;
+        if (data.length === 0) {
+            alert("Nenhum atendimento encontrado para exportar.");
+            return;
         }
+
+        var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
+
+        var csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
+
+        data.forEach(function(atendimento) {
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+            csvContent += linha;
+        });
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+
+        // Recupera o nome do ecoponto armazenado em localStorage
+        var nomeEcoponto = localStorage.getItem('ecoponto') || "ecoponto";
+        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv";
+
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", nomeArquivo);
+        document.body.appendChild(link);
+
+        link.addEventListener("click", function() {
+            var deleteTransaction = db.transaction(["atendimentos"], "readwrite");
+            var deleteObjectStore = deleteTransaction.objectStore("atendimentos");
+            var deleteRequest = deleteObjectStore.clear();
+
+            deleteRequest.onsuccess = function() {
+                console.log("Banco de dados limpo após exportação.");
+            };
+
+            deleteRequest.onerror = function(event) {
+                console.error("Erro ao limpar banco de dados:", event.target.error);
+            };
+        });
+
+        link.click();
+    };
+}
 
         function criarCookie(nome, valor, dias) {
             var data = new Date();
