@@ -4,6 +4,18 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox
 
 const CACHE = "ecopontos";
 
+// Arquivos a serem armazenados em cache
+const URLsToCache = [
+    '/',
+    '/index.html',
+    '/styles.css',
+    '/script.js',
+    '/configuracao.js',
+    '/logotipo.png',
+    '/configuracao.html',
+    // Adicione outros recursos que deseja armazenar em cache
+];
+
 // TODO: replace the following with the correct offline fallback page i.e.: const offlineFallbackPage = "offline.html";
 const offlineFallbackPage = "offline.html";
 
