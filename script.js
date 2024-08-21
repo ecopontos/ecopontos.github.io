@@ -34,9 +34,9 @@ function adicionarAtendimento() {
 
     var ecoponto = localStorage.getItem('ecoponto') || ""; // Usar uma string vazia se não houver valor
 
-    if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
-        alert("Por favor, preencha todos os campos obrigatórios.");
-        return;
+   if (placa === "" || data === "" || hora === "" || bairro === "") {
+   alert("Por favor, preencha todos os campos obrigatórios.");
+    return;
     }
 
     var residuos = [];
