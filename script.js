@@ -24,12 +24,12 @@ var db;
 
         function adicionarAtendimento() {
     // Validação do formulário
-    var ecoponto = document.getElementById("ecoponto").value;
+    // var ecoponto = document.getElementById("ecoponto").value;
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
-    var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
+   //  var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
     if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos.");
