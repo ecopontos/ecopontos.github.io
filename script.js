@@ -59,7 +59,7 @@ function adicionarAtendimento() {
 
     request.onsuccess = function(event) {
         console.log("Atendimento adicionado com sucesso");
-        document.getElementById("formularioAtendimento").reset();
+        document.getElementById("form-atendimento").reset();
         carregarEcoponto();
     };
 
