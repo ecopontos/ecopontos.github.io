@@ -47,7 +47,7 @@ var db;
         placa_veiculo: placa,
         data: data,
         hora: hora,
-        tipo_residuo: Residuo,
+        residuo: Residuo,
         bairro: bairro
     };
 
