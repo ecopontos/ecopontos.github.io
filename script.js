@@ -60,18 +60,9 @@ var db;
 request.onsuccess = function(event) {
     console.log("Atendimento adicionado com sucesso");
 
-    // Limpar apenas os campos, preservando o Ecoponto
-    document.getElementById("placa").value = "";
-    document.getElementById("data").value = "";
-    document.getElementById("hora").value = "";
-    document.getElementById("bairro").value = "";
-
-    // Obter todos os checkboxes e desmarcá-los
-    var allCheckboxes = document.querySelectorAll('input[name="residuo"]');
-    allCheckboxes.forEach(function(checkbox) {
-        checkbox.checked = false;
-    });
-};
+   // Limpar o formulário inteiro
+        document.getElementById("formularioAtendimento").reset();
+    };
 
     request.onerror = function(event) {
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
