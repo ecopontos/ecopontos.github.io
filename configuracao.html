@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração do Ecoponto App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuração do PWA</h1>
+    <form id="configForm">
+        <label for="ecoponto">Ecoponto:</label>
+        <input type="text" id="ecoponto" name="ecoponto">
+
+        <label for="nomeFuncionario">Nome do Funcionário:</label>
+        <input type="text" id="nomeFuncionario" name="nomeFuncionario">
+
+        <label for="matricula">Matrícula:</label>
+        <input type="text" id="matricula" name="matricula">
+
+        <button type="button" onclick="salvarConfiguracao()">Salvar Configurações</button>
+    </form>
+
+    <script src="configuracao.js"></script>
+</body>
+</html>
