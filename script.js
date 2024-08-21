@@ -192,12 +192,15 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarBancoDeDados();
     carregarSelecaoEcoponto();
     preencherDataHora();
-    carregarEcoponto();
     carregarConfiguracoesPWA();
+
+    var ecopontoElement = document.getElementById('ecoponto');
+    if (ecopontoElement) {
+        carregarEcoponto(); // Certifique-se de que o elemento existe antes de chamar a função
+        ecopontoElement.addEventListener('change', salvarSelecaoEcoponto);
+    }
 
     document.getElementById('placa').addEventListener('input', function() {
         this.value = this.value.toUpperCase();
     });
-
-    document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
 });
