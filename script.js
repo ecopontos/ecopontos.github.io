@@ -25,7 +25,7 @@ var db;
         function adicionarAtendimento() {
     // Validação do formulário
     var ecoponto = document.getElementById("ecoponto").value;
-    var placaVeiculo = document.getElementById("placa").value;
+    var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
