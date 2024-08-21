@@ -169,3 +169,8 @@ var db;
             carregarSelecaoEcoponto();
             preencherDataHora();
         };
+
+// Impõe caixa alta para Placa
+document.getElementById('placa_veiculo').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
