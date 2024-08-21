@@ -23,19 +23,20 @@ var db;
         };
 
         function adicionarAtendimento() {
+   function adicionarAtendimento() {
     // Validação do formulário
-    // var ecoponto = document.getElementById("ecoponto").value;
+    var ecoponto = document.getElementById("ecoponto").value;
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
-   //  var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
+    var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
+    // Verificar se todos os campos estão preenchidos e se há pelo menos um checkbox selecionado
     if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos.");
-         return; // Impede a execução do restante do código se algum campo estiver vazio
-     }
-
+        return; // Impede a execução do restante do código se algum campo estiver vazio
+    }
     // Preparar dados para adicionar ao banco de dados
     var residuo = [];
     checkboxes.forEach(function(checkbox) {
