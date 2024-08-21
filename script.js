@@ -37,7 +37,7 @@ var db;
   //   }
 
     // Preparar dados para adicionar ao banco de dados
-    var Residuo = [];
+    var residuo = [];
     checkboxes.forEach(function(checkbox) {
         tipoResiduo.push(checkbox.value);
     });
