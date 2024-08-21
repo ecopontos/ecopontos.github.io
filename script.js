@@ -31,7 +31,7 @@ var db;
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    if (ecoponto === "" || placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+    if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos.");
         return; // Impede a execução do restante do código se algum campo estiver vazio
     }
