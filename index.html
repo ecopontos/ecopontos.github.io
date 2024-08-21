@@ -16,10 +16,20 @@
 </head>
 <body>
     <img class="logo" src="/logotipo.png" alt="SMMADS">
-    <h1>Atendimentos de Ecoponto</h1>
+    <h5>Atendimentos de Ecoponto</h5>
     <form id="form-atendimento">
         <label for="ecoponto">Ecoponto:</label><br>
-	<input type="text" id="ecoponto" name="ecoponto" value="Itacorubi" required><br><br>
+<select id="ecoponto" name="ecoponto" required>
+    <option value="1">PEV ITACORUBI</option>
+    <option value="2">PEV CAPOEIRAS</option>
+    <option value="3">PEV MORRO DAS PEDRAS</option>
+    <option value="4">PEV MONTE CRISTO (ARESP)</option>
+    <option value="5">PEV CANASVIEIRAS</option>
+    <option value="6">PEV RIO VERMELHO</option>
+    <option value="7">PEV INGLESES</option>
+    <option value="8">PEV COSTEIRA</option>
+    <option value="9">PEV COLONINHA</option>
+</select><br><br>
 
         <label for="placa_veiculo">Placa do Veículo:</label><br>
         <input type="text" id="placa_veiculo" name="placa_veiculo" required><br><br>
