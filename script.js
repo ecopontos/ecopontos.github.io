@@ -1,53 +1,51 @@
-// Inicializa o IndexedDB
-var db;
-        var request = indexedDB.open("ecoponto", 1);
+// Inicializa o IndexedDB e configura as transações
+function inicializarBancoDeDados() {
+    var db;
+    var request = indexedDB.open("ecoponto", 1);
 
-        request.onerror = function(event) {
-            console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
-        };
+    request.onerror = function(event) {
+        console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
+    };
 
-        request.onupgradeneeded = function(event) {
-            db = event.target.result;
-            var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
-            objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-            objectStore.createIndex("placa", "placa", { unique: false });
-            objectStore.createIndex("data", "data", { unique: false });
-            objectStore.createIndex("hora", "hora", { unique: false });
-            objectStore.createIndex("residuo", "residuo", { unique: false });
-        };
+    request.onupgradeneeded = function(event) {
+        db = event.target.result;
+        var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+        objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+        objectStore.createIndex("placa", "placa", { unique: false });
+        objectStore.createIndex("data", "data", { unique: false });
+        objectStore.createIndex("hora", "hora", { unique: false });
+        objectStore.createIndex("residuo", "residuo", { unique: false });
+    };
 
-        request.onsuccess = function(event) {
-            console.log("Banco de dados aberto com sucesso");
-            db = event.target.result;
-            carregarSelecaoEcoponto(); // Carregar seleção ao abrir o banco de dados
-        };
+    request.onsuccess = function(event) {
+        console.log("Banco de dados aberto com sucesso");
+        db = event.target.result;
+        carregarSelecaoEcoponto(); // Carregar seleção ao abrir o banco de dados
+    };
+}
 
-   function adicionarAtendimento() {
-    // Coletar dados dos campos preenchidos pelo usuário
+// Adiciona um atendimento ao banco de dados
+function adicionarAtendimento() {
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    // Recuperar o ecoponto do localStorage
     var ecoponto = localStorage.getItem('ecoponto') || ""; // Usar uma string vazia se não houver valor
 
-    // Verificação para garantir que os campos obrigatórios preenchidos pelo usuário estejam corretos
     if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos obrigatórios.");
-        return; // Impede a execução do restante do código se algum campo obrigatório estiver vazio
+        return;
     }
 
-    // Preparar os resíduos selecionados
     var residuos = [];
     checkboxes.forEach(function(checkbox) {
         residuos.push(checkbox.value);
     });
 
-    // Criar o objeto com todos os dados, incluindo o ecoponto
     var newAtendimento = {
-        ecoponto: ecoponto, // Inclui o ecoponto recuperado
+        ecoponto: ecoponto,
         placa_veiculo: placa,
         data: data,
         hora: hora,
@@ -55,18 +53,13 @@ var db;
         bairro: bairro
     };
 
-    // Adicionar o atendimento ao banco de dados
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
-
     var request = objectStore.add(newAtendimento);
 
     request.onsuccess = function(event) {
         console.log("Atendimento adicionado com sucesso");
-
-        // Limpar o formulário inteiro
         document.getElementById("formularioAtendimento").reset();
-        // Recarregar o ecoponto (caso haja necessidade)
         carregarEcoponto();
     };
 
@@ -74,8 +67,9 @@ var db;
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
     };
 }
-// Exporta para CSV
-       function exportarParaCSV() {
+
+// Exporta dados para CSV
+function exportarParaCSV() {
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
     var request = objectStore.getAll();
@@ -87,7 +81,15 @@ var db;
             return;
         }
 
-        var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
+        var atendimentoMaisRecente = data.reduce((maisRecente, atendimento) => {
+            if (atendimento.data > maisRecente.data || (atendimento.data === maisRecente.data && atendimento.hora > maisRecente.hora)) {
+                return atendimento;
+            }
+            return maisRecente;
+        }, data[0]);
+
+        var dataMaisRecente = atendimentoMaisRecente.data;
+        var horaMaisRecente = atendimentoMaisRecente.hora.replace(/:/g, '-');
 
         var csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
@@ -100,9 +102,8 @@ var db;
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
 
-        // Recupera o nome do ecoponto armazenado em localStorage
         var nomeEcoponto = localStorage.getItem('ecoponto') || "ecoponto";
-        var nomeArquivo = nomeEcoponto + "-" + dataMaisRecente + ".csv";
+        var nomeArquivo = `${nomeEcoponto}-${dataMaisRecente}-${horaMaisRecente}.csv`;
 
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", nomeArquivo);
@@ -126,72 +127,59 @@ var db;
     };
 }
 
-        function criarCookie(nome, valor, dias) {
-            var data = new Date();
-            data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
-            var expires = "expires=" + data.toUTCString();
-            document.cookie = nome + "=" + valor + ";" + expires + ";path=/";
-        }
+// Funções de manipulação de cookies
+function criarCookie(nome, valor, dias) {
+    var data = new Date();
+    data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + data.toUTCString();
+    document.cookie = nome + "=" + valor + ";" + expires + ";path=/";
+}
 
-        function lerCookie(nome) {
-            var nomeEQ = nome + "=";
-            var ca = document.cookie.split(';');
-            for (var i = 0; i < ca.length; i++) {
-                var c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nomeEQ) === 0) return c.substring(nomeEQ.length, c.length);
-            }
-            return null;
-        }
+function lerCookie(nome) {
+    var nomeEQ = nome + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nomeEQ) === 0) return c.substring(nomeEQ.length, c.length);
+    }
+    return null;
+}
 
-        function apagarCookie(nome) {
-            document.cookie = nome + '=; Max-Age=-99999999;';
-        }
+function apagarCookie(nome) {
+    document.cookie = nome + '=; Max-Age=-99999999;';
+}
 
-        function carregarSelecaoEcoponto() {
-            var ecopontoSelecionado = lerCookie("ecopontoSelecionado");
-            if (ecopontoSelecionado) {
-                document.getElementById("ecoponto").value = ecopontoSelecionado;
-            }
-        }
+// Carrega as configurações e seleção de ecoponto
+function carregarSelecaoEcoponto() {
+    var ecopontoSelecionado = lerCookie("ecopontoSelecionado");
+    if (ecopontoSelecionado) {
+        document.getElementById("ecoponto").value = ecopontoSelecionado;
+    }
+}
 
-        function salvarSelecaoEcoponto() {
-            var ecopontoSelecionado = document.getElementById("ecoponto").value;
-            criarCookie("ecopontoSelecionado", ecopontoSelecionado, 7); // O cookie expira em 7 dias
-        }
+function salvarSelecaoEcoponto() {
+    var ecopontoSelecionado = document.getElementById("ecoponto").value;
+    criarCookie("ecopontoSelecionado", ecopontoSelecionado, 7);
+}
 
-        function preencherDataHora() {
-            var dataAtual = new Date();
-            document.getElementById("data").value = dataAtual.toISOString().split('T')[0];
-            document.getElementById("hora").value = dataAtual.toTimeString().split(' ')[0].substring(0, 5);
-        }
+function preencherDataHora() {
+    var dataAtual = new Date();
+    document.getElementById("data").value = dataAtual.toISOString().split('T')[0];
+    document.getElementById("hora").value = dataAtual.toTimeString().split(' ')[0].substring(0, 5);
+}
 
-        window.onload = function() {
-            carregarSelecaoEcoponto();
-            preencherDataHora();
-        };
-
-// Impõe caixa alta para Placa
-document.getElementById('placa').addEventListener('input', function() {
-    this.value = this.value.toUpperCase();
-});
-
-// Carrega as configurações do sistema
 function carregarConfiguracoesPWA() {
     var ecoponto = localStorage.getItem('ecoponto');
     var nomeFuncionario = localStorage.getItem('nomeFuncionario');
     var matricula = localStorage.getItem('matricula');
 
-    // Use esses valores conforme necessário no seu aplicativo
     console.log('Ecoponto:', ecoponto);
     console.log('Nome do Funcionário:', nomeFuncionario);
     console.log('Matrícula:', matricula);
 }
 
-// Chame a função quando necessário
-carregarConfiguracoesPWA();
-
-// Função para carregar o valor do Ecoponto do localStorage e definir no campo
+// Carrega o valor do Ecoponto do localStorage e define no campo
 function carregarEcoponto() {
     var ecoponto = localStorage.getItem('ecoponto');
     if (ecoponto) {
@@ -199,7 +187,17 @@ function carregarEcoponto() {
     }
 }
 
-// Chame a função ao carregar a página
-window.onload = function() {
+// Executa ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarBancoDeDados();
+    carregarSelecaoEcoponto();
+    preencherDataHora();
     carregarEcoponto();
-};
+    carregarConfiguracoesPWA();
+
+    document.getElementById('placa').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+
+    document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
+});
