@@ -31,3 +31,4 @@ function salvarConfiguracao() {
 window.onload = function() {
     carregarConfiguracao();
 };
+
