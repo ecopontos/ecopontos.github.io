@@ -137,50 +137,41 @@ if (typeof navigator.serviceWorker !== 'undefined') {
         });
 }
 
-// Captura a data atual
-var dataAtual = new Date();
-var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formata para o formato de data HTML5 (YYYY-MM-DD)
+// Função para preencher data e hora com a informação do sistema
+function preencherDataHora() {
+    var dataAtual = new Date();
+    var dataFormatada = dataAtual.toISOString().split('T')[0]; // Formato de data (YYYY-MM-DD)
+    var horaFormatada = dataAtual.toTimeString().split(' ')[0]; // Formato de hora (HH:MM:SS)
 
-// Captura a hora atual
-var horaAtual = dataAtual.toTimeString().split(' ')[0]; // Formata para o formato de hora (HH:MM:SS)
-
-// Verifica se existem valores armazenados no localStorage
-var dataArmazenada = localStorage.getItem('dataAtual');
-var horaArmazenada = localStorage.getItem('horaAtual');
-
-// Se houver valores armazenados, utiliza esses valores ao invés da data atual
-if (dataArmazenada && horaArmazenada) {
-    dataFormatada = dataArmazenada;
-    horaAtual = horaArmazenada;
+    document.getElementById('data').value = dataFormatada;
+    document.getElementById('hora').value = horaFormatada;
 }
 
-// Preenche o campo de data com a data atual ou com o valor armazenado
-document.getElementById('data').value = dataFormatada;
-
-// Preenche o campo de hora com a hora atual ou com o valor armazenado
-document.getElementById('hora').value = horaAtual;
-
-// Armazena os valores atuais no localStorage para persistência
-localStorage.setItem('dataAtual', dataFormatada);
-localStorage.setItem('horaAtual', horaAtual);
-
-//FIXA NOME DO ECOPONTO
-// Função para carregar a seleção anterior
+// Função para carregar a seleção anterior do Ecoponto
 function carregarSelecaoEcoponto() {
-    const ecopontoSelecionado = localStorage.getItem('ecopontoSelecionado');
+    var ecopontoSelecionado = localStorage.getItem('ecopontoSelecionado');
     if (ecopontoSelecionado) {
         document.getElementById('ecoponto').value = ecopontoSelecionado;
     }
 }
 
-// Função para salvar a seleção no localStorage
+// Função para salvar a seleção do Ecoponto no localStorage
 function salvarSelecaoEcoponto() {
-    const ecoponto = document.getElementById('ecoponto').value;
+    var ecoponto = document.getElementById('ecoponto').value;
     localStorage.setItem('ecopontoSelecionado', ecoponto);
 }
 
-// Carregar a seleção anterior quando a página for carregada
-window.onload = carregarSelecaoEcoponto;
+// Preenche a data e hora e carrega a seleção do Ecoponto ao carregar a página
+window.onload = function() {
+    preencherDataHora();
+    carregarSelecaoEcoponto();
+};
 
-// Salvar a seleção sempre que o usuário alterar o dropdown
+// Listener para salvar a seleção do Ecoponto ao alterar o dropdown
 document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
+
+// Listener para salvar a seleção do Ecoponto ao enviar o formulário
+document.getElementById('meuFormulario').addEventListener('submit', function(event) {
+    salvarSelecaoEcoponto();
+    // Aqui você pode adicionar código para enviar o formulário via AJAX ou similar
+});
