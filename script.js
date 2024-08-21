@@ -10,10 +10,10 @@ var db;
             db = event.target.result;
             var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
             objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-            objectStore.createIndex("placa_veiculo", "placa_veiculo", { unique: false });
+            objectStore.createIndex("placa", "placa", { unique: false });
             objectStore.createIndex("data", "data", { unique: false });
             objectStore.createIndex("hora", "hora", { unique: false });
-            objectStore.createIndex("tipo_residuo", "tipo_residuo", { unique: false });
+            objectStore.createIndex("residuo", "residuo", { unique: false });
         };
 
         request.onsuccess = function(event) {
@@ -25,13 +25,13 @@ var db;
         function adicionarAtendimento() {
     // Validação do formulário
     var ecoponto = document.getElementById("ecoponto").value;
-    var placaVeiculo = document.getElementById("placa_veiculo").value;
+    var placaVeiculo = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
     var hora = document.getElementById("hora").value;
     var bairro = document.getElementById("bairro").value;
-    var checkboxes = document.querySelectorAll('input[name="tipo_residuo"]:checked');
+    var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    if (ecoponto === "" || placaVeiculo === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+    if (ecoponto === "" || placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
         alert("Por favor, preencha todos os campos.");
         return; // Impede a execução do restante do código se algum campo estiver vazio
     }
@@ -44,10 +44,10 @@ var db;
 
     var newAtendimento = {
         ecoponto: ecoponto,
-        placa_veiculo: placaVeiculo,
+        placa_veiculo: placa,
         data: data,
         hora: hora,
-        tipo_residuo: tipoResiduo,
+        tipo_residuo: Residuo,
         bairro: bairro
     };
 
@@ -61,7 +61,7 @@ var db;
         console.log("Atendimento adicionado com sucesso");
 
         // Limpar apenas os campos, preservando o Ecoponto
-        document.getElementById("placa_veiculo").value = "";
+        document.getElementById("placa").value = "";
         document.getElementById("data").value = "";
         document.getElementById("hora").value = "";
         document.getElementById("bairro").value = "";
@@ -90,10 +90,10 @@ var db;
                 var dataMaisRecente = data.reduce((max, atendimento) => atendimento.data > max ? atendimento.data : max, data[0].data);
 
                 var csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Ecoponto,Placa do Veículo,Data,Hora,Tipo de Resíduo,Bairro\n";
+                csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
 
                 data.forEach(function(atendimento) {
-                    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.tipo_residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+                    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
                     csvContent += linha;
                 });
 
@@ -171,7 +171,7 @@ var db;
         };
 
 // Impõe caixa alta para Placa
-document.getElementById('placa_veiculo').addEventListener('input', function() {
+document.getElementById('placa').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
 });
 
