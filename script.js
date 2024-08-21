@@ -165,24 +165,5 @@ localStorage.setItem('dataAtual', dataFormatada);
 localStorage.setItem('horaAtual', horaAtual);
 
 
-//VALORES REGISTRADOS NA SELEÇÃO DO ECOPONTO
-// Função para carregar a seleção anterior
-function carregarSelecaoEcoponto() {
-    const ecopontoSelecionado = localStorage.getItem('ecopontoSelecionado');
-    if (ecopontoSelecionado) {
-        document.getElementById('ecoponto').value = ecopontoSelecionado;
-    }
-}
 
-// Função para salvar a seleção no localStorage
-function salvarSelecaoEcoponto() {
-    const ecoponto = document.getElementById('ecoponto').value;
-    localStorage.setItem('ecopontoSelecionado', ecoponto);
-}
-
-// Carregar a seleção anterior quando a página for carregada
-window.onload = carregarSelecaoEcoponto;
-
-// Salvar a seleção sempre que o usuário alterar o dropdown
-document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
 </script>
