@@ -189,3 +189,16 @@ function carregarConfiguracoesPWA() {
 
 // Chame a função quando necessário
 carregarConfiguracoesPWA();
+
+// Função para carregar o valor do Ecoponto do localStorage e definir no campo
+function carregarEcoponto() {
+    var ecoponto = localStorage.getItem('ecoponto');
+    if (ecoponto) {
+        document.getElementById('ecoponto').value = ecoponto;
+    }
+}
+
+// Chame a função ao carregar a página
+window.onload = function() {
+    carregarEcoponto();
+};
