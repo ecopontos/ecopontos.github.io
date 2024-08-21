@@ -31,10 +31,10 @@ var db;
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-   //  if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
-    //     alert("Por favor, preencha todos os campos.");
-   //      return; // Impede a execução do restante do código se algum campo estiver vazio
-  //   }
+    if (placa === "" || data === "" || hora === "" || bairro === "" || checkboxes.length === 0) {
+        alert("Por favor, preencha todos os campos.");
+         return; // Impede a execução do restante do código se algum campo estiver vazio
+     }
 
     // Preparar dados para adicionar ao banco de dados
     var residuo = [];
@@ -57,18 +57,21 @@ var db;
 
     var request = objectStore.add(newAtendimento);
 
-    request.onsuccess = function(event) {
-        console.log("Atendimento adicionado com sucesso");
+request.onsuccess = function(event) {
+    console.log("Atendimento adicionado com sucesso");
 
-        // Limpar apenas os campos, preservando o Ecoponto
-        document.getElementById("placa").value = "";
-        document.getElementById("data").value = "";
-        document.getElementById("hora").value = "";
-        document.getElementById("bairro").value = "";
-        checkboxes.forEach(function(checkbox) {
-            checkbox.checked = false;
-        });
-    };
+    // Limpar apenas os campos, preservando o Ecoponto
+    document.getElementById("placa").value = "";
+    document.getElementById("data").value = "";
+    document.getElementById("hora").value = "";
+    document.getElementById("bairro").value = "";
+
+    // Obter todos os checkboxes e desmarcá-los
+    var allCheckboxes = document.querySelectorAll('input[name="residuo"]');
+    allCheckboxes.forEach(function(checkbox) {
+        checkbox.checked = false;
+    });
+};
 
     request.onerror = function(event) {
         console.log("Erro ao adicionar atendimento:", event.target.errorCode);
