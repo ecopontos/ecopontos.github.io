@@ -44,13 +44,14 @@ function adicionarAtendimento() {
     });
 
     var newAtendimento = {
-        ecoponto: ecoponto,
-        placa_veiculo: placa,
-        data: data,
-        hora: hora,
-        residuo: residuos,
-        bairro: bairro
-    };
+    ecoponto: ecoponto,
+    placa: placa,  
+    data: data,
+    hora: hora,
+    residuo: residuos,
+    bairro: bairro
+};
+
 
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
