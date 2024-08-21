@@ -57,7 +57,7 @@
 
             request.onsuccess = function(event) {
                 console.log("Atendimento adicionado com sucesso");
-                document.getElementById("meuFormulario").reset();
+                document.getElementById("form-atendimento").reset();
                 preencherDataHora();
             };
 
@@ -154,7 +154,7 @@
         document.getElementById('ecoponto').addEventListener('change', salvarSelecaoEcoponto);
 
         // Listener para salvar a seleção do Ecoponto ao enviar o formulário
-        document.getElementById('meuFormulario').addEventListener('submit', function(event) {
+        document.getElementById('form-atendimento').addEventListener('submit', function(event) {
             event.preventDefault(); // Evita o envio padrão do formulário
             adicionarAtendimento(); // Adiciona o atendimento
         });
