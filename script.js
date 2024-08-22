@@ -94,51 +94,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function adicionarAtendimento() {
-        const ecoponto = document.getElementById('ecoponto').value;
-        const placa = document.getElementById('placa').value;
-        const data = document.getElementById('data').value;
-        const hora = document.getElementById('hora').value;
-        const bairro = document.getElementById('bairro').value;
+    // Recupera o nome do Ecoponto salvo no localStorage
+    const ecoponto = localStorage.getItem('ecoponto');
+    const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
+    
+    // Se o nome do Ecoponto estiver disponível, use-o, senão mostre uma mensagem de erro
+    const nomeEcoponto = nomeEcopontoDisplay ? nomeEcopontoDisplay.textContent : ecoponto;
 
-        const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
-                                          .map(item => item.dataset.residuo);
+    const placa = document.getElementById('placa').value;
+    const data = document.getElementById('data').value;
+    const hora = document.getElementById('hora').value;
+    const bairro = document.getElementById('bairro').value;
 
-        if (placa === "" || data === "" || hora === "" || bairro === "") {
-            alert("Por favor, preencha todos os campos obrigatórios.");
-            return;
-        }
+    const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
+                                      .map(item => item.dataset.residuo);
 
-        const agora = new Date();
-        const horaAtual = agora.toLocaleTimeString();
-
-        const novoAtendimento = {
-            ecoponto: ecoponto,
-            placa: placa,
-            data: data,
-            hora: hora,
-            bairro: bairro,
-            residuos: residuosSelecionados.join(';'),
-            horaRegistro: horaAtual
-        };
-
-        var transaction = db.transaction(["atendimentos"], "readwrite");
-        var objectStore = transaction.objectStore("atendimentos");
-        var request = objectStore.add(novoAtendimento);
-
-        request.onsuccess = function(event) {
-            console.log("Atendimento adicionado com sucesso");
-            document.getElementById("ecoponto").value = '';
-            document.getElementById("placa").value = '';
-            document.getElementById("data").value = '';
-            document.getElementById("hora").value = '';
-            document.getElementById("bairro").value = '';
-            document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
-        };
-
-        request.onerror = function(event) {
-            console.error("Erro ao adicionar atendimento:", event.target.errorCode);
-        };
+    if (!nomeEcoponto || placa === "" || data === "" || hora === "" || bairro === "") {
+        alert("Por favor, preencha todos os campos obrigatórios.");
+        return;
     }
+
+    const agora = new Date();
+    const horaAtual = agora.toLocaleTimeString();
+
+    const novoAtendimento = {
+        ecoponto: nomeEcoponto,
+        placa: placa,
+        data: data,
+        hora: hora,
+        bairro: bairro,
+        residuos: residuosSelecionados.join(';'),
+        horaRegistro: horaAtual
+    };
+
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.add(novoAtendimento);
+
+    request.onsuccess = function(event) {
+        console.log("Atendimento adicionado com sucesso");
+        document.getElementById("placa").value = '';
+        document.getElementById("data").value = '';
+        document.getElementById("hora").value = '';
+        document.getElementById("bairro").value = '';
+        document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao adicionar atendimento:", event.target.errorCode);
+    };
+}
+
 
     function exportarDadosCSV() {
         const ecoponto = document.getElementById('ecoponto').value;
