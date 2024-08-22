@@ -26,8 +26,8 @@
     </style>
 </head>
 <body>
-    <img src="logotipo.png" width="200">
-    <h2>Atendimento no Ecoponto <span id="nomeEcopontoDisplay"></span></h2>
+    <img src="logotipo.png" width="250">
+    <h2>Atendimento do Ecoponto <span id="nomeEcopontoDisplay"></span></h2>
     <p>Placa: <input type="text" id="placa"></p>
     <p>Data: <input type="date" id="data"></p>
     <p>Hora: <input type="time" id="hora"></p>
@@ -49,7 +49,7 @@
 <br><br>
     <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
 
-  <script>
+ <script>
     let db;
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -62,7 +62,6 @@
 
         document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
         document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
-        document.getElementById('limpar').addEventListener('click', limparBancoDeDados);
 
         setInterval(atualizarHoraAtual, 60000); // Atualiza a hora a cada minuto
     });
@@ -258,6 +257,9 @@
                 link.setAttribute("download", "atendimentos.csv");
                 document.body.appendChild(link);
                 link.click();
+                document.body.removeChild(link); // Remover o link depois de clicar
+
+                limparBancoDeDados(); // Limpar o banco de dados após exportação
             }
         };
 
@@ -270,7 +272,6 @@
         var request = indexedDB.deleteDatabase("nomeDoBanco");
         request.onsuccess = function(event) {
             console.log("Banco de dados limpo com sucesso.");
-            location.reload(); // Recarregar a página para reiniciar a aplicação
         };
         request.onerror = function(event) {
             console.error("Erro ao limpar o banco de dados:", event.target.error);
