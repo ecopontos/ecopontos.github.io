@@ -178,7 +178,6 @@ document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
     request.onerror = function(event) {
         console.error("Erro ao obter dados para exportação:", event.target.error);
     };
-}
 
 function criarCookie(nome, valor, dias) {
     var data = new Date();
