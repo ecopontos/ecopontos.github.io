@@ -26,7 +26,7 @@
     </style>
 </head>
 <body>
-    <img src="logotipo.png" width="100">
+    <img src="logotipo.png" width="200">
     <h2>Atendimento em Ecopontos</h2>
     <p>Ecoponto Selecionado: <span id="nomeEcopontoDisplay"></span></p>
     <p>Placa: <input type="text" id="placa"></p>
@@ -207,8 +207,8 @@
 }
             document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
 
-          function exportarParaCSV() {
-    var ecoponto = localStorage.getItem('ecoponto') || 'ecoponto'; // Obtém o valor do localStorage
+         function exportarParaCSV() {
+    var ecoponto = localStorage.getItem('ecoponto') || 'ecoponto'; // Obtém o valor do localStorage ou define um padrão
     var agora = new Date();
     var dataAtual = agora.toISOString().split('T')[0]; // Data no formato YYYY-MM-DD
     var horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
@@ -227,10 +227,10 @@
 
         // Constrói o conteúdo do CSV
         var csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID,Ecoponto,Placa,Data,Hora,Bairro,Resíduos,HoraRegistro\n";
+        csvContent += '"ID","Ecoponto","Placa","Data","Hora","Bairro","Resíduos","HoraRegistro"\n';
 
         atendimentos.forEach(atendimento => {
-            csvContent += `${atendimento.id},${atendimento.ecoponto},${atendimento.placa},${atendimento.data},${atendimento.hora},${atendimento.bairro},${atendimento.residuos},${atendimento.horaRegistro}\n`;
+            csvContent += `"${atendimento.id}","${atendimento.ecoponto}","${atendimento.placa}","${atendimento.data}","${atendimento.hora}","${atendimento.bairro}","${atendimento.residuos}","${atendimento.horaRegistro}"\n`;
         });
 
         // Cria o link para download
@@ -249,7 +249,6 @@
         console.error("Erro ao recuperar atendimentos:", event.target.error);
     };
 }
-
 function limparBancoDeDados() {
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
