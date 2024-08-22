@@ -95,7 +95,7 @@ function exportarParaCSV() {
         csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
 
         data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa_veiculo + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
             csvContent += linha;
         });
 
