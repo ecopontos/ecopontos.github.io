@@ -1,11 +1,23 @@
 var db;
 
-function inicializarBancoDeDados() {
-    var request = indexedDB.open("ecoponto", 1);
+var request = indexedDB.open("nomeDoBanco", 1);
 
-    request.onerror = function(event) {
-        console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
-    };
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    // Código para criar object stores e indexes
+    if (!db.objectStoreNames.contains("atendimentos")) {
+        db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+    }
+};
+
+request.onsuccess = function(event) {
+    db = event.target.result;
+    // Banco de dados aberto com sucesso
+};
+
+request.onerror = function(event) {
+    console.error("Erro ao abrir o banco de dados:", event.target.error);
+};
 
     request.onupgradeneeded = function(event) {
         db = event.target.result;
