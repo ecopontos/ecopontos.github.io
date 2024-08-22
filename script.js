@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(error => {
         console.error("Erro na inicialização do banco de dados:", error);
     });
+
+    criarCheckBoxesResiduos();
+    criarBairros();
+    document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
+    exibirNomeEcoponto();
 });
 
 function criarBairros() {
@@ -87,16 +92,3 @@ function criarCheckBoxesResiduos() {
         container.appendChild(item);
     });
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    criarCheckBoxesResiduos();
-    criarBairros();
-    definirDataHoraAtual();
-    setInterval(atualizarHoraAtual, 1000); // Atualiza a hora a cada segundo
-    document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
-    inicializarBancoDeDados().catch(error => {
-        console.error("Erro ao inicializar o banco de dados:", error);
-    });
-    exibirNomeEcoponto();
-});
-
