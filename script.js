@@ -1,3 +1,30 @@
+// Função para criar e adicionar os checkboxes dos bairros
+document.addEventListener('DOMContentLoaded', function() {
+    const bairros = [
+        "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
+        "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
+        "Canto", "Caieira", "Capoeiras", "Carianos",
+        "Carvoeira", "Centro", "Coloninha", "Coqueiros", "Córrego Grande",
+        "Costa de Dentro", "Costeira do Pirajubaé", "Daniela", "Estreito", "Ingleses", "Itacorubi", "Itaguaçu",
+        "Jardim Atlântico", "João Paulo", "José Mendes", "Jurerê", "Jurerê Internacional",
+        "Lagoa da Conceição", "Monte Cristo", "Monte Verde", "Morro das Pedras", "Pantanal", "Pântano do Sul",
+        "Ponta das Canas", "Praia Brava", "Ratones", "Ribeirão da Ilha", "Rio Tavares", "Saco dos Limões", "Saco Grande",
+        "Sambaqui", "Santa Mônica", "Santinho", "Santo Antônio de Lisboa", "Tapera", "Trindade",
+        "Vargem Pequena", "Vargem Grande", "Vargem do Bom Jesus", "Rio Vermelho", "Morro do 25", "Serrinha",
+        "Morro da Cruz", "Morro do Horácio", "Morro do Quilombo", "Monte Serrat", "Morro da Queimada"
+    ];
+
+    const bairroSelect = document.getElementById('bairro');
+    bairros.forEach(bairro => {
+        const option = document.createElement('option');
+        option.value = bairro;
+        option.textContent = bairro;
+        bairroSelect.appendChild(option);
+    });
+
+    // Restante do código para resíduos e banco de dados
+});
+
 // Função para criar e adicionar os checkboxes dos resíduos
 function criarCheckBoxesResiduos() {
     const residuos = [
