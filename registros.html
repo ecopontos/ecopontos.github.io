@@ -4,24 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registros de Atendimento</title>
+ <script src="script.js"></script> <!-- Referência para o seu JavaScript -->
 </head>
 <body>
     <h1>Registros de Atendimento</h1>
-   <table id="tabela-atendimentos" border="1">
-    <thead>
-        <tr>
-            <th>Ecoponto</th>
-            <th>Placa</th>
-            <th>Data</th>
-            <th>Hora</th>
-            <th>Resíduo</th>
-            <th>Bairro</th>
-        </tr>
-    </thead>
-    <tbody>
-        <!-- As linhas serão inseridas aqui dinamicamente -->
-    </tbody>
-</table>
- <script src="script.js"></script> <!-- Referência para o seu JavaScript -->
+    <table id="tabela-registros">
+        <thead>
+            <tr>
+                <th>Ecoponto</th>
+                <th>Placa</th>
+                <th>Data</th>
+                <th>Hora</th>
+                <th>Resíduo</th>
+                <th>Bairro</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Registros serão inseridos aqui -->
+        </tbody>
+    </table>
+    <script>
+        // Função para carregar e exibir os registros
+        function carregarRegistros() {
+            var transaction = db.transaction(["atendimentos"], "readonly");
+            var objectStore = transaction.objectStore("atendimentos");
+            var request = objectStore.getAll();
+
+            request.onsuccess = function(event) {
+                var registros = event.target.result;
+                var tabelaBody = document.querySelector("#tabela-registros tbody");
+
+                registros.forEach(function(atendimento) {
+                    var linha = document.createElement("tr");
+
+                    linha.innerHTML = `
+                        <td>${atendimento.ecoponto}</td>
+                        <td>${atendimento.placa}</td>
+                        <td>${atendimento.data}</td>
+                        <td>${atendimento.hora}</td>
+                        <td>${atendimento.residuo.join(", ")}</td>
+                        <td>${atendimento.bairro}</td>
+                    `;
+
+                    tabelaBody.appendChild(linha);
+                });
+            };
+
+            request.onerror = function(event) {
+                console.log("Erro ao carregar registros:", event.target.errorCode);
+            };
+        }
+
+        // Executar a função ao carregar a página
+        window.onload = carregarRegistros;
+    </script>
 </body>
 </html>
