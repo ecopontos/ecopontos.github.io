@@ -63,23 +63,23 @@
     document.addEventListener('DOMContentLoaded', function() {
         carregarNomeEcoponto();
     });
-      //   function definirDataHoraAtual() {
-           //  const agora = new Date();
-         //    const dataAtual = agora.toISOString().split('T')[0]; // Obtém a data no formato YYYY-MM-DD
-         //    const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
+         function definirDataHoraAtual() {
+        const agora = new Date();
+          const dataAtual = agora.toISOString().split('T')[0]; // Obtém a data no formato YYYY-MM-DD
+          const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
 
-       //      document.getElementById('data').value = dataAtual;
-        //     document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
+             document.getElementById('data').value = dataAtual;
+            document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
         }
 
-      //   function atualizarHoraAtual() {
-      //       const agora = new Date();
-      //       const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
-     //        document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
-     //    }
+         function atualizarHoraAtual() {
+             const agora = new Date();
+             const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
+             document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
+         }
 
-     //    document.addEventListener('DOMContentLoaded', function() {
-      //       definirDataHoraAtual(); // Define a data e hora atuais quando a página é carregada
+         document.addEventListener('DOMContentLoaded', function() {
+            definirDataHoraAtual(); // Define a data e hora atuais quando a página é carregada
 
             const bairros = [
                 "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
