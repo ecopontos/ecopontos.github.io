@@ -209,8 +209,8 @@
 
             document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
 
-           function exportarParaCSV() {
-    var ecoponto = document.getElementById('ecoponto').value || 'ecoponto'; // Obtém o valor do campo ecoponto
+          function exportarParaCSV() {
+    var ecoponto = localStorage.getItem('ecoponto') || 'ecoponto'; // Obtém o valor do localStorage
     var agora = new Date();
     var dataAtual = agora.toISOString().split('T')[0]; // Data no formato YYYY-MM-DD
     var horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
