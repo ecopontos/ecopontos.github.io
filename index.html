@@ -6,18 +6,24 @@
     <title>Atendimentos de Ecoponto Index</title>
     <link rel="manifest" href="/manifest.json">
     <style>
-        .logo {
-            max-width: 250px;
-            height: auto;
-        }
-        form {
-            margin: 20px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-    </style>
+    /* Estilos para o logotipo */
+    .logo {
+        max-width: 250px; /* Define a largura máxima do logotipo */
+        height: auto; /* Mantém a proporção da altura */
+    }
+
+    /* Alinha os checkboxes e labels na mesma linha */
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px; /* Espaçamento entre as linhas dos checkboxes */
+    }
+
+    .checkbox-container input[type="checkbox"] {
+        margin-right: 5px; /* Espaçamento entre o checkbox e o label */
+    }
+</style>
+
 </head>
 <body>
     <img class="logo" src="/logotipo.png" alt="SMMADS">
