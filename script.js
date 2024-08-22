@@ -1,41 +1,55 @@
 var db;
 
-var request = indexedDB.open("nomeDoBanco", 1);
+function inicializarBancoDeDados() {
+    return new Promise((resolve, reject) => {
+        var request = indexedDB.open("nomeDoBanco", 1);
 
-request.onupgradeneeded = function(event) {
-    db = event.target.result;
-    // Código para criar object stores e indexes
-    if (!db.objectStoreNames.contains("atendimentos")) {
-        db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+        request.onupgradeneeded = function(event) {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains("atendimentos")) {
+                var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+                objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+                objectStore.createIndex("placa", "placa", { unique: false });
+                objectStore.createIndex("data", "data", { unique: false });
+                objectStore.createIndex("hora", "hora", { unique: false });
+                objectStore.createIndex("residuo", "residuo", { unique: false });
+            }
+        };
+
+        request.onsuccess = function(event) {
+            db = event.target.result;
+            console.log("Banco de dados aberto com sucesso");
+            resolve();
+        };
+
+        request.onerror = function(event) {
+            console.error("Erro ao abrir o banco de dados:", event.target.error);
+            reject(event.target.error);
+        };
+    });
+}
+
+function visualizarAtendimentos() {
+    if (!db) {
+        console.error("Banco de dados não está disponível.");
+        return;
     }
-};
 
-request.onsuccess = function(event) {
-    db = event.target.result;
-    // Banco de dados aberto com sucesso
-};
-
-request.onerror = function(event) {
-    console.error("Erro ao abrir o banco de dados:", event.target.error);
-};
-
-    request.onupgradeneeded = function(event) {
-        db = event.target.result;
-        var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
-        objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-        objectStore.createIndex("placa", "placa", { unique: false });
-        objectStore.createIndex("data", "data", { unique: false });
-        objectStore.createIndex("hora", "hora", { unique: false });
-        objectStore.createIndex("residuo", "residuo", { unique: false });
-    };
+    var transaction = db.transaction(["atendimentos"], "readonly");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
 
     request.onsuccess = function(event) {
-        db = event.target.result;
-        console.log("Banco de dados aberto com sucesso");
-        carregarSelecaoEcoponto();
+        var data = event.target.result;
+        console.log("Dados para visualização:", data);
+        // Continue com a lógica para visualizar os atendimentos
     };
 
-// Adiciona um atendimento ao banco de dados
+    request.onerror = function(event) {
+        console.error("Erro ao obter dados:", event.target.error);
+    };
+}
+
 function adicionarAtendimento() {
     var placa = document.getElementById("placa").value;
     var data = document.getElementById("data").value;
@@ -43,11 +57,11 @@ function adicionarAtendimento() {
     var bairro = document.getElementById("bairro").value;
     var checkboxes = document.querySelectorAll('input[name="residuo"]:checked');
 
-    var ecoponto = localStorage.getItem('ecoponto') || ""; // Usar uma string vazia se não houver valor
+    var ecoponto = localStorage.getItem('ecoponto') || "";
 
-   if (placa === "" || data === "" || hora === "" || bairro === "") {
-   alert("Por favor, preencha todos os campos obrigatórios.");
-    return;
+    if (placa === "" || data === "" || hora === "" || bairro === "") {
+        alert("Por favor, preencha todos os campos obrigatórios.");
+        return;
     }
 
     var residuos = [];
@@ -56,14 +70,13 @@ function adicionarAtendimento() {
     });
 
     var newAtendimento = {
-    ecoponto: ecoponto,
-    placa: placa,  
-    data: data,
-    hora: hora,
-    residuo: residuos,
-    bairro: bairro
-};
-
+        ecoponto: ecoponto,
+        placa: placa,
+        data: data,
+        hora: hora,
+        residuo: residuos,
+        bairro: bairro
+    };
 
     var transaction = db.transaction(["atendimentos"], "readwrite");
     var objectStore = transaction.objectStore("atendimentos");
@@ -80,9 +93,8 @@ function adicionarAtendimento() {
     };
 }
 
-// Exporta dados para CSV
 function exportarParaCSV() {
-    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var transaction = db.transaction(["atendimentos"], "readonly");
     var objectStore = transaction.objectStore("atendimentos");
     var request = objectStore.getAll();
 
@@ -108,11 +120,11 @@ function exportarParaCSV() {
         var csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
 
-       data.forEach(function(atendimento) {
-    var residuos = Array.isArray(atendimento.residuo) ? atendimento.residuo.join(", ") : atendimento.residuo;
-    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + residuos + '","' + atendimento.bairro + '"\n';
-    csvContent += linha;
-});      
+        data.forEach(function(atendimento) {
+            var residuos = Array.isArray(atendimento.residuo) ? atendimento.residuo.join(", ") : atendimento.residuo;
+            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + residuos + '","' + atendimento.bairro + '"\n';
+            csvContent += linha;
+        });
 
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
@@ -140,9 +152,12 @@ function exportarParaCSV() {
 
         link.click();
     };
+
+    request.onerror = function(event) {
+        console.error("Erro ao obter dados para exportação:", event.target.error);
+    };
 }
 
-// Funções de manipulação de cookies
 function criarCookie(nome, valor, dias) {
     var data = new Date();
     data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
@@ -165,7 +180,6 @@ function apagarCookie(nome) {
     document.cookie = nome + '=; Max-Age=-99999999;';
 }
 
-// Carrega as configurações e seleção de ecoponto
 function carregarSelecaoEcoponto() {
     var ecopontoSelecionado = lerCookie("ecopontoSelecionado");
     if (ecopontoSelecionado) {
@@ -194,7 +208,6 @@ function carregarConfiguracoesPWA() {
     console.log('Matrícula:', matricula);
 }
 
-// Carrega o valor do Ecoponto do localStorage e define no campo
 function carregarEcoponto() {
     var ecoponto = localStorage.getItem('ecoponto');
     if (ecoponto) {
@@ -202,49 +215,17 @@ function carregarEcoponto() {
     }
 }
 
-// Executa ao carregar a página
 document.addEventListener('DOMContentLoaded', function() {
-    inicializarBancoDeDados();
-    carregarSelecaoEcoponto();
-    preencherDataHora();
-    carregarConfiguracoesPWA();
-
-    var ecopontoElement = document.getElementById('ecoponto');
-    if (ecopontoElement) {
-        carregarEcoponto(); // Certifique-se de que o elemento existe antes de chamar a função
-        ecopontoElement.addEventListener('change', salvarSelecaoEcoponto);
-    }
-
-    document.getElementById('placa').addEventListener('input', function() {
-        this.value = this.value.toUpperCase();
+    inicializarBancoDeDados().then(() => {
+        visualizarAtendimentos();
+        carregarConfiguracoesPWA();
+        preencherDataHora();
+    }).catch((error) => {
+        console.error("Erro ao inicializar o banco de dados:", error);
     });
+
+    document.getElementById("adicionar").addEventListener("click", adicionarAtendimento);
+    document.getElementById("exportar").addEventListener("click", exportarParaCSV);
+    document.getElementById("ecoponto").addEventListener("change", salvarSelecaoEcoponto);
+    carregarSelecaoEcoponto();
 });
-
-function visualizarAtendimentos() {
-    if (!db) {
-        console.error("Banco de dados não está disponível.");
-        return;
-    }
-
-    var transaction = db.transaction(["atendimentos"], "readonly");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.getAll();
-
-    request.onsuccess = function(event) {
-        var data = event.target.result;
-        console.log("Dados para visualização:", data);
-        // Continue com a lógica para visualizar os atendimentos
-    };
-
-    request.onerror = function(event) {
-        console.error("Erro ao obter dados:", event.target.error);
-    };
-}
-
-// Verificar se o banco de dados está aberto antes de chamar visualizarAtendimentos
-var request = indexedDB.open("nomeDoBanco", 1);
-request.onsuccess = function(event) {
-    db = event.target.result;
-    visualizarAtendimentos(); // Chamar apenas quando o banco de dados está pronto
-};
-
