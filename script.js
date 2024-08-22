@@ -208,39 +208,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Exibe Registros no Banco de Dados
 function visualizarAtendimentos() {
+    if (!db) {
+        console.error("Banco de dados não está disponível.");
+        return;
+    }
+
     var transaction = db.transaction(["atendimentos"], "readonly");
     var objectStore = transaction.objectStore("atendimentos");
     var request = objectStore.getAll();
 
     request.onsuccess = function(event) {
         var data = event.target.result;
-        var table = document.getElementById("tabela-atendimentos");
-        table.innerHTML = ""; // Limpa o conteúdo anterior da tabela
-
-        if (data.length > 0) {
-            data.forEach(function(atendimento) {
-                var row = table.insertRow();
-                row.insertCell(0).textContent = atendimento.ecoponto;
-                row.insertCell(1).textContent = atendimento.placa;
-                row.insertCell(2).textContent = atendimento.data;
-                row.insertCell(3).textContent = atendimento.hora;
-                row.insertCell(4).textContent = atendimento.residuo.join(", ");
-                row.insertCell(5).textContent = atendimento.bairro;
-            });
-        } else {
-            var row = table.insertRow();
-            var cell = row.insertCell(0);
-            cell.colSpan = 6;
-            cell.textContent = "Nenhum atendimento encontrado.";
-        }
+        console.log("Dados para visualização:", data);
+        // Continue com a lógica para visualizar os atendimentos
     };
 
     request.onerror = function(event) {
-        console.error("Erro ao visualizar atendimentos:", event.target.errorCode);
+        console.error("Erro ao obter dados:", event.target.error);
     };
 }
 
-// Chamando a função quando necessário
-visualizarAtendimentos();
+// Verificar se o banco de dados está aberto antes de chamar visualizarAtendimentos
+var request = indexedDB.open("nomeDoBanco", 1);
+request.onsuccess = function(event) {
+    db = event.target.result;
+    visualizarAtendimentos(); // Chamar apenas quando o banco de dados está pronto
+};
+
