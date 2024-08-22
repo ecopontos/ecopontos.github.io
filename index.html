@@ -27,7 +27,7 @@
 </head>
 <body>
     <img src="logotipo.png" width="100">
-    <h2>Atendimento dos Ecoponto</h2>
+    <h2>Atendimento em Ecopontos</h2>
     <p>Ecoponto Selecionado: <span id="nomeEcopontoDisplay"></span></p>
     <p>Placa: <input type="text" id="placa"></p>
     <p>Data: <input type="date" id="data"></p>
@@ -47,6 +47,20 @@
     <button id="exportar">Exportar Dados CSV</button>
 
     <script>
+        // Função para carregar o nome do ecoponto do localStorage e exibir na página
+    function carregarNomeEcoponto() {
+        var ecoponto = localStorage.getItem('ecoponto');
+        if (ecoponto) {
+            document.getElementById('nomeEcopontoDisplay').textContent = ecoponto;
+        } else {
+            document.getElementById('nomeEcopontoDisplay').textContent = 'Não definido';
+        }
+    }
+
+    // Carregar o nome do ecoponto ao carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarNomeEcoponto();
+    });
         function definirDataHoraAtual() {
             const agora = new Date();
             const dataAtual = agora.toISOString().split('T')[0]; // Obtém a data no formato YYYY-MM-DD
