@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Recupera o nome do Ecoponto salvo no localStorage
     const ecoponto = localStorage.getItem('ecoponto');
     const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
-
+// Verifica se o Ecoponto foi configurado e exibe o nome no HTML
     if (ecoponto) {
         nomeEcopontoDisplay.textContent = ecoponto;
     } else {
