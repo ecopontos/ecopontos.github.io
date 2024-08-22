@@ -94,10 +94,11 @@ function exportarParaCSV() {
         var csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
 
-        data.forEach(function(atendimento) {
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + atendimento.residuo.join(", ") + '","' + atendimento.bairro + '"\n';
-            csvContent += linha;
-        });
+       data.forEach(function(atendimento) {
+    var residuos = Array.isArray(atendimento.residuo) ? atendimento.residuo.join(", ") : atendimento.residuo;
+    var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + residuos + '","' + atendimento.bairro + '"\n';
+    csvContent += linha;
+});      
 
         var encodedUri = encodeURI(csvContent);
         var link = document.createElement("a");
