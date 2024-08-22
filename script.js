@@ -148,65 +148,32 @@ function adicionarAtendimento() {
     };
 }
 
-function exportarParaCSV() {
-    var transaction = db.transaction(["atendimentos"], "readonly");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.getAll();
+function exportarDadosCSV() {
+    const ecoponto = document.getElementById('ecoponto').value;
+    const placa = document.getElementById('placa').value;
+    const data = document.getElementById('data').value;
+    const hora = document.getElementById('hora').value;
+    const bairro = document.getElementById('bairro').value;
+    
+    const residuosSelecionados = [];
+    document.querySelectorAll('#residuos-container input[type="checkbox"]:checked').forEach(checkbox => {
+        residuosSelecionados.push(checkbox.value);
+    });
 
-    request.onsuccess = function(event) {
-        var data = event.target.result;
-        if (data.length === 0) {
-            alert("Nenhum atendimento encontrado para exportar.");
-            return;
-        }
+    const csvContent = [
+        ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos'],
+        [ecoponto, placa, data, hora, bairro, residuosSelecionados.join(';')]
+    ].map(e => e.join(',')).join('\n');
 
-        console.log("Dados para exportação:", data);
+    // Cria um link para o download do CSV
+    const link = document.createElement('a');
+    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+    link.download = 'dados_ecoponto.csv';
+    link.click();
+}
 
-        var atendimentoMaisRecente = data.reduce((maisRecente, atendimento) => {
-            if (atendimento.data > maisRecente.data || (atendimento.data === maisRecente.data && atendimento.hora > maisRecente.hora)) {
-                return atendimento;
-            }
-            return maisRecente;
-        }, data[0]);
-
-        var dataMaisRecente = atendimentoMaisRecente.data;
-        var horaMaisRecente = atendimentoMaisRecente.hora.replace(/:/g, '-');
-
-        var csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Ecoponto,Placa,Data,Hora,Residuo,Bairro\n";
-
-        data.forEach(function(atendimento) {
-            var residuos = Array.isArray(atendimento.residuo) ? atendimento.residuo.join(", ") : atendimento.residuo;
-            var linha = '"' + atendimento.ecoponto + '","' + atendimento.placa + '","' + atendimento.data + '","' + atendimento.hora + '","' + residuos + '","' + atendimento.bairro + '"\n';
-            csvContent += linha;
-        });
-
-        var encodedUri = encodeURI(csvContent);
-        var link = document.createElement("a");
-
-        var nomeEcoponto = localStorage.getItem('ecoponto') || "ecoponto";
-        var nomeArquivo = `${nomeEcoponto}-${dataMaisRecente}-${horaMaisRecente}.csv`;
-
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", nomeArquivo);
-        document.body.appendChild(link);
-
-        link.addEventListener("click", function() {
-            var deleteTransaction = db.transaction(["atendimentos"], "readwrite");
-            var deleteObjectStore = deleteTransaction.objectStore("atendimentos");
-            var deleteRequest = deleteObjectStore.clear();
-
-            deleteRequest.onsuccess = function() {
-                console.log("Banco de dados limpo após exportação.");
-            };
-
-            deleteRequest.onerror = function(event) {
-                console.error("Erro ao limpar banco de dados:", event.target.error);
-            };
-        });
-
-        link.click();
-    };
+// Adiciona event listener para exportar dados
+document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
 
     request.onerror = function(event) {
         console.error("Erro ao obter dados para exportação:", event.target.error);
