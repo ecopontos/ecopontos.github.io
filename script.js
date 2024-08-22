@@ -12,23 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    const ecopontos = {
-    1: "PEV ITACORUBI",
-    2: "PEV CAPOEIRAS",
-    3: "PEV MORRO DAS PEDRAS",
-    4: "PEV MONTE CRISTO (ARESP)",
-    5: "PEV CANASVIEIRAS",
-    6: "PEV RIO VERMELHO",
-    7: "PEV INGLESES",
-    8: "PEV COSTEIRA",
-    9: "PEV COLONINHA"
-};
-
-function getNomeEcoponto(id) {
-    return ecopontos[id] || 'Ecoponto Desconhecido';
-}
-
-    const bairros = [
+     const bairros = [
         "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
         "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
         "Canto", "Caieira", "Capoeiras", "Carianos",
@@ -162,9 +146,10 @@ function getNomeEcoponto(id) {
 }
 
 
-   function exportarDadosCSV() {
-    const ecopontoId = document.getElementById('ecoponto').value; // ID selecionado
-    const ecopontoNome = getNomeEcoponto(ecopontoId); // Obtém o nome do Ecoponto
+  function exportarDadosCSV() {
+    // Captura o número do Ecoponto do elemento nome-ecoponto-display
+    const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
+    const ecoponto = nomeEcopontoDisplay.textContent.trim(); // Obtém o número do Ecoponto
 
     const placa = document.getElementById('placa').value;
     const data = document.getElementById('data').value;
@@ -176,7 +161,7 @@ function getNomeEcoponto(id) {
 
     const csvContent = [
         ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
-        [ecopontoNome, placa, data, hora, bairro, residuosSelecionados.join(';'), new Date().toLocaleTimeString()]
+        [ecoponto, placa, data, hora, bairro, residuosSelecionados.join(';'), new Date().toLocaleTimeString()]
     ].map(e => e.join(',')).join('\n');
 
     const link = document.createElement('a');
@@ -184,6 +169,7 @@ function getNomeEcoponto(id) {
     link.download = 'dados_ecoponto.csv';
     link.click();
 }
+
 
     // Inicializar componentes
     preencherListaDeBairros();
