@@ -174,7 +174,7 @@
         console.error("Erro ao adicionar atendimento:", event.target.errorCode);
     };
 }
-            function exportarDadosCSV() {
+          function exportarDadosCSV() {
     var transaction = db.transaction(["atendimentos"], "readonly");
     var objectStore = transaction.objectStore("atendimentos");
     var request = objectStore.getAll();
@@ -191,13 +191,13 @@
         const csvContent = [
             ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
             ...atendimentos.map(atendimento => [
-                atendimento.ecoponto || "",
-                atendimento.placa || "",
-                atendimento.data || "",
-                atendimento.hora || "",
-                atendimento.bairro || "",
-                atendimento.residuos || "",
-                atendimento.horaRegistro || ""
+                `"${atendimento.ecoponto || ""}"`,
+                `"${atendimento.placa || ""}"`,
+                `"${atendimento.data || ""}"`,
+                `"${atendimento.hora || ""}"`,
+                `"${atendimento.bairro || ""}"`,
+                `"${atendimento.residuos || ""}"`,
+                `"${atendimento.horaRegistro || ""}"`
             ])
         ].map(e => e.join(',')).join('\n');
 
@@ -212,6 +212,7 @@
         console.error("Erro ao exportar dados:", event.target.error);
     };
 }
+
 
             document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
             document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
