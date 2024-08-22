@@ -9,22 +9,17 @@ function carregarConfiguracao() {
     if (matricula) document.getElementById('matricula').value = matricula;
 }
 
-// Função para salvar as configurações no localStorage
 function salvarConfiguracao() {
-    var ecoponto = document.getElementById('ecoponto').value;
-    var nomeFuncionario = document.getElementById('nomeFuncionario').value;
-    var matricula = document.getElementById('matricula').value;
+    const ecoponto = document.getElementById('ecoponto').value;
+    const nomeFuncionario = document.getElementById('nomeFuncionario').value;
+    const matricula = document.getElementById('matricula').value;
 
-    if (ecoponto === "" || nomeFuncionario === "" || matricula === "") {
-        alert("Por favor, preencha todos os campos.");
-        return;
-    }
-
+    // Salva as informações no localStorage
     localStorage.setItem('ecoponto', ecoponto);
     localStorage.setItem('nomeFuncionario', nomeFuncionario);
     localStorage.setItem('matricula', matricula);
 
-    alert("Configurações salvas com sucesso!");
+    alert('Configurações salvas com sucesso!');
 }
 
 // Carregar configurações ao carregar a página
