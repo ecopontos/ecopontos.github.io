@@ -49,8 +49,8 @@
 <br><br>
     <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
 
-    <script>
-        // Função para carregar o nome do ecoponto do localStorage e exibir na página
+   <script>
+    // Função para carregar o nome do ecoponto do localStorage e exibir na página
     function carregarNomeEcoponto() {
         var ecoponto = localStorage.getItem('ecoponto');
         if (ecoponto) {
@@ -63,235 +63,199 @@
     // Carregar o nome do ecoponto ao carregar a página
     document.addEventListener('DOMContentLoaded', function() {
         carregarNomeEcoponto();
+        definirDataHoraAtual();
+        setInterval(atualizarHoraAtual, 60000); // Atualiza a hora a cada minuto
+
+        // Adiciona o evento para caixa alta no campo placa
+        document.getElementById('placa').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+
+        // Inicializa o banco de dados e outros elementos
+        criarCheckBoxesResiduos();
+        inicializarBancoDeDados().catch(error => {
+            console.error("Erro ao inicializar o banco de dados:", error);
+        });
+
+        setInterval(atualizarHoraAtual, 1000); // Atualiza a hora a cada segundo
     });
-         function definirDataHoraAtual() {
+
+    function definirDataHoraAtual() {
         const agora = new Date();
-          const dataAtual = agora.toISOString().split('T')[0]; // Obtém a data no formato YYYY-MM-DD
-          const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
+        const dataAtual = agora.toISOString().split('T')[0]; // Data no formato YYYY-MM-DD
+        const horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
 
-             document.getElementById('data').value = dataAtual;
-            document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
-        }
-
-         function atualizarHoraAtual() {
-             const agora = new Date();
-             const horaAtual = agora.toTimeString().split(' ')[0]; // Obtém a hora no formato HH:MM:SS
-             document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
-         }
-
-         document.addEventListener('DOMContentLoaded', function() {
-            definirDataHoraAtual(); // Define a data e hora atuais quando a página é carregada
-
-            const bairros = [
-                "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
-                "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
-                "Canto", "Caieira", "Capoeiras", "Carianos",
-                "Carvoeira", "Centro", "Coloninha", "Coqueiros", "Córrego Grande",
-                "Costa de Dentro", "Costeira do Pirajubaé", "Daniela", "Estreito", "Ingleses", "Itacorubi", "Itaguaçu",
-                "Jardim Atlântico", "João Paulo", "José Mendes", "Jurerê", "Jurerê Internacional",
-                "Lagoa da Conceição", "Monte Cristo", "Monte Verde", "Morro das Pedras", "Pantanal", "Pântano do Sul",
-                "Ponta das Canas", "Praia Brava", "Ratones", "Ribeirão da Ilha", "Rio Tavares", "Saco dos Limões", "Saco Grande",
-                "Sambaqui", "Santa Mônica", "Santinho", "Santo Antônio de Lisboa", "Tapera", "Trindade",
-                "Vargem Pequena", "Vargem Grande", "Vargem do Bom Jesus", "Rio Vermelho", "Morro do 25", "Serrinha",
-                "Morro da Cruz", "Morro do Horácio", "Morro do Quilombo", "Monte Serrat", "Morro da Queimada"
-            ];
-
-            const bairroSelect = document.getElementById('bairro');
-            bairros.forEach(bairro => {
-                const option = document.createElement('option');
-                option.value = bairro;
-                option.textContent = bairro;
-                bairroSelect.appendChild(option);
-            });
-
-            const residuos = [
-                "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
-                "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
-                "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
-                "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
-                "Sucata/Metal", "Vidros", "Volumosos"
-            ];
-
-            let db;
-
-            function criarCheckBoxesResiduos() {
-                const container = document.getElementById('residuos-container');
-                residuos.forEach(residuo => {
-                    const item = document.createElement('div');
-                    item.className = 'residuo-item';
-                    item.dataset.residuo = residuo;
-                    item.textContent = residuo;
-
-                    item.addEventListener('click', function() {
-                        this.classList.toggle('selecionado');
-                    });
-
-                    container.appendChild(item);
-                });
-            }
-
-            function inicializarBancoDeDados() {
-                return new Promise((resolve, reject) => {
-                    var request = indexedDB.open("nomeDoBanco", 1);
-
-                    request.onupgradeneeded = function(event) {
-                        db = event.target.result;
-                        if (!db.objectStoreNames.contains("atendimentos")) {
-                            var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
-                            objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
-                            objectStore.createIndex("placa", "placa", { unique: false });
-                            objectStore.createIndex("data", "data", { unique: false });
-                            objectStore.createIndex("hora", "hora", { unique: false });
-                            objectStore.createIndex("bairro", "bairro", { unique: false });
-                            objectStore.createIndex("residuos", "residuos", { unique: false });
-                            objectStore.createIndex("horaRegistro", "horaRegistro", { unique: false });
-                        }
-                    };
-
-                    request.onsuccess = function(event) {
-                        db = event.target.result;
-                        console.log("Banco de dados aberto com sucesso");
-                        resolve();
-                    };
-
-                    request.onerror = function(event) {
-                        console.error("Erro ao abrir o banco de dados:", event.target.error);
-                        reject(event.target.error);
-                    };
-                });
-            }
-
-            function adicionarAtendimento() {
-    const ecoponto = localStorage.getItem('ecoponto') || 'Não definido'; // Obtém o valor do localStorage ou define um padrão
-    const placa = document.getElementById('placa').value;
-    const data = document.getElementById('data').value;
-    const hora = document.getElementById('hora').value;
-    const bairro = document.getElementById('bairro').value;
-
-    const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
-                                        .map(item => item.dataset.residuo);
-
-    if (placa === "" || data === "" || hora === "" || bairro === "") {
-        alert("Por favor, preencha todos os campos obrigatórios.");
-        return;
+        document.getElementById('data').value = dataAtual;
+        document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
     }
 
-    const agora = new Date();
-    const horaAtual = agora.toLocaleTimeString();
+    function atualizarHoraAtual() {
+        const agora = new Date();
+        const horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
+        document.getElementById('hora').value = horaAtual.substring(0, 5); // Ajusta para o formato HH:MM
+    }
 
-    const novoAtendimento = {
-        ecoponto: ecoponto,
-        placa: placa,
-        data: data,
-        hora: hora,
-        bairro: bairro,
-        residuos: residuosSelecionados.join(';'),
-        horaRegistro: horaAtual
-    };
+    function criarCheckBoxesResiduos() {
+        const residuos = [
+            "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
+            "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
+            "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
+            "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
+            "Sucata/Metal", "Vidros", "Volumosos"
+        ];
 
-    console.log("Tentando adicionar o seguinte atendimento ao banco de dados:", novoAtendimento);
+        const container = document.getElementById('residuos-container');
+        residuos.forEach(residuo => {
+            const item = document.createElement('div');
+            item.className = 'residuo-item';
+            item.dataset.residuo = residuo;
+            item.textContent = residuo;
 
-    var transaction = db.transaction(["atendimentos"], "readwrite");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.add(novoAtendimento);
+            item.addEventListener('click', function() {
+                this.classList.toggle('selecionado');
+            });
 
-    request.onsuccess = function(event) {
-        console.log("Atendimento adicionado com sucesso com o ID:", event.target.result);
-        document.getElementById("placa").value = '';
-        document.getElementById("data").value = '';
-        document.getElementById("hora").value = '';
-        document.getElementById("bairro").value = '';
-        document.querySelectorAll('#residuos-container .selecionado').forEach(el => el.classList.remove('selecionado'));
-    };
+            container.appendChild(item);
+        });
+    }
 
-    request.onerror = function(event) {
-        console.error("Erro ao adicionar atendimento:", event.target.error);
-    };
-}
-            document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
+    function inicializarBancoDeDados() {
+        return new Promise((resolve, reject) => {
+            var request = indexedDB.open("nomeDoBanco", 1);
 
-         function exportarParaCSV() {
-    var ecoponto = localStorage.getItem('ecoponto') || 'ecoponto'; // Obtém o valor do localStorage ou define um padrão
-    var agora = new Date();
-    var dataAtual = agora.toISOString().split('T')[0]; // Data no formato YYYY-MM-DD
-    var horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
-    var nomeArquivo = `${ecoponto}_${dataAtual}_${horaAtual}.csv`.replace(/:/g, '-'); // Substitui os dois pontos por hífens no nome do arquivo
+            request.onupgradeneeded = function(event) {
+                var db = event.target.result;
+                if (!db.objectStoreNames.contains("atendimentos")) {
+                    var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+                    objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
+                    objectStore.createIndex("placa", "placa", { unique: false });
+                    objectStore.createIndex("data", "data", { unique: false });
+                    objectStore.createIndex("hora", "hora", { unique: false });
+                    objectStore.createIndex("bairro", "bairro", { unique: false });
+                    objectStore.createIndex("residuos", "residuos", { unique: false });
+                    objectStore.createIndex("horaRegistro", "horaRegistro", { unique: false });
+                }
+            };
 
-    var transaction = db.transaction(["atendimentos"], "readonly");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.getAll();
+            request.onsuccess = function(event) {
+                db = event.target.result;
+                console.log("Banco de dados aberto com sucesso");
+                resolve();
+            };
 
-    request.onsuccess = function(event) {
-        var atendimentos = event.target.result;
-        if (atendimentos.length === 0) {
-            alert("Nenhum atendimento encontrado para exportar.");
+            request.onerror = function(event) {
+                console.error("Erro ao abrir o banco de dados:", event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    function adicionarAtendimento() {
+        const ecoponto = localStorage.getItem('ecoponto') || 'Não definido';
+        const placa = document.getElementById('placa').value;
+        const data = document.getElementById('data').value;
+        const hora = document.getElementById('hora').value;
+        const bairro = document.getElementById('bairro').value;
+
+        const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
+                                            .map(item => item.dataset.residuo);
+
+        if (placa === "" || data === "" || hora === "" || bairro === "") {
+            alert("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
 
-        // Constrói o conteúdo do CSV
-        var csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += '"ID","Ecoponto","Placa","Data","Hora","Bairro","Resíduos","HoraRegistro"\n';
+        const agora = new Date();
+        const horaAtual = agora.toLocaleTimeString();
 
-        atendimentos.forEach(atendimento => {
-            csvContent += `"${atendimento.id}","${atendimento.ecoponto}","${atendimento.placa}","${atendimento.data}","${atendimento.hora}","${atendimento.bairro}","${atendimento.residuos}","${atendimento.horaRegistro}"\n`;
-        });
+        const novoAtendimento = {
+            ecoponto: ecoponto,
+            placa: placa,
+            data: data,
+            hora: hora,
+            bairro: bairro,
+            residuos: residuosSelecionados.join(';'),
+            horaRegistro: horaAtual
+        };
 
-        // Cria o link para download
-        var encodedUri = encodeURI(csvContent);
-        var link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", nomeArquivo);
-        document.body.appendChild(link);
-        link.click();
+        console.log("Tentando adicionar o seguinte atendimento ao banco de dados:", novoAtendimento);
 
-        // Limpa o banco de dados após o download ser acionado
-        limparBancoDeDados();
-    };
+        var transaction = db.transaction(["atendimentos"], "readwrite");
+        var objectStore = transaction.objectStore("atendimentos");
+        var request = objectStore.add(novoAtendimento);
 
-    request.onerror = function(event) {
-        console.error("Erro ao recuperar atendimentos:", event.target.error);
-    };
-}
-function limparBancoDeDados() {
-    var transaction = db.transaction(["atendimentos"], "readwrite");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.clear(); // Limpa todos os registros do object store
+        request.onsuccess = function(event) {
+            console.log("Atendimento adicionado com sucesso com o ID:", event.target.result);
+            document.getElementById("placa").value = '';
+            document.getElementById("data").value = '';
+            document.getElementById("hora").value = '';
+            document.getElementById("bairro").value = '';
+            document.querySelectorAll('#residuos-container .selecionado').forEach(el => el.classList.remove('selecionado'));
+        };
 
-    request.onsuccess = function(event) {
-        console.log("Banco de dados limpo com sucesso.");
-        alert("Dados exportados e banco de dados limpo com sucesso!");
-    };
+        request.onerror = function(event) {
+            console.error("Erro ao adicionar atendimento:", event.target.error);
+        };
+    }
 
-    request.onerror = function(event) {
-        console.error("Erro ao limpar o banco de dados:", event.target.error);
-        alert("Erro ao limpar o banco de dados. Verifique o console para mais detalhes.");
-    };
-}
+    document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
 
-function limparBancoDeDados() {
-    var transaction = db.transaction(["atendimentos"], "readwrite");
-    var objectStore = transaction.objectStore("atendimentos");
-    var request = objectStore.clear(); // Limpa todos os registros do object store
+    function exportarParaCSV() {
+        var ecoponto = localStorage.getItem('ecoponto') || 'ecoponto';
+        var agora = new Date();
+        var dataAtual = agora.toISOString().split('T')[0];
+        var horaAtual = agora.toTimeString().split(' ')[0];
+        var nomeArquivo = `${ecoponto}_${dataAtual}_${horaAtual}.csv`.replace(/:/g, '-');
 
-    request.onsuccess = function(event) {
-        console.log("Banco de dados limpo com sucesso.");
-    };
+        var transaction = db.transaction(["atendimentos"], "readonly");
+        var objectStore = transaction.objectStore("atendimentos");
+        var request = objectStore.getAll();
 
-    request.onerror = function(event) {
-        console.error("Erro ao limpar o banco de dados:", event.target.error);
-    };
-}
+        request.onsuccess = function(event) {
+            var atendimentos = event.target.result;
+            if (atendimentos.length === 0) {
+                alert("Nenhum atendimento encontrado para exportar.");
+                return;
+            }
 
+            var csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += '"ID","Ecoponto","Placa","Data","Hora","Bairro","Resíduos","HoraRegistro"\n';
 
-            document.getElementById('exportar').addEventListener('click', exportarParaCSV);
-
-            criarCheckBoxesResiduos();
-            inicializarBancoDeDados().catch(error => {
-                console.error("Erro ao inicializar o banco de dados:", error);
+            atendimentos.forEach(atendimento => {
+                csvContent += `"${atendimento.id}","${atendimento.ecoponto}","${atendimento.placa}","${atendimento.data}","${atendimento.hora}","${atendimento.bairro}","${atendimento.residuos}","${atendimento.horaRegistro}"\n`;
             });
 
-            setInterval(atualizarHoraAtual, 1000); // Atualiza a hora atual a cada segundo
-        });
-    </script>
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", nomeArquivo);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        request.onerror = function(event) {
+            console.error("Erro ao obter atendimentos:", event.target.error);
+        };
+    }
+
+    document.getElementById('exportar').addEventListener('click', exportarParaCSV);
+
+    function limparBancoDeDados() {
+        var transaction = db.transaction(["atendimentos"], "readwrite");
+        var objectStore = transaction.objectStore("atendimentos");
+        var request = objectStore.clear();
+
+        request.onsuccess = function(event) {
+            console.log("Banco de dados limpo com sucesso.");
+        };
+
+        request.onerror = function(event) {
+            console.error("Erro ao limpar o banco de dados:", event.target.error);
+        };
+    }
+
+    document.getElementById('limpar').addEventListener('click', limparBancoDeDados);
+</script>
 </body>
 </html>
