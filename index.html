@@ -12,12 +12,17 @@
         height: auto; /* Mantém a proporção da altura */
     }
 
-    /* Alinha os checkboxes e labels na mesma linha */
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px; /* Espaçamento entre as linhas dos checkboxes */
-    }
+/* Alinhar labels e inputs de forma consistente */
+form label {
+    display: inline-block;
+    width: 150px;
+    margin-bottom: 10px;
+}
+
+form input, form select {
+    width: calc(100% - 160px); /* Considera a largura do label e margens */
+    margin-bottom: 10px;
+}
 
     .checkbox-container input[type="checkbox"] {
         margin-right: 5px; /* Espaçamento entre o checkbox e o label */
@@ -38,8 +43,6 @@
 
         <label for="hora">Hora:</label>
         <input type="time" id="hora" name="hora" required>
-
-        <label for="bairro">Selecione o Bairro:</label>
         <select id="bairro" name="bairro">
               <label for="bairro">Selecione o Bairro:</label><br>
     <option value="Abraão">Abraão</option>
@@ -112,9 +115,9 @@
 
         <button id="adicionar" type="button">Enviar Registro</button>
         <button id="exportar" type="button">Exportar dados</button>
-        <a href="registros.html">Registros</a>
-        <a href="configuracao.html">Config.</a>
     </form>
+<a href="registros.html">Registros</a><br>
+<a href="configuracao.html">Config.</a>
 
     <script src="script.js"></script>
 </body>
