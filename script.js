@@ -34,7 +34,7 @@ request.onerror = function(event) {
         console.log("Banco de dados aberto com sucesso");
         carregarSelecaoEcoponto();
     };
-}
+
 // Adiciona um atendimento ao banco de dados
 function adicionarAtendimento() {
     var placa = document.getElementById("placa").value;
