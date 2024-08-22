@@ -229,12 +229,28 @@
         document.body.appendChild(link);
         link.click();
 
-        // Limpa o banco de dados
+        // Limpa o banco de dados após o download ser acionado
         limparBancoDeDados();
     };
 
     request.onerror = function(event) {
         console.error("Erro ao recuperar atendimentos:", event.target.error);
+    };
+}
+
+function limparBancoDeDados() {
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.clear(); // Limpa todos os registros do object store
+
+    request.onsuccess = function(event) {
+        console.log("Banco de dados limpo com sucesso.");
+        alert("Dados exportados e banco de dados limpo com sucesso!");
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao limpar o banco de dados:", event.target.error);
+        alert("Erro ao limpar o banco de dados. Verifique o console para mais detalhes.");
     };
 }
 
