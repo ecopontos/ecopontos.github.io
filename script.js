@@ -5,14 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
         "Canto", "Caieira", "Capoeiras", "Carianos",
         "Carvoeira", "Centro", "Coloninha", "Coqueiros", "Córrego Grande",
         "Costa de Dentro", "Costeira do Pirajubaé", "Daniela", "Estreito", "Ingleses", "Itacorubi", "Itaguaçu",
-        "Jardim Atlântico", "João Paulo", "José Mendes", "Jurerê", "Jurerê Internacional",
-        "Lagoa da Conceição", "Monte Cristo", "Monte Verde", "Morro das Pedras", "Pantanal", "Pântano do Sul",
-        "Ponta das Canas", "Praia Brava", "Ratones", "Ribeirão da Ilha", "Rio Tavares", "Saco dos Limões", "Saco Grande",
-        "Sambaqui", "Santa Mônica", "Santinho", "Santo Antônio de Lisboa", "Tapera", "Trindade",
-        "Vargem Pequena", "Vargem Grande", "Vargem do Bom Jesus", "Rio Vermelho", "Morro do 25", "Serrinha",
-        "Morro da Cruz", "Morro do Horácio", "Morro do Quilombo", "Monte Serrat", "Morro da Queimada"
-    ];
+	"Jardim Atlântico", "João Paulo", "José Mendes", "Jurerê", "Jurerê Internacional",
+	"Lagoa da Conceição", "Monte Cristo", "Monte Verde", "Morro das Pedras", "Pantanal", "Pântano do Sul",
+	"Ponta das Canas", "Praia Brava", "Ratones", "Ribeirão da Ilha", "Rio Tavares", "Saco dos Limões", "Saco Grande",
+	"Sambaqui", "Santa Mônica", "Santinho", "Santo Antônio de Lisboa", "Tapera", "Trindade",
+	"Vargem Pequena", "Vargem Grande", "Vargem do Bom Jesus", "Rio Vermelho", "Morro do 25", "Serrinha",
+	"Morro da Cruz", "Morro do Horácio, "Morro do Quilombo", "Monte Serrat", "Morro da Queimada"
+   ];
 
+document.addEventListener('DOMContentLoaded', function() {
     const residuos = [
         "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
         "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
@@ -145,3 +146,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     inicializarBancoDeDados();
 });
+
+Minha inclusão está correta?
