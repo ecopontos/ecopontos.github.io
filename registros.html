@@ -7,62 +7,21 @@
 </head>
 <body>
     <h1>Registros de Atendimento</h1>
-    <table id="atendimentos-table">
-        <thead>
-            <tr>
-                <th>Ecoponto</th>
-                <th>Placa do Veículo</th>
-                <th>Data</th>
-                <th>Hora</th>
-                <th>Tipo de Resíduo</th>
-                <th>Bairro</th>
-            </tr>
-        </thead>
-        <tbody id="atendimentos-body">
-            <!-- Os registros serão adicionados aqui -->
-        </tbody>
-    </table>
-
-    <script>
-        var request = indexedDB.open("ecoponto", 1);
-
-        request.onerror = function(event) {
-            console.log("Erro ao abrir o banco de dados:", event.target.errorCode);
-        };
-
-        request.onsuccess = function(event) {
-            console.log("Banco de dados aberto com sucesso");
-            var db = event.target.result;
-            exibirRegistros(db);
-        };
-
-        function exibirRegistros(db) {
-            var transaction = db.transaction(["atendimentos"], "readonly");
-            var objectStore = transaction.objectStore("atendimentos");
-            var request = objectStore.getAll();
-
-            request.onsuccess = function(event) {
-                var data = event.target.result;
-                var tableBody = document.getElementById("atendimentos-body");
-
-                data.forEach(function(atendimento) {
-                    var row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${atendimento.ecoponto}</td>
-                        <td>${atendimento.placa_veiculo}</td>
-                        <td>${atendimento.data}</td>
-                        <td>${atendimento.hora}</td>
-                        <td>${atendimento.tipo_residuo.join(", ")}</td>
-                        <td>${atendimento.bairro}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            };
-
-            request.onerror = function(event) {
-                console.log("Erro ao recuperar os registros:", event.target.errorCode);
-            };
-        }
-    </script>
+   <table id="tabela-atendimentos" border="1">
+    <thead>
+        <tr>
+            <th>Ecoponto</th>
+            <th>Placa</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Resíduo</th>
+            <th>Bairro</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- As linhas serão inseridas aqui dinamicamente -->
+    </tbody>
+</table>
+ <script src="script.js"></script> <!-- Referência para o seu JavaScript -->
 </body>
 </html>
