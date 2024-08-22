@@ -204,3 +204,40 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = this.value.toUpperCase();
     });
 });
+
+// Exibe Registros no Banco de Dados
+function visualizarAtendimentos() {
+    var transaction = db.transaction(["atendimentos"], "readonly");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
+
+    request.onsuccess = function(event) {
+        var data = event.target.result;
+        var table = document.getElementById("tabela-atendimentos");
+        table.innerHTML = ""; // Limpa o conteúdo anterior da tabela
+
+        if (data.length > 0) {
+            data.forEach(function(atendimento) {
+                var row = table.insertRow();
+                row.insertCell(0).textContent = atendimento.ecoponto;
+                row.insertCell(1).textContent = atendimento.placa;
+                row.insertCell(2).textContent = atendimento.data;
+                row.insertCell(3).textContent = atendimento.hora;
+                row.insertCell(4).textContent = atendimento.residuo.join(", ");
+                row.insertCell(5).textContent = atendimento.bairro;
+            });
+        } else {
+            var row = table.insertRow();
+            var cell = row.insertCell(0);
+            cell.colSpan = 6;
+            cell.textContent = "Nenhum atendimento encontrado.";
+        }
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao visualizar atendimentos:", event.target.errorCode);
+    };
+}
+
+// Chamando a função quando necessário
+visualizarAtendimentos();
