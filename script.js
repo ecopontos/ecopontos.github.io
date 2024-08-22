@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const bairros = [
-         "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
+        "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
         "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
         "Canto", "Caieira", "Capoeiras", "Carianos",
         "Carvoeira", "Centro", "Coloninha", "Coqueiros", "Córrego Grande",
@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     const residuos = [
-       st residuos = [
         "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
         "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
         "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
@@ -149,11 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
         link.click();
     }
 
+    // Inicializar componentes
     preencherListaDeBairros();
     criarCheckBoxesResiduos();
+    inicializarBancoDeDados();
 
+    // Adicionar event listeners
     document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
     document.getElementById('exportar').addEventListener('click', exportarDadosCSV);
-
-    inicializarBancoDeDados();
 });
