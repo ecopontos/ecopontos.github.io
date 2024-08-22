@@ -2,34 +2,21 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulário de Atendimento</title>
-    <style>
-        /* Adicione aqui seu CSS se necessário */
-        .selecionado {
-            background-color: #d3d3d3;
-        }
-        .residuo-item {
-            cursor: pointer;
-        }
-    </style>
+    <title>Exportar Dados</title>
 </head>
 <body>
-    <h1>Cadastro de Atendimento</h1>
+    <p>Nome do Ecoponto: <span id="nome-ecoponto-display"></span></p>
+    <input type="text" id="placa" placeholder="Digite a placa">
+    <input type="date" id="data">
+    <input type="time" id="hora">
+    <select id="bairro">
+        <!-- Opções de bairros serão inseridas aqui pelo JavaScript -->
+    </select>
+    <div id="residuos-container">
+        <!-- Checkboxes de resíduos serão inseridos aqui pelo JavaScript -->
+    </div>
+    <button id="exportar">Exportar</button>
 
-    <label for="bairro">Bairro:</label>
-    <select id="bairro"></select>
-
-    <div id="residuos-container"></div>
-
-    <label for="data">Data:</label>
-    <input type="date" id="data" name="data">
-
-    <label for="hora">Hora:</label>
-    <input type="time" id="hora" name="hora">
-
-    <button id="exportar">Exportar Dados</button>
-
-    <script src="script.js"></script>
+    <script src="seu-script.js"></script>
 </body>
 </html>
