@@ -1,55 +1,35 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atendimentos de Ecoponto Index</title>
-    <link rel="manifest" href="/manifest.json">
+    <title>Formulário de Atendimento</title>
     <style>
-        /* Estilos para o logotipo */
-        .logo {
-            max-width: 250px; /* Define a largura máxima do logotipo */
-            height: auto; /* Mantém a proporção da altura */
-        }
-
-        .residuo-item {
-            display: inline-block;
-            padding: 10px;
-            margin: 5px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-        }
+        /* Adicione aqui seu CSS se necessário */
         .selecionado {
-            background-color: #d1e7dd;
-            border-color: #badbcc;
+            background-color: #d3d3d3;
+        }
+        .residuo-item {
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <img src="logotipo.png" width="250">
-    <h2>Atendimento no Ecoponto <span id="nome-ecoponto-display"></span></h2>
-    <p>Placa: <input type="text" id="placa"></p>
-    <p>Data: <input type="date" id="data"></p>
-    <p>Hora: <input type="time" id="hora"></p>
-    <div>
-        <label for="bairro">Bairro:</label>
-        <select id="bairro">
-            <!-- As opções de bairros serão adicionadas aqui pelo JavaScript -->
-        </select>
-    </div>
+    <h1>Cadastro de Atendimento</h1>
 
-    <div id="residuos-container">
-        <!-- Resíduos serão adicionados aqui pelo JavaScript -->
-    </div>
+    <label for="bairro">Bairro:</label>
+    <select id="bairro"></select>
 
-    <button id="adicionar">Adicionar Atendimento</button>
-    <button id="exportar">Exportar Dados CSV</button>
-<br><br>
-    <a href="https://ecopontos.github.io/registros.html">Registros atuais</a>
-<br><br>
-    <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
+    <div id="residuos-container"></div>
 
- <script src="script.js"></script>
+    <label for="data">Data:</label>
+    <input type="date" id="data" name="data">
 
+    <label for="hora">Hora:</label>
+    <input type="time" id="hora" name="hora">
+
+    <button id="exportar">Exportar Dados</button>
+
+    <script src="script.js"></script>
 </body>
 </html>
