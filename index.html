@@ -6,10 +6,16 @@
     <title>Atendimentos de Ecoponto Index</title>
     <link rel="manifest" href="/manifest.json">
     <style>
-        /* Estilos para o logotipo */
         .logo {
-            max-width: 250px; /* Define a largura máxima do logotipo */
-            height: auto; /* Mantém a proporção da altura */
+            max-width: 250px;
+            height: auto;
+        }
+        form {
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -18,92 +24,30 @@
     <h5>Atendimentos de Ecoponto</h5>
     <p>Ecoponto: <input type="text" id="ecoponto"></p>
     <form id="form-atendimento">
-        <label for="placa">Placa:</label><br>
-        <input type="text" id="placa" name="placa" required><br><br>
+        <label for="placa">Placa:</label>
+        <input type="text" id="placa" name="placa" required>
 
-        <label for="data">Data:</label><br>
-        <input type="date" id="data" name="data" required><br><br>
+        <label for="data">Data:</label>
+        <input type="date" id="data" name="data" required>
 
-        <label for="hora">Hora:</label><br>
-        <input type="time" id="hora" name="hora" required><br><br>
+        <label for="hora">Hora:</label>
+        <input type="time" id="hora" name="hora" required>
 
-        <label for="bairro">Selecione o Bairro:</label><br>
-<select id="bairro" name="bairro">
-    <option value="Abraão">Abraão</option>
-    <option value="Agronômica">Agronômica</option>
-    <option value="Armação do Pântano do Sul">Armação do Pântano do Sul</option>
-    <option value="Balneário">Balneário</option>
-    <option value="Barra da Lagoa">Barra da Lagoa</option>
-    <option value="Bom Abrigo">Bom Abrigo</option>
-    <option value="Cachoeira do Bom Jesus">Cachoeira do Bom Jesus</option>
-    <option value="Cacupé">Cacupé</option>
-    <option value="Campeche">Campeche</option>
-    <option value="Canasvieiras">Canasvieiras</option>
-    <option value="Canto">Canto</option>
-    <option value="Caieira">Caieira</option>
-    <option value="Capoeiras">Capoeiras</option>
-    <option value="Carianos">Carianos</option>
-    <option value="Carvoeira">Carvoeira</option>
-    <option value="Centro">Centro</option>
-    <option value="Coloninha">Coloninha</option>
-    <option value="Coqueiros">Coqueiros</option>
-    <option value="Córrego Grande">Córrego Grande</option>
-    <option value="Costa de Dentro">Costa de Dentro</option>
-    <option value="Costeira do Pirajubaé">Costeira do Pirajubaé</option>
-    <option value="Daniela">Daniela</option>
-    <option value="Estreito">Estreito</option>
-    <option value="Ingleses">Ingleses</option>
-    <option value="Itacorubi">Itacorubi</option>
-    <option value="Itaguaçu">Itaguaçu</option>
-    <option value="Jardim Atlântico">Jardim Atlântico</option>
-    <option value="João Paulo">João Paulo</option>
-    <option value="José Mendes">José Mendes</option>
-    <option value="Jurerê">Jurerê</option>
-    <option value="Jurerê Internacional">Jurerê Internacional</option>
-    <option value="Lagoa da Conceição">Lagoa da Conceição</option>
-    <option value="Monte Cristo">Monte Cristo</option>
-    <option value="Monte Verde">Monte Verde</option>
-    <option value="Morro das Pedras">Morro das Pedras</option>
-    <option value="Pantanal">Pantanal</option>
-    <option value="Pântano do Sul">Pântano do Sul</option>
-    <option value="Ponta das Canas">Ponta das Canas</option>
-    <option value="Praia Brava">Praia Brava</option>
-    <option value="Ratones">Ratones</option>
-    <option value="Ribeirão da Ilha">Ribeirão da Ilha</option>
-    <option value="Rio Tavares">Rio Tavares</option>
-    <option value="Saco dos Limões">Saco dos Limões</option>
-    <option value="Saco Grande">Saco Grande</option>
-    <option value="Sambaqui">Sambaqui</option>
-    <option value="Santa Mônica">Santa Mônica</option>
-    <option value="Santinho">Santinho</option>
-    <option value="Santo Antônio de Lisboa">Santo Antônio de Lisboa</option>
-    <option value="Tapera">Tapera</option>
-    <option value="Trindade">Trindade</option>
-    <option value="Vargem Pequena">Vargem Pequena</option>
-    <option value="Vargem Grande">Vargem Grande</option>
-    <option value="Vargem do Bom Jesus">Vargem do Bom Jesus</option>
-    <option value="Rio Vermelho">Rio Vermelho</option>
-    <option value="NÃO INFORMADO">NÃO INFORMADO</option>
-    <option value="Morro do 25">Morro do 25</option>
-    <option value="Serrinha">Serrinha</option>
-    <option value="Morro da Cruz">Morro da Cruz</option>
-    <option value="Morro do Horácio">Morro do Horácio</option>
-    <option value="Morro do Quilombo">Morro do Quilombo</option>
-    <option value="Monte Serrat">Monte Serrat</option>
-    <option value="Morro da Queimada">Morro da Queimada</option>
-</select><br><br>
+        <label for="bairro">Selecione o Bairro:</label>
+        <select id="bairro" name="bairro">
+            <!-- Opções de bairro -->
+        </select>
 
         <div id="residuos-container">
-        <!-- Resíduos serão adicionados aqui pelo JavaScript -->
-    </div>
+            <!-- Resíduos serão adicionados aqui pelo JavaScript -->
+        </div>
 
-        <br><br>
         <button id="adicionar" type="button">Enviar Registro</button>
-	<button id="exportar" type="button">Exportar dados</button>
-       	     <a href="registros.html">Registros</a><br><br>
-	    <a href="configuracao.html">Config.</a>
+        <button id="exportar" type="button">Exportar dados</button>
+        <a href="registros.html">Registros</a>
+        <a href="configuracao.html">Config.</a>
     </form>
 
-    <script src="script.js"></script> <!-- Referência para o seu JavaScript -->
+    <script src="script.js"></script>
 </body>
 </html>
