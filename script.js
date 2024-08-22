@@ -81,6 +81,8 @@ function exportarParaCSV() {
             return;
         }
 
+        console.log("Dados para exportação:", data);
+
         var atendimentoMaisRecente = data.reduce((maisRecente, atendimento) => {
             if (atendimento.data > maisRecente.data || (atendimento.data === maisRecente.data && atendimento.hora > maisRecente.hora)) {
                 return atendimento;
