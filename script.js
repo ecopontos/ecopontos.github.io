@@ -2,14 +2,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Recupera o nome do Ecoponto salvo no localStorage
     const ecoponto = localStorage.getItem('ecoponto');
     const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
-// Verifica se o Ecoponto foi configurado e exibe o nome no HTML
-    if (ecoponto) {
-        nomeEcopontoDisplay.textContent = ecoponto;
-    } else {
-        nomeEcopontoDisplay.textContent = 'Ecoponto não configurado';
+
+    // Verifica se o Ecoponto foi configurado e exibe o nome no HTML
+    if (nomeEcopontoDisplay) {
+        if (ecoponto) {
+            nomeEcopontoDisplay.textContent = ecoponto;
+        } else {
+            nomeEcopontoDisplay.textContent = 'Ecoponto não configurado';
+        }
     }
 
-document.addEventListener('DOMContentLoaded', function() {
     const bairros = [
         "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
         "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
