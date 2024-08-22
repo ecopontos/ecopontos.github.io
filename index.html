@@ -26,6 +26,7 @@
     </style>
 </head>
 <body>
+    <img src="logotipo.png" width="100">
     <h2>Atendimento dos Ecoponto</h2>
     <p>Ecoponto: <input type="text" id="ecoponto"></p>
     <p>Placa: <input type="text" id="placa"></p>
@@ -194,37 +195,63 @@
 
             document.getElementById('adicionar').addEventListener('click', adicionarAtendimento);
 
-            function exportarParaCSV() {
-                var transaction = db.transaction(["atendimentos"], "readonly");
-                var objectStore = transaction.objectStore("atendimentos");
-                var request = objectStore.getAll();
+           function exportarParaCSV() {
+    var ecoponto = document.getElementById('ecoponto').value || 'ecoponto'; // Obtém o valor do campo ecoponto
+    var agora = new Date();
+    var dataAtual = agora.toISOString().split('T')[0]; // Data no formato YYYY-MM-DD
+    var horaAtual = agora.toTimeString().split(' ')[0]; // Hora no formato HH:MM:SS
+    var nomeArquivo = `${ecoponto}_${dataAtual}_${horaAtual}.csv`.replace(/:/g, '-'); // Substitui os dois pontos por hífens no nome do arquivo
 
-                request.onsuccess = function(event) {
-                    var atendimentos = event.target.result;
-                    if (atendimentos.length === 0) {
-                        alert("Nenhum atendimento encontrado para exportar.");
-                        return;
-                    }
+    var transaction = db.transaction(["atendimentos"], "readonly");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.getAll();
 
-                    var csvContent = "data:text/csv;charset=utf-8,";
-                    csvContent += "ID,Ecoponto,Placa,Data,Hora,Bairro,Resíduos,HoraRegistro\n";
+    request.onsuccess = function(event) {
+        var atendimentos = event.target.result;
+        if (atendimentos.length === 0) {
+            alert("Nenhum atendimento encontrado para exportar.");
+            return;
+        }
 
-                    atendimentos.forEach(atendimento => {
-                        csvContent += `${atendimento.id},${atendimento.ecoponto},${atendimento.placa},${atendimento.data},${atendimento.hora},${atendimento.bairro},${atendimento.residuos},${atendimento.horaRegistro}\n`;
-                    });
+        // Constrói o conteúdo do CSV
+        var csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "ID,Ecoponto,Placa,Data,Hora,Bairro,Resíduos,HoraRegistro\n";
 
-                    var encodedUri = encodeURI(csvContent);
-                    var link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", "atendimentos.csv");
-                    document.body.appendChild(link);
-                    link.click();
-                };
+        atendimentos.forEach(atendimento => {
+            csvContent += `${atendimento.id},${atendimento.ecoponto},${atendimento.placa},${atendimento.data},${atendimento.hora},${atendimento.bairro},${atendimento.residuos},${atendimento.horaRegistro}\n`;
+        });
 
-                request.onerror = function(event) {
-                    console.error("Erro ao recuperar atendimentos:", event.target.error);
-                };
-            }
+        // Cria o link para download
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", nomeArquivo);
+        document.body.appendChild(link);
+        link.click();
+
+        // Limpa o banco de dados
+        limparBancoDeDados();
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao recuperar atendimentos:", event.target.error);
+    };
+}
+
+function limparBancoDeDados() {
+    var transaction = db.transaction(["atendimentos"], "readwrite");
+    var objectStore = transaction.objectStore("atendimentos");
+    var request = objectStore.clear(); // Limpa todos os registros do object store
+
+    request.onsuccess = function(event) {
+        console.log("Banco de dados limpo com sucesso.");
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao limpar o banco de dados:", event.target.error);
+    };
+}
+
 
             document.getElementById('exportar').addEventListener('click', exportarParaCSV);
 
