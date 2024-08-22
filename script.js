@@ -1,3 +1,58 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para criar e adicionar os checkboxes dos resíduos
+    function criarCheckBoxesResiduos() {
+        const residuos = [
+            "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
+            "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
+            "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
+            "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
+            "Sucata/Metal", "Vidros", "Volumosos"
+        ];
+
+        const container = document.getElementById('residuos-container');
+
+        residuos.forEach(residuo => {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = residuo.toLowerCase().replace(/ /g, '_');
+            checkbox.name = 'tipo_residuo';
+            checkbox.value = residuo;
+
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = residuo;
+
+            container.appendChild(checkbox);
+            container.appendChild(label);
+            container.appendChild(document.createElement('br'));
+        });
+    }
+
+    // Função para salvar a seleção dos resíduos
+    function salvarSelecaoResiduos() {
+        const selecionados = [];
+        document.querySelectorAll('#residuos-container input[type="checkbox"]:checked').forEach(checkbox => {
+            selecionados.push(checkbox.value);
+        });
+
+        // Aqui você pode fazer o que desejar com os resíduos selecionados
+        // Por exemplo, armazená-los em um cookie, localStorage, ou incluir no CSV
+        console.log(selecionados);
+    }
+
+    // Cria os checkboxes quando o DOM estiver pronto
+    criarCheckBoxesResiduos();
+
+    // Adiciona event listener ao botão de enviar
+    document.getElementById('adicionar').addEventListener('click', salvarSelecaoResiduos);
+
+    // Adiciona event listener para exportar dados
+    document.getElementById('exportar').addEventListener('click', function() {
+        // Aqui você pode chamar uma função para exportar os dados em CSV
+    });
+});
+
+
 var db;
 
 function inicializarBancoDeDados() {
