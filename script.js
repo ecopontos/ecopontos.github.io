@@ -1,32 +1,34 @@
-document.addEventListener('DOMContentLoaded', function() {
-    function criarCheckBoxesResiduos() {
-        const residuos = [
-            "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
-            "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
-            "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
-            "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
-            "Sucata/Metal", "Vidros", "Volumosos"
-        ];
+// Função para criar e adicionar os checkboxes dos resíduos
+function criarCheckBoxesResiduos() {
+    const residuos = [
+        "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
+        "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
+        "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
+        "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
+        "Sucata/Metal", "Vidros", "Volumosos"
+    ];
 
-        const container = document.getElementById('residuos-container');
+    const container = document.getElementById('residuos-container');
 
-        residuos.forEach(residuo => {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = residuo.toLowerCase().replace(/ /g, '_');
-            checkbox.name = 'residuo';
-            checkbox.value = residuo;
+    residuos.forEach(residuo => {
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'checkbox-container';
 
-            const label = document.createElement('label');
-            label.htmlFor = checkbox.id;
-            label.textContent = residuo;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = residuo.toLowerCase().replace(/ /g, '_');
+        checkbox.name = 'tipo_residuo';
+        checkbox.value = residuo;
 
-            container.appendChild(checkbox);
-            container.appendChild(label);
-            container.appendChild(document.createElement('br'));
-        });
-    }
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = residuo;
 
+        checkboxContainer.appendChild(checkbox);
+        checkboxContainer.appendChild(label);
+        container.appendChild(checkboxContainer);
+    });
+}
     function salvarSelecaoResiduos() {
         const selecionados = [];
         document.querySelectorAll('#residuos-container input[type="checkbox"]:checked').forEach(checkbox => {
