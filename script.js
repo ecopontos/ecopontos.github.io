@@ -12,6 +12,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    const ecopontos = {
+    1: "PEV ITACORUBI",
+    2: "PEV CAPOEIRAS",
+    3: "PEV MORRO DAS PEDRAS",
+    4: "PEV MONTE CRISTO (ARESP)",
+    5: "PEV CANASVIEIRAS",
+    6: "PEV RIO VERMELHO",
+    7: "PEV INGLESES",
+    8: "PEV COSTEIRA",
+    9: "PEV COLONINHA"
+};
+
+function getNomeEcoponto(id) {
+    return ecopontos[id] || 'Ecoponto Desconhecido';
+}
+
     const bairros = [
         "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
         "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
@@ -146,26 +162,28 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 
-    function exportarDadosCSV() {
-        const ecoponto = document.getElementById('ecoponto').value;
-        const placa = document.getElementById('placa').value;
-        const data = document.getElementById('data').value;
-        const hora = document.getElementById('hora').value;
-        const bairro = document.getElementById('bairro').value;
+   function exportarDadosCSV() {
+    const ecopontoId = document.getElementById('ecoponto').value; // ID selecionado
+    const ecopontoNome = getNomeEcoponto(ecopontoId); // Obtém o nome do Ecoponto
 
-        const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
-                                          .map(item => item.dataset.residuo);
+    const placa = document.getElementById('placa').value;
+    const data = document.getElementById('data').value;
+    const hora = document.getElementById('hora').value;
+    const bairro = document.getElementById('bairro').value;
 
-        const csvContent = [
-            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
-            [ecoponto, placa, data, hora, bairro, residuosSelecionados.join(';'), new Date().toLocaleTimeString()]
-        ].map(e => e.join(',')).join('\n');
+    const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
+                                      .map(item => item.dataset.residuo);
 
-        const link = document.createElement('a');
-        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-        link.download = 'dados_ecoponto.csv';
-        link.click();
-    }
+    const csvContent = [
+        ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
+        [ecopontoNome, placa, data, hora, bairro, residuosSelecionados.join(';'), new Date().toLocaleTimeString()]
+    ].map(e => e.join(',')).join('\n');
+
+    const link = document.createElement('a');
+    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+    link.download = 'dados_ecoponto.csv';
+    link.click();
+}
 
     // Inicializar componentes
     preencherListaDeBairros();
