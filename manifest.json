@@ -1,7 +1,8 @@
 {
-  "name": "Atedimentos em Ecopontos",
+  "name": "Atendimentos em Ecopontos",
   "short_name": "Ecopontos",
-  "description": "Um aplicativo para registrar atendimentos de ecoponto a fim de relatório",
+  "version": "1.0.0", // Atualize conforme necessário
+  "description": "Um aplicativo para registrar atendimentos de ecoponto a fim de relatório.",
   "icons": [
     {
       "src": "/icon.png",
@@ -15,12 +16,12 @@
     }
   ],
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone", // Considere usar "standalone" para uma aparência mais nativa
   "background_color": "#ffffff",
   "theme_color": "#006b97",
   "id": "ecopontopmf",
   "dir": "auto",
-  "lang": "pt",
+  "lang": "pt-BR", // Atualizado para "pt-BR" para especificar a variante do português
   "orientation": "portrait",
   "scope": "/"
 }
