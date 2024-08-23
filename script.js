@@ -108,6 +108,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('hora').value = horaAtual;
 }
 
+    // Chama a função atualizarDataHora imediatamente para definir a data e a hora inicial
+atualizarDataHora();
+
+// Configura o intervalo para atualizar a data e a hora a cada minuto (60.000 milissegundos)
+setInterval(atualizarDataHora, 60 * 1000);
+
 
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
