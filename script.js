@@ -153,7 +153,14 @@ function exportarDadosCSV() {
 
     request.onsuccess = function(event) {
         const registros = event.target.result;
-        
+
+        // Encontra o registro com a maior Hora Registro
+        const registroMaisRecente = registros.reduce((max, registro) => 
+            max.horaRegistro > registro.horaRegistro ? max : registro, registros[0]);
+
+        // Cria o nome do arquivo dinâmico
+        const nomeArquivo = `dados_${registroMaisRecente.ecoponto}_${registroMaisRecente.horaRegistro}.csv`;
+
         // Cria o conteúdo do CSV
         const csvContent = [
             ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
@@ -174,7 +181,7 @@ function exportarDadosCSV() {
         // Cria um link para download do arquivo CSV
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-        link.download = 'dados_ecoponto.csv';
+        link.download = nomeArquivo;
         link.click();
     };
 
