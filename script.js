@@ -158,8 +158,13 @@ function exportarDadosCSV() {
         const registroMaisRecente = registros.reduce((max, registro) => 
             max.horaRegistro > registro.horaRegistro ? max : registro, registros[0]);
 
+        // Obtém a data e hora atuais
+        const agora = new Date();
+        const dataAtual = agora.toLocaleDateString('pt-BR').replace(/\//g, '-'); // Formata a data
+        const horaAtual = agora.toLocaleTimeString('pt-BR').replace(/:/g, '-'); // Formata a hora
+
         // Cria o nome do arquivo dinâmico
-        const nomeArquivo = `dados_${registroMaisRecente.ecoponto}_${registroMaisRecente.horaRegistro}.csv`;
+        const nomeArquivo = `dados_${registroMaisRecente.ecoponto}_${registroMaisRecente.horaRegistro}_${dataAtual}_${horaAtual}.csv`;
 
         // Cria o conteúdo do CSV
         const csvContent = [
@@ -189,6 +194,7 @@ function exportarDadosCSV() {
         console.error("Erro ao ler dados da IndexedDB:", event.target.error);
     };
 }
+
 
     // Inicializar componentes
     preencherListaDeBairros();
