@@ -49,7 +49,19 @@
 <br><br>
     <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
 
- <script src="script.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => {
+          console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch((error) => {
+          console.error('Erro ao registrar o Service Worker:', error);
+        });
+    }
+  });
+</script>
 
 </body>
 </html>
