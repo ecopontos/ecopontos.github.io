@@ -146,30 +146,38 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 
-  function exportarDadosCSV() {
-    // Captura o número do Ecoponto do elemento nome-ecoponto-display
-    const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
-    const ecoponto = nomeEcopontoDisplay.textContent.trim(); // Obtém o número do Ecoponto
+ function exportarDadosCSV() {
+    const transaction = db.transaction(["atendimentos"], "readonly");
+    const objectStore = transaction.objectStore("atendimentos");
+    const request = objectStore.getAll(); // Obtenha todos os registros
 
-    const placa = document.getElementById('placa').value;
-    const data = document.getElementById('data').value;
-    const hora = document.getElementById('hora').value;
-    const bairro = document.getElementById('bairro').value;
+    request.onsuccess = function(event) {
+        const registros = event.target.result;
+        
+        // Cria o conteúdo do CSV
+        const csvContent = [
+            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
+            ...registros.map(registro => [
+                registro.ecoponto,
+                registro.placa,
+                registro.data,
+                registro.hora,
+                registro.bairro,
+                registro.residuos,
+                registro.horaRegistro
+            ])
+        ].map(e => e.join(',')).join('\n');
 
-    const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
-                                      .map(item => item.dataset.residuo);
+        const link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        link.download = 'dados_ecoponto.csv';
+        link.click();
+    };
 
-    const csvContent = [
-        ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
-        [ecoponto, placa, data, hora, bairro, residuosSelecionados.join(';'), new Date().toLocaleTimeString()]
-    ].map(e => e.join(',')).join('\n');
-
-    const link = document.createElement('a');
-    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-    link.download = 'dados_ecoponto.csv';
-    link.click();
+    request.onerror = function(event) {
+        console.error("Erro ao ler dados da IndexedDB:", event.target.error);
+    };
 }
-
 
     // Inicializar componentes
     preencherListaDeBairros();
