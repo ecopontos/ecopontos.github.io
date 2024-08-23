@@ -163,8 +163,8 @@ function exportarDadosCSV() {
                 registro.data,
                 registro.hora,
                 registro.bairro,
-                // Use o caractere pipe para separar múltiplos resíduos e envolva em aspas
-                `"${registro.residuos.split(';').join('|')}"`,
+                // Separe múltiplos resíduos por vírgula e adicione aspas para encapsular
+                `"${registro.residuos.split(';').join(',')}"`,
                 registro.horaRegistro
             ])
         ]
