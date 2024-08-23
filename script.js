@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 
- function exportarDadosCSV() {
+function exportarDadosCSV() {
     const transaction = db.transaction(["atendimentos"], "readonly");
     const objectStore = transaction.objectStore("atendimentos");
     const request = objectStore.getAll(); // Obtenha todos os registros
@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 registro.data,
                 registro.hora,
                 registro.bairro,
-                // Envolva o campo de resíduos em aspas para lidar com possíveis vírgulas
-                `"${registro.residuos}"`,
+                // Use o caractere pipe para separar múltiplos resíduos e envolva em aspas
+                `"${registro.residuos.split(';').join('|')}"`,
                 registro.horaRegistro
             ])
         ]
@@ -182,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Erro ao ler dados da IndexedDB:", event.target.error);
     };
 }
-
 
     // Inicializar componentes
     preencherListaDeBairros();
