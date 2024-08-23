@@ -90,10 +90,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function atualizarDataHora() {
-        const agora = new Date();
-        document.getElementById('data').value = agora.toLocaleDateString('pt-BR');
-        document.getElementById('hora').value = agora.toLocaleTimeString('pt-BR');
-    }
+    const agora = new Date();
+    
+    // Formata a data e a hora
+    const dataAtual = agora.toLocaleDateString('pt-BR');
+    const horaAtual = agora.toLocaleTimeString('pt-BR');
+
+    // Atualiza os campos de data e hora no formulário
+    document.getElementById('data').value = dataAtual;
+    document.getElementById('hora').value = horaAtual;
+}
 
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
