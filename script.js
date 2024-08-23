@@ -89,17 +89,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function atualizarDataHora() {
+   function atualizarDataHora() {
     const agora = new Date();
     
-    // Formata a data e a hora
-    const dataAtual = agora.toLocaleDateString('pt-BR');
-    const horaAtual = agora.toLocaleTimeString('pt-BR');
+    // Formata a data no formato YYYY-MM-DD
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0'); // Mês começa em 0
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const dataAtual = `${ano}-${mes}-${dia}`;
+
+    // Formata a hora no formato HH:MM
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutos = String(agora.getMinutes()).padStart(2, '0');
+    const horaAtual = `${horas}:${minutos}`;
 
     // Atualiza os campos de data e hora no formulário
     document.getElementById('data').value = dataAtual;
     document.getElementById('hora').value = horaAtual;
 }
+
 
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
