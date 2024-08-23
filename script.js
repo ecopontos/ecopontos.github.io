@@ -163,11 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 registro.data,
                 registro.hora,
                 registro.bairro,
-                registro.residuos,
+                // Envolva o campo de resíduos em aspas para lidar com possíveis vírgulas
+                `"${registro.residuos}"`,
                 registro.horaRegistro
             ])
-        ].map(e => e.join(',')).join('\n');
+        ]
+        .map(e => e.join(',')) // Junte cada linha usando vírgula
+        .join('\n'); // Junte todas as linhas com nova linha
 
+        // Cria um link para download do arquivo CSV
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
         link.download = 'dados_ecoponto.csv';
@@ -178,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Erro ao ler dados da IndexedDB:", event.target.error);
     };
 }
+
 
     // Inicializar componentes
     preencherListaDeBairros();
