@@ -8,11 +8,15 @@ const CACHE = "ecopontos";
 const URLsToCache = [
     '/',
     '/index.html',
-    '/styles.css',
+    '/configuracao.html',
+    '/registros.html',
     '/script.js',
+    '/registros.js',
+    '/notificacoes.js',
     '/configuracao.js',
     '/logotipo.png',
-    '/configuracao.html',
+    '/offline.html',
+    
     // Adicione outros recursos que deseja armazenar em cache
 ];
 
@@ -27,11 +31,13 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE)
-      .then((cache) => cache.add(offlineFallbackPage))
-      .catch((error) => {
-        console.error('Falha ao adicionar ao cache durante a instalação:', error);
-      })
+    caches.open(CACHE).then((cache) => {
+      return cache.addAll(URLsToCache)
+        .then(() => self.skipWaiting())
+        .catch((error) => {
+          console.error('Falha ao adicionar ao cache durante a instalação:', error);
+        });
+    })
   );
 });
 
@@ -56,6 +62,23 @@ self.addEventListener('fetch', (event) => {
         const cache = await caches.open(CACHE);
         const cachedResp = await cache.match(offlineFallbackPage);
         return cachedResp;
+      }
+    })());
+  } else {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const cachedResp = await cache.match(event.request);
+      if (cachedResp) {
+        return cachedResp;
+      }
+
+      try {
+        const networkResp = await fetch(event.request);
+        cache.put(event.request, networkResp.clone());
+        return networkResp;
+      } catch (error) {
+        console.error('Erro ao buscar:', error);
+        return new Response('Recurso não disponível offline.');
       }
     })());
   }
