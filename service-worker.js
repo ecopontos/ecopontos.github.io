@@ -2,7 +2,7 @@
 
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-const CACHE_NAME = "ecopontos-v1"; // Inclua a versão do cache aqui
+const CACHE_NAME = "ecopontos-v2"; // Inclua a versão do cache aqui
 
 const URLs_TO_CACHE = [
     '/',
