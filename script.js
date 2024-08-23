@@ -168,13 +168,29 @@ setInterval(atualizarDataHora, 60 * 1000);
         };
     }
 
-    function exportarDadosCSV() {
+     //Exporta dados em CSV
+function exportarDadosCSV() {
     const transaction = db.transaction(["atendimentos"], "readonly");
     const objectStore = transaction.objectStore("atendimentos");
     const request = objectStore.getAll();
 
     request.onsuccess = function(event) {
         const registros = event.target.result;
+
+        if (registros.length === 0) {
+            console.warn("Nenhum registro encontrado.");
+            return;
+        }
+
+        // Encontra o ecoponto e o registro com a data e hora máxima
+        const ecoponto = registros[0].ecoponto; // Supondo que todos os registros tenham o mesmo ecoponto
+        const maxRegistro = registros.reduce((max, registro) => {
+            const registroDateTime = new Date(`${registro.data} ${registro.hora}`);
+            const maxDateTime = new Date(`${max.data} ${max.hora}`);
+            return registroDateTime > maxDateTime ? registro : max;
+        });
+
+        const maxDataHora = `${maxRegistro.data.replace(/-/g, '')}_${maxRegistro.hora.replace(/:/g, '')}`;
 
         // Cria o conteúdo do CSV
         const csvContent = [
@@ -195,7 +211,7 @@ setInterval(atualizarDataHora, 60 * 1000);
         // Cria um link para download do arquivo CSV
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-        link.download = 'dados_exportados.csv';
+        link.download = `${ecoponto}_${maxDataHora}.csv`;
         link.click();
 
         // Limpa o banco de dados após a exportação
@@ -216,6 +232,7 @@ setInterval(atualizarDataHora, 60 * 1000);
         console.error("Erro ao ler dados da IndexedDB:", event.target.error);
     };
 }
+
 
     // Inicializa componentes e configurações
     preencherListaDeBairros();
