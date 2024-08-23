@@ -188,12 +188,26 @@ function exportarDadosCSV() {
         link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
         link.download = nomeArquivo;
         link.click();
+
+        // Limpa o banco de dados após a exportação
+        const deleteTransaction = db.transaction(["atendimentos"], "readwrite");
+        const deleteObjectStore = deleteTransaction.objectStore("atendimentos");
+        const clearRequest = deleteObjectStore.clear();
+
+        clearRequest.onsuccess = function(event) {
+            console.log("Banco de dados limpo com sucesso.");
+        };
+
+        clearRequest.onerror = function(event) {
+            console.error("Erro ao limpar o banco de dados:", event.target.error);
+        };
     };
 
     request.onerror = function(event) {
         console.error("Erro ao ler dados da IndexedDB:", event.target.error);
     };
 }
+
 
 
     // Inicializar componentes
