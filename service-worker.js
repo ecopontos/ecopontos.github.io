@@ -41,7 +41,7 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
@@ -51,40 +51,40 @@ if (workbox.navigationPreload.isSupported()) {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.mode === 'navigate') {
-        event.respondWith((async () => {
-            try {
-                const preloadResp = await event.preloadResponse;
-                if (preloadResp) {
-                    return preloadResp;
+        event.respondWith(
+            (async () => {
+                try {
+                    // Tenta usar a resposta de pré-carregamento
+                    const preloadResp = await event.preloadResponse;
+                    if (preloadResp) {
+                        return preloadResp;
+                    }
+
+                    // Tenta buscar da rede
+                    const networkResp = await fetch(event.request);
+                    return networkResp;
+                } catch (error) {
+                    console.error('Erro ao buscar:', error);
+
+                    // Fallback para cache offline
+                    const cache = await caches.open(CACHE_NAME);
+                    return await cache.match('/offline.html');
                 }
-
-                const networkResp = await fetch(event.request);
-                return networkResp;
-            } catch (error) {
-                console.error('Erro ao buscar:', error);
-
-                const cache = await caches.open(CACHE_NAME);
-                const cachedResp = await cache.match('/offline.html');
-                return cachedResp;
-            }
-        })());
+            })()
+        );
     } else {
-        event.respondWith((async () => {
-            const cache = await caches.open(CACHE_NAME);
-            const cachedResp = await cache.match(event.request);
-            if (cachedResp) {
-                return cachedResp;
-            }
-
-            try {
-                const networkResp = await fetch(event.request);
-                cache.put(event.request, networkResp.clone());
-                return networkResp;
-            } catch (error) {
-                console.error('Erro ao buscar:', error);
-                return new Response('Recurso não disponível offline.');
-            }
-        })());
+        event.respondWith(
+            caches.match(event.request).then((response) => {
+                return response || fetch(event.request).then((networkResponse) => {
+                    return caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                });
+            }).catch(() => {
+                return caches.match('/offline.html');
+            })
+        );
     }
 });
 
