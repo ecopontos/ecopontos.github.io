@@ -163,66 +163,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function exportarDadosCSV() {
-        const transaction = db.transaction(["atendimentos"], "readonly");
-        const objectStore = transaction.objectStore("atendimentos");
-        const request = objectStore.getAll(); // Obtenha todos os registros
+    const transaction = db.transaction(["atendimentos"], "readonly");
+    const objectStore = transaction.objectStore("atendimentos");
+    const request = objectStore.getAll();
 
-        request.onsuccess = function(event) {
-            const registros = event.target.result;
+    request.onsuccess = function(event) {
+        const registros = event.target.result;
 
-            // Encontra o registro com a maior Hora Registro
-            const registroMaisRecente = registros.reduce((max, registro) => 
-                max.horaRegistro > registro.horaRegistro ? max : registro, registros[0]);
+        // Cria o conteúdo do CSV
+        const csvContent = [
+            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
+            ...registros.map(registro => [
+                registro.ecoponto,
+                registro.placa,
+                registro.data,
+                registro.hora,
+                registro.bairro,
+                `"${registro.residuos.split(';').join(',')}"`,
+                registro.horaRegistro
+            ])
+        ]
+        .map(e => e.join(','))
+        .join('\n');
 
-            // Obtém a data e hora atuais
-            const agora = new Date();
-            const dataAtual = agora.toLocaleDateString('pt-BR').replace(/\//g, '-'); // Formata a data
-            const horaAtual = agora.toLocaleTimeString('pt-BR').replace(/:/g, '-'); // Formata a hora
+        // Cria um link para download do arquivo CSV
+        const link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        link.download = 'dados_exportados.csv';
+        link.click();
 
-            // Cria o nome do arquivo dinâmico
-            const nomeArquivo = `dados_${registroMaisRecente.ecoponto}_${registroMaisRecente.horaRegistro}_${dataAtual}_${horaAtual}.csv`;
+        // Limpa o banco de dados após a exportação
+        const deleteTransaction = db.transaction(["atendimentos"], "readwrite");
+        const deleteObjectStore = deleteTransaction.objectStore("atendimentos");
+        const clearRequest = deleteObjectStore.clear();
 
-            // Cria o conteúdo do CSV
-            const csvContent = [
-                ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
-                ...registros.map(registro => [
-                    registro.ecoponto,
-                    registro.placa,
-                    registro.data,
-                    registro.hora,
-                    registro.bairro,
-                    // Separe múltiplos resíduos por vírgula e adicione aspas para encapsular
-                    `"${registro.residuos.split(';').join(',')}"`,
-                    registro.horaRegistro
-                ])
-            ]
-            .map(e => e.join(',')) // Junte cada linha usando vírgula
-            .join('\n'); // Junte todas as linhas com nova linha
-
-            // Cria um link para download do arquivo CSV
-            const link = document.createElement('a');
-            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-            link.download = nomeArquivo;
-            link.click();
-
-            // Limpa o banco de dados após a exportação
-            const deleteTransaction = db.transaction(["atendimentos"], "readwrite");
-            const deleteObjectStore = deleteTransaction.objectStore("atendimentos");
-            const clearRequest = deleteObjectStore.clear();
-
-            clearRequest.onsuccess = function(event) {
-                console.log("Banco de dados limpo com sucesso.");
-            };
-
-            clearRequest.onerror = function(event) {
-                console.error("Erro ao limpar o banco de dados:", event.target.error);
-            };
+        clearRequest.onsuccess = function(event) {
+            console.log("Banco de dados limpo com sucesso.");
         };
 
-        request.onerror = function(event) {
-            console.error("Erro ao ler dados da IndexedDB:", event.target.error);
+        clearRequest.onerror = function(event) {
+            console.error("Erro ao limpar o banco de dados:", event.target.error);
         };
-    }
+    };
+
+    request.onerror = function(event) {
+        console.error("Erro ao ler dados da IndexedDB:", event.target.error);
+    };
+}
 
     // Inicializa componentes e configurações
     preencherListaDeBairros();
