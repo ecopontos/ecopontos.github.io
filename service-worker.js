@@ -22,9 +22,14 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(URLs_TO_CACHE)
-                .then(() => self.skipWaiting())
+                .then(() => {
+                    // Indica que o service worker pode pular o estado de espera
+                    self.skipWaiting();
+                    console.log('Todos os recursos foram adicionados ao cache com sucesso.');
+                })
                 .catch((error) => {
-                    console.error('Falha ao adicionar ao cache durante a instalação:', error);
+                    // Loga um erro caso ocorra algum problema ao adicionar recursos ao cache
+                    console.error('Falha ao adicionar ao cache:', error);
                 });
         })
     );
@@ -51,28 +56,25 @@ if (workbox.navigationPreload.isSupported()) {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.mode === 'navigate') {
+        // Se for uma navegação, tenta buscar da rede, mas faz fallback para a página offline
         event.respondWith(
-            (async () => {
-                try {
-                    // Tenta usar a resposta de pré-carregamento
-                    const preloadResp = await event.preloadResponse;
-                    if (preloadResp) {
-                        return preloadResp;
-                    }
-
-                    // Tenta buscar da rede
-                    const networkResp = await fetch(event.request);
-                    return networkResp;
-                } catch (error) {
-                    console.error('Erro ao buscar:', error);
-
-                    // Fallback para cache offline
-                    const cache = await caches.open(CACHE_NAME);
-                    return await cache.match('/offline.html');
+            caches.match(event.request).then((response) => {
+                if (response) {
+                    return response; // Retorna do cache se estiver disponível
                 }
-            })()
+                return fetch(event.request).then((networkResponse) => {
+                    return caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                }).catch(() => {
+                    // Se a rede falhar, retorna uma página offline
+                    return caches.match('/offline.html');
+                });
+            })
         );
     } else {
+        // Para outros pedidos, tenta a rede primeiro e depois o cache
         event.respondWith(
             caches.match(event.request).then((response) => {
                 return response || fetch(event.request).then((networkResponse) => {
@@ -80,9 +82,10 @@ self.addEventListener('fetch', (event) => {
                         cache.put(event.request, networkResponse.clone());
                         return networkResponse;
                     });
+                }).catch(() => {
+                    // Fallback para a página offline caso não haja resposta
+                    return caches.match('/offline.html');
                 });
-            }).catch(() => {
-                return caches.match('/offline.html');
             })
         );
     }
