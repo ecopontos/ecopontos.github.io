@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimentos de Ecoponto no pc</title>
+    <style>
+        /* Estilos para o logotipo */
+        .logo {
+            max-width: 250px; /* Define a largura máxima do logotipo */
+            height: auto; /* Mantém a proporção da altura */
+        }
+
+        .residuo-item {
+            display: inline-block;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .selecionado {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+
+        h2.textstyle {
+    font-family: tahoma
+}
+        p.textstyle {
+    font-family: tahoma
+}
+    </style>
+</head>
+<body>
+    <img src="logotipo.png" width="250">
+    <h2>Atendimento do Ecoponto <span id="nome-ecoponto-display"></span></h2>
+   <p>Placa: <input type="text" id="placa" onkeyup="this.value = this.value.toUpperCase();"></p>
+    <p>Data: <input type="date" id="data"></p>
+    <p>Hora: <input type="time" id="hora"></p>
+    <div>
+        <label for="bairro">Bairro:</label>
+        <select id="bairro">
+            <!-- As opções de bairros serão adicionadas aqui pelo JavaScript -->
+        </select>
+    </div>
+
+    <div id="residuos-container">
+        <!-- Resíduos serão adicionados aqui pelo JavaScript -->
+    </div>
+
+    <button id="adicionar">Adicionar Atendimento</button>
+    <button id="exportar">Exportar Dados CSV</button>
+<br><br>
+    <a href="https://ecopontos.github.io/registros.html">Registros atuais</a>
+<br><br>
+    <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
+
+<script src="scriptpc.js"></script>
+
+</body>
+</html>
