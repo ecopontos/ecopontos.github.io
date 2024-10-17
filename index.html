@@ -1,653 +1,75 @@
-<!DOCTYPE HTML>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tour</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-    
-    <link href="https://vjs.zencdn.net/7.1.0/video-js.css" rel="stylesheet" type="text/css">
-    <script src="https://vjs.zencdn.net/7.1.0/video.js"></script>
-    <script src="http://localhost/visita/js/videojs-pannellum-plugin.js"></script>
-
+    <title>Atendimentos de Ecoponto Index</title>
+    <link rel="manifest" href="/manifest.json">
     <style>
-        #panorama {
-            width: 100%;
-            height: 300px; /* Ajusta para tela cheia */
+        /* Estilos para o logotipo */
+        .logo {
+            max-width: 250px; /* Define a largura máxima do logotipo */
+            height: auto; /* Mantém a proporção da altura */
         }
+
+        .residuo-item {
+            display: inline-block;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .selecionado {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+
+        h2.textstyle {
+    font-family: tahoma
+}
+        p.textstyle {
+    font-family: tahoma
+}
     </style>
 </head>
 <body>
+    <img src="logotipo.png" width="250">
+    <h2>Atendimento do Ecoponto <span id="nome-ecoponto-display"></span></h2>
+   <p>Placa: <input type="text" id="placa" onkeyup="this.value = this.value.toUpperCase();"></p>
+    <p>Data: <input type="date" id="data"></p>
+    <p>Hora: <input type="time" id="hora"></p>
+    <div>
+        <label for="bairro">Bairro:</label>
+        <select id="bairro">
+            <!-- As opções de bairros serão adicionadas aqui pelo JavaScript -->
+        </select>
+    </div>
 
-<div id="panorama"></div>
+    <div id="residuos-container">
+        <!-- Resíduos serão adicionados aqui pelo JavaScript -->
+    </div>
 
+    <button id="adicionar">Adicionar Atendimento</button>
+    <button id="exportar">Exportar Dados CSV</button>
+<br><br>
+    <a href="https://ecopontos.github.io/registros.html">Registros atuais</a>
+<br><br>
+    <a href="https://ecopontos.github.io/configuracao.html">Configuração</a>
+
+<script src="script.js"></script>
+    
 <script>
-pannellum.viewer('panorama', {   
-    "default": {
-        "firstScene": "pano1",
-        "author": "SMMADS",
-        "sceneFadeDuration": 1000,
-        "autoLoad": true,
-        "hotSpotDebug": true,  
-        "autoRotate": -5
-    },
-    "scenes": {
-        "pano1": {
-            "title": "Pátio do CVR",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 117,
-            "type": "equirectangular",
-            "panorama": "pano1.jpg",
-            "hotSpots": [
-                 {
-                    "pitch": -1,
-                    "yaw": 17,
-                    "type": "scene",
-                    "text": "Ecoponto",
-                    "sceneId": "pano10"
-                },
-				 
-				 {
-                    "pitch": -0.31,
-                    "yaw": 48.763,
-                    "type": "scene",
-                    "text": "Museu do Lixo",
-                    "sceneId": "mu1"
-                },
-				{
-                    "pitch": -0.061,
-                    "yaw": 135.489,
-                    "type": "scene",
-                    "text": "Horta Mágica",
-                    "sceneId": "pano8"
-                },
-                {
-                    "pitch": -0.238,
-                    "yaw": -148.811,
-                    "type": "scene",
-                    "text": "ATT",
-                    "sceneId": "pano2"
-                },
-                {
-                    "pitch": 1.177,
-                    "yaw": -167.807,
-                    "type": "scene",
-                    "text": "Casa do Lixo Feio",
-                    "sceneId": "pano6"
-                },
-                {
-                    "pitch": -0.232,
-                    "yaw": -146.084,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                },
-                {
-                    "pitch": -0.148,
-                    "yaw": -170.941,
-                    "type": "scene",
-                    "text": "Casa do Lixo Bonito",
-                    "sceneId": "pano7"
-                }
-            ]
-        },
-        "pano2": {
-            "title": "Pátio da ATT",
-            "hfov": 110,
-            "yaw": -94.013,
-            "type": "equirectangular",
-            "panorama": "pano2.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -5.95,
-                    "yaw": -16.478,
-                    "type": "scene",
-                    "text": "Triturador de Madeira",
-                    "sceneId": "pano4"
-                },
-                {
-                    "pitch": -1.571,
-                    "yaw": -154.327,
-                    "type": "scene",
-                    "text": "Triturador de Podas",
-                    "sceneId": "pano3"
-                },
-                {
-                    "pitch": -1.395,
-                    "yaw": 118.972,
-                    "type": "scene",
-                    "text": "Pátio do CRV",
-                    "sceneId": "pano1"
-                },
-                {
-                    "pitch": 1.720,
-                    "yaw": 141.312,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                }
-            ]
-        },
-        "pano3": {
-            "title": "Triturador de Podas",
-            "hfov": 110,
-            "yaw": -163,
-            "type": "equirectangular",
-            "panorama": "pano3.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -1,
-                    "yaw": 26,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1" 
-                },
-                {
-                    "pitch": -2.371,
-                    "yaw": -29.334,
-                    "type": "scene",
-                    "text": "Pátio da ATT",
-                    "sceneId": "pano2"
-                },
-                {
-                    "pitch": 0.171,
-                    "yaw": -40.227,
-                    "type": "scene",
-                    "text": "Triturador de Madeira",
-                    "sceneId": "pano4"
-                },
-                {
-                    "pitch": 1.178,
-                    "yaw": 65.993,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                }
-            ]
-        },
-        "pano4": {
-            "title": "Triturador de Madeira",
-            "hfov": 110,
-            "yaw": -145,
-            "type": "equirectangular",
-            "panorama": "pano4.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -1.788,
-                    "yaw": 49.173,
-                    "type": "scene",
-                    "text": "Pátio da ATT",
-                    "sceneId": "pano3"
-                },
-                {
-                    "pitch": 2.845,
-                    "yaw": 13.985,
-                    "type": "scene",
-                    "text": "Triturador de Podas",
-                    "sceneId": "pano3"
-                },
-                {
-                    "pitch": 3.371,
-                    "yaw": -22.334,
-                    "type": "scene",
-                    "text": "Pátio do CRV",
-                    "sceneId": "pano1"
-                },
-                {
-                    "pitch": 4.755,
-                    "yaw": -11.407,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                }
-            ]
-        },
-        "pano5.1": {
-            "title": "Pátio de Compostagem",
-            "hfov": 110,
-            "yaw": 5,
-            "type": "equirectangular",
-            "panorama": "pano5.1.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -4.610,
-                    "yaw": -106.079,
-                    "type": "scene",
-                    "text": "Pátio da ATT",
-                    "sceneId": "pano2"
-                },
-                {
-                    "pitch": -4.808,
-                    "yaw": -104.126,
-                    "type": "scene",
-                    "text": "Pátio do CRV",
-                    "sceneId": "pano1"
-                },
-                {
-                    "pitch": 2.657,
-                    "yaw": 48.135,
-                    "type": "scene",
-                    "text": "Depósito de Composto",
-                    "sceneId": "pano5"
-                }
-            ]
-        },
-        "pano5": {
-            "title": "Depósito de Composto",
-            "hfov": 110,
-            "yaw": 170,
-            "type": "equirectangular",
-            "panorama": "pano5.jpg",
-            "hotSpots": [
-                {
-                    "pitch": 3.234,
-                    "yaw": -128.460,
-                    "type": "scene",
-                    "text": "Casa do Lixo feio",
-                    "sceneId": "pano6"
-                },
-                {
-                    "pitch": 3.291,
-                    "yaw": -133.035,
-                    "type": "scene",
-                    "text": "Casa do lixo bonito",
-                    "sceneId": "pano7"
-                },
-                {
-                    "pitch": 5.032,
-                    "yaw": 157.801,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                }
-            ]
-        },
-        "pano6": {
-            "title": "Casa do Lixo Feio",
-            "hfov": 110,
-            "yaw": -172,
-            "type": "equirectangular",
-            "panorama": "pano6.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -4.677,
-                    "yaw": 98.962,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                },
-                {
-                    "pitch": -4.300,
-                    "yaw": 93.248,
-                    "type": "scene",
-                    "text": "Depósito de Composto",
-                    "sceneId": "pano5"
-                },
-                {
-                    "pitch": -13.883,
-                    "yaw": -98.731,
-                    "type": "scene",
-                    "text": "Casa do lixo bonito",
-                    "sceneId": "pano7"
-                },
-                {
-                    "pitch": -15.037,
-                    "yaw": -116.455,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1"
-                }
-            ]
-        },
-        "pano7": {
-            "title": "Casa do Lixo Bonito",
-            "hfov": 110,
-            "yaw": -177,
-            "type": "equirectangular",
-            "panorama": "pano7.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -0.834,
-                    "yaw": 36.769,
-                    "type": "scene",
-                    "text": "Horta Mágica",
-                    "sceneId": "pano8"
-                },
-               				
-							
-				{
-                    "pitch": -3.076,
-                    "yaw": -51.172,
-                    "type": "scene",
-                    "text": "Pátio de Compostagem",
-                    "sceneId": "pano5.1"
-                },
-				
-				{
-                    "pitch": -1.768,
-                    "yaw": -57.060,
-                    "type": "scene",
-                    "text": "Casa do lixo feio",
-                    "sceneId": "pano6"
-                },
-				{
-                    "pitch": -2.830,
-                    "yaw": 9.894,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1"
-                }
-            ]
-        },
-		
-		"pano8": {
-            "title": "Horta Mágica",
-            "hfov": 110,
-            "yaw": 175,
-            "type": "equirectangular",
-            "panorama": "pano8.jpg",
-			"hotSpots": [
-			
-			{
-                    "pitch": -1.097,
-                    "yaw": -84.768,
-                    "type": "scene",
-                    "text": "Casa do lixo bonito",
-                    "sceneId": "pano7"
-                },
-               				
-							
-				{
-                    "pitch": -10.541,
-                    "yaw": 157.453,
-                    "type": "scene",
-                    "text": "Horta Mágica",
-                    "sceneId": "pano9"
-                },
-				
-				{
-                    "pitch": -2.471,
-                    "yaw": -35.489,
-                    "type": "scene",
-                    "text": "Casa do lixo feio",
-                    "sceneId": "pano6"
-                },
-				{
-                    "pitch": -10.317,
-                    "yaw": 152.951,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1"
-                }
-				
-				]
-        },
-       
-	    "pano9": {
-            "title": "Caminho da Hora Mágica",
-            "hfov": 110,
-            "yaw": -122,
-            "type": "equirectangular",
-            "panorama": "pano9.jpg",
-			"hotSpots": [
-			
-			{
-                    "pitch": -6.075,
-                    "yaw": -166.631,
-                    "type": "scene",
-                    "text": "Casa do lixo bonito",
-                    "sceneId": "pano7"
-                },
-               				
-							
-				{
-                    "pitch": -7.354,
-                    "yaw": -107.827,
-                    "type": "scene",
-                    "text": "Horta Mágica",
-                    "sceneId": "pano8"
-                },
-				
-				{
-                    "pitch": -5.681,
-                    "yaw": -168.810,
-                    "type": "scene",
-                    "text": "Casa do lixo feio",
-                    "sceneId": "pano6"
-                },
-				
-				{
-                    "pitch": -7.083,
-                    "yaw": 75.832,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1"
-                }
-				
-			]     
-	    },
-		
-		"pano10": {
-            "title": "Caminho da Hora Mágica",
-            "hfov": 110,
-            "yaw": 36,
-            "type": "equirectangular",
-            "panorama": "pano10.jpg",
-			"hotSpots": [
-			
-			{
-                    "pitch": 6,
-                    "yaw": 161.631,
-                    "type": "scene",
-                    "text": "Museu do Lixo",
-                    "sceneId": "mu1"
-                },
-               				
-							
-				{
-                    "pitch": 6,
-                    "yaw": 177,
-                    "type": "scene",
-                    "text": "Pátio do CVR",
-                    "sceneId": "pano1"
-                }
-				
-			]     
-	    },
-		
-		//MUSEU DO LIXO
-		
-		
-		"mu1": {
-            "title": "Museu",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 117,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu1.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -4.061,
-                    "yaw": -27,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu2"
-                },
-                
-            ]
-        },
-		
-		"mu2": {
-            "title": "Palco",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 185,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu2.jpg",
-             "hotSpots": [
-                {
-                    "pitch": 4.061,
-                    "yaw": -17,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu3"
-                },
-                
-            ]
-        },
-		
-		"mu3": {
-            "title": "Brinquedos",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 140,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu3.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -9,
-                    "yaw": 66,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu4"
-                },
-                
-            ]
-        },
-		
-		"mu4": {
-            "title": "Projetores",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 185,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu4.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -4,
-                    "yaw": -17,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu5"
-                },
-                
-            ]
-        },
-		   "mu5": {
-            "title": "Piano",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 185,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu5.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -12,
-                    "yaw": 79,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu6"
-                },
-                
-            ]
-        },
-		
-		"mu6": {
-            "title": "Discos",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 185,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu6.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -9,
-                    "yaw": 84,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu7"
-                },
-                
-            ]
-        },
-		
-		"mu7": {
-            "title": "Maquinas de Costura",
-            "hfov": 110,
-            "pitch": -2,
-            "yaw": -172,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu7.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -1,
-                    "yaw": -170,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu10"
-                },
-                
-            ]
-        },
-		
-		"mu10": {
-            "title": "Filtros",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 127,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu10.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -5,
-                    "yaw": -68,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu13"
-                },
-                
-            ]
-        },
-		
-			
-		"mu13": {
-            "title": "Manequim",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": -63,
-            "type": "equirectangular",
-            "panorama": "/visita/museu/mu13.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -17,
-                    "yaw": -18,
-                    "type": "scene",
-					//"text": "Palco do Museu",
-                    "sceneId": "mu1"
-                },
-                
-            ]
-        },
-		    }
-			
-			
-});
-</script>
-
-<div id="pannellum-viewer"></div>
-
-<!-- Inserindo a galeria dentro de um iframe -->
-<iframe src="custom.html" width="100%" height="1600px" frameborder="0"></iframe>
-
-<script type="text/javascript" src="https://pannellum.org/js/pannellum.js"></script>
-<script>
-    pannellum.viewer('pannellum-viewer', {
-        "type": "equirectangular",
-        "panorama": "seu-arquivo-panorama.jpg",
-        "autoLoad": true
-    });
+  document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => {
+          console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch((error) => {
+          console.error('Erro ao registrar o Service Worker:', error);
+        });
+    }
+  });
 </script>
 
 </body>
