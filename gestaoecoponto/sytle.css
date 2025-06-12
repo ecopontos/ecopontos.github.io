@@ -1,1 +1,26 @@
+<style>
+        /* Estilos para o logotipo */
+        .logo {
+            max-width: 250px; /* Define a largura máxima do logotipo */
+            height: auto; /* Mantém a proporção da altura */
+        }
 
+        .residuo-item {
+            display: inline-block;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .selecionado {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+
+        h2.textstyle {
+    font-family: tahoma
+}
+        p.textstyle {
+    font-family: tahoma
+}
+    </style>
