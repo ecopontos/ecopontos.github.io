@@ -44,15 +44,42 @@
   </form>
 
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<!-- Inclua no <head> -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <script>
   const { createClient } = supabase;
-const supabaseClient = createClient('https://msyrdcdcxgilsxiyxcql.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc');
-   );
+
+  const supabaseClient = createClient(
+    'https://msyrdcdcxgilsxiyxcql.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc'
+  );
 
   document.getElementById('formAcoes').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const imagemInput = formData.get('imagem');
+    let imagemUrl = null;
+
+    // 1. Upload da imagem, se houver
+    if (imagemInput && imagemInput.size > 0) {
+      const nomeArquivo = `${Date.now()}_${imagemInput.name}`;
+
+      const { data: imgData, error: imgError } = await supabaseClient
+        .storage
+        .from('acoes') // nome do bucket
+        .upload(nomeArquivo, imagemInput);
+
+      if (imgError) {
+        alert('Erro ao subir imagem: ' + imgError.message);
+        return;
+      }
+
+      imagemUrl = `https://msyrdcdcxgilsxiyxcql.supabase.co/storage/v1/object/public/acoes/${nomeArquivo}`;
+    }
+
+    // 2. Monta o payload com o link da imagem (se existir)
     const payload = {
       titulo: formData.get('titulo'),
       data_inicial: formData.get('dataInicial'),
@@ -60,9 +87,11 @@ const supabaseClient = createClient('https://msyrdcdcxgilsxiyxcql.supabase.co', 
       descricao: formData.get('descricao'),
       responsavel: formData.get('responsavel'),
       preenchido_por: formData.get('preenchidoPor'),
-      email: formData.get('email')
+      email: formData.get('email'),
+      imagem_url: imagemUrl // nova coluna no Supabase se ainda não existir
     };
 
+    // 3. Insere no banco de dados
     const { data, error } = await supabaseClient
       .from('acoes')
       .insert([payload]);
@@ -75,6 +104,7 @@ const supabaseClient = createClient('https://msyrdcdcxgilsxiyxcql.supabase.co', 
     }
   });
 </script>
+
 
 </body>
 </html>
