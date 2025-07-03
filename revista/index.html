@@ -2,121 +2,513 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro de Ação</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, textarea { display: block; margin-bottom: 15px; width: 100%; padding: 8px; }
-    label { font-weight: bold; }
-    button { padding: 10px 20px; font-size: 16px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+      opacity: 0.1;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-container {
+      padding: 40px 30px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .form-group label .required {
+      color: #e74c3c;
+      font-size: 0.8rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      padding: 15px;
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: white;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .file-input-wrapper input[type=file] {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+    }
+
+    .file-input-label {
+      padding: 15px;
+      border: 2px dashed #e1e8ed;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      display: block;
+    }
+
+    .file-input-label:hover {
+      border-color: #4facfe;
+      background: #f0f8ff;
+    }
+
+    .file-input-label.has-file {
+      border-color: #27ae60;
+      background: #e8f5e8;
+      color: #27ae60;
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 18px 40px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    .error-message {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ffa8a8 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .form-container {
+        padding: 30px 20px;
+      }
+    }
+
+    /* Animações suaves */
+    .form-group {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+    .form-group:nth-child(5) { animation-delay: 0.5s; }
+    .form-group:nth-child(6) { animation-delay: 0.6s; }
+    .form-group:nth-child(7) { animation-delay: 0.7s; }
+    .form-group:nth-child(8) { animation-delay: 0.8s; }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
+  <div class="container">
+    <div class="header">
+      <h1>✨ Cadastro de Ação</h1>
+      <p>Registre suas ações e projetos de forma organizada</p>
+    </div>
+    
+    <div class="form-container">
+      <div class="success-message" id="successMessage">
+        ✅ Ação cadastrada com sucesso!
+      </div>
+      
+      <div class="error-message" id="errorMessage">
+        ❌ Erro ao cadastrar ação. Tente novamente.
+      </div>
+      
+      <form id="formAcoes">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="titulo">
+              📝 Título da Ação
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="titulo" name="titulo" required placeholder="Digite o título da ação">
+          </div>
+          
+          <div class="form-group">
+            <label for="responsavel">
+              👤 Responsável
+            </label>
+            <input type="text" id="responsavel" name="responsavel" placeholder="Nome do responsável">
+          </div>
+          
+          <div class="form-group">
+            <label for="dataInicial">
+              📅 Data Inicial
+              <span class="required">*</span>
+            </label>
+            <input type="date" id="dataInicial" name="dataInicial" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dataFinal">
+              📅 Data Final
+            </label>
+            <input type="date" id="dataFinal" name="dataFinal">
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="descricao">
+              📄 Descrição
+              <span class="required">*</span>
+            </label>
+            <textarea id="descricao" name="descricao" required placeholder="Descreva os detalhes da ação..."></textarea>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="imagem">
+              🖼️ Upload de Imagem
+            </label>
+            <div class="file-input-wrapper">
+              <input type="file" id="imagem" name="imagem" accept="image/*">
+              <label for="imagem" class="file-input-label" id="fileLabel">
+                📎 Clique para selecionar uma imagem
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="preenchidoPor">
+              ✍️ Preenchido Por
+              <span class="required">*</span>
+            </label>
+            <input type="text" id="preenchidoPor" name="preenchidoPor" required placeholder="Seu nome">
+          </div>
+          
+          <div class="form-group">
+            <label for="email">
+              📧 E-mail
+              <span class="required">*</span>
+            </label>
+            <input type="email" id="email" name="email" required placeholder="seu@email.com">
+          </div>
+        </div>
+        
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="loading-spinner" id="loadingSpinner"></span>
+          <span id="submitText">🚀 Cadastrar Ação</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
-  <h2>Cadastro de Ação</h2>
-
-  <form id="formAcoes">
-    <label>Título da Ação:</label>
-    <input type="text" name="titulo" required>
-
-    <label>Data Inicial:</label>
-    <input type="date" name="dataInicial" required>
-
-    <label>Data Final:</label>
-    <input type="date" name="dataFinal" >
-
-    <label>Descrição:</label>
-    <textarea name="descricao" required></textarea>
-
-    <label>Responsável:</label>
-    <input type="text" name="responsavel" >
-
-    <label>Upload de Imagem:</label>
-    <input type="file" name="imagem" accept="image/*">
-
-    <label>Responsável pelo Preenchimento:</label>
-    <input type="text" name="preenchidoPor" required>
-
-    <label>E-mail do Responsável:</label>
-    <input type="email" name="email" required>
-
-    <button type="submit">Enviar</button>
-  </form>
-
-
-
-<script>
-  const { createClient } = supabase;
-
-  const supabaseClient = createClient(
-    'https://msyrdcdcxgilsxiyxcql.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc'
-  );
-
-  document.getElementById('formAcoes').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const imagemInput = formData.get('imagem');
-    let imagemUrl = null;
-
-    // 1. Upload da imagem, se houver
-    if (imagemInput && imagemInput.size > 0) {
-      const nomeArquivo = `${Date.now()}_${imagemInput.name}`;
-
-      const { data: imgData, error: imgError } = await supabaseClient
-        .storage
-        .from('acoes') // nome do bucket
-        .upload(nomeArquivo, imagemInput);
-
-      if (imgError) {
-        alert('Erro ao subir imagem: ' + imgError.message);
-        return;
-      }
-
-      imagemUrl = `https://msyrdcdcxgilsxiyxcql.supabase.co/storage/v1/object/public/acoes/${nomeArquivo}`;
-    }
-
-    // 2. Monta o payload com o link da imagem (se existir)
-    const payload = {
-      titulo: formData.get('titulo'),
-      data_inicial: formData.get('dataInicial'),
-      data_final: formData.get('dataFinal'),
-      descricao: formData.get('descricao'),
-      responsavel: formData.get('responsavel'),
-      preenchido_por: formData.get('preenchidoPor'),
-      email: formData.get('email'),
-      imagem_url: imagemUrl // nova coluna no Supabase se ainda não existir
+  <script>
+    // Armazenamento em memória para dados persistentes
+    let userData = {
+      preenchidoPor: '',
+      email: ''
     };
 
-    // 3. Insere no banco de dados
-    const { data, error } = await supabaseClient
-      .from('acoes')
-      .insert([payload]);
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+      'https://msyrdcdcxgilsxiyxcql.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc'
+    );
 
-    if (error) {
-      alert('Erro ao enviar: ' + error.message);
-    } else {
-      alert('Ação cadastrada com sucesso!');
-      e.target.reset();
+    // Elementos do DOM
+    const form = document.getElementById('formAcoes');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const fileInput = document.getElementById('imagem');
+    const fileLabel = document.getElementById('fileLabel');
+
+    // Gerenciamento do arquivo
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        fileLabel.textContent = `📎 ${file.name}`;
+        fileLabel.classList.add('has-file');
+      } else {
+        fileLabel.textContent = '📎 Clique para selecionar uma imagem';
+        fileLabel.classList.remove('has-file');
+      }
+    });
+
+    // Função para mostrar mensagens
+    function showMessage(element, message, duration = 5000) {
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => {
+        element.style.display = 'none';
+      }, duration);
     }
-  });
 
-   // Salva os campos no localStorage
-      localStorage.setItem('preenchidoPor', preenchidoPor);
-      localStorage.setItem('email', email);
-
-      alert('Ação cadastrada com sucesso!');
-      e.target.reset();
-
-      // Repõe os valores persistidos após reset
-      document.querySelector('[name="preenchidoPor"]').value = preenchidoPor;
-      document.querySelector('[name="email"]').value = email;
+    // Função para definir estado de loading
+    function setLoading(isLoading) {
+      if (isLoading) {
+        submitBtn.disabled = true;
+        loadingSpinner.style.display = 'inline-block';
+        submitText.textContent = 'Processando...';
+      } else {
+        submitBtn.disabled = false;
+        loadingSpinner.style.display = 'none';
+        submitText.textContent = '🚀 Cadastrar Ação';
+      }
     }
-  });
-</script>
 
+    // Função para restaurar dados do usuário
+    function restoreUserData() {
+      if (userData.preenchidoPor) {
+        document.getElementById('preenchidoPor').value = userData.preenchidoPor;
+      }
+      if (userData.email) {
+        document.getElementById('email').value = userData.email;
+      }
+    }
 
+    // Função para salvar dados do usuário
+    function saveUserData() {
+      userData.preenchidoPor = document.getElementById('preenchidoPor').value;
+      userData.email = document.getElementById('email').value;
+    }
+
+    // Restaurar dados ao carregar a página
+    restoreUserData();
+
+    // Submissão do formulário
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setLoading(true);
+      
+      try {
+        const formData = new FormData(e.target);
+        const imagemInput = formData.get('imagem');
+        let imagemUrl = null;
+
+        // Salvar dados do usuário
+        saveUserData();
+
+        // Upload da imagem, se houver
+        if (imagemInput && imagemInput.size > 0) {
+          const nomeArquivo = `${Date.now()}_${imagemInput.name}`;
+          const { data: imgData, error: imgError } = await supabaseClient
+            .storage
+            .from('acoes')
+            .upload(nomeArquivo, imagemInput);
+
+          if (imgError) {
+            throw new Error('Erro ao subir imagem: ' + imgError.message);
+          }
+
+          imagemUrl = `https://msyrdcdcxgilsxiyxcql.supabase.co/storage/v1/object/public/acoes/${nomeArquivo}`;
+        }
+
+        // Preparar payload
+        const payload = {
+          titulo: formData.get('titulo'),
+          data_inicial: formData.get('dataInicial'),
+          data_final: formData.get('dataFinal'),
+          descricao: formData.get('descricao'),
+          responsavel: formData.get('responsavel'),
+          preenchido_por: formData.get('preenchidoPor'),
+          email: formData.get('email'),
+          imagem_url: imagemUrl
+        };
+
+        // Inserir no banco de dados
+        const { data, error } = await supabaseClient
+          .from('acoes')
+          .insert([payload]);
+
+        if (error) {
+          throw new Error('Erro ao salvar no banco: ' + error.message);
+        }
+
+        // Sucesso
+        showMessage(successMessage, '✅ Ação cadastrada com sucesso!');
+        form.reset();
+        fileLabel.textContent = '📎 Clique para selecionar uma imagem';
+        fileLabel.classList.remove('has-file');
+        
+        // Restaurar dados do usuário após reset
+        restoreUserData();
+
+      } catch (error) {
+        console.error('Erro:', error);
+        showMessage(errorMessage, '❌ ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // Validação em tempo real
+    form.addEventListener('input', (e) => {
+      const target = e.target;
+      if (target.checkValidity()) {
+        target.style.borderColor = '#27ae60';
+      } else {
+        target.style.borderColor = '#e74c3c';
+      }
+    });
+  </script>
 </body>
 </html>
