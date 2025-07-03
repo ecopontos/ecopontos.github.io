@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Ação</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, textarea { display: block; margin-bottom: 15px; width: 100%; padding: 8px; }
+    label { font-weight: bold; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
 
+  <h2>Cadastro de Ação</h2>
+
+  <form id="formAcoes">
+    <label>Título da Ação:</label>
+    <input type="text" name="titulo" required>
+
+    <label>Data Inicial:</label>
+    <input type="date" name="dataInicial" required>
+
+    <label>Data Final:</label>
+    <input type="date" name="dataFinal" required>
+
+    <label>Descrição:</label>
+    <textarea name="descricao" required></textarea>
+
+    <label>Responsável:</label>
+    <input type="text" name="responsavel" required>
+
+    <label>Upload de Imagem:</label>
+    <input type="file" name="imagem">
+
+    <label>Responsável pelo Preenchimento:</label>
+    <input type="text" name="preenchidoPor" required>
+
+    <label>E-mail do Responsável:</label>
+    <input type="email" name="email" required>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    const supabase = supabase.createClient('https://sua-url.supabase.co', 'sua-chave-anon')
+
+    document.getElementById('formAcoes').addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const formData = new FormData(e.target)
+      const payload = {
+        titulo: formData.get('titulo'),
+        data_inicial: formData.get('dataInicial'),
+        data_final: formData.get('dataFinal'),
+        descricao: formData.get('descricao'),
+        responsavel: formData.get('responsavel'),
+        preenchido_por: formData.get('preenchidoPor'),
+        email: formData.get('email')
+      }
+
+      const { data, error } = await supabase
+        .from('acoes')
+        .insert([payload])
+
+      if (error) {
+        alert('Erro ao enviar: ' + error.message)
+      } else {
+        alert('Ação cadastrada com sucesso!')
+        e.target.reset()
+      }
+    })
+  </script>
+</body>
+</html>
