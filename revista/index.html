@@ -463,12 +463,15 @@
         }
 
         // Preparar payload
+        const dataFinal = formData.get('dataFinal');
+        const responsavel = formData.get('responsavel');
+        
         const payload = {
           titulo: formData.get('titulo'),
           data_inicial: formData.get('dataInicial'),
-          data_final: formData.get('dataFinal'),
+          data_final: dataFinal || null, // null se vazio
           descricao: formData.get('descricao'),
-          responsavel: formData.get('responsavel'),
+          responsavel: responsavel || null, // null se vazio
           preenchido_por: formData.get('preenchidoPor'),
           email: formData.get('email'),
           imagem_url: imagemUrl
