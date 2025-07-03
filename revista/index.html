@@ -43,56 +43,38 @@
     <button type="submit">Enviar</button>
   </form>
 
-  <script>
-    const { createClient } = supabase;
-    const supa = createClient(
-      'https://msyrdcdcxgilsxiyxcql.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc'
-    );
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  const { createClient } = supabase;
+const supabaseClient = createClient('https://msyrdcdcxgilsxiyxcql.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc');
+   );
 
-    document.getElementById('formAcoes').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
+  document.getElementById('formAcoes').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      // Upload da imagem (se existir)
-      const imagemInput = formData.get('imagem');
-      let imagemUrl = null;
+    const formData = new FormData(e.target);
+    const payload = {
+      titulo: formData.get('titulo'),
+      data_inicial: formData.get('dataInicial'),
+      data_final: formData.get('dataFinal'),
+      descricao: formData.get('descricao'),
+      responsavel: formData.get('responsavel'),
+      preenchido_por: formData.get('preenchidoPor'),
+      email: formData.get('email')
+    };
 
-      if (imagemInput && imagemInput.size > 0) {
-        const nomeArquivo = `${Date.now()}_${imagemInput.name}`;
+    const { data, error } = await supabaseClient
+      .from('acoes')
+      .insert([payload]);
 
-        const { data: imgData, error: imgError } = await supa.storage
-          .from('acoes') // nome do seu bucket
-          .upload(nomeArquivo, imagemInput);
+    if (error) {
+      alert('Erro ao enviar: ' + error.message);
+    } else {
+      alert('Ação cadastrada com sucesso!');
+      e.target.reset();
+    }
+  });
+</script>
 
-        if (imgError) {
-          alert('Erro ao subir imagem: ' + imgError.message);
-          return;
-        }
-
-        imagemUrl = `https://msyrdcdcxgilsxiyxcql.supabase.co/storage/v1/object/public/acoes/${nomeArquivo}`;
-      }
-
-      const payload = {
-        titulo: formData.get('titulo'),
-        data_inicial: formData.get('dataInicial'),
-        data_final: formData.get('dataFinal'),
-        descricao: formData.get('descricao'),
-        responsavel: formData.get('responsavel'),
-        preenchido_por: formData.get('preenchidoPor'),
-        email: formData.get('email'),
-        imagem_url: imagemUrl // adiciona o link da imagem
-      };
-
-      const { data, error } = await supa.from('acoes').insert([payload]);
-
-      if (error) {
-        alert('Erro ao enviar: ' + error.message);
-      } else {
-        alert('Ação cadastrada com sucesso!');
-        e.target.reset();
-      }
-    });
-  </script>
 </body>
 </html>
