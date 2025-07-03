@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Cadastro de Ação</title>
-  <!-- <script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-</script> -->
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     input, textarea { display: block; margin-bottom: 15px; width: 100%; padding: 8px; }
@@ -35,7 +32,7 @@
     <input type="text" name="responsavel" required>
 
     <label>Upload de Imagem:</label>
-    <input type="file" name="imagem">
+    <input type="file" name="imagem" accept="image/*">
 
     <label>Responsável pelo Preenchimento:</label>
     <input type="text" name="preenchidoPor" required>
@@ -46,13 +43,36 @@
     <button type="submit">Enviar</button>
   </form>
 
- 
-    const supabase = supabase.createClient('https://msyrdcdcxgilsxiyxcql.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc')
+  <script>
+    const { createClient } = supabase;
+    const supa = createClient(
+      'https://msyrdcdcxgilsxiyxcql.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeXJkY2RjeGdpbHN4aXl4Y3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2OTIwMDUsImV4cCI6MjA2NjI2ODAwNX0.ofrXwtlRozQLL2Xq8U7nN5coyYnSQgH9lPOxlHpOUYc'
+    );
 
     document.getElementById('formAcoes').addEventListener('submit', async (e) => {
-      e.preventDefault()
+      e.preventDefault();
+      const formData = new FormData(e.target);
 
-      const formData = new FormData(e.target)
+      // Upload da imagem (se existir)
+      const imagemInput = formData.get('imagem');
+      let imagemUrl = null;
+
+      if (imagemInput && imagemInput.size > 0) {
+        const nomeArquivo = `${Date.now()}_${imagemInput.name}`;
+
+        const { data: imgData, error: imgError } = await supa.storage
+          .from('acoes') // nome do seu bucket
+          .upload(nomeArquivo, imagemInput);
+
+        if (imgError) {
+          alert('Erro ao subir imagem: ' + imgError.message);
+          return;
+        }
+
+        imagemUrl = `https://msyrdcdcxgilsxiyxcql.supabase.co/storage/v1/object/public/acoes/${nomeArquivo}`;
+      }
+
       const payload = {
         titulo: formData.get('titulo'),
         data_inicial: formData.get('dataInicial'),
@@ -60,20 +80,19 @@
         descricao: formData.get('descricao'),
         responsavel: formData.get('responsavel'),
         preenchido_por: formData.get('preenchidoPor'),
-        email: formData.get('email')
-      }
+        email: formData.get('email'),
+        imagem_url: imagemUrl // adiciona o link da imagem
+      };
 
-      const { data, error } = await supabase
-        .from('acoes')
-        .insert([payload])
+      const { data, error } = await supa.from('acoes').insert([payload]);
 
       if (error) {
-        alert('Erro ao enviar: ' + error.message)
+        alert('Erro ao enviar: ' + error.message);
       } else {
-        alert('Ação cadastrada com sucesso!')
-        e.target.reset()
+        alert('Ação cadastrada com sucesso!');
+        e.target.reset();
       }
-    })
+    });
   </script>
 </body>
 </html>
