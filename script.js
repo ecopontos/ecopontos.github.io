@@ -179,10 +179,70 @@ setInterval(atualizarDataHora, 60 * 1000);
             body: JSON.stringify(atendimento)
         }).then(function() {
             console.log('Enviado para Google Sheets');
-        }).catch(function(err) {
-            console.warn('Falha ao enviar para Sheets (offline?). Dados salvos localmente.', err);
+            atualizarIndicadorPendentes();
+        }).catch(function() {
+            adicionarFilaPendente(atendimento);
+            atualizarIndicadorPendentes();
         });
     }
+
+    function adicionarFilaPendente(atendimento) {
+        var fila = JSON.parse(localStorage.getItem('filaPendente') || '[]');
+        fila.push(atendimento);
+        localStorage.setItem('filaPendente', JSON.stringify(fila));
+        console.warn('Sem conexão. Registro na fila de envio (' + fila.length + ' pendente(s)).');
+    }
+
+    function enviarPendentes() {
+        var url = localStorage.getItem('sheetsUrl');
+        if (!url) return;
+
+        var fila = JSON.parse(localStorage.getItem('filaPendente') || '[]');
+        if (fila.length === 0) return;
+
+        console.log('Reenviando ' + fila.length + ' registro(s) pendente(s)...');
+        var restante = [];
+
+        var envios = fila.map(function(atendimento) {
+            return fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(atendimento)
+            }).catch(function() {
+                restante.push(atendimento);
+            });
+        });
+
+        Promise.all(envios).then(function() {
+            localStorage.setItem('filaPendente', JSON.stringify(restante));
+            if (restante.length === 0) {
+                console.log('Todos os pendentes enviados.');
+            } else {
+                console.warn(restante.length + ' registro(s) ainda pendente(s).');
+            }
+        });
+    }
+
+    function atualizarIndicadorPendentes() {
+        var fila = JSON.parse(localStorage.getItem('filaPendente') || '[]');
+        var el = document.getElementById('status-pendente');
+        if (!el) return;
+        if (fila.length > 0) {
+            el.textContent = fila.length + ' registro(s) pendente(s) de envio';
+            el.classList.add('visivel');
+        } else {
+            el.classList.remove('visivel');
+        }
+    }
+
+    window.addEventListener('online', function() {
+        enviarPendentes();
+        setTimeout(atualizarIndicadorPendentes, 3000);
+    });
+
+    enviarPendentes();
+    atualizarIndicadorPendentes();
 
      //Exporta dados em CSV
 function exportarDadosCSV() {

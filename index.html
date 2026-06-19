@@ -191,6 +191,22 @@
             background: #d0d0d0;
         }
 
+        .status-pendente {
+            background: #ff9800;
+            color: #fff;
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .status-pendente.visivel {
+            display: block;
+        }
+
         .nav-links {
             display: flex;
             gap: 10px;
@@ -224,6 +240,8 @@
             <div class="ecoponto-nome" id="nome-ecoponto-display"></div>
         </div>
     </div>
+
+    <div class="status-pendente" id="status-pendente"></div>
 
     <div class="card">
         <label for="placa">Placa do veículo</label>
