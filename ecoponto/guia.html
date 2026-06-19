@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Guia de Uso - Ecoponto</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 12px;
+            padding-bottom: 80px;
+            background: #f0f2f5;
+            color: #1a1a1a;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #2e7d32;
+            color: #fff;
+            padding: 14px 16px;
+            margin: -12px -12px 16px -12px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: #2e7d32;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card h2 .num {
+            background: #2e7d32;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .card p, .card li {
+            font-size: 15px;
+            color: #333;
+            margin: 6px 0;
+        }
+
+        .card ul, .card ol {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .card li {
+            margin-bottom: 6px;
+        }
+
+        .destaque {
+            background: #e8f5e9;
+            border-left: 4px solid #2e7d32;
+            padding: 12px 14px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .alerta {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px 14px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 10px 4px;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 10px 12px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .bottom-bar a {
+            display: block;
+            text-align: center;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2e7d32;
+            background: #fff;
+            border: 2px solid #2e7d32;
+            border-radius: 10px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        .bottom-bar a:active {
+            background: #e8f5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Guia de Uso</h1>
+    </div>
+
+    <div class="section-title">Primeiro Uso</div>
+
+    <div class="card">
+        <h2><span class="num">1</span> Configurar o Ecoponto</h2>
+        <p>Antes de registrar atendimentos, configure o aparelho:</p>
+        <ol>
+            <li>Acesse a pagina <strong>Configuracao</strong></li>
+            <li>Selecione o <strong>Ecoponto</strong> (PEV) onde voce trabalha</li>
+            <li>Preencha seu <strong>nome</strong> e <strong>matricula</strong></li>
+            <li>Cole a <strong>URL do Google Sheets</strong> (fornecida pelo supervisor)</li>
+            <li>Toque em <strong>Salvar</strong></li>
+        </ol>
+        <div class="destaque">
+            Essa configuracao e feita apenas uma vez por aparelho. Os dados ficam salvos mesmo se fechar o app.
+        </div>
+    </div>
+
+    <div class="section-title">Uso no Dia a Dia</div>
+
+    <div class="card">
+        <h2><span class="num">2</span> Registrar um Atendimento</h2>
+        <p>Para cada veiculo que chegar ao ecoponto:</p>
+        <ol>
+            <li>Digite a <strong>placa</strong> do veiculo</li>
+            <li>A <strong>data</strong> e <strong>hora</strong> ja vem preenchidas automaticamente</li>
+            <li>Selecione o <strong>bairro</strong> informado pelo munícipe</li>
+            <li>Toque nos tipos de <strong>residuos</strong> que estao sendo entregues (ficam verdes quando selecionados)</li>
+            <li>Toque em <strong>Adicionar</strong> na barra inferior</li>
+        </ol>
+        <div class="destaque">
+            Apos adicionar, os campos sao limpos automaticamente e o app esta pronto para o proximo atendimento.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><span class="num">3</span> Envio para a Planilha</h2>
+        <p>O envio dos dados para o Google Sheets e <strong>automatico</strong>:</p>
+        <ul>
+            <li><strong>Com internet:</strong> o registro vai direto para a planilha no momento que voce toca em Adicionar</li>
+            <li><strong>Sem internet:</strong> os dados ficam salvos no aparelho e sao enviados automaticamente quando a conexao voltar</li>
+        </ul>
+        <div class="alerta">
+            Se aparecer um banner laranja no topo dizendo "X registro(s) pendente(s)", significa que ha dados aguardando envio. Eles serao enviados assim que houver conexao.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><span class="num">4</span> Consultar Registros</h2>
+        <p>Para ver os atendimentos ja registrados no aparelho:</p>
+        <ol>
+            <li>Toque em <strong>Registros</strong> na pagina principal</li>
+            <li>Os atendimentos aparecem em cards, do mais recente para o mais antigo</li>
+            <li>Cada card mostra a placa, data, hora, bairro e residuos</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2><span class="num">5</span> Exportar CSV (Backup)</h2>
+        <p>Se precisar de um backup dos dados:</p>
+        <ol>
+            <li>Toque em <strong>Exportar CSV</strong> na barra inferior</li>
+            <li>Um arquivo CSV sera baixado no aparelho</li>
+            <li>Os registros locais sao limpos apos a exportacao</li>
+        </ol>
+        <div class="alerta">
+            A exportacao CSV limpa os dados do aparelho. Use apenas quando precisar de um backup manual.
+        </div>
+    </div>
+
+    <div class="section-title">Dicas</div>
+
+    <div class="card">
+        <h2>Instalar como App</h2>
+        <p>Para acesso rapido na tela inicial do celular:</p>
+        <ul>
+            <li><strong>Android (Chrome):</strong> menu (3 pontos) > "Adicionar a tela inicial"</li>
+            <li><strong>iPhone (Safari):</strong> botao compartilhar > "Adicionar a Tela de Inicio"</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Problemas comuns</h2>
+        <ul>
+            <li><strong>"Ecoponto nao configurado"</strong> - Va em Configuracao e selecione seu PEV</li>
+            <li><strong>"Preencha todos os campos"</strong> - A placa e obrigatoria. Verifique se esta preenchida</li>
+            <li><strong>Banner laranja permanece</strong> - Verifique sua conexao com a internet. Os pendentes serao enviados automaticamente</li>
+            <li><strong>Dados nao chegam na planilha</strong> - Verifique se a URL do Google Sheets esta correta na Configuracao</li>
+        </ul>
+    </div>
+
+    <div class="bottom-bar">
+        <a href="index.html">Voltar</a>
+    </div>
+</body>
+</html>
