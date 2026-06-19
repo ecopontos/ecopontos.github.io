@@ -18,25 +18,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function exibirRegistros() {
-        const tabela = document.getElementById('registros-tabela').getElementsByTagName('tbody')[0];
-        tabela.innerHTML = ''; // Limpa a tabela
+        const lista = document.getElementById('registros-lista');
+        const contador = document.getElementById('contador');
+        lista.innerHTML = '';
 
         const transaction = db.transaction(["atendimentos"], "readonly");
         const objectStore = transaction.objectStore("atendimentos");
 
+        const registros = [];
         const request = objectStore.openCursor();
         request.onsuccess = function(event) {
             const cursor = event.target.result;
             if (cursor) {
-                const row = tabela.insertRow();
-                row.insertCell().textContent = cursor.value.ecoponto;
-                row.insertCell().textContent = cursor.value.placa;
-                row.insertCell().textContent = cursor.value.data;
-                row.insertCell().textContent = cursor.value.hora;
-                row.insertCell().textContent = cursor.value.bairro;
-                row.insertCell().textContent = cursor.value.residuos;
-                row.insertCell().textContent = cursor.value.horaRegistro;
+                registros.push(cursor.value);
                 cursor.continue();
+            } else {
+                if (registros.length === 0) {
+                    lista.innerHTML = '<div class="empty-state">Nenhum registro ainda.</div>';
+                    contador.textContent = '';
+                    return;
+                }
+
+                contador.textContent = registros.length + ' atendimento' + (registros.length !== 1 ? 's' : '');
+
+                registros.reverse().forEach(function(reg) {
+                    const card = document.createElement('div');
+                    card.className = 'registro-card';
+
+                    var residuosHTML = '';
+                    if (reg.residuos) {
+                        var tags = reg.residuos.split(';');
+                        residuosHTML = '<div class="residuos-tags">' +
+                            tags.map(function(r) { return '<span>' + r + '</span>'; }).join('') +
+                            '</div>';
+                    }
+
+                    card.innerHTML =
+                        '<div class="placa">' + (reg.placa || '—') + '</div>' +
+                        '<div class="meta">' +
+                            '<span>' + (reg.data || '') + '</span>' +
+                            '<span>' + (reg.hora || '') + '</span>' +
+                            '<span>' + (reg.bairro || '') + '</span>' +
+                        '</div>' +
+                        residuosHTML;
+
+                    lista.appendChild(card);
+                });
             }
         };
 

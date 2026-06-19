@@ -2,25 +2,137 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Registros</title>
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 12px;
+            padding-bottom: 80px;
+            background: #f0f2f5;
+            color: #1a1a1a;
+            font-size: 16px;
         }
-        th {
-            background-color: #f4f4f4;
+
+        .header {
+            background: #2e7d32;
+            color: #fff;
+            padding: 14px 16px;
+            margin: -12px -12px 16px -12px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .registro-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .registro-card .placa {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+
+        .registro-card .meta {
+            display: flex;
+            gap: 12px;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .registro-card .residuos-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .registro-card .residuos-tags span {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .contador {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 10px 12px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .bottom-bar a {
+            display: block;
+            text-align: center;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2e7d32;
+            background: #fff;
+            border: 2px solid #2e7d32;
+            border-radius: 10px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        .bottom-bar a:active {
+            background: #e8f5e9;
+        }
+
+        /* Tabela escondida, usada apenas para manter compatibilidade com o JS existente */
+        #registros-tabela {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Registros de Atendimentos</h1>
+    <div class="header">
+        <h1>Registros de Atendimentos</h1>
+    </div>
+
+    <div class="contador" id="contador"></div>
+
+    <div id="registros-lista">
+    </div>
+
     <table id="registros-tabela">
         <thead>
             <tr>
@@ -34,10 +146,13 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Os registros serão adicionados aqui pelo JavaScript -->
         </tbody>
     </table>
-    <a href="https://ecopontos.github.io/"><button>Página Inicial</button></a>
+
+    <div class="bottom-bar">
+        <a href="index.html">Voltar</a>
+    </div>
+
     <script src="registros.js"></script>
 </body>
 </html>
