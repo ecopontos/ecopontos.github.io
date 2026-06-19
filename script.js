@@ -154,17 +154,34 @@ setInterval(atualizarDataHora, 60 * 1000);
 
         request.onsuccess = function(event) {
             console.log("Atendimento adicionado com sucesso");
+            enviarParaSheets(novoAtendimento);
             document.getElementById("placa").value = '';
             document.getElementById("data").value = '';
             document.getElementById("hora").value = '';
             document.getElementById("bairro").value = '';
             document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
-            atualizarDataHora(); // Atualiza a data e hora após a submissão
+            atualizarDataHora();
         };
 
         request.onerror = function(event) {
             console.error("Erro ao adicionar atendimento:", event.target.errorCode);
         };
+    }
+
+    function enviarParaSheets(atendimento) {
+        var url = localStorage.getItem('sheetsUrl');
+        if (!url) return;
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(atendimento)
+        }).then(function() {
+            console.log('Enviado para Google Sheets');
+        }).catch(function(err) {
+            console.warn('Falha ao enviar para Sheets (offline?). Dados salvos localmente.', err);
+        });
     }
 
      //Exporta dados em CSV
