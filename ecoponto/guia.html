@@ -179,8 +179,8 @@
         <h2><span class="num">3</span> Envio para a Planilha</h2>
         <p>O envio dos dados para o Google Sheets e <strong>automatico</strong>:</p>
         <ul>
-            <li><strong>Com internet:</strong> o registro vai direto para a planilha no momento que voce toca em Adicionar</li>
-            <li><strong>Sem internet:</strong> os dados ficam salvos no aparelho e sao enviados automaticamente quando a conexao voltar</li>
+            <li><strong>Com internet:</strong> o registro vai direto para a planilha e fica marcado como <strong>Sincronizado</strong></li>
+            <li><strong>Sem internet:</strong> o registro fica como <strong>Pendente</strong> e e enviado automaticamente quando a conexao voltar</li>
         </ul>
         <div class="alerta">
             Se aparecer um banner laranja no topo dizendo "X registro(s) pendente(s)", significa que ha dados aguardando envio. Eles serao enviados assim que houver conexao.
@@ -195,6 +195,12 @@
             <li>Os atendimentos aparecem em cards, do mais recente para o mais antigo</li>
             <li>Cada card mostra a placa, data, hora, bairro e residuos</li>
         </ol>
+        <p>Cada registro tem uma tag de status:</p>
+        <ul>
+            <li><strong>Pendente</strong> (laranja) - ainda nao foi enviado para a planilha</li>
+            <li><strong>Sincronizado</strong> (verde) - ja enviado para a planilha</li>
+            <li><strong>Exportado</strong> (azul) - ja incluido em uma exportacao CSV</li>
+        </ul>
     </div>
 
     <div class="card">
@@ -202,11 +208,11 @@
         <p>Se precisar de um backup dos dados:</p>
         <ol>
             <li>Toque em <strong>Exportar CSV</strong> na barra inferior</li>
-            <li>Um arquivo CSV sera baixado no aparelho</li>
-            <li>Os registros locais sao limpos apos a exportacao</li>
+            <li>Um arquivo CSV sera baixado com os registros ainda nao exportados</li>
+            <li>Os registros sao marcados como <strong>Exportado</strong> e permanecem no aparelho</li>
         </ol>
-        <div class="alerta">
-            A exportacao CSV limpa os dados do aparelho. Use apenas quando precisar de um backup manual.
+        <div class="destaque">
+            Os dados nunca sao apagados automaticamente. O historico completo fica disponivel na pagina de Registros.
         </div>
     </div>
 
