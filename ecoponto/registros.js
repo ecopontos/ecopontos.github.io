@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function inicializarBancoDeDados() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open("nomeDoBanco", 1);
+            const request = indexedDB.open("nomeDoBanco", 2);
 
             request.onsuccess = function(event) {
                 db = event.target.result;
@@ -53,8 +53,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>';
                     }
 
+                    var status = reg.status || 'Pendente';
+                    var statusClass = 'status-tag ' + (status === 'Sincronizado' ? 'status-sync' : status === 'Exportado' ? 'status-export' : 'status-pendente');
+
                     card.innerHTML =
-                        '<div class="placa">' + (reg.placa || '—') + '</div>' +
+                        '<div class="placa-row">' +
+                            '<div class="placa">' + (reg.placa || '—') + '</div>' +
+                            '<span class="' + statusClass + '">' + status + '</span>' +
+                        '</div>' +
                         '<div class="meta">' +
                             '<span>' + (reg.data || '') + '</span>' +
                             '<span>' + (reg.hora || '') + '</span>' +
