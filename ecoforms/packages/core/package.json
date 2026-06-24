@@ -1,0 +1,33 @@
+{
+  "name": "ecoforms-core",
+  "version": "0.1.0",
+  "description": "Core compartilhado entre mobile e desktop",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./sync": {
+      "import": "./dist/sync/index.js",
+      "types": "./dist/sync/index.d.ts"
+    },
+    "./ports": {
+      "import": "./dist/ports/SqlitePort.js",
+      "types": "./dist/ports/SqlitePort.d.ts"
+    },
+    "./repositories": {
+      "import": "./dist/repositories/index.js",
+      "types": "./dist/repositories/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

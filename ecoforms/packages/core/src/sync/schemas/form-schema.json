@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ecoforms.local/schemas/form-schema.json",
+  "title": "EcoForms Form Schema",
+  "description": "JSON Schema compartilhado para formulários EcoForms — usado por mobile (ai-form-builder) e desktop (FormBuilder/VisualEditor). Define o contrato mínimo que ambos os lados devem validar.",
+  "type": "object",
+  "required": ["id", "titulo", "campos"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único do formulário (snake_case)"
+    },
+    "titulo": {
+      "type": "string",
+      "description": "Título visível do formulário"
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descrição breve do propósito do formulário"
+    },
+    "campos": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Lista de campos do formulário",
+      "items": { "$ref": "#/$defs/field" }
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "required": ["id", "label", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único do campo (snake_case)"
+        },
+        "label": {
+          "type": "string",
+          "description": "Rótulo visível do campo"
+        },
+        "type": {
+          "type": "string",
+          "description": "Tipo canônico do campo",
+          "enum": [
+            "text",
+            "textarea",
+            "number",
+            "email",
+            "tel",
+            "url",
+            "password",
+            "date",
+            "time",
+            "datetime",
+            "select",
+            "radio",
+            "checkbox",
+            "chips",
+            "file",
+            "camera",
+            "photo",
+            "signature",
+            "location",
+            "hidden",
+            "group",
+            "repeatable-group",
+            "presence",
+            "checklist",
+            "vistoria_checklist",
+            "occupation-selector",
+            "selector-modal",
+            "cards-radio",
+            "caixas-avancado"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Se o campo é obrigatório"
+        },
+        "options": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Opções como array de strings"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" }
+                }
+              },
+              "description": "Opções como array de objetos {label, value}"
+            }
+          ]
+        },
+        "placeholder": {
+          "type": "string",
+          "description": "Texto placeholder"
+        },
+        "helpText": {
+          "type": "string",
+          "description": "Texto de ajuda / tooltip"
+        },
+        "description": {
+          "type": "string",
+          "description": "Descrição adicional abaixo do campo"
+        },
+        "defaultValue": {
+          "description": "Valor padrão do campo (tipo depende do field type)"
+        },
+        "dataSource": {
+          "type": "string",
+          "description": "Nome do datasource (DataRegistry ou CRM) para opções dinâmicas"
+        },
+        "multiple": {
+          "type": "boolean",
+          "default": false,
+          "description": "Permite seleção múltipla (chips/select)"
+        },
+        "dependency": {
+          "type": "object",
+          "description": "Campo pai para filtro dependente (ex.: bairro → cidade)",
+          "required": ["fieldId"],
+          "properties": {
+            "fieldId": {
+              "type": "string",
+              "description": "ID do campo pai"
+            },
+            "filterProperty": {
+              "type": "string",
+              "description": "Propriedade do campo filho usada como filtro contra o valor do pai"
+            }
+          }
+        },
+        "columnSpan": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 1,
+          "description": "Número de colunas que o campo ocupa no grid"
+        },
+        "columnBreak": {
+          "type": "boolean",
+          "default": false,
+          "description": "Força quebra de linha após este campo"
+        },
+        "visibility": {
+          "type": "array",
+          "description": "Regras de visibilidade condicional",
+          "items": {
+            "type": "object",
+            "required": ["fieldId", "operator"],
+            "properties": {
+              "fieldId": { "type": "string" },
+              "operator": {
+                "type": "string",
+                "enum": ["equals", "notEquals", "contains", "notContains", "isEmpty", "notEmpty", "in", "notIn", "gt", "gte", "lt", "lte"]
+              },
+              "value": { "description": "Valor de comparação" },
+              "values": {
+                "type": "array",
+                "description": "Valores para operadores in/notIn"
+              },
+              "negate": { "type": "boolean" },
+              "logic": { "enum": ["AND", "OR"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

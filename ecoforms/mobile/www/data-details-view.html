@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Registro - Tabela suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x/dist/cdn.min.js" defer></script>
+    <style>
+        .json-content {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .data-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .data-field {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-field:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .field-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .field-value {
+            color: #6b7280;
+        }
+
+        .debug-info {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div x-data="detailsData()" x-init="loadData()">
+        <div class="container mx-auto px-4 py-8">
+            <div class="mb-6">
+                <a href="data-table-view.html" class="inline-flex items-center text-indigo-60 hover:text-indigo-900">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    Voltar para a tabela
+                </a>
+            </div>
+
+            <!-- Debug Information -->
+            <div class="debug-info">
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">Informações de Debug</h3>
+                <div class="space-y-2 text-sm">
+                    <p><strong>Estado do Registro:</strong> <span
+                            x-text="record ? 'Encontrado' : 'Não encontrado'"></span></p>
+                    <p><strong>Estado do Loading:</strong> <span x-text="loading ? 'Carregando' : 'Concluído'"></span>
+                    </p>
+                    <p><strong>ID da URL:</strong> <span
+                            x-text="new URLSearchParams(window.location.search).get('id') || 'N/A'"></span></p>
+                    <p><strong>URL da API:</strong> <span
+                            x-text="`https://vnnimekczkxkpckrydnc.supabase.co/rest/v1/suite?id=eq.${new URLSearchParams(window.location.search).get('id')}&select=*`"></span>
+                    </p>
+                    <p><strong>Timestamp do Carregamento:</strong> <span
+                            x-text="new Date().toLocaleString('pt-BR')"></span></p>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                    <span class="ml-3 text-gray-600">Carregando detalhes do registro...</span>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="!loading && !record" class="bg-white rounded-lg shadow-md p-6 text-center">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">Registro não encontrado</h2>
+                    <p class="text-gray-600">O registro com o ID especificado não foi encontrado.</p>
+                    <a href="data-table-view.html"
+                        class="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Voltar
+                        para a tabela</a>
+                </div>
+
+                <!-- Success State -->
+                <div x-show="!loading && record" class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Detalhes do Registro</h1>
+                            <p class="text-gray-600">ID: <span x-text="record?.id || 'N/A'"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-600">Criado em: <span
+                                    x-text="record?.criado_em ? new Date(record.criado_em).toLocaleString('pt-BR') : 'N/A'"></span>
+                            </p>
+                            <p class="text-gray-600">Tipo: <span x-text="record?.tipo_form || 'N/A'"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="data-card">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Informações Básicas</h2>
+
+                            <div class="data-field">
+                                <div class="field-label">ID do Registro</div>
+                                <div class="field-value" x-text="record?.id || 'N/A'"></div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">Data de Criação</div>
+                                <div class="field-value"
+                                    x-text="record?.criado_em ? new Date(record.criado_em).toLocaleString('pt-BR') : 'N/A'">
+                                </div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">Tipo de Formulário</div>
+                                <div class="field-value" x-text="record?.tipo_form || 'N/A'"></div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">ID do Usuário</div>
+                                <div class="field-value" x-text="record?.user_id || 'N/A'"></div>
+                            </div>
+                        </div>
+
+                        <div class="data-card">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Informações do Usuário</h2>
+
+                            <div class="data-field">
+                                <div class="field-label">Usuário</div>
+                                <div class="field-value" x-text="record?.dados?.usuario || 'N/A'"></div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">Perfil</div>
+                                <div class="field-value" x-text="record?.dados?.perfil || 'N/A'"></div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">Nome do Usuário</div>
+                                <div class="field-value" x-text="record?.dados?.nome_usuario || 'N/A'"></div>
+                            </div>
+
+                            <div class="data-field">
+                                <div class="field-label">ID do Usuário</div>
+                                <div class="field-value" x-text="record?.dados?.usuario_id || 'N/A'"></div>
+                            </div>
+                        </div>
+
+                        <div class="data-card mb-8">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Informações do Ecoponto</h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="data-field">
+                                    <div class="field-label">Nome do Ecoponto</div>
+                                    <div class="field-value" x-text="record?.dados?.nome_ecoponto || 'N/A'"></div>
+                                </div>
+
+                                <div class="data-field">
+                                    <div class="field-label">Ecoponto</div>
+                                    <div class="field-value" x-text="record?.dados?.ecoponto || 'N/A'"></div>
+                                </div>
+
+                                <div class="data-field">
+                                    <div class="field-label">Bairro</div>
+                                    <div class="field-value" x-text="record?.dados?.bairro || 'N/A'"></div>
+                                </div>
+
+                                <div class="data-field">
+                                    <div class="field-label">Placa</div>
+                                    <div class="field-value" x-text="record?.dados?.placa || 'N/A'"></div>
+                                </div>
+
+                                <div class="data-field">
+                                    <div class="field-label">Data</div>
+                                    <div class="field-value" x-text="record?.dados?.data || 'N/A'"></div>
+                                </div>
+
+                                <div class="data-field">
+                                    <div class="field-label">Hora</div>
+                                    <div class="field-value" x-text="record?.dados?.hora || 'N/A'"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-card mb-8"
+                            x-show="record?.dados?.residuos && record.dados.residuos.length > 0">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Resíduos</h2>
+                            <div class="field-value">
+                                <span
+                                    x-text="record?.dados?.residuos && Array.isArray(record.dados.residuos) ? record.dados.residuos.join(', ') : (record?.dados?.residuos || 'N/A')"></span>
+                            </div>
+                        </div>
+
+                        <div class="data-card mb-8" x-show="record?.dados?.caixas_list">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Lista de Caixas</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                ID</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Nome</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Capacidade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <template x-for="(caixa, index) in record?.dados?.caixas_list || []"
+                                            :key="index">
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                                    x-text="caixa?.id || index"></td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                                    x-text="caixa?.nome || 'N/A'"></td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                                    x-text="caixa?.status || 'N/A'"></td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                                    x-text="caixa?.capacidade || 'N/A'"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="data-card">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">Dados Completos (JSONB)</h2>
+                            <div class="json-content">
+                                <pre x-text="record?.dados ? JSON.stringify(record.dados, null, 2) : 'N/A'"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function detailsData() {
+                        return {
+                            record: null,
+                            loading: true,
+
+                            loadData() {
+                                // Obter o ID da query string
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const recordId = urlParams.get('id');
+
+                                console.log('Carregando página de detalhes para o ID:', recordId);
+                                console.log('Tipo do ID:', typeof recordId);
+                                console.log('ID é nulo ou indefinido:', recordId == null);
+                                console.log('ID é "null" como string:', recordId === 'null');
+
+                                // Verificar se o ID é válido
+                                if (!recordId || recordId === 'null' || recordId === 'undefined') {
+                                    console.log('ID inválido ou ausente');
+                                    this.loading = false;
+                                    return;
+                                }
+
+                                this.fetchRecord(recordId);
+                            },
+
+                            async fetchRecord(id) {
+                                try {
+                                    console.log('Iniciando busca do registro:', id);
+
+                                    // Usando as mesmas credenciais do arquivo supabase-config.js
+                                    const SUPABASE_URL = 'https://vnnimekczkxkpckrydnc.supabase.co';
+                                    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZubmltZWtjemt4a3Bja3J5ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDQ0NjUsImV4cCI6MjA3NzA4MDQ2NX0.RqLwcGIv5B5QnTfxvbemtTEx_Lve9Q6hqbab9SKA6aA';
+
+                                    const apiUrl = `${SUPABASE_URL}/rest/v1/suite?id=eq.${id}&select=*`;
+                                    console.log('URL da API:', apiUrl);
+
+                                    const response = await fetch(apiUrl, {
+                                        headers: {
+                                            'apikey': SUPABASE_ANON_KEY,
+                                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                            'Content-Type': 'application/json'
+                                        }
+                                    });
+
+                                    console.log('Status da resposta:', response.status);
+                                    console.log('Headers da resposta:', response.headers);
+
+                                    if (!response.ok) {
+                                        throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+                                    }
+
+                                    const data = await response.json();
+                                    console.log('Dados recebidos:', data);
+
+                                    if (data && data.length > 0) {
+                                        this.record = data[0];
+                                        console.log('Registro encontrado:', this.record);
+                                    } else {
+                                        console.log('Nenhum registro encontrado para o ID:', id);
+                                    }
+                                } catch (error) {
+                                    console.error('Erro ao buscar registro:', error);
+                                    alert('Erro ao carregar os detalhes do registro: ' + error.message);
+                                } finally {
+                                    this.loading = false;
+                                }
+                            }
+                        }
+                    }
+                </script>
+            </div>
+</body>
+
+</html>

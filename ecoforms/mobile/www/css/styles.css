@@ -1,0 +1,41 @@
+/* Exibir campos de presença lado a lado em telas pequenas */
+@media (max-width: 768px) {
+   .form-presenca-dupla {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      flex-wrap: wrap;
+   }
+   .form-presenca-dupla > .field-container {
+      flex: 1 1 48%;
+      min-width: 220px;
+      max-width: 100%;
+   }
+}
+@media (max-width: 480px) {
+   .form-presenca-dupla > .field-container {
+      min-width: 140px;
+      flex-basis: 100%;
+   }
+}
+/* ============================================================================
+   ARQUIVO DESCONTINUADO - NÃO USAR
+   ============================================================================
+   
+   Este arquivo foi consolidado no design-system.css
+   
+   Todos os estilos globais, utilitários e componentes agora estão em:
+   - design-system.css (estilos principais do sistema)
+   
+   Data da consolidação: 2025-10-03
+   Backup disponível em: www/css/archive/styles.css.backup-*
+   
+   IMPORTANTE: 
+   - NÃO adicione novos estilos neste arquivo
+   - Use design-system.css como fonte única de verdade
+   - Mantenha este arquivo vazio para compatibilidade com código legado
+   
+   ============================================================================
+*/
+
+/* Arquivo vazio - todos os estilos foram movidos para design-system.css */

@@ -1,0 +1,143 @@
+/* mobile-adapter.css 
+ * Ajustes CSS para simular o comportamento de um Moto G8 Power (1080x2300, 19:9, 6.4")
+ * mesmo quando acessado em dispositivos desktop
+ */
+
+:root {
+  /* Cores e dimensões específicas para o dispositivo alvo */
+  --moto-g8-width: 412px; /* Largura efetiva em CSS */
+  --moto-g8-height: 892px; /* Altura efetiva em CSS */
+}
+
+/* Força a exibição no formato mobile independente do dispositivo */
+@media screen and (min-width: 413px) {
+  body {
+    /* Centraliza e limita o tamanho para simular o dispositivo móvel */
+    max-width: var(--moto-g8-width);
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  /* Ajuste para elementos que ocupam toda a largura da tela */
+  .full-width, 
+  header, 
+  footer, 
+  nav, 
+  .container,
+  section,
+  div[role="main"],
+  .page-content {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Ajuste de font-size e touch targets */
+  button, 
+  input, 
+  select, 
+  textarea,
+  a {
+    font-size: 16px !important; /* Tamanho mínimo para evitar zoom automático em iOS */
+    min-height: 44px; /* Altura mínima para alvos de toque */
+  }
+
+  /* Ajuste para elementos de lista/grade */
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+  }
+
+  /* Elimina layouts para desktop */
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+/* Ajustes para elementos de formulário */
+input, 
+textarea, 
+select {
+  font-size: 16px; /* Evitar zoom automático em iOS */
+  padding: 12px;
+}
+
+/* Ajuste para botões touch-friendly */
+button, 
+.button, 
+a.button {
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-radius: 4px;
+  touch-action: manipulation;
+}
+
+/* Otimizações para performance em dispositivos móveis */
+* {
+  -webkit-tap-highlight-color: transparent; /* Remove flash ao tocar */
+  -webkit-touch-callout: none; /* Desativa callout ao pressionar */
+  touch-action: manipulation; /* Melhora a resposta ao toque */
+}
+
+/* Ajustes para formulários responsivos */
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form .form-group {
+  margin-bottom: 16px;
+}
+
+/* Ajustes para galeria e grid layouts */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+/* Ajustes para telas menores (orientação retrato) */
+@media (max-width: 412px) {
+  html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Ajustes para scrolling suave e com comportamento touch-like */
+body {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prevenir zoom em campos de entrada em dispositivos iOS */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Ajustes para navegação fixa no topo/rodapé */
+.fixed-top {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+}
+
+.fixed-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: 1000;
+  width: 100%;
+}

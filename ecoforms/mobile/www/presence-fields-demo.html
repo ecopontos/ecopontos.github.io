@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração: Campos de Presença</title>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- CSS do Sistema -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/mobile-touch-improvements.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .demo-header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .demo-header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .field-demo-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .field-demo-header {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e2e8f0;
+        }
+
+        .field-demo-header h2 {
+            font-size: 24px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .field-type-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .field-type-badge.compact {
+            background: #764ba2;
+        }
+
+        .field-description {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .features-list {
+            list-style: none;
+            margin: 15px 0;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .features-list li::before {
+            content: '✓ ';
+            color: #22c55e;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .features-list li.unavailable::before {
+            content: '✗ ';
+            color: #ef4444;
+        }
+
+        .demo-controls {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .demo-controls h3 {
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .code-sample {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .code-sample pre {
+            margin: 0;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+        }
+
+        .footer-info {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info strong {
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container" x-data="presenceDemo()">
+        
+        <!-- Header -->
+        <div class="demo-header">
+            <h1>🎯 Campos de Presença</h1>
+            <p>Comparação interativa entre PresenceListField e PresenceCompactField</p>
+        </div>
+
+        <!-- Controles -->
+        <div class="demo-controls">
+            <h3>⚙️ Controles da Demonstração</h3>
+            
+            <div class="alert-info">
+                <strong>💡 Dica:</strong> Selecione um galpão abaixo para ativar ambos os campos e veja a diferença entre eles!
+            </div>
+
+            <div class="control-group">
+                <label for="galpaSelect">Selecione o Galpão:</label>
+                <select id="galpaSelect" x-model="formData.nome_galpao">
+                    <option value="">-- Selecione um galpão --</option>
+                    <option value="ACMR">ACMR</option>
+                    <option value="Amigos da Natureza">Amigos da Natureza</option>
+                    <option value="Aresp">Aresp</option>
+                    <option value="Sul Recicla">Sul Recicla</option>
+                </select>
+            </div>
+
+            <!-- Estatísticas em Tempo Real -->
+            <div class="stats-panel" x-show="formData.nome_galpao">
+                <div class="stat-item">
+                    <div class="stat-value" x-text="getParticipantCount()"></div>
+                    <div class="stat-label">Participantes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #22c55e;" x-text="getStatusCount('presente')"></div>
+                    <div class="stat-label">Presentes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #ef4444;" x-text="getStatusCount('ausente')"></div>
+                    <div class="stat-label">Ausentes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #64748b;" x-text="getStatusCount('desligado')"></div>
+                    <div class="stat-label">Desligados</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid de Comparação -->
+        <div class="comparison-grid">
+            
+            <!-- PresenceListField -->
+            <div class="field-demo-card">
+                <div class="field-demo-header">
+                    <span class="field-type-badge">presence-list</span>
+                    <h2>PresenceListField</h2>
+                    <p class="field-description">
+                        Campo simples e direto com interface de radio buttons em estilo checklist. 
+                        Ideal para listas pequenas e formulários que precisam de simplicidade.
+                    </p>
+                    
+                    <ul class="features-list">
+                        <li>Radio buttons tradicionais</li>
+                        <li>Cores por estado (Verde/Vermelho/Cinza)</li>
+                        <li>Otimizado para mobile (48px touch)</li>
+                        <li>Código simples (212 linhas)</li>
+                        <li class="unavailable">Sem filtros de status</li>
+                        <li class="unavailable">Sem avatares</li>
+                        <li class="unavailable">Sem totalizadores</li>
+                    </ul>
+                </div>
+
+                <!-- Campo PresenceListField -->
+                <div id="field1-container"></div>
+
+                <!-- Código de Exemplo -->
+                <div class="code-sample">
+                    <pre>{
+  "type": "presence-list",
+  "id": "lista_presenca",
+  "dataSource": "cooperados",
+  "groupField": "nome_galpao",
+  "hideUntilGroup": true
+}</pre>
+                </div>
+            </div>
+
+            <!-- PresenceCompactField -->
+            <div class="field-demo-card">
+                <div class="field-demo-header">
+                    <span class="field-type-badge compact">presence_compact</span>
+                    <h2>PresenceCompactField</h2>
+                    <p class="field-description">
+                        Campo avançado com avatares, filtros dropdown e totalizadores em tempo real. 
+                        Ideal para listas grandes e dashboards que precisam de recursos visuais.
+                    </p>
+                    
+                    <ul class="features-list">
+                        <li>Avatares personalizados</li>
+                        <li>Dropdown de filtros por status</li>
+                        <li>Totalizadores visuais</li>
+                        <li>Layout em 1 ou 2 colunas</li>
+                        <li>Alternância rápida (clique no card)</li>
+                        <li>Ajuste automático de altura</li>
+                        <li>Indicadores animados</li>
+                    </ul>
+                </div>
+
+                <!-- Campo PresenceCompactField -->
+                <div id="field2-container"></div>
+
+                <!-- Código de Exemplo -->
+                <div class="code-sample">
+                    <pre>{
+  "type": "presence_compact",
+  "id": "participantes",
+  "dataSource": "cooperados",
+  "groupField": "nome_galpao",
+  "hideUntilGroup": true,
+  "columns": 1,
+  "defaultStatus": "desligado"
+}</pre>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer-info">
+            <p><strong>Sistema de Formulários - EcoForms</strong></p>
+            <p>Demonstração dos campos de presença | Otimizado para Moto G8 Power</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                Documentação completa: PRESENCE-FIELDS-COMPARISON.md
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Scripts dos Campos -->
+    <script>
+        // Dados de exemplo
+        const cooperadosData = [
+            { id: '1', nome: 'Maria Silva', galpao: 'ACMR' },
+            { id: '2', nome: 'João Santos', galpao: 'ACMR' },
+            { id: '3', nome: 'Ana Costa', galpao: 'ACMR' },
+            { id: '4', nome: 'Carlos Oliveira', galpao: 'ACMR' },
+            { id: '5', nome: 'Fernanda Lima', galpao: 'Amigos da Natureza' },
+            { id: '6', nome: 'Ricardo Mendes', galpao: 'Amigos da Natureza' },
+            { id: '7', nome: 'Paula Rodrigues', galpao: 'Amigos da Natureza' },
+            { id: '8', nome: 'Bruno Alves', galpao: 'Aresp' },
+            { id: '9', nome: 'Juliana Martins', galpao: 'Aresp' },
+            { id: '10', nome: 'Pedro Souza', galpao: 'Aresp' },
+            { id: '11', nome: 'Camila Ferreira', galpao: 'Sul Recicla' },
+            { id: '12', nome: 'Rafael Barbosa', galpao: 'Sul Recicla' },
+            { id: '13', nome: 'Mariana Gomes', galpao: 'Sul Recicla' },
+            { id: '14', nome: 'Lucas Pereira', galpao: 'Sul Recicla' }
+        ];
+
+        // Criar dados Alpine globais para os campos
+        window.field_lista_presenca_data = {
+            participants: cooperadosData,
+            statuses: {},
+            formData: {},
+            statusSequence: ['presente', 'ausente', 'desligado'],
+            statusLabels: {
+                presente: '✓ Presente',
+                ausente: '✗ Ausente',
+                desligado: 'Desligado'
+            },
+            
+            init() {
+                this.formData = window.formData || {};
+            },
+            
+            statusOf(id) {
+                return this.statuses[id] || 'desligado';
+            },
+            
+            filtered() {
+                if (!this.participants) return [];
+                const gVal = this.formData['nome_galpao'];
+                if (gVal !== undefined && gVal !== null && String(gVal).trim() !== '') {
+                    const norm = (v) => String(v ?? '').trim().toLowerCase();
+                    const target = norm(gVal);
+                    return this.participants.filter(p => norm(p['galpao']) === target);
+                }
+                return this.participants;
+            },
+            
+            showComponent() {
+                const v = (this.formData && this.formData['nome_galpao']);
+                const s = String(v ?? '').trim();
+                if (!s) return false;
+                const sentinels = new Set(['__none__', '__null__', '__empty__']);
+                return !sentinels.has(s.toLowerCase());
+            },
+            
+            setPresence(id, status) {
+                this.statuses[id] = status;
+                this.sync();
+            },
+            
+            sync() {
+                try {
+                    this.formData['lista_presenca'] = JSON.stringify(this.statuses);
+                } catch(_) {}
+            }
+        };
+
+        // Dados para o campo compact
+        window.field_participantes_data = {
+            participants: cooperadosData,
+            statuses: {},
+            formData: {},
+            statusFilter: [],
+            filterDropdownOpen: false,
+            statusSequence: ['presente', 'ausente', 'desligado'],
+            statusLabels: {
+                presente: 'Presente',
+                ausente: 'Ausente',
+                desligado: 'Desligado'
+            },
+            statusColors: {
+                presente: '#22c55e',
+                ausente: '#ef4444',
+                desligado: '#64748b'
+            },
+            
+            init() {
+                this.formData = window.formData || {};
+                
+                // Inicializar com defaultStatus
+                if ((!this.statuses || Object.keys(this.statuses).length === 0)) {
+                    const list = this.filtered() || this.participants || [];
+                    for (const it of list) {
+                        this.statuses[it.id] = 'desligado';
+                    }
+                    this.sync();
+                }
+            },
+            
+            counts() {
+                try {
+                    const list = this.filtered() || [];
+                    const map = { presente: 0, ausente: 0, desligado: 0 };
+                    for (const it of list) {
+                        const st = this.statuses[it.id] || 'desligado';
+                        if (!map[st]) map[st] = 0;
+                        map[st]++;
+                    }
+                    map.total = list.length;
+                    return map;
+                } catch(_) {
+                    return { presente: 0, ausente: 0, desligado: 0, total: 0 };
+                }
+            },
+            
+            filtered() {
+                if (!this.participants) return [];
+                let result = this.participants;
+                
+                const gVal = this.formData['nome_galpao'];
+                if (gVal !== undefined && gVal !== null && String(gVal).trim() !== '') {
+                    const norm = (v) => String(v ?? '').trim().toLowerCase();
+                    const target = norm(gVal);
+                    result = result.filter(p => norm(p['galpao']) === target);
+                }
+                
+                if (this.statusFilter && this.statusFilter.length > 0) {
+                    result = result.filter(p => {
+                        const currentStatus = this.statuses[p.id] || 'desligado';
+                        return this.statusFilter.includes(currentStatus);
+                    });
+                }
+                
+                return result;
+            },
+            
+            showComponent() {
+                const v = (this.formData && this.formData['nome_galpao']);
+                const s = String(v ?? '').trim();
+                if (!s) return false;
+                const sentinels = new Set(['__none__', '__null__', '__empty__']);
+                return !sentinels.has(s.toLowerCase());
+            },
+            
+            toggleStatusFilter(status) {
+                if (!this.statusFilter) this.statusFilter = [];
+                const index = this.statusFilter.indexOf(status);
+                if (index > -1) {
+                    this.statusFilter.splice(index, 1);
+                } else {
+                    this.statusFilter.push(status);
+                }
+            },
+            
+            isStatusFilterActive(status) {
+                return this.statusFilter && this.statusFilter.includes(status);
+            },
+            
+            clearStatusFilter() {
+                this.statusFilter = [];
+                this.filterDropdownOpen = false;
+            },
+            
+            toggleFilterDropdown() {
+                this.filterDropdownOpen = !this.filterDropdownOpen;
+            },
+            
+            closeFilterDropdown() {
+                this.filterDropdownOpen = false;
+            },
+            
+            getFilterText() {
+                if (!this.statusFilter || this.statusFilter.length === 0) {
+                    return 'Todos os status';
+                }
+                if (this.statusFilter.length === 1) {
+                    const status = this.statusFilter[0];
+                    return this.statusLabels[status] || status;
+                }
+                return `${this.statusFilter.length} filtros ativos`;
+            },
+            
+            statusOf(id) {
+                return this.statuses[id] || 'desligado';
+            },
+            
+            statusClass(id) {
+                return this.statusOf(id);
+            },
+            
+            statusStyle(id) {
+                try {
+                    const s = this.statusOf(id);
+                    const c = this.statusColors[s];
+                    if (!c) return '';
+                    const text = this.contrastColor(c);
+                    return `background-color:${c}; color:${text};`;
+                } catch(_) {
+                    return '';
+                }
+            },
+            
+            statusTextColor(id) {
+                try {
+                    const s = this.statuses[id] || 'desligado';
+                    const c = this.statusColors[s];
+                    return c ? this.contrastColor(c) : '';
+                } catch(_) {
+                    return '';
+                }
+            },
+            
+            contrastColor(hex) {
+                try {
+                    if (!hex || typeof hex !== 'string') return '#fff';
+                    const h = hex.replace('#','');
+                    if (h.length !== 6) return '#fff';
+                    const r = parseInt(h.substring(0,2),16);
+                    const g = parseInt(h.substring(2,4),16);
+                    const b = parseInt(h.substring(4,6),16);
+                    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    return lum > 0.6 ? '#000' : '#fff';
+                } catch(_) {
+                    return '#fff';
+                }
+            },
+            
+            setPresence(id, status) {
+                this.statuses[id] = status;
+                this.sync();
+            },
+            
+            toggleStatus(id) {
+                const seq = this.statusSequence;
+                const cur = this.statuses[id] || 'desligado';
+                const idx = seq.indexOf(cur);
+                const next = seq[(idx + 1) % seq.length];
+                this.statuses[id] = next;
+                this.sync();
+            },
+            
+            sync() {
+                try {
+                    this.formData['participantes'] = JSON.stringify(this.statuses);
+                } catch(_) {}
+            }
+        };
+
+        // Função Alpine.js para a demo
+        window.presenceDemo = function() {
+            return {
+                formData: {
+                    nome_galpao: '',
+                    lista_presenca: '{}',
+                    participantes: '{}'
+                },
+                
+                init() {
+                    // Tornar formData global para os campos
+                    window.formData = this.formData;
+                    
+                    // Renderizar HTML diretamente dos campos
+                    this.renderFields();
+                },
+                
+                renderFields() {
+                    // Campo 1: PresenceListField
+                    const field1Html = `
+                        <div class="presence-wrapper presence-checklist field-presence-compact" x-data="field_lista_presenca_data" x-init="init()" x-cloak x-show="showComponent()">
+                            <template x-for="p in filtered()" :key="p.id">
+                                <div class="item">
+                                    <div class="item-description" x-text="p.nome"></div>
+                                    <div class="radio-group">
+                                        <template x-for="s in statusSequence" :key="s">
+                                            <div class="radio-option">
+                                                <input type="radio" 
+                                                    :id="'lista_presenca-' + p.id + '-' + s" 
+                                                    :name="'lista_presenca-' + p.id"
+                                                    :value="s"
+                                                    x-model="statuses[p.id]"
+                                                    @change="setPresence(p.id, s)">
+                                                <label class="radio-label" :class="s" :for="'lista_presenca-' + p.id + '-' + s">
+                                                    <span x-text="statusLabels[s]"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="text-xs opacity-70 mt-2" x-show="!filtered().length">Selecione um galpão acima para ver os participantes.</div>
+                        </div>
+                    `;
+                    
+                    // Campo 2: PresenceCompactField
+                    const field2Html = `
+                        <div class="presence-wrapper presence-v2 field-presence-compact" x-data="field_participantes_data" x-init="init()" x-cloak x-show="showComponent()" x-on:keydown.escape.window="closeFilterDropdown()">
+                            
+                            <div class="status-filter" x-on:resize.window="filterDropdownOpen && adjustDropdownPosition()" x-on:scroll.window.debounce.100="filterDropdownOpen && adjustDropdownPosition()">
+                                <div class="filter-dropdown-overlay" x-show="filterDropdownOpen" @click="closeFilterDropdown()" x-transition.opacity></div>
+                                
+                                <button type="button" class="filter-dropdown-toggle" :class="{ 'open': filterDropdownOpen }" @click="toggleFilterDropdown()" x-ref="filterToggle">
+                                    <div class="filter-dropdown-text">
+                                        <span x-text="getFilterText()" :class="{ 'filter-active-text': statusFilter.length > 0 }"></span>
+                                        <span class="filter-badge" x-show="statusFilter.length > 0" x-text="statusFilter.length"></span>
+                                    </div>
+                                    <div class="filter-dropdown-arrow"></div>
+                                </button>
+                                
+                                <div class="filter-dropdown-menu" :class="{ 'open': filterDropdownOpen }" x-ref="filterMenu" @click.stop>
+                                    <div class="filter-menu-header">Filtrar por Status</div>
+                                    
+                                    <div class="filter-options">
+                                        <template x-for="s in statusSequence" :key="s">
+                                            <div class="filter-option" :class="{ 'active': isStatusFilterActive(s) }" @click="toggleStatusFilter(s)">
+                                                <div class="filter-checkbox"></div>
+                                                <div class="filter-status-dot" :style="{ 'background-color': statusColors[s] }"></div>
+                                                <span class="filter-status-label" x-text="statusLabels[s]"></span>
+                                                <span class="filter-status-count" x-text="counts()[s]"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <button type="button" class="filter-clear-button" @click="clearStatusFilter()" x-show="statusFilter.length > 0">
+                                        Limpar todos os filtros
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                <template x-for="p in filtered()" :key="p.id">
+                                    <div class="person-row-v2" :class="statusClass(p.id)" @click.prevent="toggleStatus(p.id)">
+                                        <div class="avatar-v2" x-text="p.nome.charAt(0).toUpperCase()"></div>
+                                        <div class="person-info-v2">
+                                            <div class="person-name-v2" x-text="p.nome"></div>
+                                            <div class="status-indicator-v2" :class="statusClass(p.id)" :style="statusStyle(p.id)">
+                                                <div class="status-dot-v2" :style="{ 'background-color': statusColors[statusOf(p.id)] }"></div>
+                                                <span :style="{ color: statusTextColor(p.id) }" x-text="statusLabels[statusOf(p.id)]"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <div class="text-xs opacity-70 mt-2" x-show="!filtered().length">Selecione um galpão acima para ver os participantes.</div>
+                            
+                            <div class="presence-summary" x-show="filtered().length">
+                                <template x-for="s in statusSequence" :key="s">
+                                    <div class="legend-item">
+                                        <span class="legend-dot" :style="{ 'background-color': statusColors[s] }"></span>
+                                        <span x-text="counts()[s]"></span>
+                                        <span x-text="statusLabels[s]"></span>
+                                    </div>
+                                </template>
+                                <div class="legend-item"><strong x-text="counts().total"></strong> Total</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('field1-container').innerHTML = field1Html;
+                    document.getElementById('field2-container').innerHTML = field2Html;
+                },
+                
+                getParticipantCount() {
+                    const galpao = this.formData.nome_galpao;
+                    if (!galpao) return 0;
+                    return cooperadosData.filter(c => c.galpao === galpao).length;
+                },
+                
+                getStatusCount(status) {
+                    try {
+                        const statuses1 = JSON.parse(this.formData.lista_presenca || '{}');
+                        const count1 = Object.values(statuses1).filter(s => s === status).length;
+                        
+                        const statuses2 = JSON.parse(this.formData.participantes || '{}');
+                        const count2 = Object.values(statuses2).filter(s => s === status).length;
+                        
+                        return Math.max(count1, count2);
+                    } catch (e) {
+                        return 0;
+                    }
+                }
+            };
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+pub mod auth;
+pub mod crypto;
+pub mod rbac;
+pub mod audit;
+pub mod actions;
+pub mod setup;
+pub mod key_rotation;
+pub mod email;
+pub mod lan_storage;
+pub mod sync_roteiros;
+pub mod sync_pesagens;
+pub mod sync_residuos;

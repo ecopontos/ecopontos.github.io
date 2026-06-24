@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .section { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3; }
+        .field-row { @apply flex justify-between items-center py-2.5 border-b border-gray-100 last:border-0; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="clienteDetalheApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center gap-3 mb-5">
+        <a href="clientes.html" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </a>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-xl font-bold text-gray-900 truncate"
+                x-text="cliente ? cliente.nome : 'Carregando…'"></h1>
+            <p class="text-xs text-gray-500" x-show="cliente">
+                <span x-text="formatarDoc(cliente?.documento)"></span>
+            </p>
+        </div>
+        <div class="flex gap-1">
+            <a :href="'cliente-form.html?id=' + (cliente?.id || '')"
+               x-show="cliente"
+               class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                <i class="fas fa-edit text-lg"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Not found -->
+    <div x-show="!carregando && !cliente"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-exclamation-circle text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Cliente não encontrado</p>
+        <a href="clientes.html" class="mt-3 text-sm text-blue-600 hover:underline">Voltar à lista</a>
+    </div>
+
+    <div x-show="!carregando && cliente" x-cloak>
+
+        <!-- Status -->
+        <div class="flex items-center gap-3 mb-4">
+            <span class="badge"
+                  :class="cliente.ativo === 1 || cliente.ativo === true ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'"
+                  x-text="(cliente.ativo === 1 || cliente.ativo === true) ? 'Ativo' : 'Inativo'"></span>
+            <span class="badge bg-blue-100 text-blue-700"
+                  x-text="cliente.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'"></span>
+        </div>
+
+        <!-- Dados cadastrais -->
+        <div class="section">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Dados Cadastrais</h2>
+            <dl>
+                <template x-for="campo in camposCadastrais" :key="campo.chave">
+                    <div class="field-row" x-show="campo.valor">
+                        <dt class="text-xs text-gray-500" x-text="campo.rotulo"></dt>
+                        <dd class="text-sm text-gray-900 text-right max-w-[60%] truncate" x-text="campo.valor"></dd>
+                    </div>
+                </template>
+            </dl>
+        </div>
+
+        <!-- Contatos -->
+        <div class="section">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Contatos</h2>
+            <template x-for="contato in contatos" :key="contato.chave">
+                <div class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0"
+                     x-show="contato.valor">
+                    <i :class="contato.icone + ' text-gray-400 text-sm w-5 text-center'"></i>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-500" x-text="contato.rotulo"></p>
+                        <p class="text-sm text-gray-900 truncate" x-text="contato.valor"></p>
+                    </div>
+                    <a x-show="contato.link" :href="contato.link"
+                       class="text-blue-600 text-xs hover:underline flex-none">
+                        <i :class="contato.acaoIcone"></i>
+                    </a>
+                </div>
+            </template>
+        </div>
+
+        <!-- Endereço -->
+        <div class="section" x-show="cliente?.endereco || cliente?.cidade || cliente?.estado || cliente?.cep">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Endereço</h2>
+            <div class="space-y-1 text-sm text-gray-900">
+                <p x-show="cliente?.endereco" x-text="cliente.endereco"></p>
+                <p x-show="cliente?.cidade || cliente?.estado">
+                    <span x-text="[cliente.cidade, cliente.estado].filter(Boolean).join(' / ')"></span>
+                </p>
+                <p x-show="cliente?.cep" class="text-xs text-gray-500"
+                   x-text="'CEP: ' + formatarCep(cliente?.cep)"></p>
+            </div>
+        </div>
+
+        <!-- Observação -->
+        <div class="section" x-show="cliente?.observacao">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Observação</h2>
+            <p class="text-sm text-gray-600 whitespace-pre-wrap" x-text="cliente.observacao"></p>
+        </div>
+
+        <!-- Histórico de demandas -->
+        <div class="section" x-show="demandasVinculadas.length > 0">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Demandas (<span x-text="demandasVinculadas.length"></span>)
+            </h2>
+            <template x-for="d in demandasVinculadas" :key="d.id">
+                <a :href="'demanda-detalhe.html?id=' + d.id"
+                   class="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0
+                          hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+                    <span class="badge flex-none" :class="corStatusDemanda(d.status)"
+                          x-text="labelStatusDemanda(d.status)"></span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-900 truncate"
+                           x-text="d.tipo_acao || d.descricao || 'Demanda #' + d.id.slice(-6)"></p>
+                        <p class="text-xs text-gray-500" x-text="formatarData(d.criada_em || d.created_at)"></p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+            </template>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+
+function getIdFromUrl() {
+    return new URLSearchParams(window.location.search).get('id');
+}
+
+async function lerRegistro(db, tabela, id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.clienteDetalheApp = function () {
+    return {
+        cliente: null,
+        demandasVinculadas: [],
+        carregando: false,
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+
+        get camposCadastrais() {
+            const c = this.cliente;
+            if (!c) return [];
+            return [
+                { chave: 'nome', rotulo: 'Nome/Razão Social', valor: c.nome },
+                { chave: 'documento', rotulo: 'CPF/CNPJ', valor: this.formatarDoc(c.documento) },
+                { chave: 'tipo_pessoa', rotulo: 'Tipo', valor: c.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física' },
+                { chave: 'criado_em', rotulo: 'Cadastrado em', valor: this.formatarData(c.criado_em) },
+            ];
+        },
+
+        get contatos() {
+            const c = this.cliente;
+            if (!c) return [];
+            return [
+                { chave: 'email', rotulo: 'Email', valor: c.email, icone: 'fas fa-envelope', link: c.email ? 'mailto:' + c.email : null, acaoIcone: 'fas fa-external-link-alt' },
+                { chave: 'telefone', rotulo: 'Telefone', valor: c.telefone, icone: 'fas fa-phone', link: c.telefone ? 'tel:' + c.telefone.replace(/\D/g, '') : null, acaoIcone: 'fas fa-phone' },
+                { chave: 'celular', rotulo: 'Celular', valor: c.celular, icone: 'fas fa-mobile-alt', link: c.celular ? 'https://wa.me/55' + c.celular.replace(/\D/g, '') : null, acaoIcone: 'fab fa-whatsapp' },
+            ];
+        },
+
+        async init() {
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            const id = getIdFromUrl();
+            if (!id) { this.carregando = false; return; }
+
+            try {
+                const db = await openSyncEventDB();
+                this.cliente = await lerRegistro(db, 'tbl_clientes', id);
+
+                if (this.cliente) {
+                    const demandas = await lerTabela(db, 'tbl_demandas');
+                    this.demandasVinculadas = demandas
+                        .filter(d =>
+                            d.solicitante_id === id ||
+                            d.destinatario_id === id ||
+                            d.cliente_id === id
+                        )
+                        .sort((a, b) => new Date(b.criada_em || b.created_at || 0) - new Date(a.criada_em || a.created_at || 0));
+                }
+            } catch (e) {
+                console.error('[ClienteDetalhe] Erro:', e);
+                this.mostrarToast('Erro ao carregar dados', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        formatarDoc(doc) {
+            if (!doc) return '—';
+            const d = doc.replace(/\D/g, '');
+            if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+            return doc;
+        },
+
+        formatarCep(cep) {
+            if (!cep) return '';
+            const c = cep.replace(/\D/g, '');
+            return c.length === 8 ? c.replace(/(\d{5})(\d{3})/, '$1-$2') : cep;
+        },
+
+        corStatusDemanda(s) {
+            return {
+                aberta:    'bg-yellow-100 text-yellow-800',
+                aceita:    'bg-blue-100 text-blue-700',
+                concluida: 'bg-green-100 text-green-800',
+                cancelada: 'bg-gray-100 text-gray-600',
+            }[s] ?? 'bg-gray-100 text-gray-600';
+        },
+
+        labelStatusDemanda(s) {
+            return { aberta: 'Aberta', aceita: 'Aceita', concluida: 'Concluída', cancelada: 'Cancelada' }[s] ?? s;
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

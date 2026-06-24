@@ -1,0 +1,11 @@
+[
+    {
+        "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "username": "admin",
+        "password_hash": "$2a$10$g.N/c5vATTaV62x1Q3a.6.oE/ZzB.d/E.f/G.h/I.j/K.l/M.n/O",
+        "nome": "Administrador",
+        "perfil": "gerente",
+        "formularios_permitidos": ["*"],
+        "ativo": true
+    }
+]

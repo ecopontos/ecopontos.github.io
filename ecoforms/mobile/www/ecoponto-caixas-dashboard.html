@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Ecoponto Caixas em Tempo Real</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-critical {
+            background-color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        
+        .status-warning {
+            background-color: #f59e0b;
+        }
+        
+        .status-normal {
+            background-color: #10b981;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .ocupacao-bar {
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f3f4f6;
+        }
+        
+        .ocupacao-bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tipo-residuo {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .tipo-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .entulho { background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%); }
+        .madeira { background: linear-gradient(90deg, #92400e 0%, #78350f 100%); }
+        .poda { background: linear-gradient(90deg, #16a34a 0%, #15803d 100%); }
+        .reciclavel { background: linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%); }
+        .rejeito { background: linear-gradient(90deg, #374151 0%, #1f2937 100%); }
+        .sucata { background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); }
+        .vidro { background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%); }
+        
+        .ecoponto-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid transparent;
+        }
+        
+        .ecoponto-card.critical {
+            border-left-color: #ef4444;
+        }
+        
+        .ecoponto-card.warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .ecoponto-card.normal {
+            border-left-color: #10b981;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .refresh-btn {
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .refresh-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div x-data="dashboardData()" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Dashboard Ecopontos</h1>
+                        <p class="text-sm text-gray-600 mt-1">Monitoramento em tempo real</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Última atualização</p>
+                            <p class="text-sm font-medium text-gray-900" x-text="lastUpdate"></p>
+                        </div>
+                        <button @click="refreshData()" class="refresh-btn">
+                            🔄 Atualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- Métricas Principais -->
+            <div class="mb-8">
+                <h2 class="section-title">
+                    📊 Resumo Geral
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card">
+                        <div class="metric-value text-green-600" x-text="metrics.ecopontosOperacionais"></div>
+                        <div class="metric-label">Ecopontos Ativos</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value text-blue-600" x-text="metrics.atendimentosHoje"></div>
+                        <div class="metric-label">Registros Hoje</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value text-red-600" x-text="metrics.caixasCriticas"></div>
+                        <div class="metric-label">Caixas Críticas</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value text-purple-600" x-text="metrics.ultimoAtendimento"></div>
+                        <div class="metric-label">Último Registro</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Ocupação Média -->
+            <div class="mb-8">
+                <h2 class="section-title">
+                    📈 Nível Médio de Ocupação por Tipo
+                </h2>
+                <div class="chart-container">
+                    <canvas id="ocupacaoMediaChart" height="80"></canvas>
+                </div>
+            </div>
+
+            <!-- Status por Ecoponto -->
+            <div>
+                <h2 class="section-title">
+                    🏢 Status Detalhado dos Ecopontos
+                </h2>
+                <div class="space-y-4">
+                    <template x-for="ecoponto in ecopontosDetalhados" :key="ecoponto.nome">
+                        <div class="ecoponto-card" :class="{
+                            'critical': ecoponto.status === 'high',
+                            'warning': ecoponto.status === 'medium',
+                            'normal': ecoponto.status === 'low'
+                        }">
+                            <!-- Header do Ecoponto -->
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900" x-text="ecoponto.nome"></h3>
+                                <div class="flex items-center">
+                                    <span class="status-indicator" :class="{
+                                        'status-critical': ecoponto.status === 'high',
+                                        'status-warning': ecoponto.status === 'medium',
+                                        'status-normal': ecoponto.status === 'low'
+                                    }"></span>
+                                    <span class="font-medium" :class="{
+                                        'text-red-600': ecoponto.status === 'high',
+                                        'text-yellow-600': ecoponto.status === 'medium',
+                                        'text-green-600': ecoponto.status === 'low'
+                                    }" x-text="getStatusText(ecoponto.status)"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Grid de Ocupação -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">🏗️ Entulho</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill entulho" 
+                                             :style="{ width: ecoponto.ocupacoes.entulho + '%' }"
+                                             x-text="ecoponto.ocupacoes.entulho + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">🪵 Madeira</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill madeira" 
+                                             :style="{ width: ecoponto.ocupacoes.madeira + '%' }"
+                                             x-text="ecoponto.ocupacoes.madeira + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">🌿 Poda</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill poda" 
+                                             :style="{ width: ecoponto.ocupacoes.poda + '%' }"
+                                             x-text="ecoponto.ocupacoes.poda + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">♻️ Reciclável</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill reciclavel" 
+                                             :style="{ width: ecoponto.ocupacoes.reciclavel + '%' }"
+                                             x-text="ecoponto.ocupacoes.reciclavel + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">🗑️ Rejeito</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill rejeito" 
+                                             :style="{ width: ecoponto.ocupacoes.rejeito + '%' }"
+                                             x-text="ecoponto.ocupacoes.rejeito + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">⚙️ Sucata</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill sucata" 
+                                             :style="{ width: ecoponto.ocupacoes.sucata + '%' }"
+                                             x-text="ecoponto.ocupacoes.sucata + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tipo-residuo">
+                                    <span class="tipo-label">🪟 Vidro</span>
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-bar-fill vidro" 
+                                             :style="{ width: ecoponto.ocupacoes.vidro + '%' }"
+                                             x-text="ecoponto.ocupacoes.vidro + '%'">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function initializeServices() {
+            // Verificar se o DataService já existe
+            if (!window.dataService) {
+                window.dataService = new window.DataService();
+            }
+            
+            // Aguardar a inicialização do DataService
+            if (window.dataService._initPromise) {
+                await window.dataService._initPromise;
+            }
+            
+            // Verificar se o DashboardService já existe
+            if (!window.dashboardService) {
+                window.dashboardService = new window.DashboardService();
+            }
+            
+            // Aguardar a inicialização do DashboardService
+            if (window.dashboardService._initPromise) {
+                await window.dashboardService._initPromise;
+            }
+        }
+
+        function dashboardData() {
+            return {
+                metrics: {
+                    ecopontosOperacionais: 0,
+                    atendimentosHoje: 0,
+                    caixasCriticas: 0,
+                    ultimoAtendimento: 'N/A'
+                },
+                ecopontosDetalhados: [],
+                ocupacaoMediaChart: null,
+                lastUpdate: new Date().toLocaleTimeString('pt-BR'),
+                
+                async init() {
+                    // Inicializar serviços primeiro
+                    await initializeServices();
+                    await this.loadData();
+                    this.setupAutoRefresh();
+                },
+                
+                async loadData() {
+                    try {
+                        // Verificar se os serviços estão disponíveis
+                        if (!window.dashboardService) {
+                            console.error('DashboardService não está disponível');
+                            return;
+                        }
+                        
+                        // Obter métricas operacionais
+                        this.metrics = await window.dashboardService.getMetricasOperacionais();
+                        
+                        // Obter dados detalhados por ecoponto
+                        this.ecopontosDetalhados = await window.dashboardService.getDadosEcopontosDetalhados();
+                        
+                        // Obter dados para o gráfico de ocupação média
+                        const ocupacaoMediaData = await window.dashboardService.getDadosOcupacaoMedia();
+                        
+                        // Atualizar gráfico de ocupação média
+                        this.updateOcupacaoMediaChart(ocupacaoMediaData);
+                        
+                        // Atualizar timestamp
+                        this.lastUpdate = new Date().toLocaleTimeString('pt-BR');
+                    } catch (error) {
+                        console.error('Erro ao carregar dados:', error);
+                        // Em caso de erro, usar dados mockados
+                        if (window.dashboardService) {
+                            this.metrics = window.dashboardService.getDadosMockadosOperacionais();
+                            this.ecopontosDetalhados = window.dashboardService.getDadosEcopontosMockados();
+                            const ocupacaoMediaData = window.dashboardService.getDadosGraficoOcupacaoMockados();
+                            this.updateOcupacaoMediaChart(ocupacaoMediaData);
+                        }
+                    }
+                },
+                
+                updateOcupacaoMediaChart(data) {
+                    const ctx = document.getElementById('ocupacaoMediaChart');
+                    if (!ctx) {
+                        console.error('Canvas do gráfico não encontrado');
+                        return;
+                    }
+                    
+                    const chartCtx = ctx.getContext('2d');
+                    
+                    if (this.ocupacaoMediaChart) {
+                        this.ocupacaoMediaChart.destroy();
+                    }
+                    
+                    this.ocupacaoMediaChart = new Chart(chartCtx, {
+                        type: 'bar',
+                        data: data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    titleFont: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    bodyFont: {
+                                        size: 13
+                                    },
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Ocupação: ' + context.parsed.y + '%';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: 'Nível de Ocupação (%)',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12,
+                                            weight: '500'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                async refreshData() {
+                    await this.loadData();
+                },
+                
+                setupAutoRefresh() {
+                    // Atualizar a cada 30 segundos
+                    setInterval(async () => {
+                        await this.loadData();
+                    }, 3000); // 30 segundos
+                },
+                
+                getStatusText(status) {
+                    const statusMap = {
+                        'high': 'Crítico',
+                        'medium': 'Alerta',
+                        'low': 'Normal'
+                    };
+                    return statusMap[status] || 'Desconhecido';
+                }
+            }
+        }
+    </script>
+    
+    <!-- Scripts necessários -->
+    <script src="js/supabase.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/utils/stable-stringify.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/dashboard-service.js"></script>
+</body>
+</html>

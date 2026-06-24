@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Occupation Selector Standalone</title>
+    
+    <!-- CSS do sistema de design -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/occupation-selector-compact.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .demo-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+
+        .demo-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .demo-content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .demo-section h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-section p {
+            margin: 0 0 15px 0;
+            color: #666;
+        }
+
+        .form-example {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .field-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .field-wrapper label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .demo-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .demo-button.primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .demo-button.primary:hover {
+            background: #45a049;
+        }
+
+        .demo-button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .demo-button.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .demo-output {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .theme-button {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-button.active {
+            border-color: #4CAF50;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .config-display {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 600px) {
+            .demo-content {
+                padding: 20px;
+            }
+            
+            .demo-section {
+                padding: 20px;
+            }
+            
+            .demo-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🏗️ Occupation Selector Demo</h1>
+            <p>Demonstração do componente de seleção de ocupação com configuração padrão</p>
+        </div>
+
+        <div class="demo-content">
+            <!-- Seção 1: Exemplo Básico -->
+            <div class="demo-section">
+                <h2>📦 Exemplo Básico</h2>
+                <p>Implementação padrão do seletor de ocupação com todas as funcionalidades ativas.</p>
+                
+                <div class="form-example">
+                    <div class="field-wrapper">
+                        <div id="occupation-field-1"></div>
+                    </div>
+                    
+                    <div class="demo-controls">
+                        <button class="demo-button primary" onclick="getFieldValue(1)">Obter Valor</button>
+                        <button class="demo-button secondary" onclick="clearField(1)">Limpar</button>
+                        <button class="demo-button secondary" onclick="setExampleValue(1)">Definir Exemplo</button>
+                    </div>
+                    
+                    <div id="output-1" class="demo-output" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Seção 2: Temas -->
+            <div class="demo-section">
+                <h2>🎨 Temas Disponíveis</h2>
+                <p>Teste diferentes temas visuais para o componente.</p>
+                
+                <div class="theme-selector">
+                    <button class="theme-button active" onclick="changeTheme('default')">Padrão</button>
+                    <button class="theme-button" onclick="changeTheme('compact')">Compacto</button>
+                    <button class="theme-button" onclick="changeTheme('minimal')">Minimal</button>
+                </div>
+                
+                <div class="form-example">
+                    <div class="field-wrapper">
+                        <div id="occupation-field-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 3: Configuração Personalizada -->
+            <div class="demo-section">
+                <h2>⚙️ Configuração Personalizada</h2>
+                <p>Exemplo com configurações personalizadas e validação customizada.</p>
+                
+                <div class="form-example">
+                    <div class="field-wrapper">
+                        <div id="occupation-field-3"></div>
+                    </div>
+                    
+                    <div class="demo-controls">
+                        <button class="demo-button primary" onclick="validateCustomField()">Validar</button>
+                        <button class="demo-button secondary" onclick="showConfig()">Ver Configuração</button>
+                    </div>
+                    
+                    <div id="validation-output" class="demo-output" style="display: none;"></div>
+                    <div id="config-output" class="config-display" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Seção 4: Eventos e Callbacks -->
+            <div class="demo-section">
+                <h2>🔔 Eventos e Callbacks</h2>
+                <p>Demonstração dos eventos disponíveis e como utilizá-los.</p>
+                
+                <div class="form-example">
+                    <div class="field-wrapper">
+                        <div id="occupation-field-4"></div>
+                    </div>
+                    
+                    <div class="demo-controls">
+                        <button class="demo-button secondary" onclick="clearEventLog()">Limpar Log</button>
+                    </div>
+                    
+                    <div id="event-log" class="demo-output">Log de eventos aparecerá aqui...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts necessários -->
+    <!-- Base Field -->
+    <script src="js/fields/BaseField.standalone.js"></script>
+    <!-- Utilities -->
+    <script src="js/fields/utils/boxFilterSystem.js"></script>
+    <!-- Occupation Selector Field -->
+    <script src="js/fields/types/OccupationSelectorCompactField.js"></script>
+    
+    <script>
+        // Variáveis globais para os campos
+        let field1, field2, field3, field4;
+        let currentTheme = 'default';
+        let eventLog = [];
+
+        // Inicialização quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFields();
+        });
+
+        function initializeFields() {
+            // Campo 1: Configuração padrão
+            field1 = createOccupationSelector({
+                id: 'occupation_basic',
+                name: 'occupation_basic',
+                label: 'Nível de Ocupação da Caixa'
+            });
+            document.getElementById('occupation-field-1').innerHTML = field1.render();
+            setupFieldEvents(field1, 'occupation-field-1');
+
+            // Campo 2: Com tema (inicialmente padrão)
+            field2 = createOccupationSelector({
+                id: 'occupation_theme',
+                name: 'occupation_theme',
+                label: 'Seletor com Tema',
+                ...getThemeConfig('default')
+            });
+            document.getElementById('occupation-field-2').innerHTML = field2.render();
+            setupFieldEvents(field2, 'occupation-field-2');
+
+            // Campo 3: Configuração personalizada
+            field3 = createOccupationSelector({
+                id: 'occupation_custom',
+                name: 'occupation_custom',
+                label: 'Configuração Personalizada',
+                occupationStates: [
+                    { value: '0', label: 'Vazia', progress: 0, icon: '🟢', color: '#4CAF50' },
+                    { value: '30', label: 'Baixa', progress: 30, icon: '🟡', color: '#FFC107' },
+                    { value: '70', label: 'Alta', progress: 70, icon: '🟠', color: '#FF9800' },
+                    { value: '100', label: 'Crítica', progress: 100, icon: '🔴', color: '#f44336' }
+                ],
+                validation: {
+                    customValidation: exampleCustomValidation
+                }
+            });
+            document.getElementById('occupation-field-3').innerHTML = field3.render();
+            setupFieldEvents(field3, 'occupation-field-3');
+
+            // Campo 4: Com eventos
+            field4 = createOccupationSelector({
+                id: 'occupation_events',
+                name: 'occupation_events',
+                label: 'Seletor com Eventos',
+                events: {
+                    onBoxSelect: (boxId, boxName) => {
+                        logEvent(`Caixa selecionada: ${boxName} (ID: ${boxId})`);
+                    },
+                    onOccupationChange: (occupation, label) => {
+                        logEvent(`Ocupação alterada: ${label} (${occupation}%)`);
+                    },
+                    onChange: (value) => {
+                        logEvent(`Valor completo: ${JSON.stringify(value)}`);
+                    }
+                }
+            });
+            document.getElementById('occupation-field-4').innerHTML = field4.render();
+            setupFieldEvents(field4, 'occupation-field-4');
+        }
+
+        function setupFieldEvents(field, containerId) {
+            const container = document.getElementById(containerId);
+            
+            // Event listeners para interações
+            container.addEventListener('click', function(e) {
+                // Box selector
+                if (e.target.closest('.box-selector-display')) {
+                    toggleBoxOptions(container);
+                }
+                
+                // Box option
+                if (e.target.closest('.box-option')) {
+                    const boxId = parseInt(e.target.closest('.box-option').dataset.boxId);
+                    selectBox(field, boxId, container);
+                }
+                
+                // Occupation selector
+                if (e.target.closest('.occupation-status-display')) {
+                    toggleOccupationOptions(container);
+                }
+                
+                // Occupation option
+                if (e.target.closest('.occupation-option')) {
+                    const value = e.target.closest('.occupation-option').dataset.value;
+                    selectOccupation(field, value, container);
+                }
+            });
+        }
+
+        function toggleBoxOptions(container) {
+            const display = container.querySelector('.box-selector-display');
+            const options = container.querySelector('.box-options');
+            
+            if (options.style.display === 'none') {
+                options.style.display = 'block';
+                display.classList.add('open');
+                display.setAttribute('aria-expanded', 'true');
+            } else {
+                options.style.display = 'none';
+                display.classList.remove('open');
+                display.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function toggleOccupationOptions(container) {
+            const display = container.querySelector('.occupation-status-display');
+            const options = container.querySelector('.occupation-options');
+            
+            if (options && options.style.display === 'none') {
+                options.style.display = 'block';
+                display.classList.add('open');
+                display.setAttribute('aria-expanded', 'true');
+            } else if (options) {
+                options.style.display = 'none';
+                display.classList.remove('open');
+                display.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function selectBox(field, boxId, container) {
+            field.selectedBoxId = boxId;
+            field.selectedOccupation = null; // Reset occupation when box changes
+            
+            // Trigger events
+            const box = field.boxes.find(b => b.id === boxId);
+            if (field.config.events && field.config.events.onBoxSelect) {
+                field.config.events.onBoxSelect(boxId, box ? box.nome : '');
+            }
+            
+            // Re-render
+            container.innerHTML = field.render();
+            setupFieldEvents(field, container.id);
+            
+            // Close options
+            const options = container.querySelector('.box-options');
+            if (options) options.style.display = 'none';
+        }
+
+        function selectOccupation(field, value, container) {
+            field.selectedOccupation = value;
+            
+            // Trigger events
+            const state = field.occupationStates.find(s => s.value === value);
+            if (field.config.events && field.config.events.onOccupationChange) {
+                field.config.events.onOccupationChange(value, state ? state.label : '');
+            }
+            
+            if (field.config.events && field.config.events.onChange) {
+                field.config.events.onChange(field.getValue());
+            }
+            
+            // Re-render
+            container.innerHTML = field.render();
+            setupFieldEvents(field, container.id);
+            
+            // Close options
+            const options = container.querySelector('.occupation-options');
+            if (options) options.style.display = 'none';
+        }
+
+        function getFieldValue(fieldNumber) {
+            const field = window[`field${fieldNumber}`];
+            const output = document.getElementById(`output-${fieldNumber}`);
+            
+            const value = field.getValue();
+            output.textContent = JSON.stringify(value, null, 2);
+            output.style.display = 'block';
+        }
+
+        function clearField(fieldNumber) {
+            const field = window[`field${fieldNumber}`];
+            field.setSelectedValue({ boxId: null, occupation: null });
+            
+            const container = document.getElementById(`occupation-field-${fieldNumber}`);
+            container.innerHTML = field.render();
+            setupFieldEvents(field, `occupation-field-${fieldNumber}`);
+            
+            const output = document.getElementById(`output-${fieldNumber}`);
+            if (output) output.style.display = 'none';
+        }
+
+        function setExampleValue(fieldNumber) {
+            const field = window[`field${fieldNumber}`];
+            field.setSelectedValue({ 
+                boxId: 4, // Reciclável
+                occupation: '75' // Quase cheia
+            });
+            
+            const container = document.getElementById(`occupation-field-${fieldNumber}`);
+            container.innerHTML = field.render();
+            setupFieldEvents(field, `occupation-field-${fieldNumber}`);
+        }
+
+        function changeTheme(themeName) {
+            currentTheme = themeName;
+            
+            // Update theme buttons
+            document.querySelectorAll('.theme-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Recreate field2 with new theme
+            field2 = createOccupationSelector({
+                id: 'occupation_theme',
+                name: 'occupation_theme',
+                label: 'Seletor com Tema',
+                ...getThemeConfig(themeName)
+            });
+            
+            const container = document.getElementById('occupation-field-2');
+            container.innerHTML = field2.render();
+            setupFieldEvents(field2, 'occupation-field-2');
+        }
+
+        function validateCustomField() {
+            const value = field3.getValue();
+            const output = document.getElementById('validation-output');
+            
+            let result = { isValid: true, message: 'Validação passou!' };
+            
+            if (field3.config.validation && field3.config.validation.customValidation) {
+                result = field3.config.validation.customValidation(value.occupation, value.boxId);
+            }
+            
+            output.textContent = `Status: ${result.isValid ? 'VÁLIDO' : 'INVÁLIDO'}\nMensagem: ${result.message}\nValor: ${JSON.stringify(value, null, 2)}`;
+            output.style.display = 'block';
+            output.style.color = result.isValid ? '#4CAF50' : '#f44336';
+        }
+
+        function showConfig() {
+            const output = document.getElementById('config-output');
+            output.textContent = JSON.stringify(OccupationSelectorConfig, null, 2);
+            output.style.display = output.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function logEvent(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            eventLog.push(`[${timestamp}] ${message}`);
+            
+            const logElement = document.getElementById('event-log');
+            logElement.textContent = eventLog.slice(-10).join('\n'); // Show last 10 events
+        }
+
+        function clearEventLog() {
+            eventLog = [];
+            document.getElementById('event-log').textContent = 'Log de eventos aparecerá aqui...';
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.box-selector-compact') && !e.target.closest('.occupation-status-compact')) {
+                document.querySelectorAll('.box-options, .occupation-options').forEach(options => {
+                    options.style.display = 'none';
+                });
+                document.querySelectorAll('.box-selector-display, .occupation-status-display').forEach(display => {
+                    display.classList.remove('open');
+                    display.setAttribute('aria-expanded', 'false');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

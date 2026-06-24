@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .card  { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 transition-all hover:shadow-md; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="clientesApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">Clientes</h1>
+                <p class="text-xs text-gray-500" x-text="todas.length + ' cadastrado(s)'"></p>
+            </div>
+        </div>
+        <a href="cliente-form.html"
+           class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl
+                  hover:bg-blue-700 active:bg-blue-800 transition-colors">
+            <i class="fas fa-plus text-xs"></i> Novo
+        </a>
+    </div>
+
+    <!-- Busca e filtros -->
+    <div class="flex gap-2 mb-4">
+        <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input x-model="busca" @input="aplicarFiltro()"
+                   type="text" placeholder="Buscar por nome ou documento..."
+                   class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+    </div>
+
+    <div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <template x-for="f in filtrosStatus" :key="f.valor">
+            <button @click="filtroStatus = f.valor; aplicarFiltro()"
+                    class="flex-none px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                    :class="filtroStatus === f.valor
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'">
+                <span x-text="f.label"></span>
+                <span x-show="f.valor !== 'todos'" class="ml-1 opacity-75"
+                      x-text="'(' + contar(f.valor) + ')'"></span>
+            </button>
+        </template>
+    </div>
+
+    <!-- Lista -->
+    <div x-show="!carregando && clientes.length > 0">
+        <template x-for="c in clientes" :key="c.id">
+            <div class="card" @click="abrirDetalhe(c.id)">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate"
+                           x-text="c.nome || 'Cliente #' + c.id.slice(-6)"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="formatarDoc(c.documento)"></p>
+                    </div>
+                    <span class="badge flex-none"
+                          :class="c.ativo === 1 || c.ativo === true ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'"
+                          x-text="(c.ativo === 1 || c.ativo === true) ? 'Ativo' : 'Inativo'"></span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-2">
+                    <span x-show="c.email" class="flex items-center gap-1">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                        <span x-text="c.email"></span>
+                    </span>
+                    <span x-show="c.telefone || c.celular" class="flex items-center gap-1">
+                        <i class="fas fa-phone text-gray-400"></i>
+                        <span x-text="c.celular || c.telefone"></span>
+                    </span>
+                    <span x-show="c.cidade" class="flex items-center gap-1">
+                        <i class="fas fa-map-marker-alt text-gray-400"></i>
+                        <span x-text="c.cidade + (c.estado ? '/' + c.estado : '')"></span>
+                    </span>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Empty -->
+    <div x-show="!carregando && clientes.length === 0"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-users text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Nenhum cliente encontrado</p>
+        <p class="text-sm text-gray-400 mt-1" x-show="busca || filtroStatus !== 'todos'">
+            Tente ajustar os filtros
+        </p>
+        <a href="cliente-form.html"
+           class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700">
+            Cadastrar primeiro cliente
+        </a>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.clientesApp = function () {
+    return {
+        clientes: [],
+        todas: [],
+        carregando: false,
+        busca: '',
+        filtroStatus: 'todos',
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+
+        filtrosStatus: [
+            { valor: 'todos',  label: 'Todos'   },
+            { valor: 'ativo',  label: 'Ativos'  },
+            { valor: 'inativo',label: 'Inativos'},
+        ],
+
+        async init() {
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            try {
+                const db = await openSyncEventDB();
+                const rows = await lerTabela(db, 'tbl_clientes');
+                this.todas = rows.sort((a, b) =>
+                    (a.nome || '').localeCompare(b.nome || '')
+                );
+                this.aplicarFiltro();
+            } catch (e) {
+                console.error('[Clientes] Erro ao carregar:', e);
+                this.mostrarToast('Erro ao carregar clientes', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        aplicarFiltro() {
+            let lista = [...this.todas];
+
+            if (this.busca.trim()) {
+                const q = this.busca.toLowerCase().trim();
+                lista = lista.filter(c =>
+                    (c.nome || '').toLowerCase().includes(q) ||
+                    (c.documento || '').includes(q) ||
+                    (c.email || '').toLowerCase().includes(q)
+                );
+            }
+
+            if (this.filtroStatus === 'ativo') {
+                lista = lista.filter(c => c.ativo === 1 || c.ativo === true);
+            } else if (this.filtroStatus === 'inativo') {
+                lista = lista.filter(c => c.ativo !== 1 && c.ativo !== true);
+            }
+
+            this.clientes = lista;
+        },
+
+        contar(status) {
+            if (status === 'ativo') return this.todas.filter(c => c.ativo === 1 || c.ativo === true).length;
+            if (status === 'inativo') return this.todas.filter(c => c.ativo !== 1 && c.ativo !== true).length;
+            return this.todas.length;
+        },
+
+        abrirDetalhe(id) {
+            window.location.href = `cliente-detalhe.html?id=${encodeURIComponent(id)}`;
+        },
+
+        formatarDoc(doc) {
+            if (!doc) return 'Sem documento';
+            const d = doc.replace(/\D/g, '');
+            if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+            return doc;
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

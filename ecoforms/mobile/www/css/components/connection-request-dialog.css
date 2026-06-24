@@ -1,0 +1,354 @@
+/**
+ * Estilos para o diálogo de solicitação de conexão
+ */
+
+.connection-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.connection-dialog {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.connection-dialog-icon {
+  font-size: 64px;
+  text-align: center;
+  padding: 32px 24px 16px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.connection-dialog-content {
+  padding: 0 24px 24px;
+}
+
+.connection-dialog-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.connection-dialog-message {
+  font-size: 16px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.connection-status {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.connection-status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.connection-status-item:not(:last-child) {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.connection-status-label {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.connection-status-value {
+  font-size: 14px;
+  color: #e53e3e;
+  font-weight: 500;
+}
+
+.connection-status-value.connected {
+  color: #38a169;
+}
+
+.connection-dialog-tips {
+  background: #edf2f7;
+  border-left: 4px solid #4299e1;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.connection-dialog-tips p {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.connection-dialog-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.8;
+}
+
+.connection-dialog-tips li {
+  margin-bottom: 4px;
+}
+
+.connection-reconnect-info {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #c53030;
+}
+
+.reconnect-spinner {
+  font-size: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.connection-dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background: #f7fafc;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.connection-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.connection-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.connection-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.connection-btn-primary:active {
+  transform: translateY(0);
+}
+
+.connection-btn-secondary {
+  background: #4299e1;
+  color: white;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+}
+
+.connection-btn-secondary:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+}
+
+.connection-btn-secondary:active {
+  transform: translateY(0);
+}
+
+.connection-btn-tertiary {
+  background: white;
+  color: #4a5568;
+  border: 2px solid #e2e8f0;
+}
+
+.connection-btn-tertiary:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.connection-btn-tertiary:active {
+  background: #edf2f7;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .connection-dialog {
+    max-width: 100%;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .connection-dialog-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .connection-dialog-icon {
+    font-size: 56px;
+    padding: 24px 16px 12px;
+  }
+
+  .connection-dialog-title {
+    font-size: 20px;
+  }
+
+  .connection-dialog-message {
+    font-size: 15px;
+  }
+
+  .connection-dialog-actions {
+    border-radius: 0;
+  }
+
+  .connection-btn {
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Estado de sucesso quando reconectar */
+.connection-dialog.success {
+  animation: successPulse 0.5s ease-out;
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Acessibilidade */
+.connection-btn:focus {
+  outline: 3px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* Dark mode support (opcional) */
+@media (prefers-color-scheme: dark) {
+  .connection-dialog {
+    background: #2d3748;
+  }
+
+  .connection-dialog-title {
+    color: #f7fafc;
+  }
+
+  .connection-dialog-message {
+    color: #cbd5e0;
+  }
+
+  .connection-status {
+    background: #1a202c;
+  }
+
+  .connection-status-label {
+    color: #e2e8f0;
+  }
+
+  .connection-dialog-tips {
+    background: #1a202c;
+    border-left-color: #4299e1;
+  }
+
+  .connection-dialog-tips p {
+    color: #e2e8f0;
+  }
+
+  .connection-dialog-tips ul {
+    color: #cbd5e0;
+  }
+
+  .connection-dialog-actions {
+    background: #1a202c;
+  }
+
+  .connection-btn-tertiary {
+    background: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+
+  .connection-btn-tertiary:hover {
+    background: #4a5568;
+    border-color: #718096;
+  }
+}

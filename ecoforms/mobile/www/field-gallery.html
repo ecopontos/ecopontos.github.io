@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeria de Campos EcoSuite</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .field-card { transition: all 0.3s ease; }
+        .field-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .field-demo { background: #f8fafc; border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
+        .category-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-palette mr-2"></i>Galeria de Campos EcoSuite
+            </h1>
+            <p class="text-gray-600">Demonstração interativa de todos os tipos de campo consolidados</p>
+        </header>
+
+        <!-- Alpine.js Store -->
+        <div x-data="fieldGallery" class="space-y-8">
+            
+            <!-- Input Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-keyboard mr-2"></i>Campos de Entrada (InputFieldBase)
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Text Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo de Texto</h3>
+                        <div class="field-demo" x-html="renderField('text', {
+                            id: 'demo-text',
+                            label: 'Nome Completo',
+                            placeholder: 'Digite seu nome',
+                            required: true,
+                            validation: { minLength: 2, maxLength: 50 }
+                        })"></div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Email</h3>
+                        <div class="field-demo" x-html="renderField('email', {
+                            id: 'demo-email',
+                            label: 'Endereço de Email',
+                            placeholder: 'seu@email.com',
+                            required: true
+                        })"></div>
+                    </div>
+
+                    <!-- Number Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Numérico</h3>
+                        <div class="field-demo" x-html="renderField('number', {
+                            id: 'demo-number',
+                            label: 'Quantidade',
+                            placeholder: '0',
+                            min: 0,
+                            max: 100,
+                            step: 1
+                        })"></div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Senha</h3>
+                        <div class="field-demo" x-html="renderField('password', {
+                            id: 'demo-password',
+                            label: 'Senha',
+                            placeholder: 'Digite sua senha',
+                            required: true
+                        })"></div>
+                    </div>
+
+                    <!-- TextArea Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Área de Texto</h3>
+                        <div class="field-demo" x-html="renderField('textarea', {
+                            id: 'demo-textarea',
+                            label: 'Descrição',
+                            placeholder: 'Digite uma descrição detalhada',
+                            rows: 4
+                        })"></div>
+                    </div>
+
+                    <!-- Date Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Data</h3>
+                        <div class="field-demo" x-html="renderField('date', {
+                            id: 'demo-date',
+                            label: 'Data de Nascimento',
+                            required: true
+                        })"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Selection Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-list mr-2"></i>Campos de Seleção
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Select Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Select</h3>
+                        <div class="field-demo" x-html="renderField('select', {
+                            id: 'demo-select',
+                            label: 'Estado Civil',
+                            options: [
+                                { value: 'solteiro', label: 'Solteiro(a)' },
+                                { value: 'casado', label: 'Casado(a)' },
+                                { value: 'divorciado', label: 'Divorciado(a)' },
+                                { value: 'viuvo', label: 'Viúvo(a)' }
+                            ],
+                            required: true
+                        })"></div>
+                    </div>
+
+                    <!-- Radio Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Radio</h3>
+                        <div class="field-demo" x-html="renderField('radio', {
+                            id: 'demo-radio',
+                            label: 'Gênero',
+                            options: [
+                                { value: 'masculino', label: 'Masculino' },
+                                { value: 'feminino', label: 'Feminino' },
+                                { value: 'outro', label: 'Outro' }
+                            ]
+                        })"></div>
+                    </div>
+
+                    <!-- Chips Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Chips</h3>
+                        <div class="field-demo" x-html="renderField('chips', {
+                            id: 'demo-chips',
+                            label: 'Interesses',
+                            options: [
+                                { value: 'tecnologia', label: 'Tecnologia' },
+                                { value: 'esportes', label: 'Esportes' },
+                                { value: 'musica', label: 'Música' },
+                                { value: 'arte', label: 'Arte' },
+                                { value: 'ciencia', label: 'Ciência' }
+                            ],
+                            multiple: true
+                        })"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Presence Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-user-check mr-2"></i>Campos de Presença (PresenceField)
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Presence Compact -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Presença Compacta</h3>
+                        <div class="field-demo" x-html="renderField('presence-compact', {
+                            id: 'demo-presence-compact',
+                            label: 'Status de Presença',
+                            presenceStates: [
+                                { value: 'presente', label: 'Presente', color: 'green' },
+                                { value: 'ausente', label: 'Ausente', color: 'red' },
+                                { value: 'pendente', label: 'Pendente', color: 'yellow' }
+                            ]
+                        })"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Checklist Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-clipboard-check mr-2"></i>Campos Checklist (ChecklistField)
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Inspection Checklist -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Checklist de Inspeção</h3>
+                        <div class="field-demo" x-html="renderField('inspection-checklist', {
+                            id: 'demo-inspection',
+                            label: 'Inspeção de Equipamentos',
+                            states: ['ok', 'nok', 'na'],
+                            items: [
+                                { id: 'item1', label: 'Estrutura externa intacta' },
+                                { id: 'item2', label: 'Funcionamento elétrico OK' },
+                                { id: 'item3', label: 'Níveis de óleo adequados' }
+                            ]
+                        })"></div>
+                    </div>
+
+                    <!-- Vistoria Checklist -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Checklist de Vistoria</h3>
+                        <div class="field-demo" x-html="renderField('vistoria-checklist', {
+                            id: 'demo-vistoria',
+                            label: 'Vistoria de Galpão',
+                            galpoes: [
+                                {
+                                    id: 'galpao1',
+                                    nome: 'Galpão A',
+                                    categorias: [
+                                        {
+                                            nome: 'Estrutura',
+                                            itens: [
+                                                { id: 'estrutura1', label: 'Paredes intactas' },
+                                                { id: 'estrutura2', label: 'Telhado em bom estado' }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        })"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Media Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-camera mr-2"></i>Campos de Mídia
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Camera Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Câmera</h3>
+                        <div class="field-demo" x-html="renderField('camera', {
+                            id: 'demo-camera',
+                            label: 'Tirar Foto',
+                            description: 'Capture uma imagem usando a câmera do dispositivo'
+                        })"></div>
+                    </div>
+
+                    <!-- Gallery Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Galeria</h3>
+                        <div class="field-demo" x-html="renderField('gallery', {
+                            id: 'demo-gallery',
+                            label: 'Selecionar da Galeria',
+                            multiple: true,
+                            maxFiles: 5
+                        })"></div>
+                    </div>
+
+                    <!-- File Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Arquivo</h3>
+                        <div class="field-demo" x-html="renderField('file', {
+                            id: 'demo-file',
+                            label: 'Anexar Arquivo',
+                            accept: '.pdf,.doc,.docx,.jpg,.png',
+                            multiple: true
+                        })"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Special Fields -->
+            <section>
+                <div class="category-header">
+                    <h2 class="text-2xl font-semibold">
+                        <i class="fas fa-star mr-2"></i>Campos Especiais
+                    </h2>
+                </div>
+                <div class="gallery-grid">
+                    <!-- Geolocation Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Geolocalização</h3>
+                        <div class="field-demo" x-html="renderField('geolocation', {
+                            id: 'demo-geolocation',
+                            label: 'Localização Atual',
+                            description: 'Capturar coordenadas GPS atuais'
+                        })"></div>
+                    </div>
+
+                    <!-- DateTime Field -->
+                    <div class="field-card bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Campo Data/Hora</h3>
+                        <div class="field-demo" x-html="renderField('datetime-local', {
+                            id: 'demo-datetime',
+                            label: 'Data e Hora',
+                            required: true
+                        })"></div>
+                    </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Data Display -->
+            <section class="mt-12">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        <i class="fas fa-database mr-2"></i>Dados do Formulário
+                    </h2>
+                    <pre class="bg-gray-100 p-4 rounded text-sm overflow-auto" x-text="JSON.stringify(window.formData || {}, null, 2)"></pre>
+                    <button @click="clearFormData()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-trash mr-2"></i>Limpar Dados
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="www/js/alpine.js"></script>
+    <script src="www/js/fields/index.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('fieldGallery', () => ({
+                formData: window.formData || {},
+
+                renderField(type, config) {
+                    try {
+                        const field = window.FieldFactory.createField({ ...config, type });
+                        return field.render();
+                    } catch (error) {
+                        console.error('Erro ao renderizar campo:', type, error);
+                        return `<div class="text-red-500">Erro ao carregar campo ${type}</div>`;
+                    }
+                },
+
+                clearFormData() {
+                    window.formData = {};
+                    this.formData = {};
+                    // Recarregar a página para limpar os campos
+                    location.reload();
+                }
+            }));
+        });
+
+        // Initialize formData if not exists
+        if (!window.formData) {
+            window.formData = {};
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+-- Migration 008: Seed do admin root (MANUAL — automático removido por segurança)
+-- O seed automático foi removido do código-fonte para evitar backdoors.
+-- Use este script como referência para criar o primeiro administrador manualmente.
+--
+-- 1. Gere um hash bcrypt da senha desejada:
+--    node desktop/generate-hash.js "SuaSenhaForteSegura"
+--
+-- 2. Substitua <HASH_AQUI> pelo valor gerado e execute:
+--
+-- INSERT INTO usuarios (id, username, nome, perfil, password_hash, ativo)
+-- SELECT '00000000-0000-4000-a000-000000000001', 'admin',
+--        'Administrador do Sistema', 'admin',
+--        '<HASH_AQUI>',
+--        1
+-- WHERE NOT EXISTS (SELECT 1 FROM usuarios LIMIT 1)
+--   AND EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='usuarios');
+--
+-- IMPORTANTE: Nunca commit senhas ou hashes reais no repositório.

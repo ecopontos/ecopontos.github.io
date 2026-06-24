@@ -1,0 +1,354 @@
+/**
+ * Estilos para o componente de status de atualização de ecopontos
+ */
+
+.ecoponto-update-status {
+  position: fixed;
+  bottom: 80px; /* Acima do footer mobile */
+  right: 16px;
+  max-width: 360px;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.update-status-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  border-left: 4px solid #10b981;
+}
+
+.update-status-card.warning {
+  border-left-color: #f59e0b;
+}
+
+.update-status-card.danger {
+  border-left-color: #ef4444;
+}
+
+.update-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.update-status-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.update-status-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.update-status-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.update-status-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.update-status-body {
+  padding: 12px 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.update-status-item {
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border-left: 3px solid #10b981;
+}
+
+.update-status-item.warning {
+  background: #fff3cd;
+  border-left-color: #f59e0b;
+}
+
+.update-status-item.danger {
+  background: #fee;
+  border-left-color: #ef4444;
+}
+
+.update-status-item:last-child {
+  margin-bottom: 0;
+}
+
+.update-item-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.update-item-time {
+  font-size: 12px;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.update-item-action {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  color: #495057;
+  font-weight: 500;
+}
+
+.update-item-action:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.update-status-footer {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  gap: 8px;
+}
+
+.update-footer-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.update-footer-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.update-footer-btn.primary {
+  background: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+.update-footer-btn.primary:hover {
+  background: #0b5ed7;
+  border-color: #0b5ed7;
+}
+
+.update-summary {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.update-summary-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.update-summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.update-summary-value.success {
+  color: #10b981;
+}
+
+.update-summary-value.warning {
+  color: #f59e0b;
+}
+
+.update-summary-value.danger {
+  color: #ef4444;
+}
+
+.update-summary-label {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Status indicator floating button */
+.update-status-indicator {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 9998;
+  border: 3px solid white;
+}
+
+.update-status-indicator.warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.update-status-indicator.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.update-status-indicator:hover {
+  transform: scale(1.05);
+}
+
+.update-status-indicator:active {
+  transform: scale(0.95);
+}
+
+.update-status-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.update-status-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 10px;
+  border: 2px solid white;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .ecoponto-update-status {
+    right: 8px;
+    left: 8px;
+    max-width: none;
+    bottom: 70px;
+  }
+
+  .update-status-indicator {
+    bottom: 70px;
+    right: 8px;
+  }
+
+  .update-summary {
+    gap: 8px;
+  }
+
+  .update-summary-value {
+    font-size: 20px;
+  }
+}
+
+/* Animação de entrada para novos itens */
+.update-status-item {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar customizada */
+.update-status-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.update-status-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.update-status-body::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 3px;
+}
+
+.update-status-body::-webkit-scrollbar-thumb:hover {
+  background: #6c757d;
+}

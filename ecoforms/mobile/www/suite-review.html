@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisão de Suite — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .section { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3; }
+        .field-row { @apply flex flex-col gap-1 py-2.5 border-b border-gray-100 last:border-0; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="suiteReviewApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center gap-3 mb-5">
+        <a href="suites.html" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </a>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-xl font-bold text-gray-900 truncate"
+                x-text="suite ? (suite.titulo || suite.tipo_acao || suite.module_type || 'Suite #' + suite.id.slice(-6)) : 'Carregando…'"></h1>
+            <p class="text-xs text-gray-500" x-show="suite">
+                <span x-text="'Enviada ' + formatarData(suite?.created_at || suite?.updated_at)"></span>
+            </p>
+        </div>
+        <span x-show="suite" class="badge flex-none" :class="corStatus(suite?.status)"
+              x-text="labelStatus(suite?.status)"></span>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Not found -->
+    <div x-show="!carregando && !suite"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-exclamation-circle text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Suite não encontrada</p>
+        <a href="suites.html" class="mt-3 text-sm text-blue-600 hover:underline">Voltar à lista</a>
+    </div>
+
+    <!-- Conteúdo -->
+    <div x-show="!carregando && suite" x-cloak>
+
+        <!-- Metadados -->
+        <div class="section">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Informações</h2>
+            <dl class="space-y-2">
+                <div>
+                    <dt class="text-xs text-gray-500">Status</dt>
+                    <dd class="text-sm text-gray-900 mt-0.5">
+                        <span class="badge" :class="corStatus(suite?.status)"
+                              x-text="labelStatus(suite?.status)"></span>
+                    </dd>
+                </div>
+                <template x-if="suite?.owner_id">
+                    <div>
+                        <dt class="text-xs text-gray-500">Remetente</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5"
+                            x-text="suite.owner_id === currentUser?.id ? 'Você' : (suite.owner_id || '—')"></dd>
+                    </div>
+                </template>
+                <template x-if="suite?.module_type">
+                    <div>
+                        <dt class="text-xs text-gray-500">Tipo de módulo</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5" x-text="suite.module_type"></dd>
+                    </div>
+                </template>
+                <template x-if="suite?.resource_type">
+                    <div>
+                        <dt class="text-xs text-gray-500">Tipo de recurso</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5" x-text="suite.resource_type"></dd>
+                    </div>
+                </template>
+            </dl>
+        </div>
+
+        <!-- Dados do formulário (read-only) -->
+        <div class="section" x-show="camposFormulario.length > 0">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Dados do Formulário</h2>
+            <template x-for="campo in camposFormulario" :key="campo.chave">
+                <div class="field-row">
+                    <dt class="text-xs text-gray-500" x-text="campo.rotulo"></dt>
+                    <dd class="text-sm text-gray-900 mt-0.5 break-words" x-text="campo.valor || '—'"></dd>
+                </div>
+            </template>
+        </div>
+
+        <!-- Dados JSON raw (fallback) -->
+        <div class="section" x-show="camposFormulario.length === 0 && suite?.payload_json">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Dados (JSON)</h2>
+            <pre class="text-xs text-gray-600 bg-gray-50 rounded-lg p-3 overflow-x-auto max-h-64"
+                 x-text="JSON.stringify(JSON.parse(suite.payload_json || '{}'), null, 2)"></pre>
+        </div>
+
+        <!-- Observação (para devolução) -->
+        <div class="section" x-show="mostrarDevolucao">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Devolução</h2>
+            <label class="block mb-2">
+                <span class="text-xs text-gray-500">Motivo da devolução <span class="text-red-500">*</span></span>
+                <textarea x-model="observacao" rows="3"
+                          placeholder="Descreva o motivo da devolução..."
+                          class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none
+                                 focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
+            </label>
+            <p class="text-xs text-red-500" x-show="erroObs">Informe o motivo da devolução.</p>
+        </div>
+
+        <!-- Ações -->
+        <div class="space-y-2 mt-2">
+            <!-- Aprovar (pending_review / dispatched) -->
+            <button x-show="podeAprovar"
+                    @click="aprovar()"
+                    :disabled="executando"
+                    class="w-full py-3 bg-green-600 text-white font-medium rounded-xl
+                           hover:bg-green-700 active:bg-green-800 disabled:opacity-50 transition-colors">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span x-text="executando ? 'Aprovando…' : 'Aprovar'"></span>
+            </button>
+
+            <!-- Rejeitar (pending_review) -->
+            <button x-show="podeRejeitar"
+                    @click="rejeitar()"
+                    :disabled="executando"
+                    class="w-full py-3 bg-red-600 text-white font-medium rounded-xl
+                           hover:bg-red-700 active:bg-red-800 disabled:opacity-50 transition-colors">
+                <i class="fas fa-times-circle mr-2"></i>
+                <span x-text="executando ? 'Rejeitando…' : 'Rejeitar'"></span>
+            </button>
+
+            <!-- Devolver (dispatched) -->
+            <button x-show="podeDevolver"
+                    @click="devolver()"
+                    :disabled="executando"
+                    class="w-full py-3 bg-orange-600 text-white font-medium rounded-xl
+                           hover:bg-orange-700 active:bg-orange-800 disabled:opacity-50 transition-colors">
+                <i class="fas fa-rotate-left mr-2"></i>
+                <span x-text="executando ? 'Devolvendo…' : 'Devolver'"></span>
+            </button>
+
+            <!-- Editar e Reencaminhar (refuted) -->
+            <button x-show="suite?.status === 'refuted'"
+                    @click="window.location.href = 'inbox.html'"
+                    class="w-full py-3 bg-amber-600 text-white font-medium rounded-xl
+                           hover:bg-amber-700 active:bg-amber-800 transition-colors">
+                <i class="fas fa-edit mr-2"></i>
+                Editar e Reencaminhar
+            </button>
+        </div>
+
+        <!-- Status terminal -->
+        <div x-show="suite?.status === 'approved'"
+             class="mt-3 bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+            <i class="fas fa-check-circle text-green-500 text-2xl mb-1 block"></i>
+            <p class="text-sm font-medium text-green-800">Suite aprovada</p>
+            <p class="text-xs text-green-600 mt-0.5">Nenhuma ação necessária</p>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+import { EventBus } from './js/sync/EventBus.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+function getIdFromUrl() {
+    return new URLSearchParams(window.location.search).get('id');
+}
+
+async function lerRegistro(db, tabela, id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function escreverRegistro(db, tabela, registro) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readwrite');
+        const store = tx.objectStore(tabela);
+        const req = store.put(registro);
+        req.onsuccess = resolve;
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+function extrairCampos(suite) {
+    if (!suite) return [];
+    const campos = [];
+    let payload = {};
+
+    if (suite.payload_json) {
+        try { payload = JSON.parse(suite.payload_json); } catch {}
+    }
+
+    const exibir = { ...suite, ...payload };
+    const ignorar = ['id', 'status', 'updated_at', 'owner_id', 'package_id', 'payload_json',
+                     '_schema_version', '_migrated_at', '_migration_from', 'is_current',
+                     'closed_at', 'version_no', 'dados', 'created_at', 'data'];
+
+    for (const [chave, valor] of Object.entries(exibir)) {
+        if (ignorar.includes(chave)) continue;
+        if (typeof valor === 'function' || typeof valor === 'object') continue;
+        if (String(valor).length > 500) continue;
+        const rotulo = chave
+            .replace(/_/g, ' ')
+            .replace(/([A-Z])/g, ' $1')
+            .trim()
+            .split(' ')
+            .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+            .join(' ');
+        campos.push({ chave, rotulo, valor: String(valor) });
+    }
+    return campos;
+}
+
+window.suiteReviewApp = function () {
+    return {
+        suite: null,
+        carregando: false,
+        executando: false,
+        observacao: '',
+        erroObs: false,
+        currentUser: lerUsuario(),
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+        db: null,
+        eventBus: null,
+
+        get camposFormulario() {
+            return extrairCampos(this.suite);
+        },
+
+        get podeRevisar() {
+            const user = this.currentUser;
+            if (!user) return false;
+            const perfil = (user.perfil || user.role || '').toLowerCase();
+            return ['admin', 'gerente', 'coordenador'].includes(perfil);
+        },
+
+        get mostrarDevolucao() {
+            return this.suite?.status === 'dispatched' && this.podeRevisar;
+        },
+
+        get podeAprovar() {
+            if (!this.suite || !this.podeRevisar) return false;
+            return this.suite.status === 'pending_review' || this.suite.status === 'dispatched';
+        },
+
+        get podeRejeitar() {
+            if (!this.suite || !this.podeRevisar) return false;
+            return this.suite.status === 'pending_review';
+        },
+
+        get podeDevolver() {
+            if (!this.suite || !this.podeRevisar) return false;
+            return this.suite.status === 'dispatched';
+        },
+
+        async init() {
+            this.db = await openSyncEventDB();
+            const user = this.currentUser;
+            this.eventBus = new EventBus(
+                user?.device_id || user?.id || 'mobile-unknown',
+                user?.routing_id || user?.setor_id || 'geral',
+            );
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            const id = getIdFromUrl();
+            if (!id) { this.carregando = false; return; }
+
+            try {
+                this.suite = await lerRegistro(this.db, 'suite', id);
+            } catch (e) {
+                console.error('[SuiteReview] Erro ao carregar:', e);
+                this.mostrarToast('Erro ao carregar suite', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        async aprovar() {
+            if (this.executando || !this.suite) return;
+            this.executando = true;
+            const agora = new Date().toISOString();
+            try {
+                const atualizada = {
+                    ...this.suite,
+                    status: 'approved',
+                    updated_at: agora,
+                };
+                await escreverRegistro(this.db, 'suite', atualizada);
+
+                await this.eventBus.publish('suite.aprovada', {
+                    packageId: this.suite.id,
+                    aceitoPor: this.currentUser?.id,
+                    timestamp: agora,
+                }, {
+                    aggregate_type: 'suite',
+                    aggregate_id: this.suite.id,
+                });
+
+                this.suite = atualizada;
+                this.mostrarToast('Suite aprovada com sucesso', 'ok');
+            } catch (e) {
+                console.error('[SuiteReview] Erro ao aprovar:', e);
+                this.mostrarToast('Erro ao aprovar suite', 'erro');
+            } finally {
+                this.executando = false;
+            }
+        },
+
+        async rejeitar() {
+            if (this.executando || !this.suite) return;
+            this.executando = true;
+            const agora = new Date().toISOString();
+            try {
+                const atualizada = {
+                    ...this.suite,
+                    status: 'refuted',
+                    updated_at: agora,
+                };
+                await escreverRegistro(this.db, 'suite', atualizada);
+
+                await this.eventBus.publish('suite.rejeitada', {
+                    packageId: this.suite.id,
+                    rejeitadoPor: this.currentUser?.id,
+                    timestamp: agora,
+                }, {
+                    aggregate_type: 'suite',
+                    aggregate_id: this.suite.id,
+                });
+
+                this.suite = atualizada;
+                this.mostrarToast('Suite rejeitada', 'ok');
+            } catch (e) {
+                console.error('[SuiteReview] Erro ao rejeitar:', e);
+                this.mostrarToast('Erro ao rejeitar suite', 'erro');
+            } finally {
+                this.executando = false;
+            }
+        },
+
+        async devolver() {
+            if (this.executando || !this.suite) return;
+
+            if (!this.observacao.trim()) {
+                this.erroObs = true;
+                return;
+            }
+            this.erroObs = false;
+            this.executando = true;
+
+            const agora = new Date().toISOString();
+            try {
+                const atualizada = {
+                    ...this.suite,
+                    status: 'refuted',
+                    motivo_devolucao: this.observacao.trim(),
+                    updated_at: agora,
+                };
+                await escreverRegistro(this.db, 'suite', atualizada);
+
+                await this.eventBus.publish('suite.devolvida', {
+                    packageId: this.suite.id,
+                    devolvidoPor: this.currentUser?.id,
+                    motivo: this.observacao.trim(),
+                    timestamp: agora,
+                }, {
+                    aggregate_type: 'suite',
+                    aggregate_id: this.suite.id,
+                });
+
+                this.suite = atualizada;
+                this.observacao = '';
+                this.mostrarToast('Suite devolvida com sucesso', 'ok');
+            } catch (e) {
+                console.error('[SuiteReview] Erro ao devolver:', e);
+                this.mostrarToast('Erro ao devolver suite', 'erro');
+            } finally {
+                this.executando = false;
+            }
+        },
+
+        corStatus(s) {
+            return {
+                current:        'bg-blue-100 text-blue-700',
+                pending_review: 'bg-yellow-100 text-yellow-800',
+                approved:       'bg-green-100 text-green-800',
+                refuted:        'bg-red-100 text-red-700',
+                dispatched:     'bg-purple-100 text-purple-700',
+            }[s] ?? 'bg-gray-100 text-gray-600';
+        },
+
+        labelStatus(s) {
+            return {
+                current:        'Em fluxo',
+                pending_review: 'Pendente',
+                approved:       'Aprovada',
+                refuted:        'Devolvida',
+                dispatched:     'Encaminhada',
+            }[s] ?? s ?? '—';
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

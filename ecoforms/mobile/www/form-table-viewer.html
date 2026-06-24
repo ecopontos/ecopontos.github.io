@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Gerenciador de Dados Locais</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- <link rel="stylesheet" href="css/components/table-viewer.css"> -->
+    <!-- FontAwesome para ícones mais ricos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --border-color: #e2e8f0;
+            --bg-light: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        select,
+        input {
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-light);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .table th {
+            background: var(--bg-light);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(37, 99, 235, 0.02);
+            transition: background-color 0.2s ease;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            gap: 4px;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .badge-info {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .chip {
+            background: var(--bg-light);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .detail-value {
+            color: var(--text-secondary);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--bg-light);
+            border-color: var(--primary-color);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .page-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .json-viewer {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                padding: 16px;
+            }
+
+            .table th,
+            .table td {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h1><i class="fas fa-database text-primary-600 mr-2"></i> Gerenciador de Dados Locais</h1>
+                    <p>Visualize, sincronize e gerencie os formulários armazenados neste dispositivo.</p>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    <button class="btn btn-primary" onclick="loadFormData()">
+                        <i class="fas fa-sync"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <label for="formType">Tipo de Formulário</label>
+                <select id="formType">
+                    <option value="all">Todos os tipos</option>
+                    <!-- Opções populadas dinamicamente -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter">
+                    <option value="all">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="sincronizado">Sincronizado</option>
+                    <option value="erro">Com Erro</option>
+                    <option value="draft">Rascunho</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dateRange">Período</label>
+                <select id="dateRange">
+                    <option value="all">Todo Período</option>
+                    <option value="today">Hoje</option>
+                    <option value="week">Esta Semana</option>
+                    <option value="month">Este Mês</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="searchInput">Pesquisar</label>
+                <input type="text" id="searchInput" placeholder="ID, Placa, Bairro..." onkeyup="debounceSearch()">
+            </div>
+
+            <div style="flex-grow: 1;"></div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="syncAllPending()" id="btnSyncAll">
+                    <i class="fas fa-cloud-upload-alt"></i> Sincronizar Pendentes
+                </button>
+
+                <button class="btn btn-danger" onclick="cleanupSynced()"
+                    style="background-color: var(--danger-color); color: white;">
+                    <i class="fas fa-trash-alt"></i> Limpar Sincronizados
+                </button>
+
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv"></i> Exportar
+                </button>
+            </div>
+        </div>
+
+        <div class="stats" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-number" id="totalRecords">0</div>
+                <div class="stat-label">Total de Registros</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="syncedRecords">0</div>
+                <div class="stat-label">Sincronizados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingRecords">0</div>
+                <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgCompleteness">0%</div>
+                <div class="stat-label">Completude Média</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="loadingState" class="loading" style="display: none;">
+                Carregando dados...
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>📋 Nenhum dado encontrado</h3>
+                <p>Clique em "Gerar Exemplos" para criar dados de demonstração ou carregue dados reais.</p>
+            </div>
+
+            <div id="tableContent" style="display: none;">
+                <table class="table" id="dataTable">
+                    <thead id="tableHeader"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes do Registro</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Dependências do Sistema -->
+    <script src="js/supabase.js"></script>
+    <script src="js/system-config.js"></script>
+    <script src="js/utils/stable-stringify.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="supabase-config.js"></script>
+
+    <script>
+        // Estado global
+        let currentData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let formStructure = null;
+
+        // Tipos de formulários disponíveis
+        const formTypes = {
+            ecopontoForm: {
+                name: 'Atendimento em Ecoponto',
+                icon: '🏢',
+                fields: ['placa', 'bairro', 'residuos', 'ecoponto', 'data', 'hora']
+            },
+            ecopontoCaixasForm: {
+                name: 'Inspeção de Caixas',
+                icon: '📦',
+                fields: ['ecoponto', 'caixas', 'data', 'hora', 'responsavel']
+            },
+            vistoriaForm: {
+                name: 'Vistoria',
+                icon: '🔍',
+                fields: ['local', 'tipo', 'data', 'hora', 'responsavel']
+            }
+        };
+
+        // Dicionário de nomes amigáveis para formulários
+        const formFriendlyNames = {
+            'ecopontoForm': 'Atendimento em Ecoponto',
+            'ecopontoCaixasForm': 'Inspeção de Caixas',
+            'vistoriaForm': 'Vistoria',
+            'unknown': 'Desconhecido'
+        };
+
+        function getFormFriendlyName(type) {
+            return formFriendlyNames[type] || type;
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function () {
+            // Setup search debounce
+            window.debounceSearch = debounce(function () {
+                applyFilters();
+            }, 300);
+
+            loadFormData();
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function () {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        // Gerar dados de exemplo realistas
+        async function generateSampleData() {
+            showLoading(true);
+
+            try {
+                // Carregar dados auxiliares
+                const [bairrosData, residuosData, ecopontosData] = await Promise.all([
+                    fetch('data/bairros.json').then(r => r.json()).catch(() => []),
+                    fetch('data/residuos.json').then(r => r.json()).catch(() => []),
+                    fetch('data/ecoponto.json').then(r => r.json()).catch(() => [])
+                ]);
+
+                const bairros = bairrosData.filter(b => b.id !== 'n/a');
+                const residuos = residuosData;
+                const ecopontos = ecopontosData;
+
+                // Gerar dados de exemplo
+                const sampleData = [];
+                const numRecords = 25;
+
+                for (let i = 0; i < numRecords; i++) {
+                    const data = new Date();
+                    data.setDate(data.getDate() - Math.floor(Math.random() * 30));
+
+                    const hora = `${String(Math.floor(Math.random() * 12) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`;
+
+                    const bairroSelecionado = bairros[Math.floor(Math.random() * bairros.length)];
+                    const residuosSelecionados = [];
+                    const numResiduos = Math.floor(Math.random() * 4) + 1;
+
+                    for (let j = 0; j < numResiduos; j++) {
+                        const residuo = residuos[Math.floor(Math.random() * residuos.length)];
+                        if (!residuosSelecionados.includes(residuo.nome)) {
+                            residuosSelecionados.push(residuo.nome);
+                        }
+                    }
+
+                    const ecopontoSelecionado = ecopontos[Math.floor(Math.random() * ecopontos.length)];
+
+                    // Gerar placa Mercosul ou antiga
+                    const placaTipo = Math.random() > 0.5 ? 'mercosul' : 'antiga';
+                    let placa;
+                    if (placaTipo === 'mercosul') {
+                        placa = `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 10)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
+                    } else {
+                        placa = `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}-${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
+                    }
+
+                    sampleData.push({
+                        id: `form_${i + 1}`,
+                        tipo: 'ecopontoForm',
+                        placa: placa,
+                        bairro: bairroSelecionado.nome,
+                        residuos: residuosSelecionados,
+                        ecoponto: ecopontoSelecionado.nome,
+                        data: data.toISOString().split('T')[0],
+                        hora: hora,
+                        status: ['sincronizado', 'pendente', 'erro'][Math.floor(Math.random() * 3)],
+                        completude: Math.floor(Math.random() * 30) + 70, // 70-100%
+                        usuario: `Operador ${i + 1}`,
+                        timestamp: data.toISOString(),
+                        coordenadas: {
+                            latitude: ecopontoSelecionado.latitude,
+                            longitude: ecopontoSelecionado.longitude
+                        }
+                    });
+                }
+
+                currentData = sampleData;
+                filteredData = [...currentData];
+                currentPage = 1;
+
+                updateStats();
+                renderTable();
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Erro ao gerar dados de exemplo:', error);
+                showEmptyState();
+                showLoading(false);
+            }
+        }
+
+        async function calculateCompleteness(item) {
+            // Simples estimativa se não tivermos a definição do form
+            // Contamos chaves não nulas vs total de chaves
+            if (!item) return 0;
+            let keys = Object.keys(item).filter(k => k !== 'id' && k !== 'syncStatus' && k !== 'createdAt' && k !== 'updatedAt' && k !== '_original');
+            if (keys.length === 0) return 0;
+            let filled = keys.filter(k => item[k] !== null && item[k] !== '' && item[k] !== undefined).length;
+            return Math.round((filled / keys.length) * 100);
+        }
+
+        function updateFormTypeFilter() {
+            const types = [...new Set(currentData.map(item => item.tipo))];
+            const select = document.getElementById('formType');
+
+            // Manter "Todos"
+            const allOption = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(allOption);
+
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = getFormFriendlyName(type);
+                select.appendChild(option);
+            });
+        }
+
+        // Carregar dados reais
+        async function loadFormData() {
+            showLoading(true);
+
+            try {
+                // Pequeno delay para garantir que scripts carregaram
+                if (!window.dataService) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+
+                if (!window.dataService) {
+                    console.warn('DataService não encontrado, usando exemplo');
+                    generateSampleData();
+                    return;
+                }
+
+                if (!window.dataService.db) {
+                    await window.dataService.init();
+                }
+
+                const allData = await window.dataService.getAllFormData();
+                console.log('Dados carregados:', allData);
+
+                if (allData.length === 0) {
+                    // Tentar gerar exemplo se vazio para não ficar feio na primeira vez
+                    // Mas avisar que está vazio
+                    // Melhor mostrar empty state mesmo
+                    showEmptyState();
+                    showLoading(false);
+                    return;
+                }
+
+                currentData = allData.map(item => {
+                    let dataStr = item.data;
+                    let horaStr = item.hora;
+
+                    if (!dataStr && item.createdAt) {
+                        dataStr = item.createdAt.split('T')[0];
+                    }
+                    if (!horaStr && item.createdAt) {
+                        try {
+                            const dateObj = new Date(item.createdAt);
+                            horaStr = dateObj.getHours().toString().padStart(2, '0') + ':' + dateObj.getMinutes().toString().padStart(2, '0');
+                        } catch (e) { horaStr = '--:--'; }
+                    }
+
+                    // Tentar extrair dados específicos se não estiverem no nível raiz
+                    const formType = item.formId || item.tipoForm || 'unknown';
+                    let placa = item.placa;
+                    let bairro = item.bairro;
+                    let ecoponto = item.ecoponto;
+                    let residuos = item.residuos;
+
+                    // Se estiver dentro de "data" (JSON string ou objeto)
+                    if (item.data && typeof item.data === 'string' && item.data.startsWith('{')) {
+                        try {
+                            const parsedData = JSON.parse(item.data);
+                            if (!placa) placa = parsedData.placa;
+                            if (!bairro) bairro = parsedData.bairro;
+                            if (!ecoponto) ecoponto = parsedData.ecoponto;
+                            if (!residuos) residuos = parsedData.residuos;
+                        } catch (e) { /* ignore */ }
+                    }
+
+                    return {
+                        ...item,
+                        id: item.id,
+                        tipo: formType,
+                        data: dataStr || 'N/A',
+                        hora: horaStr || 'N/A',
+                        status: item.syncStatus || 'pendente',
+                        completude: calculateCompleteness(item),
+                        ecoponto: ecoponto || 'N/A',
+                        bairro: bairro || 'N/A',
+                        placa: placa || '---',
+                        residuos: Array.isArray(residuos) ? residuos : (residuos ? [residuos] : []),
+                        // Manter referência ao objeto original para o JSON viewer
+                        _original: item
+                    };
+                });
+
+                // Ordenar por data decrescente (mais recente primeiro)
+                currentData.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || a.timestamp || 0);
+                    const dateB = new Date(b.createdAt || b.timestamp || 0);
+                    return dateB - dateA;
+                });
+
+                filteredData = [...currentData];
+
+                // Popula o filtro de tipos de formulário
+                updateFormTypeFilter();
+
+                currentPage = 1;
+                applyFilters();
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                generateSampleData();
+            }
+        }
+
+        // Atualizar estatísticas
+        function updateStats() {
+            const total = filteredData.length;
+            const sincronizados = filteredData.filter(item => item.status === 'sincronizado').length;
+            const pendentes = filteredData.filter(item => item.status === 'pendente').length;
+            const avgCompleteness = total > 0 ?
+                Math.round(filteredData.reduce((sum, item) => sum + item.completude, 0) / total) : 0;
+
+            document.getElementById('totalRecords').textContent = total;
+            document.getElementById('syncedRecords').textContent = sincronizados;
+            document.getElementById('pendingRecords').textContent = pendentes;
+            document.getElementById('avgCompleteness').textContent = `${avgCompleteness}%`;
+        }
+
+        // Renderizar tabela
+        function renderTable() {
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+
+            // Definir cabeçalhos
+            const headers = [
+                'ID', 'Placa', 'Bairro', 'Resíduos', 'Ecoponto', 'Data', 'Hora', 'Status', 'Completude', 'Ações'
+            ];
+
+            tableHeader.innerHTML = `
+                <tr>
+                    ${headers.map(header => `<th>${header}</th>`).join('')}
+                </tr>
+            `;
+
+            // Paginação
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = filteredData.slice(start, end);
+
+            // Renderizar linhas
+            tableBody.innerHTML = pageData.map(item => `
+                <tr>
+                    <td><code>${item.id}</code></td>
+                    <td><strong>${item.placa}</strong></td>
+                    <td>${item.bairro}</td>
+                    <td>
+                        <div class="chips-container">
+                            ${item.residuos.slice(0, 3).map(residuo =>
+                `<span class="chip">${residuo}</span>`
+            ).join('')}
+                            ${item.residuos.length > 3 ?
+                    `<span class="chip">+${item.residuos.length - 3}</span>` : ''
+                }
+                        </div>
+                    </td>
+                    <td>${item.ecoponto}</td>
+                    <td>${formatDate(item.data)}</td>
+                    <td>${item.hora}</td>
+                    <td>${getStatusBadge(item.status)}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="flex: 1; background: var(--bg-light); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="width: ${item.completude}%; height: 100%; background: var(--success-color); transition: width 0.3s ease;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">${item.completude}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-icon btn-primary" onclick="viewDetails('${item.id}')" title="Ver detalhes">
+                                👁️
+                            </button>
+                            <button class="btn btn-icon btn-secondary" onclick="editRecord('${item.id}')" title="Editar">
+                                ✏️
+                            </button>
+                            <button class="btn btn-icon btn-success" onclick="syncRecord('${item.id}')" title="Sincronizar">
+                                🔄
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination();
+
+            // Mostrar conteúdo
+            document.getElementById('tableContent').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        // Renderizar paginação
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+
+            // Botão anterior
+            paginationHTML += `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    Anterior
+                </button>
+            `;
+
+            // Números de página
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            // Botão próximo
+            paginationHTML += `
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Próximo
+                </button>
+            `;
+
+            // Informações da página
+            paginationHTML += `
+                <span class="page-info">
+                    Página ${currentPage} de ${totalPages} (${filteredData.length} registros)
+                </span>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // Funções auxiliares
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('pt-BR');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'sincronizado': '<span class="badge badge-success">🟢 Sincronizado</span>',
+                'pendente': '<span class="badge badge-warning">🟡 Pendente</span>',
+                'erro': '<span class="badge badge-danger">🔴 Erro</span>'
+            };
+            return badges[status] || '<span class="badge badge-info">⚪ Desconhecido</span>';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingState').style.display = show ? 'block' : 'none';
+            document.getElementById('tableContent').style.display = show ? 'none' : 'block';
+        }
+
+        function showEmptyState() {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('tableContent').style.display = 'none';
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+            }
+        }
+
+        async function syncAllPending() {
+            if (!confirm('Deseja sincronizar todos os registros pendentes?')) return;
+
+            showLoading(true);
+            try {
+                if (window.dataService) {
+                    const result = await window.dataService.syncPendingData();
+                    alert(`Sincronização concluída!\nSucessos: ${result.synced}\nErros: ${result.errors}`);
+                } else {
+                    alert('DataService não disponível.');
+                }
+                loadFormData();
+            } catch (error) {
+                console.error('Erro na sincronização em lote:', error);
+                alert('Erro ao sincronizar: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        async function cleanupSynced() {
+            if (!confirm('ATENÇÃO: Isso irá apagar do dispositivo todos os registros que JÁ FORAM ENVIADOS para o servidor (status=sincronizado).\n\nDeseja continuar?')) return;
+
+            showLoading(true);
+            try {
+                if (window.dataService) {
+                    const count = await window.dataService.clearSyncedData();
+                    alert(`${count} registros limpos com sucesso!`);
+                } else {
+                    alert('DataService não disponível.');
+                }
+                loadFormData();
+            } catch (error) {
+                console.error('Erro na limpeza:', error);
+                alert('Erro ao limpar dados: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('Tem certeza que deseja EXCLUIR este registro? Esta ação não pode ser desfeita.')) return;
+
+            try {
+                if (window.dataService) {
+                    // ID no IndexedDB é numérico
+                    await window.dataService.deleteFormData(parseInt(id));
+                    alert('Registro excluído!');
+                    loadFormData();
+                    closeModal();
+                }
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                alert('Erro ao excluir: ' + error.message);
+            }
+        }
+
+        // Funções de ação
+        function viewDetails(id) {
+            // Converter ID para number para comparação se vier como string e o id for numérico
+            const recordId = isNaN(id) ? id : parseInt(id);
+            const item = currentData.find(item => item.id == recordId);
+
+            if (!item) {
+                console.warn('Item não encontrado:', id);
+                return;
+            }
+
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+
+            // Preparar JSON para exibição
+            const jsonDisplay = JSON.stringify(item._original || item, null, 2);
+
+            modalBody.innerHTML = `
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('details')">Detalhes</button>
+                    <button class="tab-btn" onclick="switchTab('json')">JSON Bruto</button>
+                    <button class="tab-btn" onclick="switchTab('actions')" style="margin-left: auto; color: var(--danger-color);">Ações de Risco</button>
+                </div>
+
+                <div id="tab-details" class="tab-content active">
+                    <div class="detail-grid">
+                        <div class="detail-label">ID Interno:</div>
+                        <div class="detail-value">${item.id}</div>
+                        
+                        <div class="detail-label">Tipo:</div>
+                        <div class="detail-value"><strong>${getFormFriendlyName(item.tipo)}</strong> <small>(${item.tipo})</small></div>
+                        
+                        <div class="detail-label">Status:</div>
+                        <div class="detail-value">${getStatusBadge(item.status)}</div>
+                        
+                        <div class="detail-label">Data Criação:</div>
+                        <div class="detail-value">${formatDateTime(item.createdAt || item.timestamp)}</div>
+
+                        <!-- Campos Comuns -->
+                        ${item.placa && item.placa !== '---' ? `<div class="detail-label">Placa:</div><div class="detail-value">${item.placa}</div>` : ''}
+                        ${item.bairro && item.bairro !== 'N/A' ? `<div class="detail-label">Bairro:</div><div class="detail-value">${item.bairro}</div>` : ''}
+                        ${item.ecoponto && item.ecoponto !== 'N/A' ? `<div class="detail-label">Ecoponto:</div><div class="detail-value">${item.ecoponto}</div>` : ''}
+                        
+                        <div class="detail-label">Resíduos:</div>
+                        <div class="detail-value">
+                            <div class="chips-container">
+                                ${Array.isArray(item.residuos) ?
+                    item.residuos.map(r => `<span class="chip">${r}</span>`).join('') :
+                    (item.residuos ? `<span class="chip">${item.residuos}</span>` : '<span style="color:#aaa; font-style:italic;">Nenhum</span>')
+                }
+                            </div>
+                        </div>
+
+                        ${item.coordenadas ? `
+                        <div class="detail-label">Localização:</div>
+                        <div class="detail-value">
+                           <a href="https://maps.google.com/?q=${item.coordenadas.latitude},${item.coordenadas.longitude}" target="_blank" style="color:blue; text-decoration:underline;">
+                              Ver no Mapa (${item.coordenadas.latitude?.toFixed(5)}, ${item.coordenadas.longitude?.toFixed(5)})
+                           </a>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div id="tab-json" class="tab-content">
+                    <p style="color: #666; margin-bottom: 5px;">Esta é a representação exata dos dados salvos no banco local.</p>
+                    <div class="json-viewer">${jsonDisplay}</div>
+                    <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText).then(() => alert('Copiado!'))" style="margin-top: 10px;">
+                        <i class="fas fa-copy"></i> Copiar JSON
+                    </button>
+                    <div style="display:none">${jsonDisplay}</div>
+                </div>
+
+                <div id="tab-actions" class="tab-content" style="text-align: center; padding: 20px;">
+                    <p style="color: var(--danger-color); font-weight: bold; margin-bottom: 15px;">Zona de Perigo</p>
+                    
+                     <button class="btn btn-danger" onclick="deleteRecord('${item.id}')" style="width: 100%; padding: 12px; margin-bottom: 10px;">
+                        <i class="fas fa-trash"></i> Excluir Definitivamente
+                    </button>
+                    <p style="font-size: 0.8em; color: #666;">Isso apagará o registro apenas do dispositivo local. Se já foi sincronizado, permanecerá no servidor.</p>
+                </div>
+            `;
+
+            modal.classList.add('show');
+        }
+
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // Find button that calls this function with this arg - simplified approach
+            const buttons = document.querySelectorAll('.tab-btn');
+            if (tabName === 'details') buttons[0].classList.add('active');
+            if (tabName === 'json') buttons[1].classList.add('active');
+            if (tabName === 'actions') buttons[2].classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        function editRecord(id) {
+            // Verificar se temos o formId
+            const recordId = isNaN(id) ? id : parseInt(id);
+            const item = currentData.find(item => item.id == recordId);
+
+            if (item && item.tipo) {
+                // Redirecionar para o index.html com parâmetros para carregar o registro
+                const tipoForm = item.tipo;
+                // Usamos o ID original (numérico do IndexedDB)
+                window.location.href = `index.html?form=${tipoForm}&load_id=${recordId}`;
+            } else {
+                alert(`Não foi possível identificar o tipo de formulário para o registro ${id}.`);
+            }
+        }
+
+        async function syncRecord(id) {
+            const recordId = isNaN(id) ? id : parseInt(id);
+            const item = currentData.find(item => item.id == recordId);
+
+            if (item) {
+                if (item.status === 'sincronizado') {
+                    alert('Este registro já está sincronizado.');
+                    return;
+                }
+
+                showLoading(true);
+                try {
+                    if (window.dataService) {
+                        const success = await window.dataService.syncRecord(recordId);
+                        if (success) {
+                            alert('Registro sincronizado com sucesso!');
+                            loadFormData(); // Recarrega tudo
+                        } else {
+                            alert('Falha ao sincronizar registro.');
+                            showLoading(false);
+                        }
+                    } else {
+                        // Fallback demonstração
+                        item.status = 'sincronizado';
+                        item.completude = 100;
+                        renderTable();
+                        updateStats();
+                        alert(`Registro ${id} sincronizado com sucesso! (Simulação)`);
+                        showLoading(false);
+                    }
+                } catch (e) {
+                    console.error('Erro sync:', e);
+                    alert('Erro: ' + e.message);
+                    showLoading(false);
+                }
+            }
+        }
+
+        // Exportar para CSV
+        function exportToCSV() {
+            if (filteredData.length === 0) {
+                alert('Nenhum dado para exportar.');
+                return;
+            }
+
+            const headers = ['ID', 'Placa', 'Bairro', 'Resíduos', 'Ecoponto', 'Data', 'Hora', 'Status', 'Completude', 'Usuário'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredData.map(item => [
+                    item.id,
+                    `"${item.placa}"`,
+                    `"${item.bairro}"`,
+                    `"${item.residuos.join('; ')}"`,
+                    `"${item.ecoponto}"`,
+                    item.data,
+                    item.hora,
+                    item.status,
+                    item.completude,
+                    `"${item.usuario}"`
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('detailModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Filtros
+        document.getElementById('statusFilter').addEventListener('change', function () {
+            applyFilters();
+        });
+
+        document.getElementById('dateRange').addEventListener('change', function () {
+            applyFilters();
+        });
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateRange = document.getElementById('dateRange').value;
+
+            filteredData = currentData.filter(item => {
+                let matchStatus = statusFilter === 'all' || item.status === statusFilter;
+
+                let matchDate = true;
+                if (dateRange !== 'all') {
+                    const itemDate = new Date(item.data);
+                    const today = new Date();
+
+                    switch (dateRange) {
+                        case 'today':
+                            matchDate = itemDate.toDateString() === today.toDateString();
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            matchDate = itemDate >= weekAgo;
+                            break;
+                        case 'month':
+                            matchDate = itemDate.getMonth() === today.getMonth() &&
+                                itemDate.getFullYear() === today.getFullYear();
+                            break;
+                    }
+                }
+
+                return matchStatus && matchDate;
+            });
+
+            currentPage = 1;
+            updateStats();
+            renderTable();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,243 @@
+import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import maplibregl from 'maplibre-gl';
+import type { FeatureCollection } from 'geojson';
+import {
+    useExecucaoGeo,
+    useIntercorrenciasGeo,
+    useChecklistGeo,
+    type ExecucaoClienteGeo,
+    type IntercorrenciaGeo,
+    type ChecklistGeo,
+} from '@/src/interface/hooks/queries/useMapData';
+import { useExecucoes } from '@/src/interface/hooks/catalog/logistica';
+
+/**
+ * Camadas de execução de roteiro (ADR-039): coletas realizadas,
+ * intercorrências e checklist/evidências, todas vinculadas a uma
+ * `selectedExecucaoId`. A seleção é limpa quando `selectedRoteiroId` muda.
+ *
+ * Nota: diferente de `useGeoDataLayers`, estas camadas não são
+ * re-registradas no `style.load` — comportamento existente preservado.
+ */
+export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null) {
+    const [selectedExecucaoId, setSelectedExecucaoId] = useState<string | null>(null);
+    const [execucaoLayerVisible, setExecucaoLayerVisible] = useState(true);
+    const [intercorrenciasLayerVisible, setIntercorrenciasLayerVisible] = useState(true);
+    const [checklistLayerVisible, setChecklistLayerVisible] = useState(true);
+
+    const { data: execucoes } = useExecucoes();
+    const { data: execucaoGeo } = useExecucaoGeo(selectedExecucaoId);
+    const { data: intercorrenciasGeo } = useIntercorrenciasGeo(selectedExecucaoId);
+    const { data: checklistGeo } = useChecklistGeo(selectedExecucaoId);
+
+    const execucaoVisRef      = useRef(execucaoLayerVisible);          execucaoVisRef.current = execucaoLayerVisible;
+    const intercorrVisRef     = useRef(intercorrenciasLayerVisible);   intercorrVisRef.current = intercorrenciasLayerVisible;
+    const checklistVisRef     = useRef(checklistLayerVisible);         checklistVisRef.current = checklistLayerVisible;
+
+    function renderExecucaoLayer(map: maplibregl.Map, points: ExecucaoClienteGeo[]) {
+        const vis = execucaoVisRef.current ? 'visible' : 'none';
+        const geo: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: points.map(p => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] },
+                properties: {
+                    id: p.id, nome: p.cliente_nome, endereco: p.endereco,
+                    coleta_realizada: p.coleta_realizada, horario: p.horario_visita,
+                },
+            })),
+        };
+        if (map.getSource('exec-geo')) {
+            (map.getSource('exec-geo') as maplibregl.GeoJSONSource).setData(geo);
+        } else {
+            map.addSource('exec-geo', { type: 'geojson', data: geo });
+            map.addLayer({
+                id: 'exec-points', type: 'circle', source: 'exec-geo',
+                paint: {
+                    'circle-radius': 8,
+                    'circle-color': ['case', ['==', ['get', 'coleta_realizada'], 1], '#22c55e', '#ef4444'],
+                    'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
+                },
+                layout: { visibility: vis },
+            });
+            map.on('click', 'exec-points', (e) => {
+                const f = e.features?.[0];
+                if (!f || f.geometry.type !== 'Point') return;
+                const p = f.properties as Record<string, string | number | null>;
+                const status = p.coleta_realizada ? '✅ Coletado' : '❌ Não coletado';
+                new maplibregl.Popup({ maxWidth: '240px' })
+                    .setLngLat(f.geometry.coordinates as [number, number])
+                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
+                        <strong>${p.nome}</strong><br/>
+                        ${p.endereco ? `<span style="color:#555">${p.endereco}</span><br/>` : ''}
+                        <span>${status}</span>
+                        ${p.horario ? `<br/><span style="color:#888;font-size:11px">${p.horario}</span>` : ''}
+                    </div>`).addTo(map);
+            });
+            map.on('mouseenter', 'exec-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', 'exec-points', () => { map.getCanvas().style.cursor = ''; });
+        }
+        if (map.getLayer('exec-points')) map.setLayoutProperty('exec-points', 'visibility', vis);
+    }
+
+    function renderIntercorrenciasLayer(map: maplibregl.Map, points: IntercorrenciaGeo[]) {
+        const vis = intercorrVisRef.current ? 'visible' : 'none';
+        const geo: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: points.map(p => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] },
+                properties: {
+                    id: p.id, tipo_nome: p.tipo_nome, tipo_cor: p.tipo_cor,
+                    descricao: p.descricao, resolvido: p.resolvido, registrado_em: p.registrado_em,
+                },
+            })),
+        };
+        if (map.getSource('interc-geo')) {
+            (map.getSource('interc-geo') as maplibregl.GeoJSONSource).setData(geo);
+        } else {
+            map.addSource('interc-geo', { type: 'geojson', data: geo });
+            map.addLayer({
+                id: 'interc-points', type: 'circle', source: 'interc-geo',
+                paint: {
+                    'circle-radius': 9,
+                    'circle-color': ['get', 'tipo_cor'],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': ['case', ['==', ['get', 'resolvido'], 1], '#fff', '#fbbf24'],
+                },
+                layout: { visibility: vis },
+            });
+            map.on('click', 'interc-points', (e) => {
+                const f = e.features?.[0];
+                if (!f || f.geometry.type !== 'Point') return;
+                const p = f.properties as Record<string, string | number | null>;
+                const res = p.resolvido ? '✅ Resolvida' : '⚠️ Pendente';
+                const data = p.registrado_em ? new Date(p.registrado_em as string).toLocaleString('pt-BR') : '';
+                new maplibregl.Popup({ maxWidth: '260px' })
+                    .setLngLat(f.geometry.coordinates as [number, number])
+                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
+                        <strong>${p.tipo_nome}</strong><br/>
+                        ${p.descricao ? `<span style="color:#555">${p.descricao}</span><br/>` : ''}
+                        <span>${res}</span>
+                        ${data ? `<br/><span style="color:#888;font-size:11px">${data}</span>` : ''}
+                    </div>`).addTo(map);
+            });
+            map.on('mouseenter', 'interc-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', 'interc-points', () => { map.getCanvas().style.cursor = ''; });
+        }
+        if (map.getLayer('interc-points')) map.setLayoutProperty('interc-points', 'visibility', vis);
+    }
+
+    function renderChecklistLayer(map: maplibregl.Map, points: ChecklistGeo[]) {
+        const vis = checklistVisRef.current ? 'visible' : 'none';
+        const geo: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: points.map(p => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] },
+                properties: {
+                    id: p.id, item: p.item, concluido: p.concluido, evidencia_url: p.evidencia_url,
+                },
+            })),
+        };
+        if (map.getSource('checklist-geo')) {
+            (map.getSource('checklist-geo') as maplibregl.GeoJSONSource).setData(geo);
+        } else {
+            map.addSource('checklist-geo', { type: 'geojson', data: geo });
+            map.addLayer({
+                id: 'checklist-points', type: 'circle', source: 'checklist-geo',
+                paint: {
+                    'circle-radius': 7,
+                    'circle-color': ['case', ['==', ['get', 'concluido'], 1], '#3b82f6', '#94a3b8'],
+                    'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
+                },
+                layout: { visibility: vis },
+            });
+            map.on('click', 'checklist-points', (e) => {
+                const f = e.features?.[0];
+                if (!f || f.geometry.type !== 'Point') return;
+                const p = f.properties as Record<string, string | number | null>;
+                const status = p.concluido ? '✅ Concluído' : '⏳ Pendente';
+                const imgHtml = p.evidencia_url
+                    ? `<br/><img src="${p.evidencia_url}" style="max-width:180px;margin-top:4px;border-radius:4px" />`
+                    : '';
+                new maplibregl.Popup({ maxWidth: '220px' })
+                    .setLngLat(f.geometry.coordinates as [number, number])
+                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
+                        <strong>${p.item}</strong><br/>
+                        <span>${status}</span>${imgHtml}
+                    </div>`).addTo(map);
+            });
+            map.on('mouseenter', 'checklist-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', 'checklist-points', () => { map.getCanvas().style.cursor = ''; });
+        }
+        if (map.getLayer('checklist-points')) map.setLayoutProperty('checklist-points', 'visibility', vis);
+    }
+
+    // Camadas de execução (ADR-039)
+    useEffect(() => {
+        if (!mapRef.current?.isStyleLoaded()) return;
+        renderExecucaoLayer(mapRef.current, execucaoGeo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [execucaoGeo]);
+
+    useEffect(() => {
+        if (!mapRef.current?.isStyleLoaded()) return;
+        renderIntercorrenciasLayer(mapRef.current, intercorrenciasGeo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [intercorrenciasGeo]);
+
+    useEffect(() => {
+        if (!mapRef.current?.isStyleLoaded()) return;
+        renderChecklistLayer(mapRef.current, checklistGeo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [checklistGeo]);
+
+    // Toggles de visibilidade — camadas de execução
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map?.isStyleLoaded()) return;
+        const vis = execucaoLayerVisible ? 'visible' : 'none';
+        if (map.getLayer('exec-points')) map.setLayoutProperty('exec-points', 'visibility', vis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [execucaoLayerVisible]);
+
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map?.isStyleLoaded()) return;
+        const vis = intercorrenciasLayerVisible ? 'visible' : 'none';
+        if (map.getLayer('interc-points')) map.setLayoutProperty('interc-points', 'visibility', vis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [intercorrenciasLayerVisible]);
+
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map?.isStyleLoaded()) return;
+        const vis = checklistLayerVisible ? 'visible' : 'none';
+        if (map.getLayer('checklist-points')) map.setLayoutProperty('checklist-points', 'visibility', vis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [checklistLayerVisible]);
+
+    // Fit bounds ao selecionar execução (prioridade sobre itinerário)
+    useEffect(() => {
+        if (!execucaoGeo.length || !mapRef.current?.isStyleLoaded()) return;
+        const bounds = new maplibregl.LngLatBounds();
+        execucaoGeo.forEach(p => bounds.extend([p.longitude, p.latitude]));
+        mapRef.current.fitBounds(bounds, { padding: 80, maxZoom: 16, animate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [execucaoGeo]);
+
+    // Limpar seleção de execução ao trocar roteiro
+    useEffect(() => {
+        setSelectedExecucaoId(null);
+    }, [selectedRoteiroId]);
+
+    return {
+        execucoes,
+        selectedExecucaoId, setSelectedExecucaoId,
+        execucaoLayerVisible, setExecucaoLayerVisible,
+        intercorrenciasLayerVisible, setIntercorrenciasLayerVisible,
+        checklistLayerVisible, setChecklistLayerVisible,
+    };
+}

@@ -1,0 +1,132 @@
+# Logs e arquivos temporários
+*.log
+app_*.log
+app_*.txt
+android_*.log
+android_*.txt
+tauri-dev*.err
+
+# Node modules
+node_modules/
+
+# Android build files
+android/app/build/
+android/build/
+android/.gradle/
+android/gradle/
+android/gradlew*
+android/local.properties
+
+# Capacitor generated files
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+temp/
+tmp/
+scratch/
+
+# Build outputs
+packages/core/dist/
+desktop/.next/
+desktop/out/
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.keystore
+
+# Ignore env in the minimal example project
+meu-supabase-mcp/.env
+
+# Local SQLite databases (gerados em runtime)
+*.db
+*.sqlite
+
+# Arquivos de análise / IA (não fazem parte do código)
+.agents/
+.claude/
+.kilo/
+.opencode/
+.reversa/
+
+# Relatórios e saídas geradas
+reports/
+changes/
+EcoForms/
+
+# Arquivos compactados de artefatos
+*.rar
+*.zip
+
+# Build outputs mobile/desktop
+mobile/www/js/ecoforms-core.js
+mobile/www/css/fields/RepeatableGroupField.css
+desktop/www/
+mobile/android/gradle/
+mobile/android/gradlew*
+mobile/android/gradlew.bat
+
+# Temporary / one-off scripts (root)
+/count_tokens.py
+/create_*.js
+/create_*.mjs
+/AUDIT_REPORT.md
+/SCROLL-QUICK-REF.txt
+
+# Temporary / one-off scripts (desktop)
+desktop/BOOTSTRAP_FIX.md
+desktop/CHECKPOINT.md
+desktop/MIGRATION_PLAN.md
+desktop/build_log*.txt
+desktop/output_debug.txt
+desktop/no-explicit-any-errors.txt
+desktop/schema_ddl.sql
+desktop/check_*.js
+desktop/fix_*.js
+desktop/scripts/seed-local-admin.js
+
+# Temporary / one-off scripts (mobile)
+mobile/scripts/check_*.js
+mobile/scripts/check_*.cjs
+mobile/scripts/clean-test-data.js
+
+# Legacy backend debug scripts
+docs/legado_backend/check_*.js
+docs/legado_backend/check_*.mjs
+docs/legado_backend/create_*.js
+
+# Root temporary scripts
+/fix-*.mjs
+/fix_*.js
+/fix_*.sh
+/rename-*.cjs
+/implementation_*
+
+# Legacy code removido (ADR-056 — Fonte de Verdade)
+/js/
+/mobile_standalone/
+
+# Junk
+nul

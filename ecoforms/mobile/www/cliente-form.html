@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Cliente — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .input-field { @apply w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent; }
+        .input-error { @apply border-red-400; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="clienteFormApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center gap-3 mb-5">
+        <a href="clientes.html" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </a>
+        <div class="flex-1">
+            <h1 class="text-xl font-bold text-gray-900"
+                x-text="editando ? 'Editar Cliente' : 'Novo Cliente'"></h1>
+        </div>
+    </div>
+
+    <div x-show="!carregando" x-cloak class="space-y-4">
+
+        <!-- Tipo -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Tipo de Pessoa</h2>
+            <div class="flex gap-2">
+                <button @click="form.tipo_pessoa = 'fisica'"
+                        class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors"
+                        :class="form.tipo_pessoa === 'fisica' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'">
+                    Pessoa Física
+                </button>
+                <button @click="form.tipo_pessoa = 'juridica'"
+                        class="flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors"
+                        :class="form.tipo_pessoa === 'juridica' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'">
+                    Pessoa Jurídica
+                </button>
+            </div>
+        </div>
+
+        <!-- Dados cadastrais -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-3">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Dados Cadastrais</h2>
+
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">
+                    <span x-text="form.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome'"></span>
+                    <span class="text-red-500">*</span>
+                </label>
+                <input x-model="form.nome" type="text" class="input-field"
+                       :placeholder="form.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome completo'">
+                <p class="text-xs text-red-500 mt-0.5" x-show="erros.nome" x-text="erros.nome"></p>
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">
+                    <span x-text="form.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'"></span>
+                    <span class="text-red-500">*</span>
+                </label>
+                <input x-model="form.documento" type="text" class="input-field"
+                       :placeholder="form.tipo_pessoa === 'juridica' ? '00.000.000/0000-00' : '000.000.000-00'"
+                       @input="mascararDocumento()">
+                <p class="text-xs text-red-500 mt-0.5" x-show="erros.documento" x-text="erros.documento"></p>
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" x-model="form.ativo === 1 || form.ativo === true"
+                       @change="form.ativo = $event.target.checked ? 1 : 0"
+                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="text-sm text-gray-700">Cliente ativo</span>
+            </label>
+        </div>
+
+        <!-- Contatos -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-3">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contatos</h2>
+
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">Email</label>
+                <input x-model="form.email" type="email" class="input-field" placeholder="email@exemplo.com">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Telefone</label>
+                    <input x-model="form.telefone" type="tel" class="input-field" placeholder="(00) 0000-0000">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Celular</label>
+                    <input x-model="form.celular" type="tel" class="input-field" placeholder="(00) 00000-0000">
+                </div>
+            </div>
+        </div>
+
+        <!-- Endereço -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-3">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Endereço</h2>
+
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">Endereço</label>
+                <input x-model="form.endereco" type="text" class="input-field" placeholder="Rua, número, bairro">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Cidade</label>
+                    <input x-model="form.cidade" type="text" class="input-field" placeholder="Cidade">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Estado</label>
+                    <input x-model="form.estado" type="text" class="input-field" placeholder="UF" maxlength="2">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-500 block mb-1">CEP</label>
+                <input x-model="form.cep" type="text" class="input-field" placeholder="00000-000" maxlength="9">
+            </div>
+        </div>
+
+        <!-- Observação -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Observação</h2>
+            <textarea x-model="form.observacao" rows="3" class="input-field resize-none"
+                      placeholder="Informações adicionais..."></textarea>
+        </div>
+
+        <!-- Salvar -->
+        <button @click="salvar()"
+                :disabled="salvando"
+                class="w-full py-3 bg-blue-600 text-white font-medium rounded-xl
+                       hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors">
+            <i class="fas fa-save mr-2"></i>
+            <span x-text="salvando ? 'Salvando…' : (editando ? 'Atualizar Cliente' : 'Cadastrar Cliente')"></span>
+        </button>
+
+        <p x-show="editando" class="text-xs text-center text-gray-400">
+            Ao salvar, será publicado um evento de atualização para sincronização com o desktop.
+        </p>
+
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+import { EventBus } from './js/sync/EventBus.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+function getIdFromUrl() {
+    return new URLSearchParams(window.location.search).get('id');
+}
+
+async function lerRegistro(db, tabela, id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function escreverRegistro(db, tabela, registro) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readwrite');
+        const store = tx.objectStore(tabela);
+        const req = store.put(registro);
+        req.onsuccess = resolve;
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.clienteFormApp = function () {
+    return {
+        form: {
+            nome: '',
+            documento: '',
+            tipo_pessoa: 'fisica',
+            email: '',
+            telefone: '',
+            celular: '',
+            endereco: '',
+            cidade: '',
+            estado: '',
+            cep: '',
+            ativo: 1,
+            observacao: '',
+        },
+        erros: {},
+        editando: false,
+        salvando: false,
+        carregando: false,
+        clienteId: null,
+        currentUser: lerUsuario(),
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+        db: null,
+        eventBus: null,
+
+        async init() {
+            this.db = await openSyncEventDB();
+            const user = this.currentUser;
+            this.eventBus = new EventBus(
+                user?.device_id || user?.id || 'mobile-unknown',
+                user?.routing_id || user?.setor_id || 'geral',
+            );
+
+            const id = getIdFromUrl();
+            if (id) {
+                this.editando = true;
+                this.clienteId = id;
+                await this.carregarCliente(id);
+            }
+        },
+
+        async carregarCliente(id) {
+            this.carregando = true;
+            try {
+                const c = await lerRegistro(this.db, 'tbl_clientes', id);
+                if (c) {
+                    this.form = {
+                        nome: c.nome || '',
+                        documento: c.documento || '',
+                        tipo_pessoa: c.tipo_pessoa || 'fisica',
+                        email: c.email || '',
+                        telefone: c.telefone || '',
+                        celular: c.celular || '',
+                        endereco: c.endereco || '',
+                        cidade: c.cidade || '',
+                        estado: c.estado || '',
+                        cep: c.cep || '',
+                        ativo: c.ativo ?? 1,
+                        observacao: c.observacao || '',
+                    };
+                }
+            } catch (e) {
+                console.error('[ClienteForm] Erro ao carregar:', e);
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        mascararDocumento() {
+            let v = this.form.documento.replace(/\D/g, '');
+            if (this.form.tipo_pessoa === 'fisica') {
+                v = v.slice(0, 11);
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            } else {
+                v = v.slice(0, 14);
+                if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,3})/, '$1.$2');
+            }
+            this.form.documento = v;
+        },
+
+        validar() {
+            this.erros = {};
+            if (!this.form.nome.trim()) {
+                this.erros.nome = 'Nome é obrigatório';
+            }
+            const doc = this.form.documento.replace(/\D/g, '');
+            if (this.form.tipo_pessoa === 'fisica' && doc.length > 0 && doc.length !== 11) {
+                this.erros.documento = 'CPF deve ter 11 dígitos';
+            } else if (this.form.tipo_pessoa === 'juridica' && doc.length > 0 && doc.length !== 14) {
+                this.erros.documento = 'CNPJ deve ter 14 dígitos';
+            }
+            return Object.keys(this.erros).length === 0;
+        },
+
+        async salvar() {
+            if (!this.validar() || this.salvando) return;
+            this.salvando = true;
+
+            const agora = new Date().toISOString();
+            const id = this.clienteId || crypto.randomUUID();
+
+            const registro = {
+                id,
+                nome: this.form.nome.trim(),
+                documento: this.form.documento,
+                tipo_pessoa: this.form.tipo_pessoa,
+                email: this.form.email.trim(),
+                telefone: this.form.telefone.trim(),
+                celular: this.form.celular.trim(),
+                endereco: this.form.endereco.trim(),
+                cidade: this.form.cidade.trim(),
+                estado: this.form.estado.trim().toUpperCase(),
+                cep: this.form.cep.trim(),
+                ativo: this.form.ativo ? 1 : 0,
+                observacao: this.form.observacao.trim(),
+                criado_por: this.editando ? undefined : (this.currentUser?.id || ''),
+                criado_em: this.editando ? undefined : agora,
+                updated_at: agora,
+            };
+
+            if (this.editando) {
+                const existente = await lerRegistro(this.db, 'tbl_clientes', this.clienteId);
+                if (existente) {
+                    registro.criado_por = existente.criado_por;
+                    registro.criado_em = existente.criado_em;
+                }
+            }
+
+            try {
+                await escreverRegistro(this.db, 'tbl_clientes', registro);
+
+                if (this.editando) {
+                    await this.eventBus.publish('client.atualizado', {
+                        cliente_id: id,
+                        clienteId: id,
+                        nome: registro.nome,
+                        documento: registro.documento,
+                        tipo_pessoa: registro.tipo_pessoa,
+                        email: registro.email,
+                        telefone: registro.telefone,
+                        celular: registro.celular,
+                        endereco: registro.endereco,
+                        cidade: registro.cidade,
+                        estado: registro.estado,
+                        cep: registro.cep,
+                        ativo: registro.ativo,
+                        observacao: registro.observacao,
+                    }, {
+                        aggregate_type: 'client',
+                        aggregate_id: id,
+                    });
+                } else {
+                    await this.eventBus.publish('client.criado', {
+                        id,
+                        cliente_id: id,
+                        nome: registro.nome,
+                        documento: registro.documento,
+                        tipo_pessoa: registro.tipo_pessoa,
+                        email: registro.email,
+                        telefone: registro.telefone,
+                        celular: registro.celular,
+                        endereco: registro.endereco,
+                        cidade: registro.cidade,
+                        estado: registro.estado,
+                        cep: registro.cep,
+                        ativo: registro.ativo,
+                        observacao: registro.observacao,
+                        criado_por: registro.criado_por,
+                        criado_em: registro.criado_em,
+                    }, {
+                        aggregate_type: 'client',
+                        aggregate_id: id,
+                    });
+                }
+
+                this.mostrarToast(this.editando ? 'Cliente atualizado' : 'Cliente cadastrado com sucesso', 'ok');
+
+                if (!this.editando) {
+                    setTimeout(() => {
+                        window.location.href = `cliente-detalhe.html?id=${encodeURIComponent(id)}`;
+                    }, 800);
+                }
+            } catch (e) {
+                console.error('[ClienteForm] Erro ao salvar:', e);
+                this.mostrarToast('Erro ao salvar cliente', 'erro');
+            } finally {
+                this.salvando = false;
+            }
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

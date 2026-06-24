@@ -1,0 +1,385 @@
+/* Mobile Touch Improvements for Moto G8 Power and similar devices */
+/* Optimized for 6.4" screens and field usage */
+
+:root {
+  /* Mobile-specific spacing variables */
+  --mobile-touch-target: 56px; /* Increased for better touch experience */
+  --mobile-spacing-standard: 16px; /* Standard spacing between clickable elements */
+  --mobile-spacing-compact: 12px; /* Compact spacing for dense layouts */
+  --mobile-spacing-large: 24px; /* Large spacing for important elements */
+}
+
+/* == MOBILE TOUCH TARGET IMPROVEMENTS == */
+
+/* Ripple effect for touch feedback */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+
+.touch-ripple:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Ensure all clickable elements meet minimum size requirements */
+@media (max-width: 768px) {
+
+  /* Buttons - Enhanced touch targets */
+  .btn,
+  .form-button,
+  button {
+    min-height: var(--mobile-touch-target);
+    min-width: var(--mobile-touch-target);
+    margin-bottom: var(--mobile-spacing-standard);
+    padding: 12px 16px; /* Adequate padding for thumb navigation */
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover,
+  .form-button:hover,
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn:active,
+  .form-button:active,
+  button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn:last-child,
+  .form-button:last-child,
+  button:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Button groups - Improved spacing */
+  .btn-group,
+  .button-group,
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mobile-spacing-standard);
+  }
+
+  .btn-group > *,
+  .button-group > *,
+  .form-actions > * {
+    margin-bottom: 0; /* Remove individual margins in favor of gap */
+  }
+
+  /* Horizontal button groups */
+  .btn-group.horizontal,
+  .button-group.horizontal {
+    flex-direction: row;
+    gap: var(--mobile-spacing-compact);
+  }
+
+  /* List items - Enhanced touch experience */
+  .list-item,
+  .menu-item,
+  .nav-item,
+  .checklist-item,
+  li[onclick],
+  li[data-action],
+  [role="button"],
+  [role="menuitem"] {
+    min-height: var(--mobile-touch-target);
+    padding: var(--mobile-spacing-standard) 16px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .list-item:hover,
+  .menu-item:hover,
+  .nav-item:hover,
+  .checklist-item:hover,
+  li[onclick]:hover,
+  li[data-action]:hover,
+  [role="button"]:hover,
+  [role="menuitem"]:hover {
+    background: rgba(0, 106, 106, 0.05);
+    transform: translateX(4px);
+  }
+
+  .list-item:active,
+  .menu-item:active,
+  .nav-item:active,
+  .checklist-item:active,
+  li[onclick]:active,
+  li[data-action]:active,
+  [role="button"]:active,
+  [role="menuitem"]:active {
+    background: rgba(0, 106, 106, 0.08);
+    transform: translateX(0) scale(0.98);
+  }
+
+  /* Card actions - Better spacing */
+  .card-actions,
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mobile-spacing-compact);
+    padding: var(--mobile-spacing-standard);
+  }
+
+  .card-action,
+  .action-btn {
+    min-height: var(--mobile-touch-target);
+    margin-bottom: 0; /* Use gap instead */
+    transition: all 0.2s ease;
+    border-radius: 8px;
+  }
+
+  .card-action:hover,
+  .action-btn:hover {
+    background: rgba(0, 106, 106, 0.05);
+    transform: translateY(-1px);
+  }
+
+  .card-action:active,
+  .action-btn:active {
+    background: rgba(0, 106, 106, 0.08);
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Form elements - Enhanced mobile experience */
+  .form-group {
+    margin-bottom: var(--mobile-spacing-large); /* More space between form groups */
+  }
+
+  .form-control,
+  input,
+  select,
+  textarea {
+    min-height: var(--mobile-touch-target);
+    padding: 12px 16px;
+    margin-bottom: var(--mobile-spacing-standard);
+    transition: all 0.2s ease;
+    border-radius: 8px;
+  }
+
+  .form-control:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 3px rgba(0, 106, 106, 0.1);
+  }
+  
+  /* Checkbox and radio groups */
+  .checkbox-group,
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mobile-spacing-standard);
+  }
+  
+  .checkbox-item,
+  .radio-item {
+    min-height: var(--mobile-touch-target);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  /* Status buttons and toggles */
+  .status-btn,
+  .toggle-btn,
+  .chip,
+  .tag {
+    min-height: var(--mobile-touch-target);
+    min-width: var(--mobile-touch-target);
+    margin: 4px;
+    padding: 8px 12px;
+  }
+  
+  /* Navigation and menu improvements */
+  .nav-link,
+  .menu-link,
+  .sidebar-item {
+    min-height: var(--mobile-touch-target);
+    padding: var(--mobile-spacing-standard);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Tab navigation */
+  .tab-nav,
+  .tab-list {
+    display: flex;
+    gap: var(--mobile-spacing-compact);
+  }
+  
+  .tab-item,
+  .tab-button {
+    min-height: var(--mobile-touch-target);
+    padding: var(--mobile-spacing-compact) var(--mobile-spacing-standard);
+    flex: 1;
+    text-align: center;
+  }
+  
+  /* Accordion and collapsible elements */
+  .accordion-header,
+  .collapsible-header,
+  .expandable-header {
+    min-height: var(--mobile-touch-target);
+    padding: var(--mobile-spacing-standard);
+    margin-bottom: var(--mobile-spacing-compact);
+    cursor: pointer;
+  }
+  
+  /* Dropdown and select improvements */
+  .dropdown-item,
+  .select-option,
+  .autocomplete-item {
+    min-height: var(--mobile-touch-target);
+    padding: var(--mobile-spacing-compact) var(--mobile-spacing-standard);
+    cursor: pointer;
+  }
+  
+  /* Footer buttons - Critical actions */
+  .mobile-footer .btn,
+  .footer-action,
+  .submit-btn {
+    min-height: 56px; /* Larger for primary actions */
+    font-size: 16px;
+    font-weight: 600;
+    margin: 8px 0;
+  }
+  
+  /* Icon buttons - Ensure adequate touch targets */
+  .icon-btn,
+  .btn-icon,
+  [class*="icon"]:not(.material-icons) {
+    min-height: var(--mobile-touch-target);
+    min-width: var(--mobile-touch-target);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Floating action buttons */
+  .fab,
+  .floating-action {
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    margin: var(--mobile-spacing-standard);
+  }
+}
+
+/* == FIELD USE OPTIMIZATIONS == */
+
+/* High contrast mode for outdoor visibility */
+@media (prefers-contrast: high) or (max-width: 768px) {
+  .btn,
+  .form-button,
+  button {
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .btn:focus,
+  .form-button:focus,
+  button:focus {
+    border-color: #007ACC;
+    box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.3);
+  }
+}
+
+/* == UTILITY CLASSES == */
+
+/* Spacing utilities for mobile */
+@media (max-width: 768px) {
+  .mobile-spacing { margin-bottom: var(--mobile-spacing-standard) !important; }
+  .mobile-spacing-compact { margin-bottom: var(--mobile-spacing-compact) !important; }
+  .mobile-spacing-large { margin-bottom: var(--mobile-spacing-large) !important; }
+  
+  .mobile-touch-target {
+    min-height: var(--mobile-touch-target) !important;
+    min-width: var(--mobile-touch-target) !important;
+  }
+  
+  .mobile-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mobile-spacing-standard);
+  }
+  
+  .mobile-button-group.horizontal {
+    flex-direction: row;
+    gap: var(--mobile-spacing-compact);
+  }
+  
+  .no-mobile-spacing {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* == ACCESSIBILITY IMPROVEMENTS == */
+
+/* Enhanced focus indicators for mobile */
+@media (max-width: 768px) {
+  *:focus-visible {
+    outline: 3px solid #007ACC;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  
+  /* Touch feedback */
+  .btn:active,
+  .form-button:active,
+  button:active,
+  [role="button"]:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.1s ease;
+  }
+}
+
+/* == PERFORMANCE OPTIMIZATIONS == */
+
+/* Reduce animations on lower-end devices */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .form-button,
+  button,
+  .card-action {
+    transition: none;
+  }
+  
+  .btn:active,
+  .form-button:active,
+  button:active {
+    transform: none;
+  }
+}

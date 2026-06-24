@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização de Dados - Tabela suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x/dist/cdn.min.js" defer></script>
+    <style>
+        .json-content {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.875em;
+            line-height: 1.5;
+        }
+
+        .json-content pre {
+            margin: 0;
+            color: #a9dc76;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 500px;
+        }
+
+        details summary {
+            list-style: none;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        details[open]>*:not(summary) {
+            animation: slideDown 0.3s ease-out;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div x-data="appData()" class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Dados da Tabela suite</h1>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por tipo de formulário</label>
+                    <select x-model="filter.tipo_form" @change="filterData()"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Todos</option>
+                        <option value="ecopontoForm">Ecoponto Form</option>
+                        <option value="ecopontoCaixasForm">Ecoponto Caixas Form</option>
+                    </select>
+                </div>
+
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por usuário</label>
+                    <input type="text" x-model="filter.usuario" @input.debounce.300ms="filterData()"
+                        placeholder="Nome do usuário"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex items-end">
+                    <button @click="resetFilters()"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpar Filtros</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-gray-700">Total de registros: <span x-text="filteredData.length"></span></p>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="bg-white rounded-lg shadow-md p-8 text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <p class="mt-4 text-gray-600">Carregando dados...</p>
+        </div>
+
+        <!-- Error State -->
+        <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Erro ao carregar dados</h3>
+                    <p class="mt-2 text-sm text-red-700" x-text="error"></p>
+                    <button @click="fetchData()"
+                        class="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">
+                        Tentar Novamente
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="!loading && !error" class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                @click="sortData('id')">
+                                ID
+                                <span x-show="sort.field === 'id'" x-text="sort.direction === 'asc' ? '↑' : '↓'"></span>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                @click="sortData('criado_em')">
+                                Data Criação
+                                <span x-show="sort.field === 'criado_em'"
+                                    x-text="sort.direction === 'asc' ? '↑' : '↓'"></span>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                @click="sortData('tipo_form')">
+                                Tipo Formulário
+                                <span x-show="sort.field === 'tipo_form'"
+                                    x-text="sort.direction === 'asc' ? '↑' : '↓'"></span>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                @click="sortData('dados.usuario')">
+                                Usuário
+                                <span x-show="sort.field === 'dados.usuario'"
+                                    x-text="sort.direction === 'asc' ? '↑' : '↓'"></span>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                @click="sortData('dados.ecoponto')">
+                                Ecoponto
+                                <span x-show="sort.field === 'dados.ecoponto'"
+                                    x-text="sort.direction === 'asc' ? '↑' : '↓'"></span>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Empty State -->
+                        <tr x-show="!loading && !error && filteredData.length === 0">
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhum registro encontrado</h3>
+                                <p class="mt-1 text-sm text-gray-500">Tente ajustar os filtros ou recarregar a página.
+                                </p>
+                            </td>
+                        </tr>
+
+                        <template x-for="item in paginatedData" :key="item.id">
+                    <tbody>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="item.id">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                x-text="new Date(item.criado_em).toLocaleString('pt-BR')"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.tipo_form"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                x-text="(item.dados && item.dados.usuario) || 'N/A'"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                x-text="(item.dados && item.dados.ecoponto) || 'N/A'"></td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                <button @click="toggleDetails(item.id)"
+                                    class="text-indigo-600 hover:text-indigo-900 font-medium"
+                                    x-text="expandedItems.includes(item.id) ? 'Ocultar Detalhes' : 'Ver Detalhes'"></button>
+                            </td>
+                        </tr>
+                        <tr x-show="expandedItems.includes(item.id)" class="bg-gray-50">
+                            <td colspan="6" class="px-6 py-4">
+                                <div class="space-y-4">
+                                    <!-- Tabela de Dados JSONB -->
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-3 text-lg">📋 Dados do Formulário</h3>
+                                        <div class="overflow-x-auto">
+                                            <table
+                                                class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                                                <thead class="bg-gray-100">
+                                                    <tr>
+                                                        <th
+                                                            class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-1/3">
+                                                            Campo</th>
+                                                        <th
+                                                            class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                                            Valor</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white divide-y divide-gray-200">
+                                                    <template x-for="[key, value] in Object.entries(item.dados || {})"
+                                                        :key="key">
+                                                        <tr class="hover:bg-gray-50">
+                                                            <td class="px-4 py-2 text-sm font-medium text-gray-900 capitalize"
+                                                                x-text="formatFieldName(key)"></td>
+                                                            <td class="px-4 py-2 text-sm text-gray-700"
+                                                                x-html="formatFieldValue(value)"></td>
+                                                        </tr>
+                                                    </template>
+                                                    <tr x-show="!item.dados || Object.keys(item.dados).length === 0">
+                                                        <td colspan="2"
+                                                            class="px-4 py-4 text-sm text-gray-500 text-center italic">
+                                                            Nenhum dado disponível</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Visualização JSON (colapsável) -->
+                                    <div x-data="{ showJson: false }">
+                                        <button @click="showJson = !showJson"
+                                            class="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2">
+                                            <svg class="w-4 h-4 transition-transform"
+                                                :class="showJson ? 'rotate-90' : ''" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                            <span x-text="showJson ? 'Ocultar JSON bruto' : 'Ver JSON bruto'"></span>
+                                        </button>
+                                        <div x-show="showJson" x-transition class="mt-2">
+                                            <div class="json-content bg-gray-900 text-green-400 p-4 rounded-lg">
+                                                <pre
+                                                    x-text="item.dados ? JSON.stringify(item.dados, null, 2) : 'Nenhum dado disponível'"></pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button @click="prevPage()" :disabled="currentPage === 1"
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Anterior
+                    </button>
+                    <button @click="nextPage()" :disabled="currentPage === totalPages"
+                        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Próxima
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Mostrando <span x-text="startIndex + 1"></span> a <span
+                                x-text="Math.min(endIndex, filteredData.length)"></span> de <span
+                                x-text="filteredData.length"></span> resultados
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button @click="prevPage()" :disabled="currentPage === 1"
+                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span>Anterior</span>
+                            </button>
+
+                            <template x-for="page in pages" :key="page">
+                                <button @click="goToPage(page)" :class="{
+                                        'z-10 bg-indigo-50 border-indigo-500 text-indigo-600': page === currentPage,
+                                        'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': page !== currentPage
+                                    }" class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                                    x-text="page"></button>
+                            </template>
+
+                            <button @click="nextPage()" :disabled="currentPage === totalPages"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span>Próxima</span>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function appData() {
+            return {
+                data: [],
+                filteredData: [],
+                expandedItems: [],
+                currentPage: 1,
+                itemsPerPage: 10,
+                loading: false,
+                error: null,
+                sort: {
+                    field: 'id',
+                    direction: 'desc'
+                },
+                filter: {
+                    tipo_form: '',
+                    usuario: ''
+                },
+
+                init() {
+                    this.fetchData();
+                },
+
+                async fetchData() {
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        // Usando as mesmas credenciais do arquivo supabase-config.js
+                        const SUPABASE_URL = 'https://vnnimekczkxkpckrydnc.supabase.co';
+                        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZubmltZWtjemt4a3Bja3J5ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDQ0NjUsImV4cCI6MjA3NzA4MDQ2NX0.RqLwcGIv5B5QnTfxvbemtTEx_Lve9Q6hqbab9SKA6aA';
+
+                        const response = await fetch(`${SUPABASE_URL}/rest/v1/suite?select=*&order=id.desc`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+                        }
+
+                        this.data = await response.json();
+
+                        // Validar que cada item tem a estrutura esperada
+                        this.data = this.data.map(item => ({
+                            ...item,
+                            dados: item.dados || {}
+                        }));
+
+                        this.filteredData = [...this.data];
+                        console.log(`✅ ${this.data.length} registros carregados com sucesso`);
+                    } catch (error) {
+                        console.error('❌ Erro ao buscar dados:', error);
+                        this.error = error.message;
+                        alert('Erro ao carregar os dados: ' + error.message);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                toggleDetails(id) {
+                    if (this.expandedItems.includes(id)) {
+                        this.expandedItems = this.expandedItems.filter(item => item !== id);
+                    } else {
+                        this.expandedItems.push(id);
+                    }
+                },
+
+                sortData(field) {
+                    if (this.sort.field === field) {
+                        this.sort.direction = this.sort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sort.field = field;
+                        this.sort.direction = 'asc';
+                    }
+
+                    this.filteredData.sort((a, b) => {
+                        let valueA, valueB;
+
+                        if (field.includes('.')) {
+                            // Para campos aninhados como 'dados.usuario'
+                            const parts = field.split('.');
+                            valueA = a;
+                            valueB = b;
+                            for (const part of parts) {
+                                valueA = valueA ? valueA[part] : null;
+                                valueB = valueB ? valueB[part] : null;
+                            }
+                        } else {
+                            valueA = a[field];
+                            valueB = b[field];
+                        }
+
+                        // Tratamento especial para datas
+                        if (field === 'criado_em') {
+                            valueA = valueA ? new Date(valueA) : null;
+                            valueB = valueB ? new Date(valueB) : null;
+                        }
+
+                        // Tratamento para valores nulos
+                        if (valueA === null || valueA === undefined) return this.sort.direction === 'asc' ? 1 : -1;
+                        if (valueB === null || valueB === undefined) return this.sort.direction === 'asc' ? -1 : 1;
+
+                        if (valueA < valueB) return this.sort.direction === 'asc' ? -1 : 1;
+                        if (valueA > valueB) return this.sort.direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                },
+
+                filterData() {
+                    this.filteredData = this.data.filter(item => {
+                        const matchesTipoForm = !this.filter.tipo_form || item.tipo_form === this.filter.tipo_form;
+                        const matchesUsuario = !this.filter.usuario ||
+                            (item.dados && item.dados.usuario && item.dados.usuario.toLowerCase().includes(this.filter.usuario.toLowerCase()));
+
+                        return matchesTipoForm && matchesUsuario;
+                    });
+
+                    this.sortData(this.sort.field);
+                    this.currentPage = 1;
+                },
+
+                resetFilters() {
+                    this.filter = {
+                        tipo_form: '',
+                        usuario: ''
+                    };
+                    this.filteredData = [...this.data];
+                    this.sortData(this.sort.field);
+                    this.currentPage = 1;
+                },
+
+                formatFieldName(key) {
+                    // Converte snake_case e camelCase para texto legível
+                    return key
+                        .replace(/_/g, ' ')
+                        .replace(/([A-Z])/g, ' $1')
+                        .trim()
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+                },
+
+                formatFieldValue(value) {
+                    if (value === null || value === undefined) {
+                        return '<span class="text-gray-400 italic">N/A</span>';
+                    }
+
+                    if (typeof value === 'boolean') {
+                        return value
+                            ? '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Sim</span>'
+                            : '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Não</span>';
+                    }
+
+                    if (Array.isArray(value)) {
+                        if (value.length === 0) return '<span class="text-gray-400 italic">Lista vazia</span>';
+
+                        // Se é array de objetos (como caixas_list)
+                        if (typeof value[0] === 'object') {
+                            return `<div class="space-y-1">
+                                ${value.map((item, idx) => `
+                                    <details class="text-xs border border-gray-200 rounded p-2">
+                                        <summary class="cursor-pointer font-medium text-indigo-600 hover:text-indigo-800">
+                                            Item ${idx + 1} (${Object.keys(item).length} campos)
+                                        </summary>
+                                        <div class="mt-2 pl-3 space-y-1">
+                                            ${Object.entries(item).map(([k, v]) =>
+                                `<div><span class="font-medium">${this.formatFieldName(k)}:</span> ${this.formatSimpleValue(v)}</div>`
+                            ).join('')}
+                                        </div>
+                                    </details>
+                                `).join('')}
+                            </div>`;
+                        }
+
+                        // Array de valores simples
+                        return `<div class="flex flex-wrap gap-1">
+                            ${value.map(v => `<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">${this.escapeHtml(v)}</span>`).join('')}
+                        </div>`;
+                    }
+
+                    if (typeof value === 'object') {
+                        return `<details class="text-xs">
+                            <summary class="cursor-pointer text-indigo-600 hover:text-indigo-800 font-medium">
+                                Ver objeto (${Object.keys(value).length} campos)
+                            </summary>
+                            <pre class="mt-2 p-2 bg-gray-50 rounded text-xs overflow-x-auto">${JSON.stringify(value, null, 2)}</pre>
+                        </details>`;
+                    }
+
+                    // Valores simples
+                    return this.formatSimpleValue(value);
+                },
+
+                formatSimpleValue(value) {
+                    const str = String(value);
+
+                    // Detecta URLs
+                    if (str.match(/^https?:\/\//)) {
+                        return `<a href="${this.escapeHtml(str)}" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline">${this.escapeHtml(str)}</a>`;
+                    }
+
+                    // Detecta datas ISO
+                    if (str.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)) {
+                        try {
+                            const date = new Date(str);
+                            return `<span class="font-mono text-sm">${date.toLocaleString('pt-BR')}</span>`;
+                        } catch (e) {
+                            return this.escapeHtml(str);
+                        }
+                    }
+
+                    // Detecta datas no formato DD/MM/YYYY
+                    if (str.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                        return `<span class="font-mono text-sm">📅 ${this.escapeHtml(str)}</span>`;
+                    }
+
+                    // Detecta horas HH:MM
+                    if (str.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+                        return `<span class="font-mono text-sm">🕐 ${this.escapeHtml(str)}</span>`;
+                    }
+
+                    return `<span class="text-gray-900">${this.escapeHtml(str)}</span>`;
+                },
+
+                escapeHtml(text) {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                },
+
+                get startIndex() {
+                    return (this.currentPage - 1) * this.itemsPerPage;
+                },
+
+                get endIndex() {
+                    return Math.min(this.startIndex + this.itemsPerPage, this.filteredData.length);
+                },
+
+                get paginatedData() {
+                    return this.filteredData.slice(this.startIndex, this.endIndex);
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.itemsPerPage);
+                },
+
+                get pages() {
+                    const pages = [];
+                    const maxPagesToShow = 5;
+                    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+                    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+                    if (endPage - startPage + 1 < maxPagesToShow) {
+                        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        pages.push(i);
+                    }
+
+                    return pages;
+                },
+
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
+                },
+
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+
+                goToPage(page) {
+                    if (page >= 1 && page <= this.totalPages) {
+                        this.currentPage = page;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

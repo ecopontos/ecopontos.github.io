@@ -1,0 +1,85 @@
+/* Styles for PresenceCompactField (moved from inline in JS)
+	 Provides token fallbacks and instance-level CSS variables for easy overrides.
+	 JSON-configurable colors map to --pc-color-* variables when the component mounts. */
+.field-presence-compact .presence-wrapper {
+	border-radius: 0;
+	padding: 16px;
+	background: var(--md-sys-color-surface, #fff);
+	font-family: var(--md-sys-typescale-body-large-font, system-ui);
+	font-size: var(--md-sys-typescale-body-large-size, 14px);
+	border: none;
+	border-top: 1px solid var(--md-sys-color-outline-variant, rgba(0,0,0,0.06));
+	border-bottom: 1px solid var(--md-sys-color-outline-variant, rgba(0,0,0,0.06));
+	/* Altura mínima ajustada para Moto G8 Power (1080x2300px) */
+	min-height: 350px;
+	/* IMPORTANTE: Permitir que elementos filhos escapem se necessário */
+	overflow: visible !important;
+	position: relative;
+	/* Garantir z-index para dropdown */
+	z-index: 1000;
+	margin: 0;
+}
+.field-presence-compact .person-row-v2 {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	padding: 10px 12px;
+	border-radius: 8px;
+	margin-bottom: 8px;
+	background: var(--pc-row-bg, transparent);
+	transition: box-shadow .12s ease, transform .08s ease;
+}
+.field-presence-compact .person-row-v2:hover {
+	box-shadow: var(--md-sys-elevation-level1, 0 2px 6px rgba(0,0,0,0.06));
+	transform: translateY(-1px);
+}
+.field-presence-compact .avatar-v2 {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--pc-avatar-bg, var(--md-sys-color-primary-container, #0ea5a4));
+	color: var(--pc-avatar-fg, var(--md-sys-color-on-primary-container, #fff));
+	font-weight: 600;
+	font-size: 16px;
+}
+.field-presence-compact .person-info-v2 { flex: 1; display:flex; flex-direction:column; }
+.field-presence-compact .person-name-v2 {
+	font-weight: 600;
+	color: var(--md-sys-color-on-surface, #0b0b0b);
+	font-size: 15px;
+	line-height: 1.1;
+}
+.field-presence-compact .status-indicator-v2 {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	font-size: 13px;
+	color: var(--md-sys-color-on-surface-variant, #666);
+}
+.field-presence-compact .status-dot-v2 { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+/* status colors use CSS variables set on the wrapper so they can be overridden via JSON */
+.field-presence-compact .status-indicator-v2.presente .status-dot-v2 { background: var(--pc-color-presente, var(--md-sys-color-primary, #16a34a)); }
+.field-presence-compact .status-indicator-v2.presente span { color: var(--pc-color-presente, var(--md-sys-color-primary, #16a34a)); }
+.field-presence-compact .status-indicator-v2.ausente .status-dot-v2 { background: var(--pc-color-ausente, var(--md-sys-color-error, #ef4444)); }
+.field-presence-compact .status-indicator-v2.ausente span { color: var(--pc-color-ausente, var(--md-sys-color-error, #ef4444)); }
+.field-presence-compact .status-indicator-v2.desligado .status-dot-v2 { background: var(--pc-color-desligado, #f59e0b); }
+.field-presence-compact .status-indicator-v2.desligado span { color: var(--pc-color-desligado, #f59e0b); }
+.field-presence-compact .presence-summary {
+	border-top: 1px solid rgba(0,0,0,0.06);
+	padding-top: 10px;
+	margin-top: 8px;
+	display: flex;
+	gap: 14px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+.field-presence-compact .legend-item { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--md-sys-color-on-surface-variant, #444); }
+.field-presence-compact .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.field-presence-compact .legend-dot.presente { background: var(--pc-color-presente, var(--md-sys-color-primary, #16a34a)); }
+.field-presence-compact .legend-dot.ausente { background: var(--pc-color-ausente, var(--md-sys-color-error, #ef4444)); }
+.field-presence-compact .legend-dot.desligado { background: var(--pc-color-desligado, #f59e0b); }
+.field-presence-compact .compact-note { width: 100%; color: var(--md-sys-color-on-surface-variant, #666); font-size: 12px; margin-top: 6px; }
+
