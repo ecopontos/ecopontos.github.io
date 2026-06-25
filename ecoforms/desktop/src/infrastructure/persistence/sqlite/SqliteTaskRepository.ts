@@ -207,7 +207,7 @@ export class SqliteTaskRepository implements TaskRepository {
         const rows = await this.db.query<{ id_formulario: string }>(
             `SELECT DISTINCT id_formulario FROM tarefas
              WHERE atribuido_para = ? AND deletado_em IS NULL AND arquivado = 0
-               AND status NOT IN ('done', 'cancelled', 'archived')`,
+               AND status NOT IN ('concluido', 'cancelado')`,
             [userId],
         );
         return rows.map(r => r.id_formulario).filter(Boolean);

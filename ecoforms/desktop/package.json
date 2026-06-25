@@ -13,7 +13,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "start:tauri": "cargo tauri dev"
+    "start:tauri": "cargo tauri dev",
+    "audit:db": "node scripts/audit-db-consistency.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
