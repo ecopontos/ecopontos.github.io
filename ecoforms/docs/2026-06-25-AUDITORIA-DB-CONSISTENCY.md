@@ -234,10 +234,9 @@ Queries com `SELECT c.*` retornam `execucao_id`, `concluido_em`, etc., mas as in
 
 ---
 
-### P10. Tabela `cep` referenciada em `system.ts` mas nao definida no schema
+### ~~P10. Tabela `cep` referenciada em `system.ts`~~ — REMOVIDO
 
-**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/system.ts`
-Query `CEP_CACHE_*` referencia tabela `cep` que nao existe em `ensure-columns.ts`.
+Query `CEP_LOOKUP` e hook `useCEP` removidos — codigo morto, frontend busca endereco via API externa.
 
 ---
 
@@ -248,7 +247,7 @@ Query `CEP_CACHE_*` referencia tabela `cep` que nao existe em `ensure-columns.ts
 | CORRIGIDO (pre-existente) | 8 | Issues C1-C3, A1-A3, M1, M8 ja estavam corrigidos |
 | CORRIGIDO (falso positivo) | 1 | C4 — mapper esta correto |
 | CORRIGIDO (esta sessao) | 9 | M4, M7, B3, B4, N1-N5 — schema + queries + Rust |
-| PENDENTE | 10 | P1-P10 — melhorias de qualidade e completude |
+| PENDENTE | 9 | P1-P9 — melhorias de qualidade e completude |
 
 **Arquivos modificados nesta auditoria:**
 - `desktop/scripts/ensure-columns.ts` — 5 correcoes estruturais
@@ -263,8 +262,7 @@ Query `CEP_CACHE_*` referencia tabela `cep` que nao existe em `ensure-columns.ts
 
 ## PROXIMOS PASSOS RECOMENDADOS
 
-1. **P10:** Adicionar tabela `cep` ao schema ou remover queries orfas
-2. **P2:** Expandir `toTaskDto` para incluir campos omitidos
+1. **P2:** Expandir `toTaskDto` para incluir campos omitidos
 3. **P3:** Incluir `abertura_regra` no `toSyncJSON()` do `ServiceType`
 4. **P4:** Adicionar `PRIMARY KEY` a `pacotes.id` (requer migration)
 5. **P7:** Avaliar adicao de FKs (breaking change — requer dados limpos)
