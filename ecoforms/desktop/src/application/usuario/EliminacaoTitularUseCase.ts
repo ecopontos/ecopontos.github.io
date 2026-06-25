@@ -73,7 +73,7 @@ export class EliminacaoTitularUseCase {
 
         // 4 — Supabase profiles (public.profiles)
         let supabasePerfilRemovido = false;
-        if (supabaseId) {
+        if (supabaseId && supabase) {
             try {
                 const { error } = await supabase.from('profiles').delete().eq('id', supabaseId);
                 if (error) throw error;

@@ -190,6 +190,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
                     const { supabase } = await import(
                         "@/src/infrastructure/persistence/supabase/supabaseClient"
                     );
+                    if (!supabase) throw new Error('Supabase not configured');
                     const email = `${u}@ecoforms.local`;
                     const { error: sbErr } = await supabase.auth.signUp({
                         email,

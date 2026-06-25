@@ -14,6 +14,12 @@ export class SupabaseFileStorage implements FileStoragePort {
         return b ?? this.bucket;
     }
 
+    private requireClient() {
+        const client = getSupabaseClient();
+        if (!client) throw new Error('Supabase not configured — file storage unavailable in standalone mode');
+        return client;
+    }
+
     async upload(
         bucketOrPath: string,
         pathOrData: string | Blob | ArrayBuffer | Uint8Array,
@@ -25,19 +31,17 @@ export class SupabaseFileStorage implements FileStoragePort {
         let data: Blob | ArrayBuffer | Uint8Array;
 
         if (typeof pathOrData === 'string') {
-            // 3-arg form: upload(bucket, path, data, contentType?)
             bucket = bucketOrPath;
             path = pathOrData;
             data = dataOrContent as Blob | ArrayBuffer | Uint8Array;
         } else {
-            // 2-arg form: upload(path, data, contentType?)
             bucket = this.bucket;
             path = bucketOrPath;
             data = pathOrData;
             contentType = dataOrContent as string | undefined;
         }
 
-        const client = getSupabaseClient();
+        const client = this.requireClient();
         const { error } = await client.storage.from(bucket).upload(path, data, {
             contentType,
             upsert: true,
@@ -59,7 +63,7 @@ export class SupabaseFileStorage implements FileStoragePort {
             actualPath = path;
         }
 
-        const client = getSupabaseClient();
+        const client = this.requireClient();
         const { data, error } = await client.storage.from(bucket).download(actualPath);
         if (error) throw error;
         return data;
@@ -80,7 +84,7 @@ export class SupabaseFileStorage implements FileStoragePort {
             actualPaths = [];
         }
 
-        const client = getSupabaseClient();
+        const client = this.requireClient();
         const { error } = await client.storage.from(bucket).remove(actualPaths);
         if (error) throw error;
     }
@@ -97,29 +101,23 @@ export class SupabaseFileStorage implements FileStoragePort {
             actualPrefix = bucketOrPrefix;
         }
 
-        const client = getSupabaseClient();
+        const client = this.requireClient();
         const { data, error } = await client.storage.from(bucket).list(actualPrefix);
         if (error) throw error;
         return (data ?? []).map((f) => f.name);
     }
 
-    /**
-     * Tenta criar o bucket se não existir.
-     * Requer service_role key ou policy permissiva — falha silenciosamente com anon key.
-     * Retorna true se o bucket já existe ou foi criado com sucesso.
-     */
     async ensureBucket(bucketName?: string): Promise<{ ok: boolean; reason?: string }> {
-        const name = bucketName ?? this.bucket;
         const client = getSupabaseClient();
+        if (!client) return { ok: false, reason: 'Supabase not configured (standalone mode)' };
 
-        // Primeiro tenta listar para verificar se o bucket já existe e é acessível
+        const name = bucketName ?? this.bucket;
         const { error: listErr } = await client.storage.from(name).list('', { limit: 1 });
         if (!listErr) return { ok: true };
 
-        // Bucket inacessível — tenta criar
         const { error: createErr } = await client.storage.createBucket(name, {
             public: false,
-            fileSizeLimit: 52428800, // 50 MB
+            fileSizeLimit: 52428800,
         });
 
         if (!createErr) {
@@ -127,7 +125,6 @@ export class SupabaseFileStorage implements FileStoragePort {
             return { ok: true };
         }
 
-        // "already exists" não é um erro real
         if (createErr.message?.toLowerCase().includes('already exist')) {
             return { ok: true };
         }
@@ -147,7 +144,7 @@ export class SupabaseFileStorage implements FileStoragePort {
             actualPath = path;
         }
 
-        const client = getSupabaseClient();
+        const client = this.requireClient();
         return client.storage.from(bucket).getPublicUrl(actualPath).data.publicUrl;
     }
 }

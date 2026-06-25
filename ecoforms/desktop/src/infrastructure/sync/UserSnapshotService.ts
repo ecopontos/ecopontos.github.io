@@ -90,17 +90,19 @@ export class UserSnapshotService {
             };
 
             const body = JSON.stringify(snapshot);
-            const { error } = await supabase.storage
-                .from(BUCKET)
-                .upload(SNAPSHOT_PATH, body, {
-                    contentType: 'application/json',
-                    upsert: true,
-                });
+            if (supabase) {
+                const { error } = await supabase.storage
+                    .from(BUCKET)
+                    .upload(SNAPSHOT_PATH, body, {
+                        contentType: 'application/json',
+                        upsert: true,
+                    });
 
-            if (error) {
-                console.warn('[UserSnapshot] Falha ao publicar users.json:', error.message);
-            } else {
-                console.log(`[UserSnapshot] ${processed.length} usuários publicados no Storage`);
+                if (error) {
+                    console.warn('[UserSnapshot] Falha ao publicar users.json:', error.message);
+                } else {
+                    console.log(`[UserSnapshot] ${processed.length} usuários publicados no Storage`);
+                }
             }
 
             if (this.lan) {

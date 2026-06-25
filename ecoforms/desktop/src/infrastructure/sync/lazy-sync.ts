@@ -55,6 +55,9 @@ export async function getSyncAdapter(
 
     // ADR-056 §8: sync_event_index via RPCs Supabase (substitui Manifest + .enc Storage)
     const supabase = getSupabaseClient();
+    if (!supabase) {
+        throw new Error('Supabase not configured — sync unavailable in standalone mode');
+    }
     const index = createSupabaseSyncEventIndex({
         rpc: async (fn, params) => {
             const { data, error } = await supabase.rpc(fn, params);

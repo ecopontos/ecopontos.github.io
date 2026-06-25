@@ -393,6 +393,7 @@ export function useKanbanMutations(
         const patchPath = `users/${userId}/inbox/${taskId}/patches/${timestamp}.json`;
         const patchData = { ...updates, _patched_at: new Date().toISOString(), _patched_by: user?.id };
         try {
+            if (!supabase) throw new Error('Supabase not configured — patch upload unavailable in standalone mode');
             const { error: uploadError } = await supabase.storage.from('sync-bucket').upload(patchPath, JSON.stringify(patchData), { contentType: 'application/json', upsert: true });
             if (uploadError) throw uploadError;
             type PatchUpdatesExtras = Partial<KanbanTask> & { payload?: unknown };
@@ -416,7 +417,7 @@ export function useKanbanMutations(
     const getTaskPatches = async (taskId: string) => {
         const currentTask = tasks.find(t => t.id === taskId);
         const userId = currentTask?.atribuido_para;
-        if (!userId) return [];
+        if (!userId || !supabase) return [];
         try {
             const { data, error } = await supabase.storage.from('sync-bucket').list(`users/${userId}/inbox/${taskId}/patches/`);
             if (error) throw error;

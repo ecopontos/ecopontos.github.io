@@ -28,6 +28,7 @@ export function useSupabaseAdmin() {
     const syncFromSupabase = useCallback(async (): Promise<ProfileSyncResult> => {
         setSyncing(true);
         try {
+            if (!supabase) throw new Error('Supabase not configured (standalone mode)');
             const { data: profiles, error } = await supabase
                 .from('profiles')
                 .select('id, nome, email, perfil, ativo, org_id');

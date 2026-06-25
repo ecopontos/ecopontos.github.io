@@ -39,6 +39,7 @@ export function GalleryGrid() {
 
     const fetchItems = async (currentPath: string) => {
         setLoading(true);
+        if (!supabase) { setLoading(false); return; }
         try {
             const allProcessedItems: GalleryItem[] = [];
 
@@ -212,6 +213,7 @@ export function GalleryGrid() {
 
     const handleDeleteImage = async (item: GalleryItem) => {
         if (!confirm(`Tem certeza que deseja excluir a imagem "${item.name}"?`)) return;
+        if (!supabase) { alert("Storage não configurado (modo standalone)."); return; }
         try {
             const { error } = await supabase.storage.from("form-images").remove([item.path]);
             if (error) throw error;

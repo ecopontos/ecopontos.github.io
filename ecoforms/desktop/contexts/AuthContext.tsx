@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { usePermissions, UsePermissionsReturn } from "@/src/interface/hooks/catalog/auth";
 import { useSqlite } from "@/src/interface/hooks/catalog/tauri";
 import { invoke } from "@tauri-apps/api/core";
-import { supabase } from "@/src/infrastructure/persistence/supabase/supabaseClient";
+import { supabase, isSupabaseConfigured } from "@/src/infrastructure/persistence/supabase/supabaseClient";
 import { getCryptoLayer } from "@/src/infrastructure/sync/lazy-sync";
 
 interface AuthContextType {
@@ -22,6 +22,7 @@ const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 async function syncUsersFromSupabase(): Promise<void> {
     try {
         const { supabase: sb } = await import('@/src/infrastructure/persistence/supabase/supabaseClient');
+        if (!sb) return;
         const { data: profiles, error } = await sb.from('profiles').select('id, nome, email, perfil, ativo, org_id');
         if (error || !profiles?.length) return;
 
@@ -40,10 +41,10 @@ async function syncUsersFromSupabase(): Promise<void> {
 }
 
 async function syncSupabaseAuth(email: string, password: string): Promise<void> {
+    if (!supabase) return;
     try {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) {
-            // Não faz signUp automático — contas Supabase são gerenciadas pelo admin
             console.warn('[Auth] Supabase signIn failed (non-fatal):', signInError.message);
         } else {
             console.log('[Auth] Supabase session established:', email);
@@ -84,8 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("Failed to clear crypto key:", e);
         }
         try {
-            await supabase.auth.signOut();
-            console.log('[Auth] Supabase session cleared');
+            if (supabase) {
+                await supabase.auth.signOut();
+                console.log('[Auth] Supabase session cleared');
+            }
         } catch (e) {
             console.warn("Failed to clear Supabase session:", e);
         }
@@ -165,8 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // Fase C1: Supabase Auth paralela (non-fatal)
-        if (password) {
+        // Fase C1: Supabase Auth paralela (non-fatal, skip se não configurado)
+        if (password && isSupabaseConfigured()) {
             const syntheticEmail = `${userData.username}@ecoforms.local`;
             if (navigator.onLine) {
                 await syncSupabaseAuth(syntheticEmail, password);
