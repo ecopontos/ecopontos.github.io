@@ -13,15 +13,20 @@
  *   - `solicitacoes: SolicitacaoPackage[]`            — lista de pacotes do usuário
  *   - `availableForms: { form_id, titulo }[]`         — formulários ativos e ad-hoc disponíveis
  *   - `loading: boolean`                              — true durante o carregamento inicial
- *   - `fetchSolicitacoes(): Promise<void>`            — recarrega as solicitações
+ *   - `error: string | null`                          — mensagem de erro, se houver
+ *   - `hasMore: boolean`                              — true se há mais páginas para carregar
+ *   - `loadMore(): void`                              — carrega a próxima página
+ *   - `fetchSolicitacoes(): Promise<void>`            — recarrega as solicitações (reseta paginação)
  *   - `fetchAvailableForms(): Promise<void>`          — recarrega os formulários disponíveis
  */
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { getContainerAsync } from "@/src/infrastructure/container"
 import {
   SOLICITACOES_POR_USUARIO,
   FORMS_AD_HOC_DISPONIVEIS,
 } from '@/src/infrastructure/persistence/sqlite/queries/solicitacoes';
+
+const PAGE_SIZE = 25;
 
 export interface SolicitacaoPackage {
     id_pacote: string
@@ -42,23 +47,42 @@ export function useSolicitacoesList(userId: string | undefined) {
     const [solicitacoes, setSolicitacoes] = useState<SolicitacaoPackage[]>([])
     const [availableForms, setAvailableForms] = useState<{ form_id: string; titulo: string }[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [hasMore, setHasMore] = useState(false)
+    const offsetRef = useRef(0)
 
-    const fetchSolicitacoes = useCallback(async () => {
+    const fetchPage = useCallback(async (offset: number, append: boolean) => {
         if (!userId) return
         try {
-            setLoading(true)
+            if (!append) setLoading(true)
+            setError(null)
             const c = await getContainerAsync()
+            const paginatedSql = SOLICITACOES_POR_USUARIO.sql + ` LIMIT ? OFFSET ?`
             const result = await c.sqlite.query<SolicitacaoPackage>(
-                SOLICITACOES_POR_USUARIO.sql,
-                [userId],
+                paginatedSql,
+                [userId, PAGE_SIZE + 1, offset],
             )
-            setSolicitacoes(result)
-        } catch (error) {
-            console.error("Erro ao buscar solicitações:", error)
+            const page = result.slice(0, PAGE_SIZE)
+            setHasMore(result.length > PAGE_SIZE)
+            setSolicitacoes(prev => append ? [...prev, ...page] : page)
+            offsetRef.current = offset + page.length
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            console.error("Erro ao buscar solicitações:", err)
+            setError(msg)
         } finally {
             setLoading(false)
         }
     }, [userId])
+
+    const fetchSolicitacoes = useCallback(async () => {
+        offsetRef.current = 0
+        await fetchPage(0, false)
+    }, [fetchPage])
+
+    const loadMore = useCallback(() => {
+        if (hasMore) fetchPage(offsetRef.current, true)
+    }, [hasMore, fetchPage])
 
     const fetchAvailableForms = useCallback(async () => {
         try {
@@ -68,8 +92,8 @@ export function useSolicitacoesList(userId: string | undefined) {
                 [],
             )
             setAvailableForms(result)
-        } catch (error) {
-            console.error("Erro ao buscar formulários disponíveis:", error)
+        } catch (err) {
+            console.error("Erro ao buscar formulários disponíveis:", err)
         }
     }, [])
 
@@ -84,6 +108,9 @@ export function useSolicitacoesList(userId: string | undefined) {
         solicitacoes,
         availableForms,
         loading,
+        error,
+        hasMore,
+        loadMore,
         fetchSolicitacoes,
         fetchAvailableForms,
     }

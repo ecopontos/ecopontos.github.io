@@ -201,6 +201,13 @@ export class SqliteKanbanRepository implements KanbanRepository {
                 input.prazo, input.formRegistryId, input.carga, input.taskId,
             ],
         );
+        const check = await this.db.query<{ status: string }>(
+            `SELECT status FROM tarefas WHERE id = ? LIMIT 1`,
+            [input.taskId],
+        );
+        if (!check[0] || check[0].status === 'aguardando_aprovacao') {
+            throw new Error('Falha ao aprovar: solicitação não encontrada ou já processada.');
+        }
     }
 
     async rejectSolicitacao(taskId: string, motivo: string): Promise<void> {
@@ -212,6 +219,13 @@ export class SqliteKanbanRepository implements KanbanRepository {
              WHERE id = ? AND status = 'aguardando_aprovacao'`,
             [motivo, taskId],
         );
+        const check = await this.db.query<{ status: string }>(
+            `SELECT status FROM tarefas WHERE id = ? LIMIT 1`,
+            [taskId],
+        );
+        if (!check[0] || check[0].status !== 'cancelado') {
+            throw new Error('Falha ao rejeitar: solicitação não encontrada ou já processada.');
+        }
     }
 
     async ensureGeneralProject(userId: string): Promise<string> {

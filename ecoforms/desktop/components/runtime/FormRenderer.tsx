@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { getContainerAsync } from "@/src/infrastructure/container";
 import { isFieldEmpty } from "@/src/lib/utils";
@@ -141,7 +142,7 @@ export function FormRenderer({ content, formType, prefillData, readOnly = false,
             // Ignorar campos invisíveis (condicionalidade)
             for (const field of displayedFields) {
                 if (field.required && isFieldEmpty(formData[field.id])) {
-                    alert(`O campo "${field.label}" é obrigatório.`);
+                    toast.error(`O campo "${field.label}" é obrigatório.`);
                     setSubmitting(false);
                     return;
                 }
@@ -161,7 +162,7 @@ export function FormRenderer({ content, formType, prefillData, readOnly = false,
                 await customSubmit(stampedData);
             } else {
                 if (!user) {
-                    alert("Você precisa estar logado para enviar este formulário.");
+                    toast.error("Você precisa estar logado para enviar este formulário.");
                     setSubmitting(false);
                     return;
                 }
@@ -255,9 +256,11 @@ export function FormRenderer({ content, formType, prefillData, readOnly = false,
                         isAdHocForm = isTruthy(row.ad_hoc);
                     }
 
-                    // Detecta se é uma solicitação (campo oculto tipo_submissao=SOLICITACAO)
-                    const isSolicitacao = Object.values(offlineData).some(
-                        v => typeof v === 'string' && v.toUpperCase() === 'SOLICITACAO'
+                    const hiddenFieldIds = new Set(
+                        (content.campos || []).filter(f => f.type === 'hidden').map(f => f.id),
+                    );
+                    const isSolicitacao = Object.entries(offlineData).some(
+                        ([k, v]) => hiddenFieldIds.has(k) && typeof v === 'string' && v.toUpperCase() === 'SOLICITACAO'
                     );
 
                     const now = new Date().toISOString();
@@ -355,7 +358,7 @@ export function FormRenderer({ content, formType, prefillData, readOnly = false,
                     // 4. Sucesso
                     console.log(`[FormRenderer] Ad-hoc form check - isAdHocForm:`, isAdHocForm);
 
-                    alert("Formulário salvo com sucesso!");
+                    toast.success("Formulário salvo com sucesso!");
 
                     router.push("/");
                     return;
@@ -363,14 +366,14 @@ export function FormRenderer({ content, formType, prefillData, readOnly = false,
                 } catch (offErr: unknown) {
                     console.error("Erro ao salvar:", offErr);
                     const errMsg = offErr instanceof Error ? offErr.message : String(offErr);
-                    alert("Erro ao salvar: " + errMsg);
+                    toast.error("Erro ao salvar: " + errMsg);
                     setSubmitting(false);
                     return;
                 }
             }
         } catch (error: unknown) {
             console.error("Erro ao enviar:", error);
-            alert("Erro ao enviar: " + (error instanceof Error ? error.message : String(error)));
+            toast.error("Erro ao enviar: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setSubmitting(false);
         }

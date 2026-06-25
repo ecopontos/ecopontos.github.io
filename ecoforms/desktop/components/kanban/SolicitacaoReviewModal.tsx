@@ -163,6 +163,9 @@ export function SolicitacaoReviewModal({
                 ...existingFormDados,
                 campos: editableFormDados
             });
+        } catch (error) {
+            toast.error("Erro ao aprovar solicitação.");
+            console.error("[SolicitacaoReviewModal] Approve failed:", error);
         } finally {
             setIsLoading(false);
         }
@@ -264,7 +267,10 @@ export function SolicitacaoReviewModal({
                                         />
                                     ) : (
                                         <div className="space-y-4">
-                                            <Label className="text-[10px] uppercase text-slate-400 font-bold">Conteúdo da Submissão</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Label className="text-[10px] uppercase text-slate-400 font-bold">Conteúdo da Submissão</Label>
+                                                <Badge variant="outline" className="text-[9px] text-slate-400">Visualização simplificada</Badge>
+                                            </div>
                                             <pre className="text-xs bg-slate-100 p-4 rounded-lg overflow-x-auto max-h-96 border border-slate-200">
                                                 {JSON.stringify(formDados, null, 2)}
                                             </pre>

@@ -30,6 +30,8 @@ export default function MinhasSolicitacoesPage() {
         solicitacoes,
         availableForms,
         loading,
+        hasMore,
+        loadMore,
         fetchSolicitacoes,
         fetchAvailableForms,
     } = useSolicitacoesList(user?.id);
@@ -204,6 +206,13 @@ export default function MinhasSolicitacoesPage() {
                         {["todas", "pendentes", "aprovadas", "rejeitadas", "arquivadas"].map(tab => (
                             <TabsContent key={tab} value={tab} className="mt-0">
                                 {renderTable(filteredSolicitacoes)}
+                                {hasMore && (
+                                    <div className="flex justify-center py-4">
+                                        <Button variant="outline" size="sm" onClick={loadMore}>
+                                            Carregar mais
+                                        </Button>
+                                    </div>
+                                )}
                             </TabsContent>
                         ))}
                     </Tabs>

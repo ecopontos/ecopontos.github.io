@@ -448,30 +448,40 @@ export function useKanbanMutations(
         const solicitation = solicitacoes.find(s => s.id === solicitationId);
         if (!solicitation) throw new Error("Solicitação não encontrada no estado local.");
 
-        let finalProjectId = overrides?.projeto_id || solicitation.projeto_id || currentProjectId || null;
-        if (!finalProjectId) finalProjectId = await ensureGeneralProject();
+        try {
+            let finalProjectId = overrides?.projeto_id || solicitation.projeto_id || currentProjectId || null;
+            if (!finalProjectId) finalProjectId = await ensureGeneralProject();
 
-        const overridesExtras = (overrides || {}) as (Partial<KanbanTask> & { status?: TaskStatus });
-        const finalFormDados = updatedFormDados || solicitation.form_dados;
+            const overridesExtras = (overrides || {}) as (Partial<KanbanTask> & { status?: TaskStatus });
+            const finalFormDados = updatedFormDados || solicitation.form_dados;
 
-        await kanban.approveSolicitacao({
-            taskId: solicitationId,
-            projetoId: finalProjectId,
-            titulo: overrides?.titulo || solicitation.titulo,
-            descricao: overrides?.descricao || solicitation.descricao || null,
-            status: overridesExtras.status || 'a_fazer',
-            prioridade: overrides?.prioridade || solicitation.prioridade || 'media',
-            atribuidoPara: overrides?.atribuido_para || null,
-            aprovadoPor: user.id,
-            prazo: overrides?.prazo || null,
-            formRegistryId: overrides?.form_registry_id || solicitation.form_nome || null,
-            carga: finalFormDados ? JSON.stringify(finalFormDados) : null,
-        });
+            let carga: string | null = null;
+            if (finalFormDados) {
+                try { carga = JSON.stringify(finalFormDados); } catch { carga = '{}'; }
+            }
 
-        toast.success("Solicitação aprovada!");
-        refetchTasks();
-        refetchSolicitacoes();
-        scheduleTaskSync();
+            await kanban.approveSolicitacao({
+                taskId: solicitationId,
+                projetoId: finalProjectId,
+                titulo: overrides?.titulo || solicitation.titulo,
+                descricao: overrides?.descricao || solicitation.descricao || null,
+                status: overridesExtras.status || 'a_fazer',
+                prioridade: overrides?.prioridade || solicitation.prioridade || 'media',
+                atribuidoPara: overrides?.atribuido_para || null,
+                aprovadoPor: user.id,
+                prazo: overrides?.prazo || null,
+                formRegistryId: overrides?.form_registry_id || solicitation.form_nome || null,
+                carga,
+            });
+
+            toast.success("Solicitação aprovada!");
+            refetchTasks();
+            refetchSolicitacoes();
+            scheduleTaskSync();
+        } catch (error) {
+            toast.error("Falha ao aprovar solicitação.");
+            throw error;
+        }
     };
 
     const rejectSolicitacao = async (solicitationId: string, motivo: string) => {
