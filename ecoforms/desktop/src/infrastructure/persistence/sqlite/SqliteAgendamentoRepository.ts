@@ -1,5 +1,5 @@
 import { Agendamento, type StatusAgendamento } from '../../../domain/service/Agendamento';
-import type { AgendamentoRepository, AgendamentoFiltros } from '../../../domain/service/AgendamentoRepository';
+import type { AgendamentoRepository, AgendamentoFiltros, AgendamentoWithDetails } from '../../../domain/service/AgendamentoRepository';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
 
 interface AgendamentoRow {
@@ -55,6 +55,21 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
             [id],
         );
         return rows[0] ? rowToEntity(rows[0]) : null;
+    }
+
+    async findByIdWithDetails(id: string): Promise<AgendamentoWithDetails | null> {
+        const rows = await this.db.query<AgendamentoWithDetails>(
+            `SELECT ag.cliente_nome, ag.cliente_email, ag.cliente_telefone,
+                    ag.bairro, ag.vagas_solicitadas, ag.status, ag.dados_formulario,
+                    sl.titulo as slot_titulo, sl.local, sl.data_inicio, sl.data_fim,
+                    st.nome as service_type_nome
+             FROM tbl_agendamentos ag
+             JOIN tbl_service_slots sl ON sl.id = ag.slot_id
+             JOIN tbl_service_types st ON st.id = ag.service_type_id
+             WHERE ag.id = ? LIMIT 1`,
+            [id],
+        );
+        return rows[0] ?? null;
     }
 
     async findBySlotId(slotId: string): Promise<Agendamento[]> {
