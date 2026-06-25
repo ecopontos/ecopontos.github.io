@@ -6,21 +6,37 @@ export interface AgendamentoFiltros {
     status?: string;
     serviceTypeId?: string;
     setorId?: string;
+    limit?: number;
+    offset?: number;
 }
 
 export interface AgendamentoWithDetails {
-    cliente_nome: string | null;
-    cliente_email: string | null;
-    cliente_telefone: string | null;
+    clienteNome: string | null;
+    clienteEmail: string | null;
+    clienteTelefone: string | null;
     bairro: string | null;
-    vagas_solicitadas: number;
+    vagasSolicitadas: number;
     status: string;
-    dados_formulario: string | null;
-    slot_titulo: string | null;
+    dadosFormulario: string | null;
+    slotTitulo: string | null;
     local: string | null;
-    data_inicio: string | null;
-    data_fim: string | null;
-    service_type_nome: string | null;
+    dataInicio: string | null;
+    dataFim: string | null;
+    serviceTypeNome: string | null;
+}
+
+export interface AgendamentoMapPoint {
+    id: string;
+    clienteId: string;
+    clienteNome: string;
+    bairro: string | null;
+    endereco: string | null;
+    numero: string | null;
+    cidade: string | null;
+    latitude: number;
+    longitude: number;
+    status: string;
+    vagasSolicitadas: number;
 }
 
 export interface AgendamentoRepository {
@@ -29,6 +45,7 @@ export interface AgendamentoRepository {
     findBySlotId(slotId: string): Promise<Agendamento[]>;
     findByClienteId(clienteId: string): Promise<Agendamento[]>;
     findAll(filtros?: AgendamentoFiltros): Promise<Agendamento[]>;
+    findMapDataBySlotId(slotId: string): Promise<AgendamentoMapPoint[]>;
     existeParaClienteESlot(clienteId: string, slotId: string): Promise<boolean>;
     save(agendamento: Agendamento): Promise<void>;
     confirmIfPendente(id: string, atualizadoEm: string): Promise<boolean>;

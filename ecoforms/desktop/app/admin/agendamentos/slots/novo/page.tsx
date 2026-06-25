@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TaskDateSection, DEFAULT_RECORRENCIA } from "@/components/kanban/TaskDateSection";
 import type { TipoPrazo, RecorrenciaConfig } from "@/components/kanban/TaskDateSection";
 import type { AberturaRegra } from "@/src/application/service/CreateServiceSlotUseCase";
+import { toast } from "sonner";
 
 export default function NovoServiceSlotPage() {
     const router = useRouter();
@@ -51,7 +52,7 @@ export default function NovoServiceSlotPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!prazo) { alert("Informe a data de início."); return; }
+        if (!prazo) { toast.error("Informe a data de início."); return; }
         try {
             const dataInicio = prazo;
             const dataFim = tipoPrazo === 'unico' ? prazo : (prazoFim || prazo);
@@ -71,7 +72,7 @@ export default function NovoServiceSlotPage() {
             });
             router.push("/admin/agendamentos");
         } catch (err) {
-            alert("Erro ao criar slot: " + (err as Error).message);
+            toast.error("Erro ao criar slot: " + (err as Error).message);
         }
     };
 

@@ -9,6 +9,7 @@ import { ArrowLeft, Calendar, Users, MapPin, Repeat, MapIcon } from "lucide-reac
 import Link from "next/link";
 import { useBookingTasks, useServiceSlotById, useServiceTypes, useServiceMutations } from "@/src/interface/hooks/catalog/service";
 import { RoteiroModal } from "@/components/agendamentos/RoteiroModal";
+import { toast } from "sonner";
 
 const STATUS_LABELS: Record<string, string> = {
     a_fazer: 'A fazer',
@@ -37,7 +38,7 @@ export default function SlotDetailPage() {
     const { slot, loading: fetching, reload: reloadSlot } = useServiceSlotById(id ?? null);
     const { types } = useServiceTypes();
     const { publishSlot, cancelSlot } = useServiceMutations();
-    const { tasks, reload: reloadTasks } = useBookingTasks(id ?? null);
+    const { tasks, hasMore, loadMore, reload: reloadTasks } = useBookingTasks(id ?? null);
 
     const serviceType = types.find(t => t.id === slot?.serviceTypeId) ?? null;
 
@@ -48,7 +49,7 @@ export default function SlotDetailPage() {
             reloadSlot();
             await reloadTasks();
         } catch (err) {
-            alert("Erro: " + (err as Error).message);
+            toast.error("Erro: " + (err as Error).message);
         } finally {
             setPublishing(false);
         }
@@ -62,7 +63,7 @@ export default function SlotDetailPage() {
             reloadSlot();
             await reloadTasks();
         } catch (err) {
-            alert("Erro: " + (err as Error).message);
+            toast.error("Erro: " + (err as Error).message);
         } finally {
             setCancelling(false);
         }
@@ -185,7 +186,7 @@ export default function SlotDetailPage() {
                                     <div>
                                         <p className="text-sm font-medium">{task.titulo}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {new Date(task.criado_em).toLocaleString('pt-BR')}
+                                            {new Date(task.criadoEm).toLocaleString('pt-BR')}
                                         </p>
                                     </div>
                                     <Badge variant={STATUS_VARIANTS[task.status] ?? 'secondary'}>
@@ -193,6 +194,11 @@ export default function SlotDetailPage() {
                                     </Badge>
                                 </div>
                             ))}
+                            {hasMore && (
+                                <Button variant="outline" size="sm" className="w-full" onClick={loadMore}>
+                                    Carregar mais
+                                </Button>
+                            )}
                         </div>
                     )}
                 </CardContent>

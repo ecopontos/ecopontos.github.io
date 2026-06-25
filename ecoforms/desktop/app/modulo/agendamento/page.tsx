@@ -13,7 +13,7 @@ export default function ModuloAgendamentoPage() {
     const { types } = useServiceTypes();
     const { publishSlot, encerrarSlot, cancelSlot, loading: mutating } = useServiceMutations();
     const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-    const { tasks, loading: tasksLoading } = useBookingTasks(selectedSlotId);
+    const { tasks, loading: tasksLoading, hasMore, loadMore } = useBookingTasks(selectedSlotId);
     const [actionId, setActionId] = useState<string | null>(null);
 
     const handlePublish = async (slotId: string) => {
@@ -236,7 +236,7 @@ export default function ModuloAgendamentoPage() {
                                         <div>
                                             <p className="font-medium">{task.titulo}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                Status: {task.status} · Criado em: {task.criado_em}
+                                                Status: {task.status} · Criado em: {task.criadoEm}
                                             </p>
                                         </div>
                                         <Link href={`/tasks/${task.id}`}>
@@ -244,6 +244,11 @@ export default function ModuloAgendamentoPage() {
                                         </Link>
                                     </div>
                                 ))}
+                                {hasMore && (
+                                    <Button variant="outline" size="sm" className="w-full" onClick={loadMore}>
+                                        Carregar mais
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </CardContent>

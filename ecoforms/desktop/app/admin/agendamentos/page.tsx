@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useServiceSlots, useServiceTypes, useServiceMutations } from "@/src/interface/hooks/catalog/service";
+import { toast } from "sonner";
 
 export default function AdminAgendamentosPage() {
     const { slots, loading, reload } = useServiceSlots();
@@ -22,7 +23,7 @@ export default function AdminAgendamentosPage() {
             await publishSlot(slotId);
             reload?.();
         } catch (err) {
-            alert("Erro ao publicar: " + (err as Error).message);
+            toast.error("Erro ao publicar: " + (err as Error).message);
         } finally {
             setPublishing(null);
         }

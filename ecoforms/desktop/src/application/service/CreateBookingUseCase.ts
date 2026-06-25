@@ -6,6 +6,7 @@ import type { ServiceTypeRepository } from '../../domain/service/ServiceTypeRepo
 import { ServiceValidatorFactory } from '../../domain/service/validators/ServiceValidatorFactory';
 import type { AgendamentoEfeitosService } from './services/AgendamentoEfeitosService';
 import type { SqlitePort } from '../ports/SqlitePort';
+import { formatDateBR } from '../../lib/date';
 
 export interface CreateBookingInput {
     slotId: string;
@@ -38,7 +39,7 @@ export class CreateBookingUseCase {
 
         const aberturaEm = slot.aberturaEm;
         if (aberturaEm && new Date() < new Date(aberturaEm)) {
-            throw new Error(`Agendamentos para este slot abrem em ${this.formatDate(aberturaEm)}`);
+            throw new Error(`Agendamentos para este slot abrem em ${formatDateBR(aberturaEm)}`);
         }
 
         const serviceType = await this.typeRepo.findById(slot.serviceTypeId);
@@ -97,8 +98,4 @@ export class CreateBookingUseCase {
         return agendamentoId;
     }
 
-    private formatDate(iso: string): string {
-        const [y, m, d] = iso.slice(0, 10).split('-');
-        return `${d}/${m}/${y}`;
-    }
 }

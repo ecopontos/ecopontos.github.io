@@ -5,6 +5,7 @@ import type { ServiceTypeRepository } from '../../../domain/service/ServiceTypeR
 import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
 import type { TaskProjectionService } from '../../task/TaskProjectionService';
 import type { NotificacaoService } from './NotificacaoService';
+import { formatDateBR } from '../../../lib/date';
 
 export class AgendamentoEfeitosService {
     constructor(
@@ -22,7 +23,7 @@ export class AgendamentoEfeitosService {
             const serviceType = await this.typeRepo.findById(ag.serviceTypeId);
 
             if (slot && serviceType) {
-                const titulo = `[${serviceType.nome}] ${ag.clienteNome} · ${this.formatDate(slot.dataInicio)}`;
+                const titulo = `[${serviceType.nome}] ${ag.clienteNome} · ${formatDateBR(slot.dataInicio)}`;
 
                 const linhas: string[] = [];
                 if (ag.bairro) linhas.push(`Bairro: ${ag.bairro}`);
@@ -85,8 +86,4 @@ export class AgendamentoEfeitosService {
         }, { aggregateId: ag.id, streamId: ag.slotId });
     }
 
-    private formatDate(iso: string): string {
-        const [y, m, d] = iso.slice(0, 10).split('-');
-        return `${d}/${m}/${y}`;
-    }
 }
