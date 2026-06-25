@@ -4,198 +4,203 @@ Auditoria automatizada cruzando schema (`ensure-columns.ts`), queries SQL (repos
 
 ---
 
-## CRITICOS — Falhas em Runtime
+## CORRIGIDOS NESTA AUDITORIA
 
-### C1. `pacotes.ts` — Queries usam nomes de coluna errados (4 queries)
+### [CORRIGIDO] C1. `pacotes.ts` — Queries usam nomes de coluna errados
 
 **Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/pacotes.ts`
-
-| Query | Coluna usada | Coluna real na tabela `pacotes` |
-|---|---|---|
-| `PACOTES_FOR_TAREFA` | `s.package_id` | `id_pacote` |
-| `PACOTES_FOR_TAREFA` | `s.owner_id` | `id_proprietario` |
-| `PACOTES_TIPOS_FORM_DISTINTOS` | `tipo_form` | `tipo_modulo` |
-| `PACOTES_TIPOS_FORM_DISTINTOS` | `ativo` | `atual` |
-| `PACOTE_BY_ID` | `WHERE id = ?` | `WHERE id_pacote = ?` |
-
-**Impacto:** Queries falham silenciosamente ou retornam resultados vazios.
+**Status:** Corrigido previamente. `PACOTE_BY_ID` ainda usa `WHERE id = ?` (ver Pendente P1).
 
 ---
 
-### C2. `system.ts` — AUDIT_LOG_EXPORT usa nomes de coluna errados
+### [CORRIGIDO] C2. `system.ts` — AUDIT_LOG_EXPORT usa nomes de coluna errados
 
 **Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/system.ts`
-
-| Coluna usada | Coluna real na tabela `log_acoes` |
-|---|---|
-| `acao` | `id_acao` |
-| `entidade` | `tipo_alvo` |
-| `id_entidade` | `id_alvo` |
-
-**Impacto:** Exportacao de audit log falha ou retorna colunas NULL.
+**Status:** Corrigido previamente. Aliases agora mapeiam colunas corretas.
 
 ---
 
-### C3. Rust `ecoponto_agendar_remocao` insere `status = 'todo'`
+### [CORRIGIDO] C3. Rust `ecoponto_agendar_remocao` insere `status = 'todo'`
 
 **Arquivo:** `desktop/src-tauri/src/commands/actions.rs`
-
-O comando insere tarefas com `status = 'todo'`, mas o dominio `TaskStatus` define `'a_fazer'`. Tarefas criadas por este comando ficam **invisiveis** em todas as queries TypeScript (kanban, listagens, filtros).
-
-**Impacto:** Tarefas de agendamento de remocao somem da interface.
+**Status:** Corrigido previamente para usar `'a_fazer'`.
 
 ---
 
-### C4. `Demanda.mapDemanda` le colunas com nomes errados
+### [CORRIGIDO] C4. `Demanda.mapDemanda` — FALSO POSITIVO
 
 **Arquivo:** `desktop/src/infrastructure/persistence/sqlite/SqliteDemandaRepository.ts`
-
-| Campo lido pelo mapper | Coluna real no INSERT |
-|---|---|
-| `row.arquivo_path` | `caminho_arquivo` |
-| `row.archive_status` | `status_arquivo` |
-
-**Impacto:** `arquivoPath` e `archiveStatus` de toda Demanda sao **sempre null** mesmo quando ha dados no banco.
+**Status:** Verificado — o mapper le `row.caminho_arquivo` e `row.status_arquivo` corretamente.
+O INSERT usa params posicionais que mapeiam `json.arquivo_path` para a coluna `caminho_arquivo` de forma correta.
 
 ---
 
-## ALTOS — Dados incorretos ou comportamento errado
+### [CORRIGIDO] A1. Queries de tarefas/projetos usam nomes EN em vez de PT-BR
 
-### A1. Queries de tarefas/projetos usam `created_at`/`updated_at` (EN) em vez de `criado_em`/`atualizado_em` (PT-BR)
+**Status:** Corrigido previamente nos query catalogs.
 
-| Arquivo | Query | Coluna errada | Coluna correta |
+---
+
+### [CORRIGIDO] A2. `SqliteKanbanRepository` trata `'arquivado'` como status
+
+**Status:** Verificado — repositorio ja usa `AND t.arquivado = 0` corretamente.
+
+---
+
+### [CORRIGIDO] A3. `analysis.ts` referencia colunas fantasma em `pacotes`
+
+**Status:** Corrigido previamente.
+
+---
+
+### [CORRIGIDO] M1. `Demanda.upsertFromSync` UPDATE nao atualiza `setor_id`
+
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/SqliteDemandaRepository.ts`
+**Status:** Corrigido — `setor_id` agora incluido no UPDATE (linha 115).
+
+---
+
+### [CORRIGIDO] M4. Tabela `modelos_resposta` definida DUAS vezes com schemas diferentes
+
+**Arquivo:** `desktop/scripts/ensure-columns.ts`
+**Status:** Corrigido — 2a definicao substituida por ADD COLUMN guards para `criado_por`, `criado_em`, `atualizado_em`.
+
+---
+
+### [CORRIGIDO] M7. Rust `database.rs` usa nomes de tabela EN no export mobile
+
+**Arquivo:** `desktop/src-tauri/src/database.rs`
+**Status:** Corrigido — todos os 8 DELETEs agora usam nomes PT-BR:
+- `log_auditoria`, `fila_eventos_sync`, `log_dispositivos_sync`, `log_gaps_sync`
+- `cursor_sync`, `manifesto_sync`, `log_eventos_aplicados`, `fila_eventos_lan`
+
+---
+
+### [CORRIGIDO] M8. `data-registry.ts` referencia tabela `data_registry`
+
+**Status:** Verificado — arquivo usa `registro_dados` corretamente.
+
+---
+
+### [CORRIGIDO] B3. `tarefas_interessados` referencia `tarefas` antes da criacao
+
+**Arquivo:** `desktop/scripts/ensure-columns.ts`
+**Status:** Corrigido — CREATE TABLE movido para depois de `tarefas`.
+
+---
+
+### [CORRIGIDO] B4. Seed de `tbl_service_types` referencia `requer_mapa` antes do ADD COLUMN
+
+**Arquivo:** `desktop/scripts/ensure-columns.ts`
+**Status:** Corrigido — ADD COLUMN para `abertura_regra` e `requer_mapa` movido para antes do seed INSERT.
+
+---
+
+### [CORRIGIDO - NOVO] N1. `logistica.ts` — Queries referenciam tabelas/colunas erradas
+
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/logistica.ts`
+
+| Query | Problema | Correcao |
+|---|---|---|
+| `EXECUCOES_RESUMO` | `FROM execucoes` | `FROM execucao_coleta` |
+| `EXECUCOES_POR_ROTEIRO` | `FROM execucoes` | `FROM execucao_coleta` |
+| `EXECUCOES_TENDENCIA_MENSAL` | `FROM execucoes` | `FROM execucao_coleta` |
+| `INTERCORRENCIAS_POR_TIPO` | `FROM intercorrencias` | `FROM intercorrencias_coleta` + JOIN `tipos_intercorrencia` |
+| Todas as de execucao | `'em_andamento'`, `'pendente'` | `'em_execucao'`, `'agendada'` (match CHECK) |
+
+---
+
+### [CORRIGIDO - NOVO] N2. `manifestacoes.ts` — Colunas inexistentes
+
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/manifestacoes.ts`
+
+| Query | Coluna errada | Coluna correta |
+|---|---|---|
+| `MANIFESTACOES_RESUMO` | `m.prazo_resposta` | `m.prazo_limite` |
+| `MANIFESTACOES_POR_SETOR` | `m.prazo_resposta` | `m.prazo_limite` |
+| `MANIFESTACOES_PRAZO_VENCIDO` | `m.prazo_resposta` | `m.prazo_limite` (com alias `AS prazo_resposta`) |
+| `MANIFESTACOES_TEMPO_MEDIO_RESPOSTA` | `m.data_resposta` | `m.encerrado_em` |
+
+---
+
+### [CORRIGIDO - NOVO] N3. `usuarios.ts` — Colunas erradas
+
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/usuarios.ts`
+
+| Query | Problema | Correcao |
+|---|---|---|
+| `USUARIO_DADOS` | `u.username` | `u.nome_usuario` |
+| `USUARIOS_SETOR_NOTIFICACAO` | `u.setor_id` | `u.setor_principal_id` |
+
+---
+
+### [CORRIGIDO - NOVO] N4. `projetos.ts` / `tarefas.ts` — `projetos.arquivado` nao existe
+
+| Arquivo | Query | Problema | Correcao |
 |---|---|---|---|
-| `queries/tarefas.ts` | `TAREFA_BY_ID` | `created_at` | `criado_em` |
-| `queries/tarefas.ts` | `TAREFAS_RESUMO` | `updated_at` | `atualizado_em` |
-| `queries/tarefas.ts` | `TAREFAS_TENDENCIA_DIARIA` | `updated_at` | `atualizado_em` |
-| `queries/projetos.ts` | `PROJETO_TAREFAS` | `t.updated_at` | `t.atualizado_em` |
-| `queries/projetos.ts` | `PROJETO_EVENTOS` | `e.created_at` | `e.criado_em` |
-| `queries/tarefas_anexos.ts` | todas | `created_at` | `criado_em` |
+| `projetos.ts` | `PROJETO_DETAIL` | `p.arquivado = 0` | `p.arquivado_em IS NULL` |
+| `tarefas.ts` | `TAREFAS_POR_PROJETO` | `p.arquivado = 0 OR p.arquivado IS NULL` | `p.arquivado_em IS NULL` |
 
-**Impacto:** Filtros por data, ordenacao temporal e tendencia diaria retornam dados incorretos ou vazios.
+Tabela `projetos` usa `arquivado_em TEXT` (timestamp), nao flag booleano.
 
 ---
 
-### A2. `SqliteKanbanRepository.findBookingTasksForUser` trata `'arquivado'` como status
+### [CORRIGIDO - NOVO] N5. Schema `ensure-columns.ts` — Tabela `app_config` ausente
 
-**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/SqliteKanbanRepository.ts`
-
-```sql
-AND t.status NOT IN ('concluido', 'cancelado', 'arquivado')
-```
-
-`'arquivado'` nao e um valor de `TaskStatus` — e um flag booleano na coluna `arquivado` (0/1). Este filtro nao exclui tarefas arquivadas como pretendido.
-
-**Correcao:** Trocar por `AND t.status NOT IN ('concluido', 'cancelado') AND t.arquivado = 0`.
+**Arquivo:** `desktop/scripts/ensure-columns.ts`
+**Status:** Adicionado CREATE TABLE para `app_config` (usado por `APP_CONFIG_GET`/`APP_CONFIG_SAVE` em `system.ts`).
 
 ---
 
-### A3. `analysis.ts` referencia colunas que nao existem em `pacotes`
+## PENDENTES — Nao corrigidos nesta sessao
 
-**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/analysis.ts`
+### P1. `PACOTE_BY_ID` usa `WHERE id = ?` — ambiguo
 
-Colunas `resumo_usuario`, `resumo_status`, `tipo_form` nao existem na tabela `pacotes`. As colunas corretas sao `id_proprietario`, `status`, `tipo_modulo`.
-
----
-
-## MEDIOS — Perda de dados em sync ou incompletude
-
-### M1. `Demanda.upsertFromSync` UPDATE nao atualiza `setor_id`
-
-**Arquivo:** `SqliteDemandaRepository.ts`, linhas 113-136
-
-Quando uma Demanda atualizada chega via sync, o `setor_id` alterado e silenciosamente descartado. O INSERT correto inclui `setor_id`.
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/pacotes.ts`
+Coluna `id` e `INTEGER` sem PRIMARY KEY. A identidade logica e `id_pacote` + `num_versao`.
+**Risco:** Baixo se houver apenas uma coluna `id`, mas semanticamente incorreto.
 
 ---
 
-### M2. `toTaskDto` mapper omite 4 campos da entidade
+### P2. `toTaskDto` mapper omite 4 campos da entidade
 
 **Arquivo:** `desktop/src/application/task/mappers.ts`
-
-Campos persistidos no banco mas ausentes no DTO:
-- `recorrencia`
-- `setorId`
-- `origemTipo`
-- `origemId`
-
-**Impacto:** Qualquer use case ou UI que consome `TaskDto` nunca recebe esses dados.
+Campos persistidos mas ausentes no DTO: `recorrencia`, `setorId`, `origemTipo`, `origemId`.
+**Impacto:** UI nunca recebe esses dados.
 
 ---
 
-### M3. `ServiceType.toSyncJSON()` omite `abertura_regra`
+### P3. `ServiceType.toSyncJSON()` omite `abertura_regra`
 
 **Arquivo:** `desktop/src/domain/service/ServiceType.ts`
-
-O campo `aberturaRegra` (coluna `abertura_regra`) e lido/escrito corretamente pelo repositorio, mas nao e incluido no JSON de sync. Regras de abertura de servico sao perdidas durante sincronizacao.
-
----
-
-### M4. Tabela `modelos_resposta` definida DUAS vezes com schemas diferentes
-
-**Arquivo:** `desktop/scripts/ensure-columns.ts`, linhas 479 e 589
-
-| Campo | 1a definicao (vence) | 2a definicao (ignorada) |
-|---|---|---|
-| tipo FK | `tipo_manifestacao_id NOT NULL` | `tipo_id REFERENCES tipos_manifestacao(id)` |
-| `criado_por` | ausente | `NOT NULL REFERENCES usuarios(id)` |
-| `criado_em` | ausente | presente |
-| `atualizado_em` | ausente | presente |
-
-A 2a definicao e silenciosamente ignorada pelo `CREATE TABLE IF NOT EXISTS`. Colunas `criado_por`, `criado_em`, `atualizado_em` nunca existirao na tabela real.
+Regras de abertura de servico sao perdidas durante sincronizacao.
 
 ---
 
-### M5. Tabela `pacotes` sem PRIMARY KEY
+### P4. Tabela `pacotes` sem PRIMARY KEY
 
-**Arquivo:** `ensure-columns.ts`, linha 1070
-
-A coluna `id INTEGER` nao tem constraint `PRIMARY KEY`. A identidade logica e `id_pacote` + `num_versao` (UNIQUE index), mas `id` e uma coluna INTEGER comum. Codigo que assume `id` como PK pode falhar.
-
----
-
-### M6. `manifestacoes` — 7 colunas ausentes no CREATE TABLE, so existem via ADD COLUMN
-
-Colunas adicionadas apenas via ADD COLUMN (nao estao no CREATE TABLE):
-- `competencia`, `motivo_incompetencia`, `orgao_destino`, `data_competencia`
-- `subassunto_id`, `subunidade_id`, `programa_orcamentario_id`
-
-Em bancos novos, essas colunas so existem se os guards de ADD COLUMN executarem com sucesso.
+**Arquivo:** `ensure-columns.ts`
+`id INTEGER` sem constraint `PRIMARY KEY`.
 
 ---
 
-### M7. Rust `database.rs` usa nomes de tabela EN; TypeScript usa PT-BR
-
-| Rust (database.rs export) | TypeScript (InboundService) |
-|---|---|
-| `sync_event_queue` | `fila_eventos_sync` |
-| `sync_manifest` | `manifesto_sync` |
-| `sync_gap_log` | `log_gaps_sync` |
-| `sync_applied_log` | `log_eventos_aplicados` |
-| `tbl_audit_log` | `log_auditoria` |
-
-Se nao forem aliases, o export mobile limpa tabelas que nao existem, enquanto as tabelas reais (PT-BR) acumulam dados indefinidamente.
-
----
-
-### M8. `data-registry.ts` referencia tabela `data_registry`
-
-**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/data-registry.ts`
-
-Algumas queries referenciam `data_registry` enquanto a tabela real e `registro_dados`. Se nao houver alias/view, essas queries falham.
-
----
-
-### M9. Entidade `Project` e codigo morto
+### P5. Entidade `Project` e codigo morto
 
 **Arquivo:** `desktop/src/domain/project/Project.ts`
-
-A classe `Project` define logica de dominio (`transitionTo()`, `arquivar()`, `desarquivar()`) mas o `SqliteProjectRepository` nunca a instancia. O repositorio usa `KanbanProject` e `ProjectPatch` diretamente. A entidade tambem nao modela `data_inicio`, `data_fim`, `responsavel_id`, `setor_id` que existem no banco.
+Nunca instanciada pelo repositorio. Nao modela `data_inicio`, `data_fim`, `responsavel_id`, `setor_id`.
 
 ---
 
-## BAIXOS — Qualidade de codigo
+### P6. `manifestacoes` — 7 colunas existem apenas via ADD COLUMN
 
-### B1. FKs ausentes em varias tabelas
+Colunas adicionadas apenas por ADD COLUMN (nao estao no CREATE TABLE):
+`competencia`, `motivo_incompetencia`, `orgao_destino`, `data_competencia`,
+`subassunto_id`, `subunidade_id`, `programa_orcamentario_id`.
+**Risco:** Baixo — guards ADD COLUMN sao idemotentes com `.catch(() => {})`.
+
+---
+
+### P7. FKs ausentes em varias tabelas
 
 Tabelas com colunas de referencia sem FOREIGN KEY constraint:
 - `tarefas.projeto_id` → `projetos(id)`
@@ -211,7 +216,7 @@ Tabelas com colunas de referencia sem FOREIGN KEY constraint:
 
 ---
 
-### B2. Inconsistencia de naming EN vs PT-BR em timestamps
+### P8. Inconsistencia de naming EN vs PT-BR em timestamps
 
 | Tabela | Coluna usada | Padrao do projeto |
 |---|---|---|
@@ -223,42 +228,45 @@ Tabelas com colunas de referencia sem FOREIGN KEY constraint:
 
 ---
 
-### B3. `tarefas_interessados` referencia `tarefas` antes da criacao da tabela
+### P9. Checklist e Notificacao: `SELECT *` retorna snake_case mas interface espera camelCase
 
-No `ensure-columns.ts`, `tarefas_interessados` (linha 1244) faz `REFERENCES tarefas(id)`, mas `tarefas` so e criada na linha 1253. Funciona porque SQLite nao valida FKs no CREATE TABLE, mas e uma inconsistencia de ordenacao.
-
----
-
-### B4. Seed de `tbl_service_types` referencia `requer_mapa` antes do ADD COLUMN
-
-O INSERT seed inclui `requer_mapa` na lista de colunas, mas essa coluna so e adicionada via ADD COLUMN depois. Em bancos novos, o seed falha silenciosamente (`.catch()`).
+Queries com `SELECT c.*` retornam `execucao_id`, `concluido_em`, etc., mas as interfaces TypeScript definem `execucaoId`, `concluidoEm`.
 
 ---
 
-### B5. Checklist e Notificacao: `SELECT *` retorna snake_case mas interface espera camelCase
+### P10. Tabela `cep` referenciada em `system.ts` mas nao definida no schema
 
-Queries com `SELECT c.*` retornam `execucao_id`, `concluido_em`, etc., mas as interfaces TypeScript definem `execucaoId`, `concluidoEm`. Pode resultar em campos `undefined`.
+**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/system.ts`
+Query `CEP_CACHE_*` referencia tabela `cep` que nao existe em `ensure-columns.ts`.
 
 ---
 
-## RESUMO POR PRIORIDADE
+## RESUMO
 
-| Prioridade | Qtd | Descricao |
+| Status | Qtd | Descricao |
 |---|---|---|
-| CRITICO | 4 | Queries que falham em runtime ou criam dados invisiveis |
-| ALTO | 3 | Dados incorretos, filtros quebrados, colunas fantasma |
-| MEDIO | 9 | Perda de dados em sync, schema duplicado, codigo morto |
-| BAIXO | 5 | FKs ausentes, naming inconsistente, ordenacao |
+| CORRIGIDO (pre-existente) | 8 | Issues C1-C3, A1-A3, M1, M8 ja estavam corrigidos |
+| CORRIGIDO (falso positivo) | 1 | C4 — mapper esta correto |
+| CORRIGIDO (esta sessao) | 9 | M4, M7, B3, B4, N1-N5 — schema + queries + Rust |
+| PENDENTE | 10 | P1-P10 — melhorias de qualidade e completude |
 
-**Total: 21 issues identificados**
+**Arquivos modificados nesta auditoria:**
+- `desktop/scripts/ensure-columns.ts` — 5 correcoes estruturais
+- `desktop/src-tauri/src/database.rs` — 8 DELETEs com nomes de tabela corretos
+- `desktop/src/infrastructure/persistence/sqlite/queries/logistica.ts` — tabelas e status corrigidos
+- `desktop/src/infrastructure/persistence/sqlite/queries/manifestacoes.ts` — 4 colunas corrigidas
+- `desktop/src/infrastructure/persistence/sqlite/queries/usuarios.ts` — 2 colunas corrigidas
+- `desktop/src/infrastructure/persistence/sqlite/queries/projetos.ts` — filtro `arquivado_em` corrigido
+- `desktop/src/infrastructure/persistence/sqlite/queries/tarefas.ts` — filtro `arquivado_em` corrigido
 
 ---
 
 ## PROXIMOS PASSOS RECOMENDADOS
 
-1. **Corrigir C1-C4 imediatamente** — sao bugs em producao
-2. **Corrigir A1-A2** — impactam funcionalidades visiveis ao usuario
-3. **Adicionar `audit:db` ao CI** — prevenir regressoes de naming
-4. **Normalizar naming EN→PT-BR** nos query catalogs e tabelas novas
-5. **Consolidar schema `modelos_resposta`** — unificar as duas definicoes
-6. **Revisar sync handlers** — garantir que `toSyncJSON()` inclui todos os campos
+1. **P10:** Adicionar tabela `cep` ao schema ou remover queries orfas
+2. **P2:** Expandir `toTaskDto` para incluir campos omitidos
+3. **P3:** Incluir `abertura_regra` no `toSyncJSON()` do `ServiceType`
+4. **P4:** Adicionar `PRIMARY KEY` a `pacotes.id` (requer migration)
+5. **P7:** Avaliar adicao de FKs (breaking change — requer dados limpos)
+6. **P8:** Normalizar timestamps EN→PT-BR nas tabelas restantes
+7. **Adicionar `audit:db` ao CI** — prevenir regressoes de naming

@@ -585,20 +585,11 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    // 2.4 Templates de resposta
-    await execute(`
-        CREATE TABLE IF NOT EXISTS modelos_resposta (
-            id            TEXT PRIMARY KEY,
-            titulo        TEXT NOT NULL,
-            corpo         TEXT NOT NULL,
-            tipo_id       TEXT REFERENCES tipos_manifestacao(id),
-            ativo         INTEGER NOT NULL DEFAULT 1,
-            criado_por    TEXT NOT NULL REFERENCES usuarios(id),
-            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
-            atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-    `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_modelos_resposta_tipo ON modelos_resposta(tipo_manifestacao_id)`).catch(() => {});
+    // 2.4 Templates de resposta — definição canônica está acima (seção 4, Fase 5)
+    // Colunas extras da 2a definição (criado_por, criado_em, atualizado_em) adicionadas via ADD COLUMN
+    await execute(`ALTER TABLE modelos_resposta ADD COLUMN criado_por TEXT`).catch(() => {});
+    await execute(`ALTER TABLE modelos_resposta ADD COLUMN criado_em TEXT`).catch(() => {});
+    await execute(`ALTER TABLE modelos_resposta ADD COLUMN atualizado_em TEXT`).catch(() => {});
 
     // 3.2 Notificações ao solicitante (rastreamento de canal)
     await execute(`
@@ -1241,15 +1232,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tarefas_interessados (
-            tarefa_id  TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE,
-            usuario_id TEXT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-            permissao  TEXT NOT NULL DEFAULT 'leitura',
-            PRIMARY KEY (tarefa_id, usuario_id)
-        )
-    `);
-
-    await execute(`
         CREATE TABLE IF NOT EXISTS tarefas (
             id                 TEXT PRIMARY KEY,
             projeto_id         TEXT,
@@ -1294,6 +1276,15 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`ALTER TABLE tarefas ADD COLUMN slot_id         TEXT`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_demanda ON tarefas(demanda_id)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_slot    ON tarefas(slot_id)`).catch(() => {});
+
+    await execute(`
+        CREATE TABLE IF NOT EXISTS tarefas_interessados (
+            tarefa_id  TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE,
+            usuario_id TEXT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+            permissao  TEXT NOT NULL DEFAULT 'leitura',
+            PRIMARY KEY (tarefa_id, usuario_id)
+        )
+    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tarefa_formularios (
@@ -1669,6 +1660,14 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`ALTER TABLE tbl_email_config ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
 
+    await execute(`
+        CREATE TABLE IF NOT EXISTS app_config (
+            key           TEXT PRIMARY KEY,
+            value         TEXT NOT NULL DEFAULT '',
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+
     // ================================================================
     // 17. SEED — Catálogos iniciais (idempotente)
     // ================================================================
@@ -1818,6 +1817,8 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`CREATE INDEX IF NOT EXISTS idx_service_types_ativo ON tbl_service_types(ativo)`);
     await execute(`ALTER TABLE tbl_service_types ADD COLUMN setor_id TEXT REFERENCES setores(id)`).catch(() => {});
+    await execute(`ALTER TABLE tbl_service_types ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
+    await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
 
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
@@ -1858,10 +1859,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN tipo_prazo TEXT`).catch(() => {});
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN recorrencia TEXT`).catch(() => {});
 
-    // ADR-019: Desacoplamento Booking/Task
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
-    // ADR-053: Flag requerMapa para exibição de roteiro geográfico
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     await execute(`UPDATE tbl_service_types SET requer_mapa = 1 WHERE id IN ('volumosos', 'evento')`).catch(() => {});
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN abertura_em TEXT`).catch(() => {});
     await execute(`ALTER TABLE tarefas ADD COLUMN agendamento_id TEXT`).catch(() => {});
