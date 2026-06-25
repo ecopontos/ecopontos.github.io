@@ -1,4 +1,4 @@
-import { getTransport } from './lazy-sync';
+import { getTransport, getLanTransport } from './lazy-sync';
 
 export class SyncOutbox {
     async write(
@@ -15,5 +15,10 @@ export class SyncOutbox {
             aggregate_id: options?.aggregateId ?? (data['id'] as string | undefined) ?? '',
             stream_id: options?.streamId,
         });
+
+        const lanTransport = getLanTransport();
+        if (lanTransport) {
+            lanTransport.triggerPush();
+        }
     }
 }

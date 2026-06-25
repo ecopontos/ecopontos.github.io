@@ -4,6 +4,7 @@ mod supabase_admin;
 mod session;
 mod sql_guard;
 pub mod commands;
+pub mod lan_server;
 
 use database::DbState;
 use commands::crypto::{CryptoState, SmtpCryptoState};
@@ -93,6 +94,9 @@ pub fn run() {
         .manage(supabase_admin::SupabaseAdminState::new())
         .manage(CryptoState(Mutex::new(None)))
         .manage(SmtpCryptoState(Mutex::new(None)))
+        .manage(std::sync::Arc::new(lan_server::LanServerState::new(
+            uuid::Uuid::new_v4().to_string(),
+        )))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -134,6 +138,11 @@ pub fn run() {
             commands::key_rotation::recover_sync_salt,
             commands::key_rotation::list_salt_history,
             toggle_devtools,
+            lan_server::lan_server_start,
+            lan_server::lan_server_stop,
+            lan_server::lan_server_status,
+            lan_server::lan_server_set_role,
+            lan_server::lan_server_discover_peers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

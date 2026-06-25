@@ -16,12 +16,15 @@ function isSyncStoragePort(storage: unknown): storage is SyncStoragePort {
     return typeof (storage as SyncStoragePort).ensureBucket === 'function';
 }
 
+import type { LanTransport } from './LanTransport';
+
 let _adapter: EventSyncAdapter | null = null;
 let _cryptoLayer: CryptoLayer | null = null;
 let _transport: TransportService | null = null;
 let _inbound: InboundService | null = null;
 let _orgConfigService: OrgConfigService | null = null;
 let _bootstrapService: import('./StorageBootstrapService').StorageBootstrapService | null = null;
+let _lanTransport: LanTransport | null = null;
 
 export async function getSyncAdapter(
     sqlite: SqlitePort,
@@ -82,6 +85,14 @@ export function getCryptoLayer(): CryptoLayer | null {
 
 export function getTransport(): TransportService | null {
     return _transport;
+}
+
+export function getLanTransport(): LanTransport | null {
+    return _lanTransport;
+}
+
+export function setLanTransport(transport: LanTransport | null): void {
+    _lanTransport = transport;
 }
 
 export function getInbound(): InboundService | null {

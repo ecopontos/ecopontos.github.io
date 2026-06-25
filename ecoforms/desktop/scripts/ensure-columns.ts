@@ -1548,6 +1548,21 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`CREATE INDEX IF NOT EXISTS idx_sync_event_queue_status ON fila_eventos_sync(situacao)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_sync_event_queue_entity ON fila_eventos_sync(tipo_agregado, id_agregado)`);
+    await execute(`ALTER TABLE fila_eventos_sync ADD COLUMN situacao_lan TEXT DEFAULT 'pending'`).catch(() => {});
+
+    // LAN Server — fila de eventos recebidos na rede local (independente da fila cloud)
+    await execute(`
+        CREATE TABLE IF NOT EXISTS fila_eventos_lan (
+            id                 TEXT PRIMARY KEY,
+            tipo               TEXT NOT NULL,
+            carga              TEXT NOT NULL,
+            sequencia_lan      INTEGER NOT NULL,
+            id_roteamento      TEXT NOT NULL,
+            dispositivo_origem TEXT NOT NULL,
+            recebido_em        TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_fila_eventos_lan_routing ON fila_eventos_lan(id_roteamento, sequencia_lan)`);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS log_eventos_aplicados (
