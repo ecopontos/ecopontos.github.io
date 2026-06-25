@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Interessado, KanbanProject, UnifiedTaskView } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAccessiblePerfis } from '@/src/infrastructure/persistence/AccessFilterBuilder';
@@ -26,6 +26,7 @@ export function useKanbanData(
     const [tasks, setTasks] = useState<UnifiedTaskView[]>([]);
     const [solicitacoes, setSolicitacoes] = useState<UnifiedTaskView[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [tick, setTick] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -84,12 +85,9 @@ export function useKanbanData(
         };
         load();
         return () => { cancelled = true; };
-    }, [user, permissions, accessiblePerfis, showAllProjects, currentProjectId]);
+    }, [user, permissions, accessiblePerfis, showAllProjects, currentProjectId, tick]);
 
-    const refetch = () => {
-        // trigger re-fetch by changing a dependency - but we don't have a mutable ref here
-        // For simplicity, the consumer can remount or we can add a refetch counter
-    };
+    const refetch = useCallback(() => setTick(t => t + 1), []);
 
     return {
         projects,
