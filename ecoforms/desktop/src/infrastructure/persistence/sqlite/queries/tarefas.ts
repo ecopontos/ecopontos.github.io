@@ -21,11 +21,11 @@ export const TAREFAS_RESUMO: QueryDef = {
                   AND prazo IS NOT NULL
                   AND date(prazo) < date('now') THEN 1 ELSE 0 END)                    AS atrasadas,
         SUM(CASE WHEN status = 'concluido'
-                  AND date(updated_at) = date('now') THEN 1 ELSE 0 END)               AS concluidas_hoje,
+                  AND date(atualizado_em) = date('now') THEN 1 ELSE 0 END)               AS concluidas_hoje,
         SUM(CASE WHEN status = 'concluido'
-                  AND date(updated_at) >= date('now', '-7 days') THEN 1 ELSE 0 END)   AS concluidas_semana,
+                  AND date(atualizado_em) >= date('now', '-7 days') THEN 1 ELSE 0 END)   AS concluidas_semana,
         SUM(CASE WHEN status = 'concluido'
-                  AND date(updated_at) >= date('now', '-30 days') THEN 1 ELSE 0 END)  AS concluidas_mes
+                  AND date(atualizado_em) >= date('now', '-30 days') THEN 1 ELSE 0 END)  AS concluidas_mes
     FROM tarefas
     WHERE arquivado != 1 OR arquivado IS NULL
   `,
@@ -83,11 +83,11 @@ export const TAREFAS_POR_PRIORIDADE: QueryDef = {
 export const TAREFAS_TENDENCIA_DIARIA: QueryDef = {
   sql: `
     SELECT
-        date(updated_at)                                               AS data,
+        date(atualizado_em)                                               AS data,
         SUM(CASE WHEN status = 'concluido' THEN 1 ELSE 0 END)          AS concluidas
     FROM tarefas
-    WHERE date(updated_at) >= date('now', ? || ' days')
-    GROUP BY date(updated_at)
+    WHERE date(atualizado_em) >= date('now', ? || ' days')
+    GROUP BY date(atualizado_em)
     ORDER BY data ASC
   `,
   description: 'Tendência diária de tarefas concluídas nos últimos N dias (param: "-30")',
@@ -97,7 +97,7 @@ export const TAREFAS_TENDENCIA_DIARIA: QueryDef = {
 };
 
 export const TAREFA_BY_ID: QueryDef = {
-  sql: `SELECT id, projeto_id, titulo, status, prioridade, atribuido_para, created_at, prazo, setor_id, demanda_id
+  sql: `SELECT id, projeto_id, titulo, status, prioridade, atribuido_para, criado_em, prazo, setor_id, demanda_id
  FROM tarefas WHERE id = ? LIMIT 1`,
   description: 'Tarefa completa por ID (TaskDetailPage)',
   params: ['id'],

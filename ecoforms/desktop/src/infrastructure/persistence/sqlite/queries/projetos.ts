@@ -52,7 +52,7 @@ export const PROJETO_TAREFAS: QueryDef = {
  FROM tarefas t
  LEFT JOIN usuarios u ON u.id = t.atribuido_para
  WHERE t.projeto_id = ? AND t.arquivado = 0
- ORDER BY t.updated_at DESC
+ ORDER BY t.atualizado_em DESC
  LIMIT 20`,
   description: 'Tarefas ativas de um projeto (top 20) com nome do atribuido',
   params: ['projeto_id'],
@@ -66,7 +66,7 @@ export const PROJETO_EVENTOS: QueryDef = {
  JOIN tarefas t ON t.id = e.tarefa_id
  LEFT JOIN usuarios u ON u.id = e.usuario_id
  WHERE t.projeto_id = ?
- ORDER BY e.created_at DESC
+ ORDER BY e.criado_em DESC
  LIMIT 20`,
   description: 'Eventos recentes das tarefas de um projeto (top 20) com título da tarefa e nome do usuário',
   params: ['projeto_id'],

@@ -78,7 +78,7 @@ pub fn ecoponto_agendar_remocao(
     let tarefa_id = format!("{:x}", rand::random::<u128>());
 
     conn.execute(
-        "INSERT INTO tarefas (id, titulo, status, setor_id, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, 'todo', ?3, ?4, datetime('now'), datetime('now'))",
+        "INSERT INTO tarefas (id, titulo, status, setor_id, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, 'a_fazer', ?3, ?4, datetime('now'), datetime('now'))",
         [&tarefa_id, &format!("Remocao ecoponto {}", ecoponto_id), &setor_destino, &user_id],
     ).map_err(|e| format!("Erro ao criar tarefa de remocao: {}", e))?;
 

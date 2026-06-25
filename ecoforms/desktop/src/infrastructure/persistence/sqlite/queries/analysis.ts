@@ -3,15 +3,15 @@ import type { QueryDef } from './_types';
 export const PACOTES_ANALISE: QueryDef = {
   sql: `
     SELECT
-        id,
-        dados,
+        COALESCE(id_pacote, CAST(id AS TEXT)) AS id,
+        COALESCE(carga_json, dados)           AS dados,
         criado_em,
-        resumo_usuario AS usuario,
-        resumo_status  AS status
+        id_proprietario                       AS usuario,
+        status
     FROM pacotes
-    WHERE tipo_form = ?
-      AND (? = '' OR dados LIKE ? OR resumo_usuario LIKE ?)
-      AND (? = 'all' OR resumo_status = ?)
+    WHERE COALESCE(tipo_modulo, tipo_form) = ?
+      AND (? = '' OR COALESCE(carga_json, dados) LIKE ? OR id_proprietario LIKE ?)
+      AND (? = 'all' OR status = ?)
     ORDER BY criado_em DESC
     LIMIT ?
   `,

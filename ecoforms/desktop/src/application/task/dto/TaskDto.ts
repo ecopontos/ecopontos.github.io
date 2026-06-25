@@ -19,6 +19,10 @@ export interface TaskDto {
     parentTaskId: string | null;
     demandaId: string | null;
     arquivado: boolean;
+    recorrencia?: string | null;
+    setorId?: string | null;
+    origemTipo?: string | null;
+    origemId?: string | null;
     criadoEm?: string;
     atualizadoEm?: string;
 }

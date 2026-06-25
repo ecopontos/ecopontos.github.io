@@ -163,8 +163,8 @@ export const PACOTE_INSERT_FROM_FORM: QueryDef = {
 };
 
 export const PACOTES_TIPOS_FORM_DISTINTOS: QueryDef = {
-  sql: `SELECT DISTINCT tipo_form FROM pacotes WHERE ativo = 1 ORDER BY tipo_form`,
-  description: 'Lista distinta de tipo_form em pacotes ativos (usePacoteFormTypes / useAnalysisData)',
+  sql: `SELECT DISTINCT COALESCE(tipo_modulo, tipo_form) AS tipo_form FROM pacotes WHERE atual = 1 OR (atual IS NULL AND ativo = 1) ORDER BY tipo_form`,
+  description: 'Lista distinta de tipo_form/tipo_modulo em pacotes ativos (usePacoteFormTypes / useAnalysisData)',
   params: [],
   use: 'operacional',
   returns: '{ tipo_form }[]',
@@ -228,8 +228,8 @@ export const PACOTES_PENDING_SOLICITACOES_COUNT: QueryDef = {
 export const PACOTES_FOR_TAREFA: QueryDef = {
   sql: `
     SELECT
-        s.package_id AS id,
-        s.owner_id   AS user_id,
+        s.id_pacote       AS id,
+        s.id_proprietario AS user_id,
         s.criado_em,
         s.tipo_modulo AS tipo_form,
         s.status,

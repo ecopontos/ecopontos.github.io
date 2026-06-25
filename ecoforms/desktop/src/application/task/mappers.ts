@@ -21,6 +21,10 @@ export function toTaskDto(task: Task): TaskDto {
         parentTaskId: p.parentTaskId ?? null,
         demandaId: p.demandaId ?? null,
         arquivado: !!p.arquivado,
+        recorrencia: p.recorrencia ?? null,
+        setorId: p.setorId ?? null,
+        origemTipo: p.origemTipo ?? null,
+        origemId: p.origemId ?? null,
         criadoEm: p.criadoEm,
         atualizadoEm: p.atualizadoEm,
     };

@@ -27,7 +27,7 @@ export const APP_CONFIG_GET: QueryDef = {
 };
 
 export const AUDIT_LOG_EXPORT: QueryDef = {
-  sql: `SELECT id, acao, entidade, id_entidade, criado_em FROM log_acoes WHERE id_usuario = ? ORDER BY criado_em DESC LIMIT 500`,
+  sql: `SELECT id, id_acao AS acao, tipo_alvo AS entidade, id_alvo AS id_entidade, criado_em FROM log_acoes WHERE id_usuario = ? ORDER BY criado_em DESC LIMIT 500`,
   description: 'Log de ações de um usuário para exportação GDPR',
   params: ['id_usuario'],
   use: 'operacional',

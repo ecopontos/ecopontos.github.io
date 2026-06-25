@@ -112,6 +112,7 @@ export class SqliteDemandaRepository implements DemandaRepository {
       await this.db.execute(
         `UPDATE demandas SET
           origem_tipo = ?, origem_id = ?, solicitante_id = ?, destinatario_id = ?,
+          setor_id = ?,
           tipo_acao = ?, descricao = ?, status = ?, politica_conclusao = ?,
           auto_aceite = ?, aceito_por = ?, aceito_em = ?,
           encerrado_por = ?, encerrado_em = ?,
@@ -122,6 +123,7 @@ export class SqliteDemandaRepository implements DemandaRepository {
         [
           json.origem_tipo ?? null, json.origem_id ?? null,
           json.solicitante_id ?? null, json.destinatario_id ?? null,
+          json.setor_id ?? null,
           json.tipo_acao ?? null, json.descricao ?? null,
           json.status ?? null, json.politica_conclusao ?? null,
           json.auto_aceite != null ? (json.auto_aceite as number) : 0,
@@ -262,8 +264,8 @@ export class SqliteDemandaRepository implements DemandaRepository {
       encerradoEm: row.encerrado_em as string | null,
       criadaEm: row.criado_em as string,
       arquivadaEm: row.arquivada_em as string | null,
-      arquivoPath: row.arquivo_path as string | null,
-      archiveStatus: row.archive_status as ArchiveStatus | null,
+      arquivoPath: row.caminho_arquivo as string | null,
+      archiveStatus: row.status_arquivo as ArchiveStatus | null,
     });
   }
 

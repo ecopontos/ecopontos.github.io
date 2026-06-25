@@ -153,7 +153,8 @@ export class SqliteKanbanRepository implements KanbanRepository {
              WHERE t.origem = 'booking'
                AND t.atribuido_para = ?
                AND date(t.prazo) = date('now')
-               AND t.status NOT IN ('concluido', 'cancelado', 'arquivado')
+               AND t.status NOT IN ('concluido', 'cancelado')
+               AND t.arquivado = 0
              ORDER BY t.prazo ASC`,
             [userId],
         );

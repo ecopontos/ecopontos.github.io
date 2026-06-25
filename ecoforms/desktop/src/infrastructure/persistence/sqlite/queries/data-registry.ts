@@ -23,8 +23,8 @@ export const REGISTRY_CONTAGEM_POR_TIPO: QueryDef = {
 };
 
 export const DATA_REGISTRY_TIPOS_COUNT: QueryDef = {
-  sql: `SELECT tipo, COUNT(*) as count FROM data_registry GROUP BY tipo ORDER BY tipo`,
-  description: 'Contagem de registros por tipo na tabela data_registry (para selects de catálogo no wizard de módulos)',
+  sql: `SELECT tipo, COUNT(*) as count FROM registro_dados GROUP BY tipo ORDER BY tipo`,
+  description: 'Contagem de registros por tipo na tabela registro_dados (para selects de catálogo no wizard de módulos)',
   params: [],
   use: 'operacional',
   returns: '{ tipo, count }[]',

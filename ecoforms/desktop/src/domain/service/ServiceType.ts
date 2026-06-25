@@ -57,6 +57,7 @@ export class ServiceType {
             icone: this.props.icone ?? null,
             cor: this.props.cor ?? null,
             ativo: this.props.ativo ? 1 : 0,
+            abertura_regra: this.props.aberturaRegra ?? null,
             setor_id: this.props.setorId ?? null,
             criado_em: this.props.criadoEm,
             atualizado_em: this.props.atualizadoEm,
