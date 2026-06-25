@@ -191,12 +191,11 @@ Nunca instanciada pelo repositorio. Nao modela `data_inicio`, `data_fim`, `respo
 
 ---
 
-### P6. `manifestacoes` — 7 colunas existem apenas via ADD COLUMN
+### ~~P6. `manifestacoes` — 7 colunas existem apenas via ADD COLUMN~~ — CORRIGIDO
 
-Colunas adicionadas apenas por ADD COLUMN (nao estao no CREATE TABLE):
-`competencia`, `motivo_incompetencia`, `orgao_destino`, `data_competencia`,
-`subassunto_id`, `subunidade_id`, `programa_orcamentario_id`.
-**Risco:** Baixo — guards ADD COLUMN sao idemotentes com `.catch(() => {})`.
+Colunas `competencia`, `motivo_incompetencia`, `orgao_destino`, `data_competencia`,
+`subassunto_id`, `subunidade_id`, `programa_orcamentario_id` consolidadas no CREATE TABLE.
+ADD COLUMNs mantidos como guards de migracao para bancos legados.
 
 ---
 
@@ -247,7 +246,7 @@ Query `CEP_LOOKUP` e hook `useCEP` removidos — codigo morto, frontend busca en
 | CORRIGIDO (pre-existente) | 8 | Issues C1-C3, A1-A3, M1, M8 ja estavam corrigidos |
 | CORRIGIDO (falso positivo) | 1 | C4 — mapper esta correto |
 | CORRIGIDO (esta sessao) | 9 | M4, M7, B3, B4, N1-N5 — schema + queries + Rust |
-| PENDENTE | 9 | P1-P9 — melhorias de qualidade e completude |
+| PENDENTE | 8 | P1-P5, P7-P9 — melhorias de qualidade e completude |
 
 **Arquivos modificados nesta auditoria:**
 - `desktop/scripts/ensure-columns.ts` — 5 correcoes estruturais

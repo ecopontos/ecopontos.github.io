@@ -375,6 +375,13 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             avaliacao_comentario TEXT,
             avaliacao_em     TEXT,
             manifestacao_origem_id TEXT REFERENCES manifestacoes(id),
+            competencia      TEXT CHECK(competencia IN ('compete','nao_compete','pendente')) DEFAULT 'pendente',
+            motivo_incompetencia TEXT,
+            orgao_destino    TEXT,
+            data_competencia TEXT,
+            subassunto_id    TEXT,
+            subunidade_id    TEXT,
+            programa_orcamentario_id TEXT,
             criado_em        TEXT NOT NULL DEFAULT (datetime('now')),
             atualizado_em    TEXT NOT NULL DEFAULT (datetime('now')),
             encerrado_em     TEXT
