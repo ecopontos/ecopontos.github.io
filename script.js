@@ -60,12 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function inicializarBancoDeDados() {
         return new Promise((resolve, reject) => {
-            var request = indexedDB.open("nomeDoBanco", 1);
+            var request = indexedDB.open("nomeDoBanco", 2);
 
             request.onupgradeneeded = function(event) {
                 db = event.target.result;
+                var objectStore;
                 if (!db.objectStoreNames.contains("atendimentos")) {
-                    var objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
+                    objectStore = db.createObjectStore("atendimentos", { keyPath: "id", autoIncrement: true });
                     objectStore.createIndex("ecoponto", "ecoponto", { unique: false });
                     objectStore.createIndex("placa", "placa", { unique: false });
                     objectStore.createIndex("data", "data", { unique: false });
@@ -73,6 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     objectStore.createIndex("bairro", "bairro", { unique: false });
                     objectStore.createIndex("residuos", "residuos", { unique: false });
                     objectStore.createIndex("horaRegistro", "horaRegistro", { unique: false });
+                    objectStore.createIndex("status", "status", { unique: false });
+                } else {
+                    objectStore = event.target.transaction.objectStore("atendimentos");
+                    if (!objectStore.indexNames.contains("status")) {
+                        objectStore.createIndex("status", "status", { unique: false });
+                    }
                 }
             };
 
@@ -145,7 +152,8 @@ setInterval(atualizarDataHora, 60 * 1000);
             hora: hora,
             bairro: bairro,
             residuos: residuosSelecionados.join(';'),
-            horaRegistro: horaAtual
+            horaRegistro: horaAtual,
+            status: 'Pendente'
         };
 
         var transaction = db.transaction(["atendimentos"], "readwrite");
@@ -153,8 +161,9 @@ setInterval(atualizarDataHora, 60 * 1000);
         var request = objectStore.add(novoAtendimento);
 
         request.onsuccess = function(event) {
+            var registroId = event.target.result;
             console.log("Atendimento adicionado com sucesso");
-            enviarParaSheets(novoAtendimento);
+            enviarParaSheets(novoAtendimento, registroId);
             document.getElementById("placa").value = '';
             document.getElementById("data").value = '';
             document.getElementById("hora").value = '';
@@ -168,7 +177,7 @@ setInterval(atualizarDataHora, 60 * 1000);
         };
     }
 
-    function enviarParaSheets(atendimento) {
+    function enviarParaSheets(atendimento, registroId) {
         var url = localStorage.getItem('sheetsUrl');
         if (!url) return;
 
@@ -179,11 +188,25 @@ setInterval(atualizarDataHora, 60 * 1000);
             body: JSON.stringify(atendimento)
         }).then(function() {
             console.log('Enviado para Google Sheets');
+            if (registroId) atualizarStatus(registroId, 'Sincronizado');
             atualizarIndicadorPendentes();
         }).catch(function() {
             adicionarFilaPendente(atendimento);
             atualizarIndicadorPendentes();
         });
+    }
+
+    function atualizarStatus(id, novoStatus) {
+        var transaction = db.transaction(["atendimentos"], "readwrite");
+        var objectStore = transaction.objectStore("atendimentos");
+        var request = objectStore.get(id);
+        request.onsuccess = function(event) {
+            var registro = event.target.result;
+            if (registro) {
+                registro.status = novoStatus;
+                objectStore.put(registro);
+            }
+        };
     }
 
     function adicionarFilaPendente(atendimento) {
@@ -244,7 +267,6 @@ setInterval(atualizarDataHora, 60 * 1000);
     enviarPendentes();
     atualizarIndicadorPendentes();
 
-     //Exporta dados em CSV
 function exportarDadosCSV() {
     const transaction = db.transaction(["atendimentos"], "readonly");
     const objectStore = transaction.objectStore("atendimentos");
@@ -252,15 +274,15 @@ function exportarDadosCSV() {
 
     request.onsuccess = function(event) {
         const registros = event.target.result;
+        const naoExportados = registros.filter(function(r) { return r.status !== 'Exportado'; });
 
-        if (registros.length === 0) {
-            console.warn("Nenhum registro encontrado.");
+        if (naoExportados.length === 0) {
+            alert("Nenhum registro novo para exportar.");
             return;
         }
 
-        // Encontra o ecoponto e o registro com a data e hora máxima
-        const ecoponto = registros[0].ecoponto; // Supondo que todos os registros tenham o mesmo ecoponto
-        const maxRegistro = registros.reduce((max, registro) => {
+        const ecoponto = naoExportados[0].ecoponto;
+        const maxRegistro = naoExportados.reduce((max, registro) => {
             const registroDateTime = new Date(`${registro.data} ${registro.hora}`);
             const maxDateTime = new Date(`${max.data} ${max.hora}`);
             return registroDateTime > maxDateTime ? registro : max;
@@ -268,39 +290,36 @@ function exportarDadosCSV() {
 
         const maxDataHora = `${maxRegistro.data.replace(/-/g, '')}_${maxRegistro.hora.replace(/:/g, '')}`;
 
-        // Cria o conteúdo do CSV
         const csvContent = [
-            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro'],
-            ...registros.map(registro => [
+            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro', 'Status'],
+            ...naoExportados.map(registro => [
                 registro.ecoponto,
                 registro.placa,
                 registro.data,
                 registro.hora,
                 registro.bairro,
                 `"${registro.residuos.split(';').join(',')}"`,
-                registro.horaRegistro
+                registro.horaRegistro,
+                registro.status || 'Pendente'
             ])
         ]
         .map(e => e.join(','))
         .join('\n');
 
-        // Cria um link para download do arquivo CSV
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
         link.download = `${ecoponto}_${maxDataHora}.csv`;
         link.click();
 
-        // Limpa o banco de dados após a exportação
-        const deleteTransaction = db.transaction(["atendimentos"], "readwrite");
-        const deleteObjectStore = deleteTransaction.objectStore("atendimentos");
-        const clearRequest = deleteObjectStore.clear();
+        const updateTransaction = db.transaction(["atendimentos"], "readwrite");
+        const updateStore = updateTransaction.objectStore("atendimentos");
+        naoExportados.forEach(function(reg) {
+            reg.status = 'Exportado';
+            updateStore.put(reg);
+        });
 
-        clearRequest.onsuccess = function(event) {
-            console.log("Banco de dados limpo com sucesso.");
-        };
-
-        clearRequest.onerror = function(event) {
-            console.error("Erro ao limpar o banco de dados:", event.target.error);
+        updateTransaction.oncomplete = function() {
+            console.log(naoExportados.length + ' registro(s) marcado(s) como Exportado.');
         };
     };
 
