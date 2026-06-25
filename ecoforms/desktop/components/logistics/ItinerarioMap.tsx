@@ -128,14 +128,31 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         const p = f.properties as Record<string, string | number>;
         const coords = f.geometry.coordinates as [number, number];
         const inRoute = p.in_route === 1;
-        const badge = inRoute
-          ? `<span style="background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600">NO ROTEIRO</span>`
-          : "";
+
+        const container = document.createElement('div');
+        container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+        const strong = document.createElement('strong');
+        strong.style.fontSize = '14px';
+        strong.textContent = String(p.nome ?? '');
+        container.appendChild(strong);
+
+        if (inRoute) {
+          const badge = document.createElement('span');
+          badge.style.cssText = 'background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px';
+          badge.textContent = 'NO ROTEIRO';
+          container.appendChild(badge);
+        }
+
+        container.appendChild(document.createElement('br'));
+        const meta = document.createElement('span');
+        meta.style.cssText = 'color:#888;font-size:11px';
+        meta.textContent = `${p.tipo}${p.endereco ? ` · ${p.endereco}` : ''}`;
+        container.appendChild(meta);
+
         const popup = new maplibregl.Popup({ maxWidth: "240px" })
           .setLngLat(coords)
-          .setHTML(
-            `<div style="font-family:sans-serif;font-size:13px;line-height:1.5"><strong style="font-size:14px">${p.nome}</strong> ${badge}<br/><span style="color:#888;font-size:11px">${p.tipo}${p.endereco ? ` · ${p.endereco}` : ""}</span></div>`,
-          )
+          .setDOMContent(container)
           .addTo(map);
         popupsRef.current.push(popup);
         if (onClienteClick) onClienteClick(p.id as string);

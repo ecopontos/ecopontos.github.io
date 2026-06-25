@@ -55,6 +55,8 @@ import { REGISTRO_DADOS_BY_TIPO_ECOPONTO } from '@/src/infrastructure/persistenc
 import { PACOTES_TIPOS_FORM_DISTINTOS } from '@/src/infrastructure/persistence/sqlite/queries/pacotes';
 import {
   CLIENTES_GEO,
+  CLIENTES_GEO_IN_VIEWPORT,
+  CLIENTES_GEO_COUNT,
   TERRENOS_ATIVOS,
   TERRENOS_IN_VIEWPORT_RTREE,
   TERRENOS_IN_VIEWPORT_CENTROID,
@@ -527,6 +529,31 @@ export async function fetchRegistroDadosByTipoEcoponto(
 export async function fetchClientesGeo(): Promise<Record<string, unknown>[]> {
   const c = await getContainerAsync();
   return c.sqlite.query<Record<string, unknown>>(CLIENTES_GEO.sql, CLIENTES_GEO.params);
+}
+
+/** Clientes no viewport via bbox (useClientesGeoInViewport). */
+export async function fetchClientesGeoInViewport(
+  bbox: [number, number, number, number],
+): Promise<Record<string, unknown>[]> {
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  const c = await getContainerAsync();
+  return c.sqlite.query<Record<string, unknown>>(
+    CLIENTES_GEO_IN_VIEWPORT.sql,
+    [minLng, maxLng, minLat, maxLat],
+  );
+}
+
+/** Contagem de clientes geolocalizados — decide threshold para viewport loading. */
+export async function fetchClientesGeoCount(): Promise<number> {
+  const c = await getContainerAsync();
+  const rows = await c.sqlite.query<{ count: number | string | bigint }>(
+    CLIENTES_GEO_COUNT.sql,
+    CLIENTES_GEO_COUNT.params,
+  );
+  const raw = rows[0]?.count;
+  if (typeof raw === 'string') return parseInt(raw, 10) || 0;
+  if (typeof raw === 'bigint') return Number(raw);
+  return Number(raw ?? 0);
 }
 
 /** Terrenos ativos (useMapData useTerrenos). */
