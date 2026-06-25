@@ -1063,10 +1063,9 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    // pacotes: id INTEGER mantido por compatibilidade de código (id_pacote é a identidade lógica UUIDv7)
     await execute(`
         CREATE TABLE IF NOT EXISTS pacotes (
-            id               INTEGER,
+            id               INTEGER PRIMARY KEY,
             criado_em        TEXT NOT NULL DEFAULT (datetime('now')),
             id_usuario          TEXT NOT NULL DEFAULT '0000000-000-000-000-00000000',
             dados            TEXT NOT NULL,

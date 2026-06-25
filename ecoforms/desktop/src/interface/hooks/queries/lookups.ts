@@ -259,9 +259,7 @@ export async function closePacotes(ids: string[]): Promise<void> {
 }
 
 /**
- * Pacote completo por id (app/view). Retorna null se não existir.
- * NOTA: o catálogo usa coluna `id` (preserva comportamento original) —
- * investigar se é alias de id_pacote.
+ * Pacote atual por id_pacote (app/view). Retorna null se não existir.
  */
 export async function fetchPacoteById(id: string): Promise<Record<string, unknown> | null> {
   const c = await getContainerAsync();

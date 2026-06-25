@@ -154,33 +154,27 @@ Tabela `projetos` usa `arquivado_em TEXT` (timestamp), nao flag booleano.
 
 ## PENDENTES — Nao corrigidos nesta sessao
 
-### P1. `PACOTE_BY_ID` usa `WHERE id = ?` — ambiguo
+### ~~P1. `PACOTE_BY_ID` usa `WHERE id = ?`~~ — CORRIGIDO
 
-**Arquivo:** `desktop/src/infrastructure/persistence/sqlite/queries/pacotes.ts`
-Coluna `id` e `INTEGER` sem PRIMARY KEY. A identidade logica e `id_pacote` + `num_versao`.
-**Risco:** Baixo se houver apenas uma coluna `id`, mas semanticamente incorreto.
+Corrigido para `WHERE id_pacote = ? AND atual = 1`. Callers passam UUIDv7 via URL param.
 
 ---
 
-### P2. `toTaskDto` mapper omite 4 campos da entidade
+### ~~P2. `toTaskDto` mapper omite 4 campos~~ — JA CORRIGIDO
 
-**Arquivo:** `desktop/src/application/task/mappers.ts`
-Campos persistidos mas ausentes no DTO: `recorrencia`, `setorId`, `origemTipo`, `origemId`.
-**Impacto:** UI nunca recebe esses dados.
+Verificado: mapper ja inclui `recorrencia`, `setorId`, `origemTipo`, `origemId`.
 
 ---
 
-### P3. `ServiceType.toSyncJSON()` omite `abertura_regra`
+### ~~P3. `ServiceType.toSyncJSON()` omite `abertura_regra`~~ — JA CORRIGIDO
 
-**Arquivo:** `desktop/src/domain/service/ServiceType.ts`
-Regras de abertura de servico sao perdidas durante sincronizacao.
+Verificado: `toSyncJSON()` ja inclui `abertura_regra` (linha 60).
 
 ---
 
-### P4. Tabela `pacotes` sem PRIMARY KEY
+### ~~P4. Tabela `pacotes` sem PRIMARY KEY~~ — CORRIGIDO
 
-**Arquivo:** `ensure-columns.ts`
-`id INTEGER` sem constraint `PRIMARY KEY`.
+`id INTEGER` → `id INTEGER PRIMARY KEY`. Seguro — alias do rowid implicito do SQLite.
 
 ---
 
@@ -215,15 +209,12 @@ Tabelas com colunas de referencia sem FOREIGN KEY constraint:
 
 ---
 
-### P8. Inconsistencia de naming EN vs PT-BR em timestamps
+### P8. Naming EN em timestamps de tabelas de infraestrutura — INTENCIONAL
 
-| Tabela | Coluna usada | Padrao do projeto |
-|---|---|---|
-| `tarefas_anexos` | `created_at` | `criado_em` |
-| `tbl_suite` | `created_at` | `criado_em` |
-| `anexos_cache` | `created_at`, `accessed_at` | `criado_em` |
-| `anexos_refs` | `created_at` | `criado_em` |
-| `sync_salt_history` | `replaced_at` | PT-BR |
+Tabelas `tbl_suite`, `tarefas_anexos`, `anexos_cache`, `anexos_refs`, `sync_salt_history`
+usam `created_at`/`accessed_at`/`replaced_at` por decisao de design (subsistemas de
+infraestrutura/sync). Ha migracao explicita `RENAME COLUMN criado_em TO created_at` em
+`tarefas_anexos`. Nao e bug — manter como esta.
 
 ---
 
@@ -246,7 +237,10 @@ Query `CEP_LOOKUP` e hook `useCEP` removidos — codigo morto, frontend busca en
 | CORRIGIDO (pre-existente) | 8 | Issues C1-C3, A1-A3, M1, M8 ja estavam corrigidos |
 | CORRIGIDO (falso positivo) | 1 | C4 — mapper esta correto |
 | CORRIGIDO (esta sessao) | 9 | M4, M7, B3, B4, N1-N5 — schema + queries + Rust |
-| PENDENTE | 8 | P1-P5, P7-P9 — melhorias de qualidade e completude |
+| CORRIGIDO (esta sessao - rd2) | 4 | P1, P4, P6, P10 + remoção CEP dead code |
+| JA CORRIGIDO (verificado) | 2 | P2, P3 — ja estavam corretos |
+| INTENCIONAL | 1 | P8 — naming EN em tabelas de infra |
+| PENDENTE | 3 | P5, P7, P9 — codigo morto, FKs, camelCase |
 
 **Arquivos modificados nesta auditoria:**
 - `desktop/scripts/ensure-columns.ts` — 5 correcoes estruturais
