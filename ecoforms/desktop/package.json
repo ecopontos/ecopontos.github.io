@@ -44,6 +44,7 @@
     "@tauri-apps/plugin-shell": "^2.3.4",
     "@tauri-apps/plugin-store": "^2.4.2",
     "@types/bcryptjs": "^2.4.6",
+    "@vitest/ui": "^4.1.9",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -71,7 +72,7 @@
     "@types/proj4": "^2.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.1.9",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
@@ -79,6 +80,17 @@
     "sqlite3": "^6.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.10"
+    },
+    "exceljs": {
+      "uuid": "^11.1.1"
+    },
+    "socks": {
+      "ip-address": "^10.2.0"
+    }
   }
 }
