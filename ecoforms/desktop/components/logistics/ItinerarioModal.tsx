@@ -32,6 +32,8 @@ import type { RoteiroCliente } from "@/src/domain/logistics/LogisticsRepository"
 import type { Cliente } from "@/types/clientes";
 import ItinerarioMap from "./ItinerarioMap";
 
+const PAGE_SIZE = 50;
+
 type SearchMode = "nome" | "cep" | "bairro";
 
 function SortableItem({
@@ -122,13 +124,18 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
   const [searchBy, setSearchBy] = useState<SearchMode>("nome");
   const [showMap, setShowMap] = useState(true);
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const { data: clientesRoteiro, refetch } = useClientesByRoteiro(roteiroId);
-  const { data: allClientes, loading: loadingClientes } = useClientes();
+  const clienteFilter = useMemo(() => {
+    if (search.length < 2) return undefined;
+    return { searchTerm: search };
+  }, [search]);
+  const { data: allClientes, loading: loadingClientes } = useClientes(clienteFilter);
   const { data: clientesGeo } = useClientesGeo();
   const { data: itinerario } = useItinerario(roteiroId);
   const { data: terrenos } = useTerrenos();
-  const { addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, loading: saving } =
+  const { addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdemBatch, loading: saving } =
     useLogisticsMutations();
 
   const sensors = useSensors(
@@ -151,26 +158,32 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
 
   const existingIds = useMemo(() => new Set(sorted.map((c) => c.clienteId)), [sorted]);
 
-  const available = useMemo(() => {
+  const filteredAvailable = useMemo(() => {
     const base = (allClientes || []).filter((c) => !existingIds.has(c.id) && c.ativo === 1);
-    if (search.length < 2) return base.slice(0, 50);
+    if (search.length < 2) return base;
     const q = search.toLowerCase();
     if (searchBy === "cep") {
-      return base.filter((c) => (c.cep || "").toLowerCase().includes(q)).slice(0, 50);
+      return base.filter((c) => (c.cep || "").toLowerCase().includes(q));
     }
     if (searchBy === "bairro") {
-      return base.filter((c) => (c.bairro || "").toLowerCase().includes(q)).slice(0, 50);
+      return base.filter((c) => (c.bairro || "").toLowerCase().includes(q));
     }
-    return base
-      .filter(
-        (c) =>
-          c.nome.toLowerCase().includes(q) ||
-          (c.cep || "").toLowerCase().includes(q) ||
-          (c.bairro || "").toLowerCase().includes(q) ||
-          (c.endereco || "").toLowerCase().includes(q),
-      )
-      .slice(0, 50);
+    return base.filter(
+      (c) =>
+        c.nome.toLowerCase().includes(q) ||
+        (c.cep || "").toLowerCase().includes(q) ||
+        (c.bairro || "").toLowerCase().includes(q) ||
+        (c.endereco || "").toLowerCase().includes(q),
+    );
   }, [allClientes, existingIds, search, searchBy]);
+
+  const available = useMemo(
+    () => filteredAvailable.slice(0, visibleCount),
+    [filteredAvailable, visibleCount],
+  );
+
+  const totalAvailable = filteredAvailable.length;
+  const hasMore = visibleCount < totalAvailable;
 
   const handleAdd = async (cliente: Cliente) => {
     const maxOrdem = sorted.length > 0 ? Math.max(...sorted.map((c) => c.ordem)) : 0;
@@ -216,12 +229,21 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
     }));
 
     const changed = reordered.filter((c, i) => c.ordem !== sorted[i]?.ordem);
+    if (changed.length === 0) return;
     try {
-      await Promise.all(changed.map((c) => updateClienteOrdem(roteiroId, c.clienteId, c.ordem)));
+      await updateClienteOrdemBatch(
+        roteiroId,
+        changed.map((c) => ({ clienteId: c.clienteId, ordem: c.ordem })),
+      );
       refetch();
     } catch {
       toast.error("Erro ao reordenar");
     }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setVisibleCount(PAGE_SIZE);
   };
 
   const searchModes: { value: SearchMode; label: string }[] = [
@@ -239,7 +261,7 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-6xl flex flex-col gap-3 p-0" style={{ height: "700px" }}>
+      <DialogContent className="max-w-6xl flex flex-col gap-3 p-0 h-[min(700px,85vh)]">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -275,7 +297,7 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                   }`}
                   onClick={() => {
                     setSearchBy(mode.value);
-                    setSearch("");
+                    handleSearchChange("");
                   }}
                 >
                   {mode.label}
@@ -288,21 +310,28 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                 placeholder={searchPlaceholder}
                 className="pl-8 pr-8"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
               {search && (
                 <button
                   className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSearch("")}
+                  onClick={() => handleSearchChange("")}
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-[1fr_2.5rem_8.5rem] gap-1 px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              <span>Nome</span>
-              <span className="text-center">Tipo</span>
-              <span>Endereço</span>
+            <div className="flex items-center justify-between px-3">
+              <div className="grid grid-cols-[1fr_2.5rem_8.5rem] gap-1 flex-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <span>Nome</span>
+                <span className="text-center">Tipo</span>
+                <span>Endereço</span>
+              </div>
+              {totalAvailable > 0 && (
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                  {available.length} de {totalAvailable}
+                </span>
+              )}
             </div>
             <ScrollArea className="flex-1 rounded-md border">
               <div className="p-1 space-y-0.5">
@@ -311,33 +340,43 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                 ) : available.length === 0 ? (
                   <p className="p-3 text-sm text-muted-foreground">
                     {search.length < 2
-                      ? "Nenhum cliente disponível."
+                      ? "Digite ao menos 2 caracteres para buscar."
                       : "Nenhum cliente encontrado."}
                   </p>
                 ) : (
-                  available.map((c) => (
-                    <button
-                      key={c.id}
-                      className={`grid grid-cols-[1fr_2.5rem_8.5rem] gap-1 items-center w-full text-left px-3 py-1.5 text-sm rounded group ${
-                        selectedClienteId === c.id ? "bg-primary/10 border border-primary" : "hover:bg-accent"
-                      }`}
-                      onClick={() => setSelectedClienteId(c.id)}
-                      onDoubleClick={() => handleAdd(c)}
-                      disabled={saving}
-                    >
-                      <span className="truncate font-medium">
-                        {highlightMatch(c.nome, search.length >= 2 ? search : "")}
-                      </span>
-                      <span className="text-xs text-muted-foreground text-center shrink-0">
-                        <span className="inline-flex items-center gap-0.5">
-                          <span className="bg-muted rounded px-1 py-px text-[10px] leading-tight">{c.tipo}</span>
+                  <>
+                    {available.map((c) => (
+                      <button
+                        key={c.id}
+                        className={`grid grid-cols-[1fr_2.5rem_8.5rem] gap-1 items-center w-full text-left px-3 py-1.5 text-sm rounded group ${
+                          selectedClienteId === c.id ? "bg-primary/10 border border-primary" : "hover:bg-accent"
+                        }`}
+                        onClick={() => setSelectedClienteId(c.id)}
+                        onDoubleClick={() => handleAdd(c)}
+                        disabled={saving}
+                      >
+                        <span className="truncate font-medium">
+                          {highlightMatch(c.nome, search.length >= 2 ? search : "")}
                         </span>
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate" title={formatEndereco(c)}>
-                        {formatEndereco(c)}
-                      </span>
-                    </button>
-                  ))
+                        <span className="text-xs text-muted-foreground text-center shrink-0">
+                          <span className="inline-flex items-center gap-0.5">
+                            <span className="bg-muted rounded px-1 py-px text-[10px] leading-tight">{c.tipo}</span>
+                          </span>
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate" title={formatEndereco(c)}>
+                          {formatEndereco(c)}
+                        </span>
+                      </button>
+                    ))}
+                    {hasMore && (
+                      <button
+                        className="w-full py-2 text-xs text-primary hover:underline"
+                        onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                      >
+                        Carregar mais ({totalAvailable - visibleCount} restantes)
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </ScrollArea>

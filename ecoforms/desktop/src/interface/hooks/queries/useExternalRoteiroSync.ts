@@ -19,11 +19,11 @@ interface SyncResult {
 }
 
 const DEFAULT_CONFIG = {
-    pgHost: "172.16.76.202",
-    pgPort: 5432,
-    pgDb: "geo_fpolis",
-    pgUser: "smma",
-    pgPassword: "H6N3pNTVcr",
+    pgHost: process.env.NEXT_PUBLIC_PG_SYNC_HOST ?? "172.16.76.202",
+    pgPort: Number(process.env.NEXT_PUBLIC_PG_SYNC_PORT ?? 5432),
+    pgDb: process.env.NEXT_PUBLIC_PG_SYNC_DB ?? "geo_fpolis",
+    pgUser: process.env.NEXT_PUBLIC_PG_SYNC_USER ?? "smma",
+    pgPassword: process.env.NEXT_PUBLIC_PG_SYNC_PASSWORD ?? "",
 };
 
 const LAST_SYNC_KEY = "ecoforms.sync.roteiros.lastSyncAt";

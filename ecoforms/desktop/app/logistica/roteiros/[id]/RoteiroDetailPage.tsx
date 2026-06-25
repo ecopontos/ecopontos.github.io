@@ -37,7 +37,7 @@ export default function RoteiroDetailPage() {
   const deepLinkExecId = searchParams.get("exec");
   const deepLinkPanel = searchParams.get("panel");
   const { roteiro, loading } = useRoteiroById(id);
-  const { saveRoteiro, addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateExecucaoStatus, loading: saving } = useLogisticsMutations();
+  const { saveRoteiro, addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
   const { data: clientesRoteiro, refetch: refetchClientes } = useClientesByRoteiro(id);
   const { data: execucoes, refetch: refetchExecucoes } = useExecucoes(id ? { roteiroId: id } : undefined);
   const { user } = useAuth();
@@ -111,8 +111,7 @@ export default function RoteiroDetailPage() {
 
   const handleTransicaoStatus = async (execucaoId: string, novoStatus: string) => {
     try {
-      const fimEm = (novoStatus === "concluida" || novoStatus === "cancelada") ? new Date().toISOString() : undefined;
-      await updateExecucaoStatus(execucaoId, novoStatus, fimEm);
+      await transicaoExecucaoStatus(execucaoId, novoStatus);
       toast.success(`Status alterado para "${novoStatus}"`);
       refetchExecucoes();
     } catch (e) {
