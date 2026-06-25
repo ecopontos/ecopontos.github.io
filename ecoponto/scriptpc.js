@@ -32,13 +32,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let db;
 
-    function preencherListaDeBairros() {
-        const selectBairro = document.getElementById('bairro');
-        bairros.forEach(bairro => {
-            const option = document.createElement('option');
-            option.value = bairro;
-            option.textContent = bairro;
-            selectBairro.appendChild(option);
+    function inicializarBairros() {
+        var input = document.getElementById('bairro-input');
+        var hidden = document.getElementById('bairro');
+        var lista = document.getElementById('bairro-lista');
+
+        function renderBairros(filtro) {
+            lista.innerHTML = '';
+            var texto = (filtro || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            var filtrados = bairros.filter(function(b) {
+                var normalizado = b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                return texto === '' || normalizado.indexOf(texto) !== -1;
+            });
+
+            filtrados.forEach(function(bairro) {
+                var btn = document.createElement('div');
+                btn.className = 'bairro-opcao' + (hidden.value === bairro ? ' selecionado' : '');
+                btn.textContent = bairro;
+                btn.addEventListener('click', function() {
+                    hidden.value = bairro;
+                    input.value = bairro;
+                    lista.innerHTML = '';
+                });
+                lista.appendChild(btn);
+            });
+        }
+
+        input.addEventListener('input', function() {
+            hidden.value = '';
+            renderBairros(this.value);
+        });
+
+        input.addEventListener('focus', function() {
+            if (!hidden.value) renderBairros(this.value);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.card') || (!e.target.closest('#bairro-input') && !e.target.closest('#bairro-lista'))) {
+                lista.innerHTML = '';
+            }
         });
     }
 
@@ -168,6 +200,7 @@ setInterval(atualizarDataHora, 60 * 1000);
             document.getElementById("data").value = '';
             document.getElementById("hora").value = '';
             document.getElementById("bairro").value = '';
+            document.getElementById("bairro-input").value = '';
             document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
             atualizarDataHora();
         };
@@ -270,7 +303,7 @@ function exportarDadosCSV() {
 
 
     // Inicializa componentes e configurações
-    preencherListaDeBairros();
+    inicializarBairros();
     criarCheckBoxesResiduos();
     inicializarBancoDeDados();
     atualizarDataHora(); // Atualiza data e hora inicialmente

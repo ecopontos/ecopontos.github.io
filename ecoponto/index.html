@@ -103,6 +103,41 @@
             flex: 1;
         }
 
+        .bairro-lista {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .bairro-lista:empty {
+            display: none;
+        }
+
+        .bairro-opcao {
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .bairro-opcao:active {
+            transform: scale(0.96);
+        }
+
+        .bairro-opcao.selecionado {
+            background: #2e7d32;
+            color: #fff;
+            border-color: #2e7d32;
+        }
+
         .section-title {
             font-size: 14px;
             font-weight: 700;
@@ -260,9 +295,10 @@
     </div>
 
     <div class="card">
-        <label for="bairro">Bairro</label>
-        <select id="bairro">
-        </select>
+        <label for="bairro-input">Bairro</label>
+        <input type="text" id="bairro-input" placeholder="Digite para filtrar..." autocomplete="off">
+        <input type="hidden" id="bairro" value="">
+        <div id="bairro-lista" class="bairro-lista"></div>
     </div>
 
     <div class="section-title">Resíduos</div>
