@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,7 +141,7 @@ export function NewTaskModal({ open, onOpenChange, onCreate, projects, defaultPr
         } catch (error) {
             console.error("Failed to create task", error);
             const message = error instanceof Error ? error.message : "Erro ao criar tarefa. Verifique o console.";
-            alert(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }

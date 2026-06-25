@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TasksTableView } from '@/components/tasks/TasksTableView';
 import { TaskMetricsContent } from '@/components/tasks/TaskMetricsContent';
 import { useKanbanData, useKanbanMutations } from '@/src/interface/hooks/catalog/kanban';
+import { toast } from 'sonner';
 import type { UnifiedTaskView } from '@/types';
 
 export default function TasksPage() {
@@ -33,10 +34,13 @@ export default function TasksPage() {
         await archiveTask(taskId, true);
     };
 
-    const handleDelete = async (taskId: string) => {
-        if (confirm('Deseja excluir esta tarefa permanentemente?')) {
-            await deleteTask(taskId);
-        }
+    const handleDelete = (taskId: string) => {
+        toast('Deseja excluir esta tarefa permanentemente?', {
+            action: {
+                label: 'Excluir',
+                onClick: () => deleteTask(taskId),
+            },
+        });
     };
 
     return (

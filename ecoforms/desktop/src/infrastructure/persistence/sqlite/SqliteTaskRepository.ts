@@ -75,20 +75,26 @@ export class SqliteTaskRepository implements TaskRepository {
         return rows[0] ? rowToTask(rows[0]) : null;
     }
 
-    async findByProject(projectId: string | null, includeArchived = false): Promise<Task[]> {
+    async findByProject(projectId: string | null, includeArchived = false, limit?: number, offset?: number): Promise<Task[]> {
         const archivedClause = includeArchived ? '' : 'AND arquivado = 0';
-        const rows = projectId === null
-            ? await this.db.query<TaskRow>(
-                `SELECT ${SELECT_COLUMNS} FROM tarefas
-                 WHERE projeto_id IS NULL AND deletado_em IS NULL ${archivedClause}
-                 ORDER BY ordem ASC`,
-            )
-            : await this.db.query<TaskRow>(
-                `SELECT ${SELECT_COLUMNS} FROM tarefas
-                 WHERE projeto_id = ? AND deletado_em IS NULL ${archivedClause}
-                 ORDER BY ordem ASC`,
-                [projectId],
-            );
+        let pagination = '';
+        const params: unknown[] = [];
+        if (projectId !== null) params.push(projectId);
+        if (limit != null) {
+            pagination += ' LIMIT ?';
+            params.push(limit);
+            if (offset != null) {
+                pagination += ' OFFSET ?';
+                params.push(offset);
+            }
+        }
+        const whereProject = projectId === null ? 'projeto_id IS NULL' : 'projeto_id = ?';
+        const rows = await this.db.query<TaskRow>(
+            `SELECT ${SELECT_COLUMNS} FROM tarefas
+             WHERE ${whereProject} AND deletado_em IS NULL ${archivedClause}
+             ORDER BY ordem ASC${pagination}`,
+            params,
+        );
         return rows.map(rowToTask);
     }
 
@@ -104,7 +110,15 @@ export class SqliteTaskRepository implements TaskRepository {
         if (filter.createdBy) { clauses.push('criado_por = ?'); params.push(filter.createdBy); }
         if (!filter.includeArchived) clauses.push('arquivado = 0');
 
-        const sql = `SELECT ${SELECT_COLUMNS} FROM tarefas WHERE ${clauses.join(' AND ')} ORDER BY ordem ASC`;
+        let sql = `SELECT ${SELECT_COLUMNS} FROM tarefas WHERE ${clauses.join(' AND ')} ORDER BY ordem ASC`;
+        if (filter.limit != null) {
+            sql += ' LIMIT ?';
+            params.push(filter.limit);
+            if (filter.offset != null) {
+                sql += ' OFFSET ?';
+                params.push(filter.offset);
+            }
+        }
         const rows = await this.db.query<TaskRow>(sql, params);
         return rows.map(rowToTask);
     }

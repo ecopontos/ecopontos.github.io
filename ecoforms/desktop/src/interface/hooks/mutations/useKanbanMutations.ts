@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { stableStringify, uuidv7, calculateNextOccurrence } from 'ecoforms-core';
-import { KanbanTask, UnifiedTaskView, TaskDateConfig, Interessado } from '@/types';
+import { stableStringify, uuidv7 } from 'ecoforms-core';
+import { KanbanTask, UnifiedTaskView, Interessado } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSyncStatus } from '@/contexts/SyncContext';
 import { useTaskUseCases } from '../domain/useTaskUseCases';
@@ -10,11 +10,6 @@ import { getContainer } from '@/src/infrastructure/container';
 import { toast } from 'sonner';
 import type { TaskStatus } from '@/src/domain/task/TaskStatus';
 import { assertValidTransition } from '@/src/domain/task/TaskStatus';
-
-const safeJsonParse = (val: string | null | undefined, fallback: unknown) => {
-    if (!val) return fallback;
-    try { return JSON.parse(val); } catch { return fallback; }
-};
 
 const ACTIVE_RUNTIME_STATUSES = new Set<KanbanTask['status']>(['a_fazer', 'em_progresso']);
 
@@ -114,7 +109,8 @@ export function useKanbanMutations(
                 usuarioId: user?.id ?? null,
                 metadata: metadata ?? null,
             });
-        } catch {
+        } catch (e) {
+            console.warn('[insertTaskEvent] falhou:', e);
         }
     }, [kanban, user]);
 
@@ -135,26 +131,14 @@ export function useKanbanMutations(
         const oldStatus = currentTask?.status;
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, ordem: newOrder } : t));
         try {
-            await taskUseCases.move.execute({ id: taskId, to: newStatus as TaskStatus, ordem: newOrder });
+            if (newStatus === 'concluido') {
+                await taskUseCases.complete.execute({ id: taskId });
+            } else {
+                await taskUseCases.move.execute({ id: taskId, to: newStatus as TaskStatus, ordem: newOrder });
+            }
             await invalidateKanbanQueries();
             await insertTaskEvent(taskId, 'status', `Status alterado`, { de: oldStatus, para: newStatus });
             scheduleTaskSync(1500);
-
-            if (newStatus === 'concluido' && currentTask?.tipo_prazo === 'recorrente') {
-                const dateConfig: TaskDateConfig | undefined = currentTask.payload?.dateConfig || (currentTask.recorrencia ? {
-                    tipo: 'recorrente',
-                    data_inicio: currentTask.prazo,
-                    recorrencia: safeJsonParse(typeof currentTask.recorrencia === 'string' ? currentTask.recorrencia : null, currentTask.recorrencia)
-                } : undefined);
-                if (dateConfig?.recorrencia) {
-                    const nextDate = calculateNextOccurrence(dateConfig.data_inicio || currentTask.prazo || new Date().toISOString(), dateConfig.recorrencia);
-                    if (nextDate) {
-                        const nextConfig = { ...dateConfig, data_inicio: nextDate };
-                        const nextRecorrencia = typeof dateConfig.recorrencia === 'string' ? dateConfig.recorrencia : JSON.stringify(dateConfig.recorrencia);
-                        await createTask({ ...currentTask, id: undefined, status: 'a_fazer', prazo: nextDate, tipo_prazo: 'recorrente', recorrencia: nextRecorrencia, payload: { ...currentTask.payload, dateConfig: nextConfig } });
-                    }
-                }
-            }
         } catch (error) {
             console.error('Error moving task:', error);
             refetchTasks();
@@ -183,7 +167,7 @@ export function useKanbanMutations(
             try {
                 const sectors = await kanban.getUserSectors(task.atribuido_para);
                 setorId = sectors[0] ?? null;
-            } catch { }
+            } catch (e) { console.warn('[createTask] getUserSectors falhou:', e); }
         }
 
         const newTaskId = uuidv7();
@@ -273,7 +257,7 @@ export function useKanbanMutations(
             try {
                 const sectors = await kanban.getUserSectors(updates.atribuido_para);
                 setorId = sectors[0] ?? null;
-            } catch { }
+            } catch (e) { console.warn('[updateTask] getUserSectors falhou:', e); }
         }
 
         const input: import('@/src/domain/kanban/KanbanRepository').UpdateKanbanTaskInput = {
@@ -421,7 +405,7 @@ export function useKanbanMutations(
             const { data, error } = await supabase.storage.from('sync-bucket').list(`users/${userId}/inbox/${taskId}/patches/`);
             if (error) throw error;
             return data || [];
-        } catch { return []; }
+        } catch (e) { console.warn('[getTaskPatches] falhou:', e); return []; }
     };
 
     const deleteTask = async (taskId: string) => {

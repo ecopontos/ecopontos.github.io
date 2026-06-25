@@ -30,6 +30,7 @@ import { CreateTaskUseCase } from '../application/task/CreateTaskUseCase';
 import { DeleteTaskUseCase } from '../application/task/DeleteTaskUseCase';
 import { ListTasksByProjectUseCase } from '../application/task/ListTasksByProjectUseCase';
 import { MoveTaskUseCase } from '../application/task/MoveTaskUseCase';
+import { CompleteTaskUseCase } from '../application/task/CompleteTaskUseCase';
 import { AddTaskCommentUseCase, FindAssignedActiveFormsUseCase } from '../application/task/TaskCommentUseCases';
 import {
     GetTaskMetricsSummaryUseCase,
@@ -147,6 +148,7 @@ import type { SyncTransportService } from './sync/SyncTransportService';
 
 export interface TaskUseCases {
     create: CreateTaskUseCase;
+    complete: CompleteTaskUseCase;
     move: MoveTaskUseCase;
     assign: AssignTaskUseCase;
     archive: ArchiveTaskUseCase;
@@ -464,6 +466,7 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
 
     const tasks: TaskUseCases = overrides.tasks ?? {
         create: new CreateTaskUseCase(taskRepository, clock, sqlite),
+        complete: new CompleteTaskUseCase(taskRepository, demandaTaskSynchronizer, syncOutbox),
         move: new MoveTaskUseCase(taskRepository, demandaTaskSynchronizer, syncOutbox),
         assign: new AssignTaskUseCase(taskRepository),
         archive: new ArchiveTaskUseCase(taskRepository, demandaTaskSynchronizer, syncOutbox),

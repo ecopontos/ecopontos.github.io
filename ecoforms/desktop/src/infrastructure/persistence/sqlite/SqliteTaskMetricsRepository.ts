@@ -41,9 +41,9 @@ export class SqliteTaskMetricsRepository implements TaskMetricsRepository {
                 SUM(CASE WHEN status = 'em_progresso'${period} THEN 1 ELSE 0 END) as in_progress,
                 SUM(CASE WHEN status = 'a_fazer'${period} THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status != 'concluido' AND prazo IS NOT NULL AND date(prazo) < date('now')${period} THEN 1 ELSE 0 END) as overdue,
-                SUM(CASE WHEN status = 'concluido' AND date(updated_at) = date('now') THEN 1 ELSE 0 END) as completed_today,
-                SUM(CASE WHEN status = 'concluido' AND date(updated_at) >= date('now', '-7 days') THEN 1 ELSE 0 END) as completed_week,
-                SUM(CASE WHEN status = 'concluido' AND date(updated_at) >= date('now', '-30 days') THEN 1 ELSE 0 END) as completed_month
+                SUM(CASE WHEN status = 'concluido' AND date(atualizado_em) = date('now') THEN 1 ELSE 0 END) as completed_today,
+                SUM(CASE WHEN status = 'concluido' AND date(atualizado_em) >= date('now', '-7 days') THEN 1 ELSE 0 END) as completed_week,
+                SUM(CASE WHEN status = 'concluido' AND date(atualizado_em) >= date('now', '-30 days') THEN 1 ELSE 0 END) as completed_month
             FROM tarefas
             WHERE arquivado != 1 OR arquivado IS NULL`,
         );
@@ -129,11 +129,11 @@ export class SqliteTaskMetricsRepository implements TaskMetricsRepository {
             completed: number;
         }>(
             `SELECT
-                date(updated_at) as date,
+                date(atualizado_em) as date,
                 SUM(CASE WHEN status = 'concluido' THEN 1 ELSE 0 END) as completed
             FROM tarefas
-            WHERE date(updated_at) >= date('now', ? || ' days')
-            GROUP BY date(updated_at)
+            WHERE date(atualizado_em) >= date('now', ? || ' days')
+            GROUP BY date(atualizado_em)
             ORDER BY date ASC`,
             [`-${safeDays}`],
         );

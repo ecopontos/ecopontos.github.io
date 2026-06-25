@@ -26,6 +26,7 @@ export function useKanbanData(
     const [tasks, setTasks] = useState<UnifiedTaskView[]>([]);
     const [solicitacoes, setSolicitacoes] = useState<UnifiedTaskView[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [tick, setTick] = useState(0);
 
     useEffect(() => {
@@ -35,7 +36,7 @@ export function useKanbanData(
                 if (!cancelled) { setProjects([]); setTasks([]); setSolicitacoes([]); }
                 return;
             }
-            if (!cancelled) setIsLoading(true);
+            if (!cancelled) { setIsLoading(true); setError(null); }
             try {
                 const c = await getContainerAsync();
                 const { projects: pRows, tasks: tRows, solicitacoes: sRows } = await c.kanbanRepository.getKanbanData(
@@ -78,7 +79,7 @@ export function useKanbanData(
                 }
             } catch (err) {
                 console.error('[useKanbanData] Error:', err);
-                if (!cancelled) { setProjects([]); setTasks([]); setSolicitacoes([]); }
+                if (!cancelled) { setError(String(err)); setProjects([]); setTasks([]); setSolicitacoes([]); }
             } finally {
                 if (!cancelled) setIsLoading(false);
             }
@@ -95,6 +96,7 @@ export function useKanbanData(
         setTasks,
         solicitacoes,
         isLoading,
+        error,
         refetchProjects: refetch,
         refetchTasks: refetch,
         refetchSolicitacoes: refetch,

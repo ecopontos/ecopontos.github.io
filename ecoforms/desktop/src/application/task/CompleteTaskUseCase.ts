@@ -5,8 +5,7 @@ import type { DemandaTaskSynchronizer } from '../demanda/services/DemandaTaskSyn
 import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
 import type { TaskDto } from './dto/TaskDto';
 import { toTaskDto } from './mappers';
-import { calculateNextOccurrence } from 'ecoforms-core';
-import type { TaskDateConfig } from '@/types';
+import { calculateNextOccurrence, uuidv7 } from 'ecoforms-core';
 
 export interface CompleteTaskInput {
     id: string;
@@ -60,47 +59,35 @@ export class CompleteTaskUseCase {
     /**
      * Cria a próxima ocorrência de uma tarefa recorrente
      */
-    private async criarProximaOcorrencia(task: any): Promise<void> {
+    private async criarProximaOcorrencia(task: Task): Promise<void> {
         try {
-            // Extrair configuração de data
-            const dateConfig: TaskDateConfig | undefined = task.payload?.dateConfig || (task.recorrencia ? {
-                tipo: 'recorrente',
-                data_inicio: task.prazo,
-                recorrencia: typeof task.recorrencia === 'string'
-                    ? JSON.parse(task.recorrencia)
-                    : task.recorrencia
-            } : undefined);
+            if (!task.recorrencia) return;
 
-            if (!dateConfig?.recorrencia) return;
+            let recorrenciaObj: Record<string, unknown>;
+            try {
+                recorrenciaObj = JSON.parse(task.recorrencia);
+            } catch {
+                return;
+            }
 
-            // Calcular próxima data
-            const nextDate = calculateNextOccurrence(
-                dateConfig.data_inicio || task.prazo || new Date().toISOString(),
-                dateConfig.recorrencia
-            );
-
+            const props = task.toProps();
+            const baseDate = props.prazo || new Date().toISOString();
+            const nextDate = calculateNextOccurrence(baseDate, recorrenciaObj);
             if (!nextDate) return;
 
-            // Preparar configuração para próxima ocorrência
-            const nextConfig = { ...dateConfig, data_inicio: nextDate };
-            const nextRecorrencia = typeof dateConfig.recorrencia === 'string'
-                ? dateConfig.recorrencia
-                : JSON.stringify(dateConfig.recorrencia);
-
-            // Criar nova tarefa com próxima data
-            const props = task.toProps();
             const newTask = Task.fromProps({
                 ...props,
-                id: undefined as unknown as string, // Novo ID será gerado
+                id: uuidv7(),
                 status: 'a_fazer',
                 prazo: nextDate,
                 tipoPrazo: 'recorrente',
-                recorrencia: nextRecorrencia,
-                payload: { ...props.payload, dateConfig: nextConfig },
+                recorrencia: task.recorrencia,
+                arquivado: false,
+                criadoEm: undefined,
+                atualizadoEm: undefined,
             });
             await this.tasks.save(newTask);
         } catch (error) {
-            // Log erro mas não falha a conclusão da tarefa atual
             console.error('[CompleteTaskUseCase] Erro ao criar próxima ocorrência:', error);
         }
     }

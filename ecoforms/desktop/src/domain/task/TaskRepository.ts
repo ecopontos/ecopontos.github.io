@@ -7,6 +7,8 @@ export interface TaskQuery {
     assignedTo?: string;
     createdBy?: string;
     includeArchived?: boolean;
+    limit?: number;
+    offset?: number;
 }
 
 export interface TaskHistoryEvent {
@@ -22,7 +24,7 @@ export interface TaskHistoryEvent {
 
 export interface TaskRepository {
     findById(id: string): Promise<Task | null>;
-    findByProject(projectId: string | null, includeArchived?: boolean): Promise<Task[]>;
+    findByProject(projectId: string | null, includeArchived?: boolean, limit?: number, offset?: number): Promise<Task[]>;
     query(filter: TaskQuery): Promise<Task[]>;
     save(task: Task): Promise<void>;
     delete(id: string): Promise<void>;

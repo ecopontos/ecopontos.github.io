@@ -180,8 +180,11 @@ export function KanbanBoard() {
 
         let newStatus = activeTask.status;
 
+        const VALID_MOVE_TARGETS = ['a_fazer', 'em_progresso', 'concluido'] as const;
+        type MoveTarget = typeof VALID_MOVE_TARGETS[number];
+
         if (columns.some(c => c.id === overId)) {
-            newStatus = overId as any;
+            newStatus = overId as string;
         } else {
             const overTask = tasks.find(t => t.id === overId);
             if (overTask) {
@@ -189,13 +192,12 @@ export function KanbanBoard() {
             }
         }
 
-        if (activeTask.status !== newStatus) {
-            if (activeTask.status === 'solicitacao') {
-                // Se arrastou de solicitação para qualquer outro lugar, dispara aprovação
-                handleApproveSolicitacao(activeTask, newStatus);
-            } else {
-                moveTask(activeId, newStatus as any, activeTask.ordem);
-            }
+        if (activeTask.status === newStatus) return;
+
+        if (activeTask.status === 'solicitacao') {
+            handleApproveSolicitacao(activeTask, newStatus);
+        } else if ((VALID_MOVE_TARGETS as readonly string[]).includes(newStatus)) {
+            moveTask(activeId, newStatus as MoveTarget, activeTask.ordem);
         }
     };
 
