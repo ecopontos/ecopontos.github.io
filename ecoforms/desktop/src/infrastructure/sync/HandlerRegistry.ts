@@ -193,6 +193,15 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
+    inbound.on('task.arquivada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tarefas SET arquivado = 1, arquivado_em = ?, atualizado_em = ? WHERE id = ?`,
+            [env.time, env.time, tarefaId],
+        );
+    });
+
     inbound.on('demanda.aceita', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
@@ -200,6 +209,65 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
              SET status = 'aceita', aceito_por = ?, aceito_em = ?, atualizado_em = ?
              WHERE id = ? AND status = 'aberta'`,
             [d.aceito_por ?? d.aceitoPor ?? null, env.time, env.time, env.aggregate.id],
+        );
+    });
+
+    inbound.on('demanda.encerrada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `UPDATE demandas
+             SET status = 'encerrada', encerrado_por = ?, encerrado_em = ?, atualizado_em = ?
+             WHERE id = ?`,
+            [d.encerrado_por ?? d.encerradoPor ?? null, env.time, env.time, env.aggregate.id],
+        );
+    });
+
+    inbound.on('demanda.encaminhada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `UPDATE demandas
+             SET setor_destino = ?, encaminhado_por = ?, encaminhado_em = ?, atualizado_em = ?
+             WHERE id = ?`,
+            [d.setor_destino ?? d.setorDestino ?? null,
+             d.encaminhado_por ?? d.encaminhadoPor ?? null,
+             env.time, env.time, env.aggregate.id],
+        );
+    });
+
+    // ── Agendamentos ───────────────────────────────────────────────────────────
+    inbound.on('agendamento.criado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'pendente', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.confirmado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.cancelado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'cancelado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.realizado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'realizado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
         );
     });
 

@@ -48,7 +48,7 @@ export class AgendamentoEfeitosService {
         }
 
         await this.notificador.enviarConfirmacao(ag);
-        await this.sync.write('service.agendamento.confirmado', {
+        await this.sync.write('agendamento.confirmado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
@@ -58,7 +58,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoCriar(ag: Agendamento, criadoPor: string): Promise<void> {
-        await this.sync.write('service.agendamento.criado', {
+        await this.sync.write('agendamento.criado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
@@ -68,7 +68,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoCancelar(ag: Agendamento): Promise<void> {
-        await this.sync.write('service.agendamento.cancelado', {
+        await this.sync.write('agendamento.cancelado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             vagasDevolvidas: ag.vagasSolicitadas,
@@ -76,7 +76,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoRealizar(ag: Agendamento, realizadoPor: string): Promise<void> {
-        await this.sync.write('service.agendamento.realizado', {
+        await this.sync.write('agendamento.realizado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
