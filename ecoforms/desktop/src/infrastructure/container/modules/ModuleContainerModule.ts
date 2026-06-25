@@ -9,6 +9,9 @@ import { ArchiveModuleUseCase } from '../../../application/module/ArchiveModuleU
 import { ListModulesUseCase } from '../../../application/module/ListModulesUseCase';
 import { GetModuleRuntimeUseCase } from '../../../application/module/GetModuleRuntimeUseCase';
 import { UpdateModuleConfigUseCase } from '../../../application/module/UpdateModuleConfigUseCase';
+import { ListAccessibleModulesUseCase } from '../../../application/module/ListAccessibleModulesUseCase';
+import { SetModulePermissionOverrideUseCase } from '../../../application/module/SetModulePermissionOverrideUseCase';
+import { GetUserAccessMatrixUseCase } from '../../../application/module/GetUserAccessMatrixUseCase';
 import { GetModuleVisuaisUseCase } from '../../../application/visuals/GetModuleVisuaisUseCase';
 import {
     CreateViewUseCase,
@@ -38,6 +41,9 @@ export interface ModuleContainerResult {
         list: ListModulesUseCase;
         getRuntime: GetModuleRuntimeUseCase;
         updateConfig: UpdateModuleConfigUseCase;
+        listAccessible: ListAccessibleModulesUseCase;
+        setUserOverride: SetModulePermissionOverrideUseCase;
+        getAccessMatrix: GetUserAccessMatrixUseCase;
     };
     visuals: {
         getModuleVisuais: GetModuleVisuaisUseCase;
@@ -79,6 +85,9 @@ export function buildModuleContainer(deps: ModuleContainerDependencies): ModuleC
         list: new ListModulesUseCase(moduleRepository),
         getRuntime: new GetModuleRuntimeUseCase(moduleRepository),
         updateConfig: new UpdateModuleConfigUseCase(moduleRepository),
+        listAccessible: new ListAccessibleModulesUseCase(sqlite),
+        setUserOverride: new SetModulePermissionOverrideUseCase(sqlite),
+        getAccessMatrix: new GetUserAccessMatrixUseCase(sqlite),
     };
 
     const visuals = {

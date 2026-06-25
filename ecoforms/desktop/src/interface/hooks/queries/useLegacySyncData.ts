@@ -65,7 +65,7 @@ export function useLegacySyncData(filters: LegacySyncFilters, limit = 10) {
             base: filters.roteiroBase,
             turno: filters.roteiroTurno,
             limit,
-        }) as Promise<RoteiroRow[]>,
+        }) as unknown as Promise<RoteiroRow[]>,
         enabled: isTauri(),
     });
 
@@ -84,7 +84,7 @@ export function useLegacySyncData(filters: LegacySyncFilters, limit = 10) {
             dataInicio: filters.pesagemDataInicio,
             dataFim: filters.pesagemDataFim,
             limit,
-        }) as Promise<PesagemRow[]>,
+        }) as unknown as Promise<PesagemRow[]>,
         enabled: isTauri(),
     });
 

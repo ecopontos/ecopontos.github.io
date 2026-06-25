@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
+import { invoke } from "@tauri-apps/api/core"
 import { toast } from "sonner"
 import { fetchSetoresAll, fetchEscalas } from "@/src/interface/hooks/queries/lookups"
 import {

@@ -107,6 +107,22 @@ export function getBootstrapService(): import('./StorageBootstrapService').Stora
     return _bootstrapService;
 }
 
+export type SyncEventIndexFactory = () => import('ecoforms-core').SyncEventIndexPort;
+
+let _syncEventIndexFactory: SyncEventIndexFactory | null = null;
+
+export function setSyncEventIndexFactory(factory: SyncEventIndexFactory): void {
+    _syncEventIndexFactory = factory;
+}
+
+export function getSyncEventIndexFactory(): SyncEventIndexFactory | null {
+    return _syncEventIndexFactory;
+}
+
+export function getSyncTransportService(): TransportService | null {
+    return _transport;
+}
+
 export function resetSyncAdapter(): void {
     _adapter?.stop?.();
     _adapter = null;

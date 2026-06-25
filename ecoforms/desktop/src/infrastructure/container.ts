@@ -430,7 +430,7 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
     const logger = overrides.logger ?? new ConsoleLogger();
     const fileStorage = overrides.fileStorage ?? new SupabaseFileStorage();
 
-    const syncOutbox = new SyncOutbox(sqlite, getTransport);
+    const syncOutbox = new SyncOutbox();
     const sync = overrides.sync ?? new LazySyncAdapter(sqlite, fileStorage, clock);
     const syncTransportService = getSyncTransportService();
 

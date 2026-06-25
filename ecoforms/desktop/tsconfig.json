@@ -69,7 +69,9 @@
     "node_modules",
     "src-tauri",
     "src/infrastructure/sync/_deprecated",
-    "src/application/ports/_deprecated"
+    "src/application/ports/_deprecated",
+    "playwright.config.ts",
+    "e2e"
   ]
 }
 // Modified

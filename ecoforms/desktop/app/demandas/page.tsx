@@ -54,7 +54,7 @@ export default function DemandasPage() {
             try {
                 const filters = statusFilter === "todas"
                     ? {}
-                    : { status: statusFilter as Parameters<typeof listDemandasWithDetails>[0]['status'] };
+                    : { status: statusFilter as 'aberta' | 'aceita' | 'em_campo' | 'concluida' };
                 const rows = await listDemandasWithDetails(filters);
                 if (!cancelled) setDemandas(rows);
             } catch (e) {

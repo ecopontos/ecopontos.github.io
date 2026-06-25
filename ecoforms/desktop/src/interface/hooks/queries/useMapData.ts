@@ -402,7 +402,7 @@ export async function saveTerrenosBatch(
                     criado_por: t.criado_por,
                     criado_em: now,
                     atualizado_em: now,
-                    bbox,
+                    bbox: bbox ?? undefined,
                 });
                 if (bbox) {
                     await upsertTerrenosRtree({ bbox, terreno_id: t.id });

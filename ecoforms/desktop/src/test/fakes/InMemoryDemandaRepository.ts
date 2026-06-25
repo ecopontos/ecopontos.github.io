@@ -45,7 +45,7 @@ export class InMemoryDemandaRepository implements DemandaRepository {
           descricao: props.descricao,
           status: props.status,
           politica_conclusao: props.politicaConclusao,
-          criado_em: props.criadoEm,
+          criado_em: props.criadaEm,
           setor_nome: null,
           solicitante_nome: null,
         } as DemandaListItem;
