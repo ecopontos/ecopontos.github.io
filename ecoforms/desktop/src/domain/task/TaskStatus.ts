@@ -1,6 +1,7 @@
-export type TaskStatus = 'a_fazer' | 'em_progresso' | 'concluido' | 'cancelado';
+export type TaskStatus = 'a_fazer' | 'em_progresso' | 'concluido' | 'cancelado' | 'aguardando_aprovacao';
 
 const VALID_TRANSITIONS: Record<TaskStatus, readonly TaskStatus[]> = {
+    aguardando_aprovacao: ['a_fazer', 'cancelado'],
     a_fazer: ['em_progresso', 'cancelado'],
     em_progresso: ['a_fazer', 'concluido', 'cancelado'],
     concluido: [],
@@ -8,6 +9,7 @@ const VALID_TRANSITIONS: Record<TaskStatus, readonly TaskStatus[]> = {
 };
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
+    aguardando_aprovacao: 'Aguardando Aprovação',
     a_fazer: 'A Fazer',
     em_progresso: 'Em Progresso',
     concluido: 'Concluído',

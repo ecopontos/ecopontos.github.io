@@ -348,7 +348,18 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
     // --- Checklist ---
     async findChecklistByExecucao(execucaoId: string): Promise<ChecklistExecucao[]> {
         return this.db.query<ChecklistExecucao>(`
-            SELECT c.*, u.nome AS concluidoPorNome
+            SELECT
+                c.id,
+                c.execucao_id   AS execucaoId,
+                c.item,
+                c.concluido,
+                c.observacao,
+                c.evidencia_url AS evidenciaUrl,
+                c.latitude,
+                c.longitude,
+                c.concluido_em  AS concluidoEm,
+                c.concluido_por AS concluidoPor,
+                u.nome          AS concluidoPorNome
             FROM checklist_execucao c
             LEFT JOIN usuarios u ON c.concluido_por = u.id
             WHERE c.execucao_id = ?
