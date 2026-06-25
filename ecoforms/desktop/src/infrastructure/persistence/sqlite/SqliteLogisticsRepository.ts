@@ -72,7 +72,10 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
     }
 
     async deleteRoteiro(id: string): Promise<void> {
-        await this.db.execute('DELETE FROM roteiros WHERE id = ?', [id]);
+        await this.db.execute(
+            "UPDATE roteiros SET situacao = 'inativo', atualizado_em = ? WHERE id = ?",
+            [new Date().toISOString(), id]
+        );
     }
 
     // --- Roteiro Clientes ---
@@ -117,6 +120,15 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             'UPDATE roteiro_clientes SET ordem = ? WHERE roteiro_id = ? AND cliente_id = ?',
             [ordem, roteiroId, clienteId]
         );
+    }
+
+    async updateClienteOrdemBatch(roteiroId: string, items: { clienteId: string; ordem: number }[]): Promise<void> {
+        for (const item of items) {
+            await this.db.execute(
+                'UPDATE roteiro_clientes SET ordem = ? WHERE roteiro_id = ? AND cliente_id = ?',
+                [item.ordem, roteiroId, item.clienteId]
+            );
+        }
     }
 
     // --- Execucao Coleta ---

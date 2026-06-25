@@ -1,12 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-interface Cobranca {
-  id: string;
-  usuario_nome?: string;
-  mensagem: string;
-  criado_em: string;
-}
+import type { Cobranca } from "@/src/domain/ouvidoria/ManifestacaoRepository";
 
 interface CobrancasTabProps {
   cobranças: Cobranca[];
@@ -35,9 +29,9 @@ export function CobrancasTab({ cobranças }: CobrancasTabProps) {
               <TableBody>
                 {cobranças.map(c => (
                   <TableRow key={c.id}>
-                    <TableCell>{c.usuario_nome || "—"}</TableCell>
+                    <TableCell>{c.usuarioNome || "—"}</TableCell>
                     <TableCell>{c.mensagem}</TableCell>
-                    <TableCell>{new Date(c.criado_em).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(c.criadoEm).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

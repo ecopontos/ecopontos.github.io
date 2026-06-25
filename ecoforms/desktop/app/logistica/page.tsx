@@ -28,15 +28,14 @@ export default function LogisticaPage() {
   const { data: roteiros, loading: loadingRoteiros } = useRoteiros({ searchTerm: searchRoteiros || undefined });
   const { data: execucoes, loading: loadingExecucoes, refetch: refetchExecucoes } = useExecucoes({ status: searchExecucoes || undefined });
   const { status: syncStatus, syncing, lastResult, error: syncError, sync, lastSyncAt } = useExternalRoteiroSync();
-  const { updateExecucaoStatus, loading: saving } = useLogisticsMutations();
+  const { transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
   const { users: usuarios } = useAllUsers();
 
   const [showNovaExecucao, setShowNovaExecucao] = useState(false);
 
   const handleTransicaoStatus = async (execucaoId: string, novoStatus: string) => {
     try {
-      const fimEm = (novoStatus === "concluida" || novoStatus === "cancelada") ? new Date().toISOString() : undefined;
-      await updateExecucaoStatus(execucaoId, novoStatus, fimEm);
+      await transicaoExecucaoStatus(execucaoId, novoStatus);
       toast.success(`Status alterado para "${novoStatus}"`);
       refetchExecucoes();
     } catch (e) {

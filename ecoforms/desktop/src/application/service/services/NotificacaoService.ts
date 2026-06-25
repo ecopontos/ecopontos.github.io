@@ -2,6 +2,7 @@ import type { Agendamento } from '../../../domain/service/Agendamento';
 import type { AgendamentoNotificacaoRepository } from '../../../domain/service/AgendamentoNotificacaoRepository';
 import type { ServiceSlotRepository } from '../../../domain/service/ServiceSlotRepository';
 import type { ServiceTypeRepository } from '../../../domain/service/ServiceTypeRepository';
+import { formatDateBR } from '../../../lib/date';
 
 export class NotificacaoService {
     constructor(
@@ -54,8 +55,7 @@ export class NotificacaoService {
         bairro: string | null,
         protocolo: string,
     ): string {
-        const [y, m, d] = dataInicio.slice(0, 10).split('-');
-        const data = `${d}/${m}/${y}`;
+        const data = formatDateBR(dataInicio);
         return [
             `Olá, ${clienteNome}!`,
             ``,

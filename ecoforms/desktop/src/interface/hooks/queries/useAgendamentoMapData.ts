@@ -1,46 +1,26 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { getContainerAsync } from '../../../infrastructure/container';
+import type { AgendamentoMapPoint } from '../../../domain/service/AgendamentoRepository';
 
-export interface AgendamentoMapPoint {
-    id: string;
-    clienteId: string;
-    clienteNome: string;
-    bairro: string | null;
-    endereco: string | null;
-    numero: string | null;
-    cidade: string | null;
-    latitude: number;
-    longitude: number;
-    status: string;
-    vagasSolicitadas: number;
-}
+export type { AgendamentoMapPoint };
 
 export function useAgendamentoMapData(slotId: string | null) {
     const [data, setData] = useState<AgendamentoMapPoint[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!slotId) { setData([]); return; }
+        let cancelled = false;
         setLoading(true);
-        invoke<AgendamentoMapPoint[]>('db_query', {
-            sql: `SELECT a.id, a.cliente_id AS clienteId, a.cliente_nome AS clienteNome,
-                         a.bairro, a.status, a.vagas_solicitadas AS vagasSolicitadas,
-                         c.endereco, c.numero, c.cidade,
-                         COALESCE(t.centroid_lat, c.latitude)  AS latitude,
-                         COALESCE(t.centroid_lng, c.longitude) AS longitude
-                  FROM tbl_agendamentos a
-                  JOIN clientes c ON c.id = a.cliente_id
-                  LEFT JOIN terrenos t ON t.id = c.terreno_id
-                  WHERE a.slot_id = ?
-                    AND a.status != 'cancelado'
-                    AND (t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
-                  ORDER BY a.criado_em`,
-            params: [slotId],
-        })
-            .then(rows => setData(Array.isArray(rows) ? rows : []))
-            .catch(() => setData([]))
-            .finally(() => setLoading(false));
+        setError(null);
+        getContainerAsync()
+            .then(c => c.agendamentoRepo.findMapDataBySlotId(slotId))
+            .then(rows => { if (!cancelled) setData(rows); })
+            .catch(e => { if (!cancelled) setError(String(e)); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
     }, [slotId]);
 
-    return { data, loading };
+    return { data, loading, error };
 }

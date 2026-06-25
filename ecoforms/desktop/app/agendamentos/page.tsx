@@ -256,7 +256,7 @@ interface SlotDetailSheetProps {
 }
 
 function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDetailSheetProps) {
-    const { tasks, loading: tasksLoading, reload: reloadTasks } = useBookingTasks(slot?.id ?? null);
+    const { tasks, loading: tasksLoading, hasMore, loadMore, reload: reloadTasks } = useBookingTasks(slot?.id ?? null);
     const [bookingOpen, setBookingOpen] = useState(false);
 
     const handleBookingClose = useCallback((agendamentoId?: string) => {
@@ -355,10 +355,10 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
                                 <div key={t.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
                                     <div>
                                         <p className="font-medium leading-tight">{t.titulo}</p>
-                                        {t.atribuido_para && (
+                                        {t.atribuidoPara && (
                                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                                 <UserCheck className="h-3 w-3" />
-                                                {t.atribuido_para}
+                                                {t.atribuidoPara}
                                             </p>
                                         )}
                                     </div>
@@ -370,6 +370,11 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
                                     </Badge>
                                 </div>
                             ))}
+                            {hasMore && (
+                                <Button variant="outline" size="sm" className="w-full" onClick={loadMore}>
+                                    Carregar mais
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </SheetContent>

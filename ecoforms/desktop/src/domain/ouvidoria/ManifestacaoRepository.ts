@@ -187,6 +187,13 @@ export interface ManifestacaoInput {
     encerrado_em?: string | null;
 }
 
+export interface Cobranca {
+    id: string;
+    mensagem: string;
+    criadoEm: string;
+    usuarioNome: string;
+}
+
 export interface ManifestacaoRepository {
     findAll(filter?: ManifestacaoFilter): Promise<ManifestacaoSummary[]>;
     findById(id: string): Promise<ManifestacaoSummary | null>;
@@ -228,4 +235,6 @@ export interface ManifestacaoRepository {
 
     listHistorico(manifestacaoId: string): Promise<HistoricoAlteracao[]>;
     addHistorico(h: HistoricoAlteracao): Promise<void>;
+
+    listCobranças(manifestacaoId: string): Promise<Cobranca[]>;
 }

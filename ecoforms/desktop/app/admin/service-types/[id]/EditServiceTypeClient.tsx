@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useServiceTypeById, useServiceTypeMutations } from "@/src/interface/hooks/catalog/service";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { getContainerAsync } from "@/src/infrastructure/container";
 import type { Setor } from "@/src/domain/setor/Setor";
 
@@ -79,7 +80,7 @@ export default function EditServiceTypeClient() {
             });
             router.push("/admin/service-types");
         } catch (err) {
-            alert("Erro ao salvar: " + (err as Error).message);
+            toast.error("Erro ao salvar: " + (err as Error).message);
         }
     };
 

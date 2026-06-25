@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type {
-  ManifestacaoSummary, Tramitacao, Resposta, Despacho, Prazo,
+  ManifestacaoSummary, Tramitacao, Resposta, Despacho, Prazo, Cobranca,
 } from "@/src/domain/ouvidoria/ManifestacaoRepository";
 import { isManifestacaoTerminal } from "@/src/domain/ouvidoria/ManifestacaoWorkflowPolicy";
 import { STATUS_LABEL, statusVariant, urgencyScore } from "../_lib/helpers";
@@ -14,13 +14,6 @@ import { RespostasTab } from "./quick-modal/RespostasTab";
 import { DespachosTab } from "./quick-modal/DespachosTab";
 import { PrazosTab } from "./quick-modal/PrazosTab";
 import { CobrancasTab } from "./quick-modal/CobrancasTab";
-
-interface Cobranca {
-  id: string;
-  mensagem: string;
-  criado_em: string;
-  usuario_nome: string;
-}
 
 interface ManifestacaoQuickModalProps {
   selected: ManifestacaoSummary | null;

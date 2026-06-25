@@ -1,9 +1,4 @@
-interface Cobranca {
-  id: string;
-  mensagem: string;
-  criado_em: string;
-  usuario_nome: string;
-}
+import type { Cobranca } from "@/src/domain/ouvidoria/ManifestacaoRepository";
 
 interface CobrancasTabProps {
   cobranças: Cobranca[];
@@ -22,9 +17,9 @@ export function CobrancasTab({ cobranças }: CobrancasTabProps) {
           <div key={c.id} className="rounded-md border border-amber-200 bg-amber-50/50 p-3 text-sm flex items-start justify-between gap-3">
             <div className="space-y-0.5">
               <p className="text-sm text-foreground/80">{c.mensagem}</p>
-              <p className="text-xs text-muted-foreground">Notificado: {c.usuario_nome || "—"}</p>
+              <p className="text-xs text-muted-foreground">Notificado: {c.usuarioNome || "—"}</p>
             </div>
-            <span className="text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">{new Date(c.criado_em).toLocaleString("pt-BR")}</span>
+            <span className="text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">{new Date(c.criadoEm).toLocaleString("pt-BR")}</span>
           </div>
         ))}
       </div>

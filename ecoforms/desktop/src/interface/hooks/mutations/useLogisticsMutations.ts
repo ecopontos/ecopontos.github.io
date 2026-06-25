@@ -54,6 +54,13 @@ export function useLogisticsMutations() {
         });
     }, []);
 
+    const updateClienteOrdemBatch = useCallback(async (roteiroId: string, items: { clienteId: string; ordem: number }[]) => {
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.logisticsRepository.updateClienteOrdemBatch(roteiroId, items);
+        });
+    }, []);
+
     const saveExecucao = useCallback(async (exec: ExecucaoColeta) => {
         return withLoading(async () => {
             const c = await getContainerAsync();
@@ -65,6 +72,14 @@ export function useLogisticsMutations() {
         return withLoading(async () => {
             const c = await getContainerAsync();
             await c.logisticsRepository.updateExecucaoStatus(id, status, fimEm);
+        });
+    }, []);
+
+    const transicaoExecucaoStatus = useCallback(async (execucaoId: string, novoStatus: string) => {
+        const fimEm = (novoStatus === "concluida" || novoStatus === "cancelada") ? new Date().toISOString() : undefined;
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.logisticsRepository.updateExecucaoStatus(execucaoId, novoStatus, fimEm);
         });
     }, []);
 
@@ -107,8 +122,8 @@ export function useLogisticsMutations() {
 
     return {
         saveRoteiro, removeRoteiro,
-        addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem,
-        saveExecucao, updateExecucaoStatus, removeExecucao,
+        addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateClienteOrdemBatch,
+        saveExecucao, updateExecucaoStatus, transicaoExecucaoStatus, removeExecucao,
         saveChecklistItem, completeChecklistItem,
         saveIntercorrencia, resolverIntercorrencia,
         loading, error,
