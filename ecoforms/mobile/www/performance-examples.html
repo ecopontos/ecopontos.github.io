@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance System - Exemplos Práticos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .example-section {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .success-box {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">🚀 Sistema de Performance - Exemplos Práticos</h1>
+        <p class="text-lg text-gray-600 mb-8">Guia rápido de uso do sistema de otimização de performance do EcoForms</p>
+
+        <!-- Exemplo 1: Uso Básico -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">1️⃣ Uso Básico - Renderização Simples</h2>
+            <p class="text-gray-700 mb-4">Exemplo mais simples para começar a usar o sistema.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+
+// Container onde o formulário será renderizado
+const container = document.getElementById('my-form');
+
+// Criar renderer com configuração básica
+const renderer = new ProgressiveFormRenderer(container, {
+    strategy: 'critical-first',  // Campos críticos primeiro
+    chunkSize: 20,               // 20 campos por chunk
+    enableMemoization: true      // Ativar cache
+});
+
+// Seus campos do formulário
+const fields = [
+    { id: 'nome', type: 'text', label: 'Nome', required: true },
+    { id: 'email', type: 'email', label: 'Email', required: true },
+    { id: 'telefone', type: 'tel', label: 'Telefone', required: false },
+    // ... mais campos
+];
+
+// Renderizar
+await renderer.render(fields);
+
+console.log('✅ Formulário renderizado!');</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Formulário renderizado com otimizações automáticas e feedback visual.
+            </div>
+        </div>
+
+        <!-- Exemplo 2: Com Monitoramento -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">2️⃣ Com Monitoramento de Performance</h2>
+            <p class="text-gray-700 mb-4">Adicionar PerformanceMonitor para capturar métricas.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+import { PerformanceMonitor } from './js/core/PerformanceMonitor.js';
+
+// Inicializar monitor
+const monitor = new PerformanceMonitor({
+    trackFPS: true,
+    trackMemory: true,
+    trackLongTasks: true
+});
+
+const container = document.getElementById('my-form');
+const renderer = new ProgressiveFormRenderer(container, {
+    strategy: 'critical-first',
+    chunkSize: 20,
+    enableMemoization: true
+});
+
+await renderer.render(fields);
+
+// Obter métricas após renderização
+setTimeout(() => {
+    const metrics = monitor.getMetrics();
+    
+    console.log('📊 Métricas de Performance:');
+    console.log(`- FCP: ${metrics.fcp?.toFixed(2)}ms`);
+    console.log(`- TTI: ${metrics.tti?.toFixed(2)}ms`);
+    console.log(`- Campos: ${metrics.totalFields}`);
+    console.log(`- Tempo médio/campo: ${metrics.averageFieldTime?.toFixed(2)}ms`);
+    console.log(`- FPS médio: ${metrics.averageFPS}`);
+    console.log(`- Long tasks: ${metrics.longTaskCount}`);
+    
+    // Gerar relatório completo
+    const report = monitor.generateReport();
+    console.log('📄 Relatório:', report);
+}, 500);</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Console mostra Core Web Vitals, FPS, memória e recomendações.
+            </div>
+        </div>
+
+        <!-- Exemplo 3: Progress Tracking -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">3️⃣ Com Progress Bar e Feedback Visual</h2>
+            <p class="text-gray-700 mb-4">Mostrar progresso da renderização ao usuário.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+import { eventBus } from './js/core/EventEmitter.js';
+
+const container = document.getElementById('my-form');
+const progressBar = document.getElementById('progress-bar');
+const statusText = document.getElementById('status-text');
+
+// Event listeners para progresso
+eventBus.on('progressiveRenderProgress', (payload) => {
+    const percent = (payload.current / payload.total) * 100;
+    
+    // Atualizar barra de progresso
+    progressBar.style.width = `${percent}%`;
+    
+    // Atualizar texto
+    statusText.textContent = `Renderizando... ${payload.current}/${payload.total}`;
+});
+
+eventBus.on('progressiveRenderCompleted', (payload) => {
+    statusText.textContent = `✅ ${payload.totalFields} campos renderizados em ${payload.renderTime?.toFixed(2)}ms`;
+    
+    // Esconder progress bar
+    setTimeout(() => {
+        progressBar.style.opacity = '0';
+    }, 1000);
+});
+
+eventBus.on('fieldRendered', (payload) => {
+    console.log(`✓ Campo renderizado: ${payload.fieldId}`);
+});
+
+const renderer = new ProgressiveFormRenderer(container, {
+    strategy: 'priority',
+    chunkSize: 20
+});
+
+await renderer.render(fields);</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Progress bar animada e status textual em tempo real.
+            </div>
+        </div>
+
+        <!-- Exemplo 4: Formulário Grande -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">4️⃣ Formulário Grande (500+ campos)</h2>
+            <p class="text-gray-700 mb-4">Configuração otimizada para formulários grandes.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+import { PerformanceMonitor } from './js/core/PerformanceMonitor.js';
+
+const monitor = new PerformanceMonitor();
+
+// Para formulários grandes, use estratégia 'virtual'
+const renderer = new ProgressiveFormRenderer(container, {
+    strategy: 'virtual',         // 🎯 Melhor para 500+ campos
+    chunkSize: 25,               // Chunks maiores
+    enableMemoization: true,     // Cache ativado
+    lazyLoadSections: true       // Lazy loading de seções
+});
+
+// Gerar 1000 campos de teste
+const largeFormFields = Array.from({ length: 1000 }, (_, i) => ({
+    id: `field-${i}`,
+    type: i % 5 === 0 ? 'select' : 'text',
+    label: `Campo ${i}`,
+    required: i % 10 === 0,
+    section: `section-${Math.floor(i / 250)}`  // 4 seções
+}));
+
+console.log('🚀 Renderizando 1000 campos...');
+const start = performance.now();
+
+await renderer.render(largeFormFields);
+
+const duration = performance.now() - start;
+const metrics = monitor.getMetrics();
+
+console.log(`✅ Renderizado em ${duration.toFixed(2)}ms`);
+console.log(`📊 FPS médio: ${metrics.averageFPS}`);
+console.log(`💾 Memória: ${metrics.currentMemory?.used}`);
+console.log(`⚡ Long tasks: ${metrics.longTaskCount}`);</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> 1000 campos renderizados em ~3s com FPS > 50 e zero long tasks.
+            </div>
+        </div>
+
+        <!-- Exemplo 5: Integração Alpine.js -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">5️⃣ Integração com Alpine.js</h2>
+            <p class="text-gray-700 mb-4">Usar o sistema com Alpine.js para reatividade.</p>
+            
+            <div class="code-block">
+<pre>&lt;!-- HTML --&gt;
+&lt;div x-data="formRenderer" x-init="init()"&gt;
+    &lt;div class="mb-4"&gt;
+        &lt;progress :value="progress" max="100" class="w-full"&gt;&lt;/progress&gt;
+        &lt;p x-text="statusText"&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    
+    &lt;div id="form-container"&gt;&lt;/div&gt;
+    
+    &lt;button @click="loadForm()" class="btn"&gt;Carregar Formulário&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;script type="module"&gt;
+import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+import { PerformanceMonitor } from './js/core/PerformanceMonitor.js';
+import { eventBus } from './js/core/EventEmitter.js';
+
+Alpine.data('formRenderer', () => ({
+    renderer: null,
+    monitor: null,
+    progress: 0,
+    statusText: 'Pronto',
+    metrics: {},
+    
+    init() {
+        // Inicializar monitor
+        this.monitor = new PerformanceMonitor({
+            trackFPS: true,
+            trackMemory: true
+        });
+        
+        // Inicializar renderer
+        this.renderer = new ProgressiveFormRenderer(this.$el.querySelector('#form-container'), {
+            strategy: 'critical-first',
+            chunkSize: 20,
+            enableMemoization: true
+        });
+        
+        // Event listeners
+        eventBus.on('progressiveRenderProgress', (p) => {
+            this.progress = (p.current / p.total) * 100;
+            this.statusText = `Renderizando... ${p.current}/${p.total}`;
+        });
+        
+        eventBus.on('progressiveRenderCompleted', (p) => {
+            this.statusText = `✅ Completo! ${p.totalFields} campos`;
+            this.metrics = this.monitor.getMetrics();
+            
+            console.log('Métricas:', this.metrics);
+        });
+    },
+    
+    async loadForm() {
+        const fields = await fetch('/api/form-config.json').then(r => r.json());
+        await this.renderer.render(fields);
+    }
+}));
+&lt;/script&gt;</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Integração reativa com Alpine.js, progress bar e métricas no estado.
+            </div>
+        </div>
+
+        <!-- Exemplo 6: Adaptive Rendering -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">6️⃣ Adaptive Rendering (Progressive Enhancement)</h2>
+            <p class="text-gray-700 mb-4">Adaptar estratégia baseado no dispositivo e tamanho do formulário.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+
+// Detectar capacidade do dispositivo
+const isLowEnd = navigator.hardwareConcurrency < 4;
+const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+// Função para escolher estratégia ideal
+function getOptimalConfig(fieldCount) {
+    if (fieldCount < 100) {
+        return {
+            strategy: 'sequential',
+            chunkSize: 10,
+            enableMemoization: false
+        };
+    }
+    
+    if (fieldCount < 500) {
+        return {
+            strategy: isLowEnd ? 'virtual' : 'critical-first',
+            chunkSize: isLowEnd ? 15 : 20,
+            enableMemoization: !isLowEnd
+        };
+    }
+    
+    // 500+ campos
+    return {
+        strategy: 'virtual',
+        chunkSize: isLowEnd ? 20 : 25,
+        enableMemoization: !isLowEnd,
+        lazyLoadSections: true
+    };
+}
+
+// Usar configuração adaptativa
+const config = getOptimalConfig(fields.length);
+
+console.log(`📱 Dispositivo: ${isMobile ? 'Mobile' : 'Desktop'}`);
+console.log(`💻 CPU cores: ${navigator.hardwareConcurrency}`);
+console.log(`⚙️ Configuração: ${config.strategy}, chunk ${config.chunkSize}`);
+
+const renderer = new ProgressiveFormRenderer(container, config);
+await renderer.render(fields);</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Performance otimizada automaticamente para o dispositivo do usuário.
+            </div>
+        </div>
+
+        <!-- Exemplo 7: Testing/Benchmarking -->
+        <div class="example-section bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">7️⃣ Benchmark Custom</h2>
+            <p class="text-gray-700 mb-4">Criar seus próprios benchmarks personalizados.</p>
+            
+            <div class="code-block">
+<pre>import { ProgressiveFormRenderer } from './js/core/ProgressiveFormRenderer.js';
+import { PerformanceMonitor } from './js/core/PerformanceMonitor.js';
+
+async function benchmarkStrategy(strategy, fields) {
+    const monitor = new PerformanceMonitor();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    
+    const renderer = new ProgressiveFormRenderer(container, {
+        strategy,
+        chunkSize: 20
+    });
+    
+    const start = performance.now();
+    await renderer.render(fields);
+    const duration = performance.now() - start;
+    
+    const metrics = monitor.getMetrics();
+    
+    // Cleanup
+    renderer.destroy();
+    monitor.destroy();
+    document.body.removeChild(container);
+    
+    return {
+        strategy,
+        duration: duration.toFixed(2),
+        avgFieldTime: metrics.averageFieldTime?.toFixed(2),
+        longTasks: metrics.longTaskCount,
+        fps: metrics.averageFPS,
+        memory: metrics.currentMemory?.used
+    };
+}
+
+// Comparar estratégias
+const fields = generateTestFields(500);
+const strategies = ['sequential', 'critical-first', 'priority', 'virtual'];
+const results = [];
+
+for (const strategy of strategies) {
+    const result = await benchmarkStrategy(strategy, fields);
+    results.push(result);
+    
+    // Aguardar limpeza
+    await new Promise(resolve => setTimeout(resolve, 200));
+}
+
+console.table(results);
+
+// Exportar para CSV
+const csv = results.map(r => Object.values(r).join(',')).join('\n');
+console.log('\nCSV Export:\n', csv);</pre>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ Resultado:</strong> Tabela comparativa de todas as estratégias com exportação CSV.
+            </div>
+        </div>
+
+        <!-- Comandos NPM -->
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mt-8">
+            <h2 class="text-2xl font-bold text-blue-900 mb-4">🎮 Comandos NPM Disponíveis</h2>
+            
+            <div class="space-y-2">
+                <div class="bg-white p-3 rounded">
+                    <code class="text-blue-600">npm run benchmark</code>
+                    <p class="text-sm text-gray-600 mt-1">Executar todos os benchmarks de performance</p>
+                </div>
+                
+                <div class="bg-white p-3 rounded">
+                    <code class="text-blue-600">npm run benchmark:100</code>
+                    <p class="text-sm text-gray-600 mt-1">Testar com 100 campos</p>
+                </div>
+                
+                <div class="bg-white p-3 rounded">
+                    <code class="text-blue-600">npm run benchmark:500</code>
+                    <p class="text-sm text-gray-600 mt-1">Testar com 500 campos</p>
+                </div>
+                
+                <div class="bg-white p-3 rounded">
+                    <code class="text-blue-600">npm run benchmark:1000</code>
+                    <p class="text-sm text-gray-600 mt-1">Testar com 1000 campos</p>
+                </div>
+                
+                <div class="bg-white p-3 rounded">
+                    <code class="text-blue-600">npm run benchmark:compare</code>
+                    <p class="text-sm text-gray-600 mt-1">Comparar todas as estratégias</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Links Úteis -->
+        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6 mt-8">
+            <h2 class="text-2xl font-bold text-green-900 mb-4">📚 Recursos Adicionais</h2>
+            
+            <ul class="space-y-2">
+                <li>
+                    <a href="performance-monitor.html" class="text-green-600 hover:underline font-medium">
+                        🎛️ Dashboard de Performance (Interativo)
+                    </a>
+                </li>
+                <li>
+                    <a href="../docs/PERFORMANCE-OPTIMIZATION.md" class="text-green-600 hover:underline font-medium">
+                        📖 Documentação Completa (700+ linhas)
+                    </a>
+                </li>
+                <li>
+                    <a href="../PERFORMANCE-SYSTEM-SUMMARY.md" class="text-green-600 hover:underline font-medium">
+                        📝 Resumo Executivo
+                    </a>
+                </li>
+                <li>
+                    <a href="../tests/performance.benchmark.test.js" class="text-green-600 hover:underline font-medium">
+                        🧪 Suite de Benchmarks (Código-fonte)
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 mt-12 pb-8">
+            <p>EcoForms Performance System v1.0</p>
+            <p class="text-sm">Sistema completo de otimização para formulários grandes</p>
+        </div>
+    </div>
+</body>
+</html>

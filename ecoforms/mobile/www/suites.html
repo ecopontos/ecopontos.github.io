@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suites — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .card  { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 transition-all hover:shadow-md; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="suitesApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+            <a href="inbox.html" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">Suites</h1>
+                <p class="text-xs text-gray-500" x-text="resumo"></p>
+            </div>
+        </div>
+        <button @click="carregar()" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+            <i class="fas fa-sync-alt" :class="carregando && 'fa-spin'"></i>
+        </button>
+    </div>
+
+    <!-- Filtro de status -->
+    <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <template x-for="f in filtros" :key="f.valor">
+            <button @click="filtroAtivo = f.valor; aplicarFiltro()"
+                    class="flex-none px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                    :class="filtroAtivo === f.valor
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'">
+                <span x-text="f.label"></span>
+                <span x-show="f.valor !== 'todas'" class="ml-1 opacity-75"
+                      x-text="'(' + contar(f.valor) + ')'"></span>
+            </button>
+        </template>
+    </div>
+
+    <!-- Lista -->
+    <div x-show="!carregando && suites.length > 0">
+        <template x-for="s in suites" :key="s.id">
+            <div class="card" @click="abrirDetalhe(s.id)">
+
+                <!-- Linha 1: título + status -->
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate"
+                           x-text="s.titulo || s.tipo_acao || s.module_type || 'Suite #' + s.id.slice(-6)"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-show="s.created_at || s.updated_at"
+                           x-text="'Enviada ' + formatarData(s.created_at || s.updated_at)"></p>
+                    </div>
+                    <span class="badge flex-none" :class="corStatus(s.status)" x-text="labelStatus(s.status)"></span>
+                </div>
+
+                <!-- Linha 2: metadados -->
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+                    <span x-show="s.owner_id">
+                        <i class="fas fa-user mr-1"></i>
+                        <span x-text="s.owner_id === currentUser?.id ? 'Enviada por mim' : s.owner_id"></span>
+                    </span>
+                    <span x-show="s.module_type">
+                        <i class="fas fa-cube mr-1"></i>
+                        <span x-text="s.module_type"></span>
+                    </span>
+                </div>
+
+                <!-- Ações inline -->
+                <div x-show="acoesDisponiveis(s).length > 0"
+                     @click.stop class="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-gray-100">
+
+                    <!-- Aceitar (pending_review) -->
+                    <button x-show="s.status === 'pending_review' && podeRevisar()"
+                            @click="executarAcao(s, 'aceitar')"
+                            :disabled="executando === s.id"
+                            class="btn-transition bg-green-50 text-green-700 hover:bg-green-100
+                                   disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium rounded-lg">
+                        <i class="fas fa-check mr-1"></i> Aceitar
+                    </button>
+
+                    <!-- Rejeitar (pending_review) -->
+                    <button x-show="s.status === 'pending_review' && podeRevisar()"
+                            @click="executarAcao(s, 'rejeitar')"
+                            :disabled="executando === s.id"
+                            class="btn-transition bg-red-50 text-red-700 hover:bg-red-100
+                                   disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium rounded-lg">
+                        <i class="fas fa-times mr-1"></i> Rejeitar
+                    </button>
+
+                    <!-- Editar e Reencaminhar (refuted) -->
+                    <button x-show="s.status === 'refuted'"
+                            @click="abrirDetalhe(s.id)"
+                            class="btn-transition bg-amber-50 text-amber-700 hover:bg-amber-100
+                                   px-3 py-1.5 text-xs font-medium rounded-lg">
+                        <i class="fas fa-edit mr-1"></i> Editar e Reencaminhar
+                    </button>
+
+                    <!-- Aprovar / Devolver (dispatched, gerente/admin) -->
+                    <button x-show="s.status === 'dispatched' && podeRevisar()"
+                            @click="executarAcao(s, 'aceitar')"
+                            :disabled="executando === s.id"
+                            class="btn-transition bg-green-50 text-green-700 hover:bg-green-100
+                                   disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium rounded-lg">
+                        <i class="fas fa-check-circle mr-1"></i> Aprovar
+                    </button>
+                    <button x-show="s.status === 'dispatched' && podeRevisar()"
+                            @click="abrirDetalhe(s.id)"
+                            class="btn-transition bg-orange-50 text-orange-700 hover:bg-orange-100
+                                   px-3 py-1.5 text-xs font-medium rounded-lg">
+                        <i class="fas fa-rotate-left mr-1"></i> Devolver
+                    </button>
+
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Empty state -->
+    <div x-show="!carregando && suites.length === 0"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-box-archive text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Nenhuma suite encontrada</p>
+        <p class="text-sm text-gray-400 mt-1" x-show="filtroAtivo !== 'todas'">
+            Tente o filtro "Todas"
+        </p>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+import { EventBus } from './js/sync/EventBus.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function escreverRegistro(db, tabela, registro) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readwrite');
+        const store = tx.objectStore(tabela);
+        const req = store.put(registro);
+        req.onsuccess = resolve;
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.suitesApp = function () {
+    return {
+        suites: [],
+        todasSuites: [],
+        carregando: false,
+        filtroAtivo: 'todas',
+        executando: null,
+        currentUser: lerUsuario(),
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+        db: null,
+        eventBus: null,
+
+        filtros: [
+            { valor: 'todas',          label: 'Todas'          },
+            { valor: 'current',        label: 'Em fluxo'       },
+            { valor: 'pending_review', label: 'Pendentes'      },
+            { valor: 'approved',       label: 'Aprovadas'      },
+            { valor: 'refuted',        label: 'Devolvidas'     },
+            { valor: 'dispatched',     label: 'Encaminhadas'   },
+        ],
+
+        get resumo() {
+            const pendentes = this.todasSuites.filter(s => s.status === 'pending_review').length;
+            return pendentes > 0 ? `${pendentes} pendente(s) de revisão` : `${this.todasSuites.length} no total`;
+        },
+
+        async init() {
+            this.db = await openSyncEventDB();
+            const user = this.currentUser;
+            this.eventBus = new EventBus(
+                user?.device_id || user?.id || 'mobile-unknown',
+                user?.routing_id || user?.setor_id || 'geral',
+            );
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            try {
+                const rows = await lerTabela(this.db, 'suite');
+                this.todasSuites = rows.sort((a, b) =>
+                    new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0)
+                );
+                this.aplicarFiltro();
+            } catch (e) {
+                console.error('[Suites] Erro ao carregar:', e);
+                this.mostrarToast('Erro ao carregar suites', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        aplicarFiltro() {
+            if (this.filtroAtivo === 'todas') {
+                this.suites = [...this.todasSuites];
+            } else {
+                this.suites = this.todasSuites.filter(s => s.status === this.filtroAtivo);
+            }
+        },
+
+        contar(status) {
+            return this.todasSuites.filter(s => s.status === status).length;
+        },
+
+        podeRevisar() {
+            const user = this.currentUser;
+            if (!user) return false;
+            const perfil = (user.perfil || user.role || '').toLowerCase();
+            return ['admin', 'gerente', 'coordenador'].includes(perfil);
+        },
+
+        acoesDisponiveis(s) {
+            const acoes = [];
+            if (s.status === 'pending_review' && this.podeRevisar()) {
+                acoes.push('aceitar', 'rejeitar');
+            }
+            if (s.status === 'refuted') {
+                acoes.push('reencaminhar');
+            }
+            if (s.status === 'dispatched' && this.podeRevisar()) {
+                acoes.push('aceitar', 'devolver');
+            }
+            return acoes;
+        },
+
+        async executarAcao(suite, acao) {
+            if (this.executando) return;
+            this.executando = suite.id;
+
+            const agora = new Date().toISOString();
+            const eventoMap = {
+                aceitar:   'suite.aprovada',
+                rejeitar:  'suite.rejeitada',
+                devolver:  'suite.devolvida',
+            };
+            const novoStatusMap = {
+                aceitar:   'approved',
+                rejeitar:  'refuted',
+                devolver:  'refuted',
+            };
+
+            const eventoType = eventoMap[acao];
+            const novoStatus = novoStatusMap[acao];
+
+            if (!eventoType) { this.executando = null; return; }
+
+            try {
+                const atualizada = {
+                    ...suite,
+                    status: novoStatus,
+                    updated_at: agora,
+                };
+                await escreverRegistro(this.db, 'suite', atualizada);
+
+                await this.eventBus.publish(eventoType, {
+                    packageId: suite.id,
+                    aceitoPor: acao === 'aceitar' ? this.currentUser?.id : undefined,
+                    rejeitadoPor: acao === 'rejeitar' ? this.currentUser?.id : undefined,
+                    devolvidoPor: acao === 'devolver' ? this.currentUser?.id : undefined,
+                    timestamp: agora,
+                }, {
+                    aggregate_type: 'suite',
+                    aggregate_id: suite.id,
+                });
+
+                await this.carregar();
+                const msg = { aceitar: 'Aprovada', rejeitar: 'Rejeitada', devolver: 'Devolvida' }[acao];
+                this.mostrarToast(`Suite ${msg} com sucesso`, 'ok');
+            } catch (e) {
+                console.error('[Suites] Erro na ação:', e);
+                this.mostrarToast('Erro ao executar ação', 'erro');
+            } finally {
+                this.executando = null;
+            }
+        },
+
+        abrirDetalhe(id) {
+            window.location.href = `suite-review.html?id=${encodeURIComponent(id)}`;
+        },
+
+        corStatus(s) {
+            return {
+                current:        'bg-blue-100 text-blue-700',
+                pending_review: 'bg-yellow-100 text-yellow-800',
+                approved:       'bg-green-100 text-green-800',
+                refuted:        'bg-red-100 text-red-700',
+                dispatched:     'bg-purple-100 text-purple-700',
+            }[s] ?? 'bg-gray-100 text-gray-600';
+        },
+
+        labelStatus(s) {
+            return {
+                current:        'Em fluxo',
+                pending_review: 'Pendente',
+                approved:       'Aprovada',
+                refuted:        'Devolvida',
+                dispatched:     'Encaminhada',
+            }[s] ?? s ?? '—';
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

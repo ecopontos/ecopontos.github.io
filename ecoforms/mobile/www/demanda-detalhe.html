@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demanda - EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .section { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3; }
+        .tarefa-row { @apply flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0; }
+        .timeline-dot { @apply w-3 h-3 rounded-full flex-none; }
+        .timeline-line { @apply w-0.5 flex-1 min-h-[24px]; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="demanhaDetalheApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center gap-3 mb-5">
+        <a href="demandas.html" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-arrow-left text-lg"></i>
+        </a>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-xl font-bold text-gray-900 truncate"
+                x-text="demanda ? (demanda.tipo_acao || 'Demanda #' + demanda.id.slice(-6)) : 'Carregando…'"></h1>
+            <p class="text-xs text-gray-500" x-show="demanda">
+                <span x-text="'Criada ' + formatarData(demanda?.criada_em)"></span>
+            </p>
+        </div>
+        <span x-show="demanda" class="badge flex-none" :class="corStatus(demanda?.status)"
+              x-text="labelStatus(demanda?.status)"></span>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Not found -->
+    <div x-show="!carregando && !demanda"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-exclamation-circle text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Demanda não encontrada</p>
+        <a href="demandas.html" class="mt-3 text-sm text-blue-600 hover:underline">Voltar à lista</a>
+    </div>
+
+    <!-- Conteúdo -->
+    <div x-show="!carregando && demanda" x-cloak>
+
+        <!-- Informações principais -->
+        <div class="section">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Detalhes</h2>
+            <dl class="space-y-2">
+                <template x-if="demanda?.descricao">
+                    <div>
+                        <dt class="text-xs text-gray-500">Descrição</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5" x-text="demanda.descricao"></dd>
+                    </div>
+                </template>
+                <template x-if="demanda?.tipo_acao">
+                    <div>
+                        <dt class="text-xs text-gray-500">Tipo de ação</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5" x-text="demanda.tipo_acao"></dd>
+                    </div>
+                </template>
+                <template x-if="demanda?.origem_tipo">
+                    <div>
+                        <dt class="text-xs text-gray-500">Origem</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5" x-text="demanda.origem_tipo"></dd>
+                    </div>
+                </template>
+                <template x-if="demanda?.destinatario_id">
+                    <div>
+                        <dt class="text-xs text-gray-500">Destinatário</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5"
+                            x-text="demanda.destinatario_id === currentUser?.id ? 'Você' : demanda.destinatario_id"></dd>
+                    </div>
+                </template>
+                <template x-if="demanda?.aceito_por">
+                    <div>
+                        <dt class="text-xs text-gray-500">Aceita por</dt>
+                        <dd class="text-sm text-gray-900 mt-0.5"
+                            x-text="demanda.aceito_por === currentUser?.id ? 'Você' : demanda.aceito_por"></dd>
+                    </div>
+                </template>
+            </dl>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Timeline</h2>
+            <div class="flex flex-col gap-0 pl-1">
+
+                <!-- Criada -->
+                <div class="flex gap-3 items-start">
+                    <div class="flex flex-col items-center">
+                        <div class="timeline-dot bg-blue-500"></div>
+                        <div class="timeline-line bg-gray-200" x-show="demanda?.aceito_em || demanda?.encerrada_em"></div>
+                    </div>
+                    <div class="pb-4">
+                        <p class="text-sm font-medium text-gray-900">Criada</p>
+                        <p class="text-xs text-gray-500" x-text="formatarData(demanda?.criada_em)"></p>
+                    </div>
+                </div>
+
+                <!-- Aceita -->
+                <div class="flex gap-3 items-start" x-show="demanda?.aceito_em">
+                    <div class="flex flex-col items-center">
+                        <div class="timeline-dot bg-green-500"></div>
+                        <div class="timeline-line bg-gray-200" x-show="demanda?.encerrada_em || demanda?.cancelada_em"></div>
+                    </div>
+                    <div class="pb-4">
+                        <p class="text-sm font-medium text-gray-900">Aceita</p>
+                        <p class="text-xs text-gray-500" x-text="formatarData(demanda?.aceito_em)"></p>
+                    </div>
+                </div>
+
+                <!-- Concluída / Cancelada -->
+                <div class="flex gap-3 items-start"
+                     x-show="demanda?.encerrada_em || demanda?.cancelada_em">
+                    <div class="flex flex-col items-center">
+                        <div class="timeline-dot"
+                             :class="demanda?.cancelada_em ? 'bg-gray-400' : 'bg-emerald-500'"></div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900"
+                           x-text="demanda?.cancelada_em ? 'Cancelada' : 'Concluída'"></p>
+                        <p class="text-xs text-gray-500"
+                           x-text="formatarData(demanda?.encerrada_em || demanda?.cancelada_em)"></p>
+                    </div>
+                </div>
+
+                <!-- Pendente (não encerrada) -->
+                <div class="flex gap-3 items-start"
+                     x-show="demanda?.aceito_em && !demanda?.encerrada_em && !demanda?.cancelada_em">
+                    <div class="flex flex-col items-center">
+                        <div class="timeline-dot border-2 border-dashed border-gray-300 bg-white"></div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Aguardando conclusão</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Tarefas vinculadas -->
+        <div class="section" x-show="tarefas.length > 0">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Tarefas</h2>
+                <span class="text-xs text-gray-500">
+                    <span x-text="tarefasConcluidas"></span>/<span x-text="tarefas.length"></span> concluídas
+                </span>
+            </div>
+            <template x-for="t in tarefas" :key="t.id">
+                <div class="tarefa-row">
+                    <i class="fas text-base flex-none"
+                       :class="{
+                           'fa-check-circle text-green-500': t.status === 'concluido',
+                           'fa-spinner text-blue-500': t.status === 'em_andamento',
+                           'fa-circle text-gray-300': t.status === 'a_fazer' || !t.status,
+                           'fa-archive text-gray-400': t.status === 'arquivado',
+                       }"></i>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-900 truncate"
+                           x-text="t.titulo || t.title || 'Tarefa #' + t.id.slice(-4)"></p>
+                        <p class="text-xs text-gray-400 mt-0.5"
+                           x-text="labelTarefaStatus(t.status)"></p>
+                    </div>
+                    <span class="text-xs text-gray-400 flex-none" x-show="t.responsavel_id"
+                          x-text="t.responsavel_id === currentUser?.id ? 'Você' : ''"></span>
+                </div>
+            </template>
+        </div>
+
+        <!-- Sem tarefas -->
+        <div class="section" x-show="tarefas.length === 0 && demanda?.status === 'aceita'">
+            <p class="text-sm text-gray-500 text-center py-2">Nenhuma tarefa vinculada</p>
+        </div>
+
+        <!-- Ação: Encerrar -->
+        <div x-show="podeEncerrar" class="mt-2">
+            <button @click="encerrar()"
+                    :disabled="encerrando"
+                    class="w-full py-3 bg-emerald-600 text-white font-medium rounded-xl
+                           hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 transition-colors">
+                <i class="fas fa-flag-checkered mr-2"></i>
+                <span x-text="encerrando ? 'Encerrando…' : 'Encerrar demanda'"></span>
+            </button>
+            <p class="text-xs text-center text-gray-400 mt-2" x-show="tarefas.length > 0 && !todasConcluidas">
+                Encerramento declarado — existem tarefas ainda abertas
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+import { EventBus } from './js/sync/EventBus.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+function getIdFromUrl() {
+    return new URLSearchParams(window.location.search).get('id');
+}
+
+async function lerRegistro(db, tabela, id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function escreverRegistro(db, tabela, registro) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readwrite');
+        const store = tx.objectStore(tabela);
+        const req = store.put(registro);
+        req.onsuccess = resolve;
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.demanhaDetalheApp = function () {
+    return {
+        demanda: null,
+        tarefas: [],
+        carregando: false,
+        encerrando: false,
+        currentUser: lerUsuario(),
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+        db: null,
+        eventBus: null,
+
+        get tarefasConcluidas() {
+            return this.tarefas.filter(t => t.status === 'concluido').length;
+        },
+
+        get todasConcluidas() {
+            return this.tarefas.length > 0 && this.tarefas.every(t =>
+                t.status === 'concluido' || t.status === 'arquivado'
+            );
+        },
+
+        get podeEncerrar() {
+            if (!this.demanda) return false;
+            if (this.demanda.status === 'concluida' || this.demanda.status === 'cancelada') return false;
+            if (this.demanda.status !== 'aceita') return false;
+            return true;
+        },
+
+        async init() {
+            this.db = await openSyncEventDB();
+            const user = this.currentUser;
+            this.eventBus = new EventBus(
+                user?.device_id || user?.id || 'mobile-unknown',
+                user?.routing_id || user?.setor_id || 'geral',
+            );
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            const id = getIdFromUrl();
+            if (!id) { this.carregando = false; return; }
+
+            try {
+                this.demanda = await lerRegistro(this.db, 'tbl_demandas', id);
+                if (this.demanda) {
+                    const todas = await lerTabela(this.db, 'tarefas');
+                    this.tarefas = todas
+                        .filter(t => t.demanda_id === id)
+                        .sort((a, b) => new Date(a.criada_em || a.created_at || 0) - new Date(b.criada_em || b.created_at || 0));
+                }
+            } catch (e) {
+                console.error('[DemanhaDetalhe] Erro ao carregar:', e);
+                this.mostrarToast('Erro ao carregar demanda', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        async encerrar() {
+            if (this.encerrando || !this.demanda) return;
+            this.encerrando = true;
+            try {
+                const agora = new Date().toISOString();
+                const atualizado = {
+                    ...this.demanda,
+                    status: 'concluida',
+                    encerrada_por: this.currentUser?.id || null,
+                    encerrada_em: agora,
+                    updated_at: agora,
+                };
+                await escreverRegistro(this.db, 'tbl_demandas', atualizado);
+
+                await this.eventBus.publish('demanda.encerrada', {
+                    demanda_id: this.demanda.id,
+                    encerrada_por: this.currentUser?.id,
+                    encerrada_em: agora,
+                    tarefas_abertas: this.tarefas.filter(t => t.status !== 'concluido' && t.status !== 'arquivado').length,
+                }, {
+                    aggregate_type: 'demanda',
+                    aggregate_id: this.demanda.id,
+                });
+
+                this.demanda = atualizado;
+                this.mostrarToast('Demanda encerrada com sucesso', 'ok');
+            } catch (e) {
+                console.error('[DemanhaDetalhe] Erro ao encerrar:', e);
+                this.mostrarToast('Erro ao encerrar demanda', 'erro');
+            } finally {
+                this.encerrando = false;
+            }
+        },
+
+        corStatus(s) {
+            return {
+                aberta:    'bg-yellow-100 text-yellow-800',
+                aceita:    'bg-blue-100 text-blue-700',
+                concluida: 'bg-green-100 text-green-800',
+                cancelada: 'bg-gray-100 text-gray-600',
+            }[s] ?? 'bg-gray-100 text-gray-600';
+        },
+
+        labelStatus(s) {
+            return { aberta: 'Aberta', aceita: 'Aceita', concluida: 'Concluída', cancelada: 'Cancelada' }[s] ?? s;
+        },
+
+        labelTarefaStatus(s) {
+            return {
+                a_fazer:      'A fazer',
+                em_andamento: 'Em andamento',
+                concluido:    'Concluída',
+                arquivado:    'Arquivada',
+            }[s] ?? s ?? '—';
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

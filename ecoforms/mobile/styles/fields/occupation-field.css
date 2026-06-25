@@ -1,0 +1,239 @@
+/* Estilos para o OccupationField */
+.occupation-field {
+  margin-bottom: 1.5rem;
+}
+
+.occupation-header {
+  margin-bottom: 1rem;
+}
+
+.occupation-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.occupation-subtitle {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+}
+
+.occupation-accordion {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.occupation-accordion-item {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.occupation-accordion-item:last-child {
+  border-bottom: none;
+}
+
+.occupation-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  text-align: left;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.accordion-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.accordion-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.occupation-box-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.occupation-box-name {
+  font-weight: 500;
+}
+
+.occupation-box-current {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #f1f5f9;
+}
+
+.occupation-box-current.critical {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.occupation-box-pending {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.occupation-box-removed {
+  font-size: 0.875rem;
+  color: #16a34a;
+}
+
+.accordion-chevron {
+  transition: transform 0.2s;
+}
+
+.occupation-accordion-item.expanded .accordion-chevron {
+  transform: rotate(180deg);
+}
+
+.occupation-accordion-content {
+  padding: 1rem;
+  background: #fff;
+  display: none;
+}
+
+.occupation-accordion-item.expanded .occupation-accordion-content {
+  display: block;
+}
+
+.occupation-levels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.occupation-level-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.occupation-level-btn:hover {
+  background: #f1f5f9;
+}
+
+.occupation-level-btn.selected {
+  border-width: 2px;
+}
+
+.level-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.level-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.removal-action {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.btn-mark-removed {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px dashed #dc2626;
+  border-radius: 0.375rem;
+  background: #fee2e2;
+  cursor: pointer;
+  text-align: left;
+}
+
+.removal-icon {
+  font-size: 1.25rem;
+}
+
+.removal-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.removed-notice {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #ecfdf5;
+  border-radius: 0.375rem;
+}
+
+.removed-icon {
+  font-size: 1.75rem;
+}
+
+.removed-content h5 {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.btn-undo-removal {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  border: 1px solid #16a34a;
+  border-radius: 0.25rem;
+  color: #16a34a;
+  cursor: pointer;
+}
+
+.occupation-alert {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #f59e0b;
+  border-radius: 0.5rem;
+  background: #fef3c7;
+  display: flex;
+  gap: 1rem;
+}
+
+.occupation-alert-icon {
+  font-size: 1.5rem;
+}
+
+.occupation-alert-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.occupation-alert-list {
+  margin-top: 0.5rem;
+  list-style: none;
+  padding-left: 0;
+}
+
+.occupation-alert-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* Cores dos níveis */
+.bg-green-100.border-green-400 { background-color: #dcfce7; border-color: #4ade80; }
+.bg-yellow-100.border-yellow-400 { background-color: #fef9c3; border-color: #facc15; }
+.bg-orange-100.border-orange-400 { background-color: #ffedd5; border-color: #fb923c; }
+.bg-red-100.border-red-400 { background-color: #fee2e2; border-color: #f87171; }

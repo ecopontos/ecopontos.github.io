@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Estratégico - Ecopontos</title>
+    <link href="css/design-system.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #16a34a;
+            --primary-light: #22c55e;
+            --primary-dark: #15803d;
+            --secondary: #0ea5e9;
+            --secondary-light: #38bdf8;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --bg-start: #f8fafc;
+            --bg-end: #e2e8f0;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --radius: 20px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 56px;
+            padding: 40px 0;
+            position: relative;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+        
+        .header p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-top: 16px;
+            font-weight: 500;
+        }
+        
+        .time-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 0 0 48px;
+            flex-wrap: wrap;
+        }
+        
+        .time-btn {
+            padding: 14px 28px;
+            border: 2px solid transparent;
+            background: var(--card-bg);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-sm);
+            font-size: 0.95rem;
+        }
+        
+        .time-btn:hover:not(.active) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border);
+        }
+        
+        .time-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+        
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 36px 32px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+        
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 20px 0;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .metric-trend {
+            font-size: 0.9rem;
+            margin-top: 16px;
+            padding: 8px 16px;
+            border-radius: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .metric-trend::before {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        
+        .trend-up {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(22, 163, 74, 0.18));
+            color: var(--primary-dark);
+        }
+        
+        .trend-up::before { content: '↗'; }
+        
+        .trend-down {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.18));
+            color: var(--danger);
+        }
+        
+        .trend-down::before { content: '↘'; }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 36px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .chart-container.large {
+            height: 480px;
+        }
+        
+        .chart-container.small {
+            height: 400px;
+        }
+        
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 28px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .chart-title::before {
+            content: '';
+            width: 5px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            border-top: 2px solid var(--border);
+            margin-top: 48px;
+            font-weight: 500;
+        }
+        
+        .footer #lastUpdate {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 1024px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .metric-value { font-size: 2.8rem; }
+            .time-selector { gap: 8px; }
+            .time-btn { padding: 10px 18px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Dashboard Estratégico</h1>
+            <p>Visão agregada de desempenho e eficiência operacional dos Ecopontos</p>
+        </div>
+        
+        <div class="time-selector">
+            <button class="time-btn active" data-period="7">Últimos 7 dias</button>
+            <button class="time-btn" data-period="30">Últimos 30 dias</button>
+            <button class="time-btn" data-period="90">Últimos 90 dias</button>
+            <button class="time-btn" data-period="365">Últimos 12 meses</button>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Atendimentos Total</div>
+                <div class="metric-value" id="totalAtendimentos">1,248</div>
+                <div class="metric-trend trend-up">+12% vs mês anterior</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Volume de Resíduos (t)</div>
+                <div class="metric-value" id="totalResiduos">142.5</div>
+                <div class="metric-trend trend-up">+8% vs mês anterior</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Ecopontos Ativos</div>
+                <div class="metric-value" id="totalEcopontos">26</div>
+                <div class="metric-trend trend-up">+3 novos</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Taxa de Ocupação Média</div>
+                <div class="metric-value" id="taxaOcupacao">68%</div>
+                <div class="metric-trend trend-down">-5% vs mês anterior</div>
+            </div>
+        </div>
+        
+        <div class="charts-row">
+            <div class="chart-container large">
+                <div class="chart-title">Evolução de Atendimentos por Período</div>
+                <canvas id="atendimentosChart"></canvas>
+            </div>
+            
+            <div class="chart-container small">
+                <div class="chart-title">Distribuição por Tipo</div>
+                <canvas id="residuosChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="charts-row">
+            <div class="chart-container large">
+                <div class="chart-title">Atendimentos por Bairro</div>
+                <canvas id="bairroChart"></canvas>
+            </div>
+            
+            <div class="chart-container small">
+                <div class="chart-title">Ecopontos por Status</div>
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Dashboard atualizado em tempo real • Última atualização: <span id="lastUpdate"></span></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/utils/stable-stringify.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/dashboard-service.js"></script>
+    <script>
+        let dashboardService = null;
+        let currentPeriod = 7;
+        let chartInstances = {};
+
+        // Wait for all dependencies to load before initializing
+        async function initDashboard() {
+            // Wait for dataService to be ready
+            let attempts = 0;
+            while (!window.dataService && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.dataService) {
+                console.error('❌ DataService não carregou após 5 segundos');
+                return;
+            }
+            
+            // Inicializar o serviço de dashboard
+            dashboardService = new DashboardService();
+            
+            // Atualizar a hora da última atualização
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('pt-BR');
+            
+            // Carregar dados iniciais
+            await carregarDadosDashboard();
+            
+            // Configurar eventos de clique nos botões de período
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPeriod = parseInt(this.dataset.period);
+                    console.log(`Período selecionado: ${currentPeriod} dias`);
+                    
+                    // Atualizar todos os dados com o novo período
+                    await carregarDadosDashboard();
+                });
+            });
+            
+            // Configurar atualização automática a cada 5 minutos
+            setInterval(async () => {
+                console.log('Atualizando dados do dashboard automaticamente...');
+                await carregarDadosDashboard();
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString('pt-BR');
+            }, 5 * 60 * 1000); // 5 minutos
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDashboard);
+        } else {
+            initDashboard();
+        }
+        
+        // Garantir fallback para dados mockados caso o DataService não esteja disponível
+        window.addEventListener('load', function() {
+            if (!window.dataService || !window.dataService.supabaseClient) {
+                console.warn('⚠️ DataService não disponível. Os dashboards usarão dados mockados.');
+            }
+        });
+
+        // Função para carregar todos os dados do dashboard
+        async function carregarDadosDashboard() {
+            try {
+                // Exibir indicador de carregamento
+                mostrarCarregamento(true);
+                
+                // Carregar métricas estratégicas (usando nova estrutura consolidada com fallback)
+                const metricas = await dashboardService.getMetricasEstrategicas(currentPeriod);
+                atualizarMetricas(metricas);
+                
+                // Carregar dados para os gráficos (usando nova estrutura consolidada com fallback)
+                const dadosGraficos = await dashboardService.getDadosGraficosEstrategicos(currentPeriod);
+                atualizarGraficos(dadosGraficos);
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados do dashboard:', error);
+                // Em caso de erro, tentar usar dados mockados
+                const metricas = dashboardService.getDadosMockadosEstrategicos();
+                atualizarMetricas(metricas);
+                
+                const dadosGraficos = dashboardService.getDadosGraficosMockados();
+                atualizarGraficos(dadosGraficos);
+            } finally {
+                mostrarCarregamento(false);
+            }
+        }
+
+        // Função para atualizar as métricas no dashboard
+        function atualizarMetricas(metricas) {
+            document.getElementById('totalAtendimentos').textContent = metricas.totalAtendimentos;
+            document.getElementById('totalResiduos').textContent = metricas.totalResiduos;
+            document.getElementById('totalEcopontos').textContent = metricas.totalEcopontos;
+            document.getElementById('taxaOcupacao').textContent = metricas.taxaOcupacao;
+        }
+
+        // Função para atualizar os gráficos
+        function atualizarGraficos(dadosGraficos) {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 16,
+                            font: { size: 13, weight: '600', family: 'Poppins' },
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    }
+                }
+            };
+            
+            // Atualizar gráfico de atendimentos
+            if (chartInstances.atendimentos) {
+                chartInstances.atendimentos.destroy();
+            }
+            chartInstances.atendimentos = new Chart(document.getElementById('atendimentosChart').getContext('2d'), {
+                type: 'line',
+                data: dadosGraficos.atendimentos,
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+            
+            // Atualizar gráfico de resíduos
+            if (chartInstances.residuos) {
+                chartInstances.residuos.destroy();
+            }
+            chartInstances.residuos = new Chart(document.getElementById('residuosChart').getContext('2d'), {
+                type: 'doughnut',
+                data: dadosGraficos.residuos,
+                options: { ...chartOptions, cutout: '65%' }
+            });
+            
+            // Atualizar gráfico por bairro
+            if (chartInstances.bairro) {
+                chartInstances.bairro.destroy();
+            }
+            chartInstances.bairro = new Chart(document.getElementById('bairroChart').getContext('2d'), {
+                type: 'bar',
+                data: dadosGraficos.bairro,
+                options: { ...chartOptions, indexAxis: 'y', scales: { x: { grid: { color: '#f1f5f9' } } } }
+            });
+            
+            // Atualizar gráfico de status
+            if (chartInstances.status) {
+                chartInstances.status.destroy();
+            }
+            chartInstances.status = new Chart(document.getElementById('statusChart').getContext('2d'), {
+                type: 'pie',
+                data: dadosGraficos.status,
+                options: chartOptions
+            });
+        }
+
+        // Função para mostrar/ocultar indicador de carregamento
+        function mostrarCarregamento(mostrar) {
+            // Poderia adicionar um spinner ou overlay aqui
+            if (mostrar) {
+                console.log('Carregando dados...');
+            } else {
+                console.log('Dados carregados');
+            }
+        }
+    </script>
+</body>
+</html>

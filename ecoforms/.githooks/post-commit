@@ -1,0 +1,15 @@
+#!/bin/bash
+DIR=".reversa"
+FILE="$DIR/.pending-sync"
+
+mkdir -p "$DIR"
+
+changed=$(git diff-tree --no-commit-id --name-only -r HEAD \
+  | grep -vE '^(node_modules|\.git|dist|build|coverage|__pycache__|_reversa_sdd|\.reversa|yarn\.lock|package-lock\.json|pnpm-lock\.yaml|go\.sum|Cargo\.lock|Gemfile\.lock|composer\.lock|poetry\.lock|Pipfile\.lock|\.githooks|\.env|tmp/)' \
+  | tr '\n' ' ')
+
+if [ -n "$changed" ]; then
+  ts=$(date -Iseconds 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%S%z")
+  sha=$(git rev-parse --short HEAD)
+  echo "$ts | $sha | $changed" >> "$FILE"
+fi

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulos — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .card  { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 transition-all; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="modulosApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900">Módulos</h1>
+                <p class="text-xs text-gray-500" x-text="todas.length + ' módulo(s) no catálogo'"></p>
+            </div>
+        </div>
+        <button @click="carregar()" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+            <i class="fas fa-sync-alt" :class="carregando && 'fa-spin'"></i>
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <template x-for="f in filtros" :key="f.valor">
+            <button @click="filtroAtivo = f.valor; aplicarFiltro()"
+                    class="flex-none px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                    :class="filtroAtivo === f.valor
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'">
+                <span x-text="f.label"></span>
+                <span x-show="f.valor !== 'todos'" class="ml-1 opacity-75"
+                      x-text="'(' + contar(f.valor) + ')'"></span>
+            </button>
+        </template>
+    </div>
+
+    <!-- Lista -->
+    <div x-show="!carregando && modulos.length > 0">
+        <template x-for="m in modulos" :key="m.id">
+            <div class="card">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate"
+                           x-text="m.name || m.nome || m.slug || 'Módulo #' + m.id.slice(-6)"></p>
+                        <p class="text-xs text-gray-500 mt-0.5" x-show="m.slug"
+                           x-text="m.slug"></p>
+                    </div>
+                    <span class="badge flex-none" :class="corStatus(m.status)"
+                          x-text="labelStatus(m.status)"></span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-2">
+                    <span x-show="m.entity_type" class="flex items-center gap-1">
+                        <i class="fas fa-cube text-gray-400"></i>
+                        <span x-text="m.entity_type"></span>
+                    </span>
+                    <span x-show="m.version" class="flex items-center gap-1">
+                        <i class="fas fa-code-branch text-gray-400"></i>
+                        <span x-text="'v' + m.version"></span>
+                    </span>
+                    <span x-show="m.publicado_em || m.updated_at" class="flex items-center gap-1">
+                        <i class="fas fa-clock text-gray-400"></i>
+                        <span x-text="formatarData(m.publicado_em || m.updated_at)"></span>
+                    </span>
+                </div>
+                <div x-show="m.config" class="mt-2 pt-2 border-t border-gray-100">
+                    <details class="text-xs">
+                        <summary class="text-gray-500 cursor-pointer hover:text-blue-600">Configuração</summary>
+                        <pre class="mt-2 text-gray-600 bg-gray-50 rounded-lg p-2 overflow-x-auto max-h-40"
+                             x-text="typeof m.config === 'string' ? JSON.stringify(JSON.parse(m.config || '{}'), null, 2) : JSON.stringify(m.config || {}, null, 2)"></pre>
+                    </details>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Empty -->
+    <div x-show="!carregando && modulos.length === 0"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-puzzle-piece text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Nenhum módulo publicado</p>
+        <p class="text-sm text-gray-400 mt-1">Módulos publicados pelo desktop aparecerão aqui</p>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.modulosApp = function () {
+    return {
+        modulos: [],
+        todas: [],
+        carregando: false,
+        filtroAtivo: 'todos',
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+
+        filtros: [
+            { valor: 'todos',     label: 'Todos'      },
+            { valor: 'published', label: 'Publicados'  },
+            { valor: 'archived',  label: 'Arquivados'  },
+        ],
+
+        async init() {
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            try {
+                const db = await openSyncEventDB();
+                const rows = await lerTabela(db, 'tbl_modulos');
+                this.todas = rows.sort((a, b) =>
+                    (a.name || a.nome || a.slug || '').localeCompare(b.name || b.nome || b.slug || '')
+                );
+                this.aplicarFiltro();
+            } catch (e) {
+                console.error('[Modulos] Erro:', e);
+                this.mostrarToast('Erro ao carregar módulos', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        aplicarFiltro() {
+            if (this.filtroAtivo === 'todos') {
+                this.modulos = [...this.todas];
+            } else {
+                this.modulos = this.todas.filter(m => m.status === this.filtroAtivo);
+            }
+        },
+
+        contar(status) {
+            return this.todas.filter(m => m.status === status).length;
+        },
+
+        corStatus(s) {
+            return {
+                published: 'bg-green-100 text-green-800',
+                archived:  'bg-gray-100 text-gray-500',
+            }[s] ?? 'bg-blue-100 text-blue-700';
+        },
+
+        labelStatus(s) {
+            return {
+                published: 'Publicado',
+                archived:  'Arquivado',
+            }[s] ?? s ?? '—';
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+/* consolidated-forms.css
+ * Centraliza estilos de formulário comuns para evitar duplicação
+ * Inclui: .form-container, .form-header, .form-body, .form-title,
+ * .field-container, .field-label, .chip
+ */
+
+:root {
+  /* Fallback tokens if not defined elsewhere */
+  --cf-bg: #ffffff;
+  --cf-surface: #ffffff;
+  --cf-border: rgba(0,0,0,0.08);
+  --cf-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --cf-radius-md: 10px;
+  --cf-radius-lg: 12px;
+  --cf-space-8: 8px;
+}
+
+.form-container,
+body .form-container,
+html body .form-container {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: var(--cf-surface) !important;
+  border-radius: var(--cf-radius-md) !important;
+  box-shadow: var(--cf-shadow) !important;
+  border: 1px solid var(--cf-border) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Full-height behaviour: prefer opt-in via class, but provide default high-specificity fallback */
+html body .form-container--fullheight,
+html body .form-container {
+  height: 100vh !important;
+  min-height: 100vh !important;
+}
+
+.form-header,
+body .form-header,
+html body .form-header {
+  background: transparent !important;
+  padding: 12px !important;
+  border-bottom: 0.5px solid var(--cf-border) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+}
+
+/* Small, iOS-like header requirement */
+html body .form-header,
+html body .form-container--fullheight > .form-header {
+  height: 25px !important;
+  min-height: 25px !important;
+  line-height: 25px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.form-body,
+body .form-body,
+html body .form-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 12px !important;
+}
+
+.form-title {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  color: inherit !important;
+}
+
+.field-container {
+  margin-bottom: var(--cf-space-8) !important;
+}
+
+.field-label {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  margin-bottom: 6px !important;
+  color: inherit !important;
+}
+
+.chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 6px 10px !important;
+  border-radius: 16px !important;
+  background: rgba(0,0,0,0.06) !important;
+  border: none !important;
+  font-size: 14px !important;
+}
+
+/* Ensure small screens have compact paddings */
+@media (max-width: 600px) {
+  .form-title { font-size: 16px !important; }
+  .form-header { padding: 8px !important; }
+  .form-body { padding: 8px !important; }
+}
+
+@media (max-width: 480px) {
+  /* Ensure header stays small on narrow phones */
+  html body .form-header,
+  html body .form-container--fullheight > .form-header {
+    height: 25px !important;
+    padding: 0 8px !important;
+    line-height: 25px !important;
+  }
+}

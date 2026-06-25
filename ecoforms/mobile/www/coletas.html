@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coletas — EcoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .card  { @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 transition-all; }
+        .modal-overlay { @apply fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50; }
+        .modal-content { @apply bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-5; }
+        .input-field { @apply w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="coletasApp()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Cabeçalho -->
+    <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+            <a href="roteiros.html" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900"
+                    x-text="roteiro ? (roteiro.nome || 'Roteiro #' + roteiro.id.slice(-6)) : 'Coletas'"></h1>
+                <p class="text-xs text-gray-500">
+                    <span x-show="roteiro" x-text="coletas.length + ' coleta(s) registrada(s)'"></span>
+                    <span x-show="!roteiro">Carregando…</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex gap-1">
+            <button @click="carregar()" :disabled="carregando"
+                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50">
+                <i class="fas fa-sync-alt" :class="carregando && 'fa-spin'"></i>
+            </button>
+            <button @click="abrirModal(null)" x-show="roteiro"
+                    class="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-xl
+                           hover:bg-green-700 active:bg-green-800 transition-colors">
+                <i class="fas fa-plus text-xs"></i> Registrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Progresso do roteiro -->
+    <div x-show="roteiro" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+        <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-500">Progresso</span>
+            <span class="font-semibold text-gray-900"
+                  x-text="coletas.length + '/' + (roteiro.pontos_total || 0) + ' pontos'"></span>
+        </div>
+        <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
+            <div class="h-full rounded-full bg-green-500 transition-all"
+                 :style="'width: ' + progresso + '%'"></div>
+        </div>
+    </div>
+
+    <!-- Lista de coletas -->
+    <div x-show="!carregando && coletas.length > 0">
+        <template x-for="c in coletas" :key="c.id">
+            <div class="card">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate"
+                           x-text="c.ponto_nome || 'Ponto #' + (c.ponto_id || '').slice(-4)"></p>
+                        <p class="text-xs text-gray-500 mt-0.5"
+                           x-text="formatarData(c.registrado_em)"></p>
+                    </div>
+                    <span class="badge flex-none bg-green-100 text-green-800">
+                        <span x-text="c.quantidade + ' ' + (c.unidade || 'kg')"></span>
+                    </span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-2">
+                    <span x-show="c.tipo_residuo" class="flex items-center gap-1">
+                        <i class="fas fa-recycle text-gray-400"></i>
+                        <span x-text="c.tipo_residuo"></span>
+                    </span>
+                    <span x-show="c.registrado_por" class="flex items-center gap-1">
+                        <i class="fas fa-user text-gray-400"></i>
+                        <span x-text="c.registrado_por === currentUser?.id ? 'Você' : c.registrado_por"></span>
+                    </span>
+                </div>
+                <div x-show="c.observacao" class="mt-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-2"
+                     x-text="c.observacao"></div>
+                <div x-show="c.foto_url" class="mt-2">
+                    <img :src="c.foto_url" class="w-full h-32 object-cover rounded-lg"
+                         @click="window.open(c.foto_url)">
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Empty -->
+    <div x-show="!carregando && coletas.length === 0"
+         class="flex flex-col items-center justify-center py-16 text-center">
+        <i class="fas fa-truck text-5xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 font-medium">Nenhuma coleta registrada</p>
+        <p x-show="roteiro" class="text-sm text-gray-400 mt-1">Toque em "Registrar" para iniciar</p>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregando" class="flex justify-center py-16">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+    </div>
+
+    <!-- Modal de Registro -->
+    <div x-show="modal.aberto" x-cloak x-transition class="modal-overlay" @click.self="fecharModal()">
+        <div class="modal-content" @click.stop>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-900">Registrar Coleta</h2>
+                <button @click="fecharModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Ponto de coleta <span class="text-red-500">*</span></label>
+                    <input x-model="modal.form.ponto_nome" type="text" class="input-field"
+                           placeholder="Nome ou identificação do ponto">
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Tipo de resíduo <span class="text-red-500">*</span></label>
+                    <select x-model="modal.form.tipo_residuo" class="input-field">
+                        <option value="">Selecione...</option>
+                        <option value="Entulho">Entulho</option>
+                        <option value="Madeira">Madeira</option>
+                        <option value="Poda">Poda</option>
+                        <option value="Reciclável">Reciclável</option>
+                        <option value="Rejeito">Rejeito</option>
+                        <option value="Sucata">Sucata</option>
+                        <option value="Vidro">Vidro</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Quantidade <span class="text-red-500">*</span></label>
+                        <input x-model.number="modal.form.quantidade" type="number" min="0" step="0.1"
+                               class="input-field" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Unidade</label>
+                        <select x-model="modal.form.unidade" class="input-field">
+                            <option value="kg">kg</option>
+                            <option value="ton">ton</option>
+                            <option value="m³">m³</option>
+                            <option value="un">un</option>
+                            <option value="L">L</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Observação</label>
+                    <textarea x-model="modal.form.observacao" rows="2" class="input-field resize-none"
+                              placeholder="Detalhes da coleta..."></textarea>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 block mb-1">Foto</label>
+                    <input type="file" accept="image/*" capture="environment"
+                           @change="modal.form.foto = $event.target.files[0]"
+                           class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3
+                                  file:rounded-lg file:border-0 file:text-sm file:font-medium
+                                  file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <p x-show="modal.erro" class="text-xs text-red-500" x-text="modal.erro"></p>
+
+                <button @click="registrarColeta()"
+                        :disabled="modal.registrando"
+                        class="w-full py-3 bg-green-600 text-white font-medium rounded-xl
+                               hover:bg-green-700 active:bg-green-800 disabled:opacity-50 transition-colors">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span x-text="modal.registrando ? 'Registrando…' : 'Registrar Coleta'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.visivel" x-cloak x-transition
+         class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg z-50"
+         :class="toast.tipo === 'ok' ? 'bg-green-600' : 'bg-red-600'"
+         x-text="toast.msg"></div>
+
+</div>
+
+<script type="module">
+import { openSyncEventDB } from './js/sync/SyncEventDB.js';
+import { EventBus } from './js/sync/EventBus.js';
+
+function lerUsuario() {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; }
+}
+
+function getRoteiroIdFromUrl() {
+    return new URLSearchParams(window.location.search).get('roteiro');
+}
+
+async function lerRegistro(db, tabela, id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function lerTabela(db, tabela) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readonly');
+        const store = tx.objectStore(tabela);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+async function escreverRegistro(db, tabela, registro) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(tabela, 'readwrite');
+        const store = tx.objectStore(tabela);
+        const req = store.put(registro);
+        req.onsuccess = resolve;
+        req.onerror  = () => reject(req.error);
+    });
+}
+
+window.coletasApp = function () {
+    return {
+        roteiro: null,
+        coletas: [],
+        carregando: false,
+        currentUser: lerUsuario(),
+        db: null,
+        eventBus: null,
+        toast: { visivel: false, msg: '', tipo: 'ok' },
+
+        modal: {
+            aberto: false,
+            erro: '',
+            registrando: false,
+            form: {
+                ponto_nome: '',
+                tipo_residuo: '',
+                quantidade: 0,
+                unidade: 'kg',
+                observacao: '',
+                foto: null,
+            },
+        },
+
+        get progresso() {
+            if (!this.roteiro || !this.roteiro.pontos_total) return 0;
+            return Math.round((this.coletas.length / this.roteiro.pontos_total) * 100);
+        },
+
+        async init() {
+            this.db = await openSyncEventDB();
+            const user = this.currentUser;
+            this.eventBus = new EventBus(
+                user?.device_id || user?.id || 'mobile-unknown',
+                user?.routing_id || user?.setor_id || 'geral',
+            );
+            await this.carregar();
+        },
+
+        async carregar() {
+            this.carregando = true;
+            try {
+                const roteiroId = getRoteiroIdFromUrl();
+                if (roteiroId) {
+                    this.roteiro = await lerRegistro(this.db, 'tbl_roteiros', roteiroId);
+                }
+                const todas = await lerTabela(this.db, 'tbl_coletas');
+                this.coletas = (todas || [])
+                    .filter(c => !roteiroId || c.roteiro_id === roteiroId)
+                    .sort((a, b) => new Date(b.registrado_em || 0) - new Date(a.registrado_em || 0));
+            } catch (e) {
+                console.error('[Coletas] Erro:', e);
+                this.mostrarToast('Erro ao carregar dados', 'erro');
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        abrirModal() {
+            this.modal.form = {
+                ponto_nome: '',
+                tipo_residuo: '',
+                quantidade: 0,
+                unidade: 'kg',
+                observacao: '',
+                foto: null,
+            };
+            this.modal.erro = '';
+            this.modal.aberto = true;
+        },
+
+        fecharModal() {
+            this.modal.aberto = false;
+        },
+
+        async registrarColeta() {
+            const f = this.modal.form;
+            if (!f.ponto_nome.trim()) { this.modal.erro = 'Informe o ponto de coleta'; return; }
+            if (!f.tipo_residuo) { this.modal.erro = 'Selecione o tipo de resíduo'; return; }
+            if (!f.quantidade || f.quantidade <= 0) { this.modal.erro = 'Informe a quantidade'; return; }
+
+            this.modal.erro = '';
+            this.modal.registrando = true;
+
+            const agora = new Date().toISOString();
+            const id = crypto.randomUUID();
+
+            const registro = {
+                id,
+                roteiro_id: this.roteiro?.id || '',
+                ponto_id: '',
+                ponto_nome: f.ponto_nome.trim(),
+                tipo_residuo: f.tipo_residuo,
+                quantidade: f.quantidade,
+                unidade: f.unidade,
+                observacao: f.observacao.trim(),
+                foto_url: null,
+                registrado_por: this.currentUser?.id || '',
+                registrado_em: agora,
+                updated_at: agora,
+            };
+
+            try {
+                await escreverRegistro(this.db, 'tbl_coletas', registro);
+
+                await this.eventBus.publish('crm.coleta.registrada', {
+                    coleta_id: id,
+                    roteiro_id: registro.roteiro_id,
+                    ponto_id: registro.ponto_id,
+                    ponto_nome: registro.ponto_nome,
+                    tipo_residuo: registro.tipo_residuo,
+                    quantidade: registro.quantidade,
+                    unidade: registro.unidade,
+                    observacao: registro.observacao,
+                    registrado_por: registro.registrado_por,
+                    registrado_em: registro.registrado_em,
+                }, {
+                    aggregate_type: 'coleta',
+                    aggregate_id: id,
+                });
+
+                // Update roteiro progress
+                if (this.roteiro) {
+                    const atualizado = {
+                        ...this.roteiro,
+                        pontos_visitados: (this.roteiro.pontos_visitados || 0) + 1,
+                        ...(this.roteiro.pontos_total && (this.roteiro.pontos_visitados || 0) + 1 >= this.roteiro.pontos_total
+                            ? { status: 'concluido' } : {}),
+                        updated_at: agora,
+                    };
+                    await escreverRegistro(this.db, 'tbl_roteiros', atualizado);
+                    this.roteiro = atualizado;
+                }
+
+                this.coletas.unshift(registro);
+                this.fecharModal();
+                this.mostrarToast('Coleta registrada com sucesso', 'ok');
+            } catch (e) {
+                console.error('[Coletas] Erro ao registrar:', e);
+                this.mostrarToast('Erro ao registrar coleta', 'erro');
+            } finally {
+                this.modal.registrando = false;
+            }
+        },
+
+        formatarData(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        },
+
+        mostrarToast(msg, tipo = 'ok') {
+            this.toast = { visivel: true, msg, tipo };
+            setTimeout(() => { this.toast.visivel = false; }, 3000);
+        },
+    };
+};
+</script>
+</body>
+</html>

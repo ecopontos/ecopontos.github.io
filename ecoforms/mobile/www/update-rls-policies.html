@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualizar Políticas RLS</title>
+
+    <!-- Supabase Configuration -->
+    <meta name="supabase-url" content="https://vnnimekczkxkpckrydnc.supabase.co">
+    <meta name="supabase-key"
+        content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZubmltZWtjemt4a3Bja3J5ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDQ0NjUsImV4cCI6MjA3NzA4MDQ2NX0.RqLwcGIv5B5QnTfxvbemtTEx_Lve9Q6hqbab9SKA6aA">
+    <meta name="supabase-table" content="suite">
+</head>
+
+<body>
+    <h1>Atualizar Políticas RLS</h1>
+    <div id="results"></div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        async function updateRLSPolicies() {
+            const results = document.getElementById('results');
+
+            try {
+                results.innerHTML += '<p>🔄 Conectando ao Supabase...</p>';
+
+                // Obter cliente Supabase
+                let supabaseClient = null;
+                if (typeof window.getSupabaseClientSync === 'function') {
+                    const metaUrl = document.querySelector('meta[name="supabase-url"]')?.content || '';
+                    const metaKey = document.querySelector('meta[name="supabase-key"]')?.content || '';
+                    supabaseClient = window.getSupabaseClientSync(metaUrl, metaKey);
+                }
+
+                if (!supabaseClient) {
+                    results.innerHTML += '<p style="color: red;">❌ Cliente Supabase não encontrado</p>';
+                    return;
+                }
+
+                results.innerHTML += '<p style="color: green;">✅ Conectado ao Supabase</p>';
+
+                // NOTA: Não podemos executar DDL (ALTER TABLE, CREATE POLICY, etc.) via API REST do Supabase
+                // Essas alterações precisam ser feitas no SQL Editor do Supabase Dashboard
+
+                results.innerHTML += '<h2>⚠️ AÇÃO NECESSÁRIA:</h2>';
+                results.innerHTML += '<p>Execute o script SQL atualizado no <strong>SQL Editor do Supabase Dashboard</strong>:</p>';
+
+                const sqlScript = `-- Execute este script no SQL Editor do Supabase:
+
+-- 1. Remover políticas antigas
+DROP POLICY IF EXISTS "tbl_usuarios_select_own" ON usuarios;
+DROP POLICY IF EXISTS "tbl_usuarios_insert_managers" ON usuarios;
+DROP POLICY IF EXISTS "tbl_usuarios_update_managers" ON usuarios;
+DROP POLICY IF EXISTS "tbl_usuarios_delete_managers" ON usuarios;
+
+-- 2. Criar novas políticas simplificadas
+CREATE POLICY "tbl_usuarios_select_all" ON usuarios FOR SELECT USING (true);
+CREATE POLICY "tbl_usuarios_insert_all" ON usuarios FOR INSERT WITH CHECK (true);
+CREATE POLICY "tbl_usuarios_update_all" ON usuarios FOR UPDATE USING (true);
+CREATE POLICY "tbl_usuarios_delete_all" ON usuarios FOR DELETE USING (true);`;
+
+                results.innerHTML += `<pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;">${sqlScript}</pre>`;
+
+                results.innerHTML += '<h3>Após executar o script:</h3>';
+                results.innerHTML += '<ol>';
+                results.innerHTML += '<li>Vá para <a href="http://localhost:8000/user-management.html" target="_blank">Gerenciamento de Usuários</a></li>';
+                results.innerHTML += '<li>Faça login como admin (senha: 123456)</li>';
+                results.innerHTML += '<li>Tente criar um novo usuário</li>';
+                results.innerHTML += '</ol>';
+
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">❌ Erro: ${error.message}</p>`;
+                console.error('Erro:', error);
+            }
+        }
+
+        // Executar quando a página carregar
+        window.addEventListener('load', updateRLSPolicies);
+    </script>
+</body>
+
+</html>

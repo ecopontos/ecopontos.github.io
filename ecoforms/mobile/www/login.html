@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoSuite - Login</title>
+    <link href="css/design-system.css" rel="stylesheet">
+    <!-- Mobile Touch Improvements -->
+    <link href="css/mobile-touch-improvements.css" rel="stylesheet" media="(max-width: 768px)">
+    <style>
+        /* Estilos específicos do login */
+        html,
+        body {
+            height: 100%;
+            overflow-x: hidden;
+            /* Correção para problemas de toque no primeiro scroll */
+            touch-action: auto !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Garantir que o scroll funcione corretamente */
+            position: relative;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            /* Melhorar resposta ao toque */
+            touch-action: auto;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 32px;
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+            /* Melhorar toque em inputs */
+            touch-action: manipulation;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: rgba(0, 106, 106, 0.1);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            /* Melhorar resposta ao toque */
+            touch-action: manipulation;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: rgba(76, 175, 80, 0.2);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .mode-switch {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .mode-switch button {
+            background: none;
+            border: none;
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .mode-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .sync-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sync-indicator.syncing {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .sync-indicator.synced {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .sync-indicator.error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+
+        .sync-icon {
+            width: 12px;
+            height: 12px;
+            border: 2px solid currentColor;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .sync-icon.synced {
+            animation: none;
+            border: none;
+            width: 0;
+            height: 0;
+            border-left: 6px solid currentColor;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            transform: rotate(45deg);
+        }
+
+        .sync-icon.ready {
+            animation: none;
+            border: none;
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        /* == CORREÇÕES PARA PROBLEMAS DE TOQUE == */
+        /* Garantir que o scroll funcione no primeiro toque */
+        * {
+            touch-action: auto !important;
+        }
+
+        /* Restaurar touch-action específico apenas onde necessário */
+        .form-control,
+        .btn,
+        .login-container {
+            touch-action: manipulation !important;
+        }
+
+        /* Prevenir zoom acidental em inputs */
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        textarea {
+            font-size: 16px !important;
+            touch-action: manipulation;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .user-info h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .permissions {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .permission-tag {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sync-indicator" id="sync-indicator">
+        <div class="sync-icon" id="sync-icon"></div>
+        <span id="sync-text">Pronto</span>
+    </div>
+
+    <div class="mode-indicator" id="mode-indicator">Modo: Supabase</div>
+
+    <div class="login-container">
+        <img src="logo-pmf.png" alt="Prefeitura Municipal de Florianópolis" style="width: 80px; height: auto; margin-bottom: 10px;">`n        <div class="logo">EcoSuite</div>
+        <div class="subtitle">Prefeitura de Florianópolis - Gestão Ambiental</div>
+
+        <!-- Área de Login -->
+        <div id="login-area">
+            <div id="alert-container"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Usuário</label>
+                    <input type="text" id="username" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Senha</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span id="login-text">Entrar</span>
+                    <span id="login-loading" class="hidden"><span class="loading"></span>Conectando...</span>
+                </button>
+            </form>
+
+            <div class="mode-switch">
+                <p><small>Problemas de conexão?</small></p>
+                <p><small>O app detecta automaticamente o modo offline/online</small></p>
+            </div>
+        </div>
+
+        <!-- Área Logado -->
+        <div id="logged-area" class="hidden">
+            <div class="user-info">
+                <h3 id="user-name">-</h3>
+                <p><strong>Perfil:</strong> <span id="user-profile">-</span></p>
+                <p><strong>Login:</strong> <span id="login-time">-</span></p>
+
+                <div class="permissions">
+                    <strong>Formulários permitidos:</strong>
+                    <div id="user-permissions"></div>
+                </div>
+            </div>
+
+            <button onclick="goToApp()" class="btn btn-primary">
+                🚀 Acessar Sistema
+            </button>
+
+            <button onclick="updateDeviceData()" class="btn btn-secondary" id="update-btn" style="background: #17a2b8;">
+                <span id="update-text">🔄 Atualizar Dados</span>
+                <span id="update-loading" class="hidden"><span class="loading"></span>Atualizando...</span>
+            </button>
+
+            <!-- Gerenciar Usuários (apenas para gerentes) -->
+            <button onclick="goToUserManagement()" class="btn btn-secondary" id="manage-users-btn"
+                style="background: #6f42c1; display: none;">
+                👥 Gerenciar Usuários
+            </button>
+
+            <button onclick="logout()" class="btn btn-secondary">
+                🚪 Sair
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <!-- Runtime Supabase config (can be injected by host/server). Example values omitted for security. -->
+    <meta name="supabase-url" content="https://vnnimekczkxkpckrydnc.supabase.co">
+    <meta name="supabase-key"
+        content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZubmltZWtjemt4a3Bja3J5ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDQ0NjUsImV4cCI6MjA3NzA4MDQ2NX0.RqLwcGIv5B5QnTfxvbemtTEx_Lve9Q6hqbab9SKA6aA">
+    <meta name="supabase-table" content="suite">
+    <script src="js/system-config.js"></script>
+    <script src="js/utils/stable-stringify.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="js/notification-service.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/vendor/bcrypt.js"></script>
+    <script src="js/auth-manager.js"></script>
+
+    <!-- Dev-only: quick Supabase client creation test (no-op unless enabled)
+                     Enable by adding ?dev_supabase_test=1 to the URL or set localStorage.setItem('dev_supabase_test','1') -->
+    <script>
+        (function () {
+            try {
+                var enabled = new URLSearchParams(window.location.search).get('dev_supabase_test') === '1' || localStorage.getItem('dev_supabase_test') === '1';
+                if (!enabled) return;
+                console.group('Dev Supabase client test');
+                console.log('Dev test enabled via query/localStorage');
+                var metaUrl = document.querySelector('meta[name="supabase-url"]')?.content || '';
+                var metaKey = document.querySelector('meta[name="supabase-key"]')?.content || '';
+                console.log('meta supabase-url present?', !!metaUrl, 'meta supabase-key present?', !!metaKey);
+
+                var url = metaUrl || (window.supabaseConfig && window.supabaseConfig.url) || '';
+                var key = metaKey || (window.supabaseConfig && window.supabaseConfig.key) || '';
+
+                console.time('getSupabaseClientSync');
+                var syncClient = null;
+                try {
+                    if (window.getSupabaseClientSync) syncClient = window.getSupabaseClientSync(url, key);
+                    else if (window.globalSupabaseClient) syncClient = window.globalSupabaseClient;
+                    else if (window.supabase && window.supabase.createClient) syncClient = window.supabase.createClient(url, key);
+                } catch (e) { console.warn('sync create error', e); }
+                console.timeEnd('getSupabaseClientSync');
+                console.log('syncClient ->', syncClient);
+
+                console.time('getSupabaseClient(async)');
+                var asyncGetter = (window.getSupabaseClient) ? window.getSupabaseClient(url, key, 3000) : Promise.resolve(syncClient);
+                asyncGetter.then(function (c) {
+                    console.timeEnd('getSupabaseClient(async)');
+                    console.log('async client ->', c);
+                    if (c && c.auth && c.auth.getUser) {
+                        try { c.auth.getUser().then(function (u) { console.log('auth.getUser ->', u); }); } catch (e) { }
+                    }
+                    console.groupEnd();
+                }).catch(function (err) {
+                    console.timeEnd('getSupabaseClient(async)');
+                    console.error('async getter error', err);
+                    console.groupEnd();
+                });
+            } catch (e) { console.error('Dev supabase test error', e); }
+        })();
+    </script>
+
+    <script>
+        // Variáveis globais
+        let authManager = null;
+        let supabaseClient = null;
+        let isOnline = navigator.onLine;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 DOM carregado, iniciando sistema...');
+
+            try {
+                await initializeAuth();
+
+                // Verificar se já está logado
+                if (authManager && authManager.isLoggedIn()) {
+                    console.log('👤 Usuário já autenticado, mostrando área logada');
+                    showLoggedArea();
+                } else {
+                    console.log('🔓 Nenhum usuário autenticado');
+                }
+            } catch (error) {
+                console.error('❌ Erro durante inicialização:', error);
+                showAlert('Erro durante inicialização: ' + error.message, 'error');
+            }
+        });
+
+        async function initializeAuth() {
+            try {
+                console.log('🔧 Iniciando inicialização do sistema de autenticação...');
+
+                // Verificar se os scripts necessários estão carregados
+                if (typeof AuthManager === 'undefined') {
+                    throw new Error('AuthManager não está disponível. Verifique se o script auth-manager.js foi carregado.');
+                }
+
+                // Inicializar cliente Supabase de forma robusta (meta tags -> supabaseIntegration -> singleton)
+                const metaUrl = document.querySelector('meta[name="supabase-url"]')?.content || '';
+                const metaKey = document.querySelector('meta[name="supabase-key"]')?.content || '';
+                const cfg = (window.supabaseConfig) || (window.supabaseIntegration && window.supabaseIntegration.config) || {};
+                const url = metaUrl || cfg.url || '';
+                const key = metaKey || cfg.key || '';
+
+                console.log('🔗 Configuração Supabase:', {
+                    hasUrl: !!url,
+                    hasKey: !!key,
+                    source: metaUrl ? 'meta' : (cfg.url ? 'config' : 'none')
+                });
+
+                try {
+                    if (!supabaseClient && typeof window.getSupabaseClientSync === 'function') {
+                        supabaseClient = window.getSupabaseClientSync(url, key);
+                        console.log('✅ Cliente Supabase criado via getSupabaseClientSync');
+                    }
+                    if (!supabaseClient && window.globalSupabaseClient) {
+                        supabaseClient = window.globalSupabaseClient;
+                        console.log('✅ Cliente Supabase obtido via globalSupabaseClient');
+                    }
+                    if (!supabaseClient && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function' && url && key) {
+                        supabaseClient = supabase.createClient(url, key);
+                        console.log('✅ Cliente Supabase criado diretamente');
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Erro ao criar cliente Supabase:', e);
+                }
+
+                // Inicializar AuthManager
+                console.log('🔐 Inicializando AuthManager...');
+                authManager = new AuthManager();
+                await authManager.init(supabaseClient);
+                console.log('✅ AuthManager inicializado com sucesso');
+
+                updateModeIndicator();
+
+            } catch (error) {
+                console.error('❌ Erro ao inicializar autenticação:', error);
+                showAlert('Erro na inicialização do sistema: ' + error.message, 'error');
+            }
+        }
+
+        // Handler do formulário de login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await performLogin();
+        });
+
+        async function performLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showAlert('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+
+            // Mostrar loading
+            showLoading(true);
+
+            try {
+                console.log(`🔐 Iniciando login para usuário: ${username}`);
+                const result = await authManager.login(username, password);
+
+                if (result.success) {
+                    console.log(`✅ Login bem-sucedido para: ${result.user.nome} (${result.user.perfil})`);
+
+                    // Log detalhado das permissões do usuário
+                    if (result.user.perfil === 'gerente') {
+                        console.log('👑 Usuário é gerente - tem acesso a todos os formulários');
+                    } else {
+                        console.log(`📋 Usuário tem permissão para ${result.user.formulariosPermitidos.length} formulários:`);
+                        result.user.formulariosPermitidos.forEach(form => {
+                            console.log(`  ✅ ${form}`);
+                        });
+                    }
+
+                    showAlert(`Bem-vindo, ${result.user.nome}!`, 'success');
+
+                    // Sincronizar usuários para modo offline após login bem-sucedido
+                    if (authManager.useSupabase && authManager.supabaseClient) {
+                        try {
+                            await authManager.syncUsersToLocalStorage();
+                            console.log('✅ Usuários sincronizados após login');
+                        } catch (syncError) {
+                            console.warn('⚠️ Erro na sincronização automática:', syncError);
+                        }
+                    }
+
+                    // Atualizar userId no DataService
+                    if (window.dataService && result.user?.id) {
+                        window.dataService.userId = result.user.id;
+                        console.log(`🔄 DataService userId atualizado após login: ${result.user.id}`);
+                    }
+
+
+                    setTimeout(() => {
+                        showLoggedArea();
+                    }, 1000);
+                } else {
+                    console.warn(`🚫 Login falhou para ${username}: ${result.error}`);
+                    showAlert(result.error || 'Erro no login', 'error');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro no login:', error);
+                showAlert('Erro interno no login', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoggedArea() {
+            document.getElementById('login-area').classList.add('hidden');
+            document.getElementById('logged-area').classList.remove('hidden');
+
+            const user = authManager.getCurrentUser();
+
+            console.log(`👤 Exibindo área logada para: ${user.nome} (${user.perfil})`);
+
+            document.getElementById('user-name').textContent = user.nome;
+            document.getElementById('user-profile').textContent = user.perfil.toUpperCase();
+            document.getElementById('login-time').textContent = new Date(user.loginAt).toLocaleString('pt-BR');
+
+            // Mostrar permissões
+            const permissionsDiv = document.getElementById('user-permissions');
+            permissionsDiv.innerHTML = '';
+
+            if (user.perfil === 'gerente') {
+                permissionsDiv.innerHTML = '<span class="permission-tag">TODOS OS FORMULÁRIOS</span>';
+                console.log('👑 Gerente tem acesso a todos os formulários');
+
+                // Mostrar botão de gerenciamento de usuários para gerentes
+                document.getElementById('manage-users-btn').style.display = 'block';
+            } else {
+                console.log(`📋 Usuário tem acesso a ${user.formulariosPermitidos.length} formulários:`);
+                user.formulariosPermitidos.forEach(form => {
+                    const tag = document.createElement('span');
+                    tag.className = 'permission-tag';
+                    tag.textContent = form;
+                    permissionsDiv.appendChild(tag);
+                    console.log(`  ✅ ${form}`);
+                });
+
+                // Esconder botão de gerenciamento de usuários para não gerentes
+                document.getElementById('manage-users-btn').style.display = 'none';
+            }
+        }
+
+        function goToUserManagement() {
+            // Verificar se o usuário é gerente antes de redirecionar
+            const user = authManager.getCurrentUser();
+            if (user && user.perfil === 'gerente') {
+                console.log('👥 Redirecionando para gerenciamento de usuários...');
+                window.location.href = 'user-management.html';
+            } else {
+                console.warn('🚫 Acesso negado: apenas gerentes podem gerenciar usuários');
+                showAlert('Acesso negado: apenas gerentes podem gerenciar usuários', 'error');
+            }
+        }
+
+        async function logout() {
+            await authManager.logout();
+
+            // Resetar interface
+            document.getElementById('logged-area').classList.add('hidden');
+            document.getElementById('login-area').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+
+            showAlert('Logout realizado com sucesso', 'success');
+        }
+
+        async function goToApp() {
+            // Verificar se a sessão está armazenada corretamente
+            const sessionData = localStorage.getItem('ecoforms_auth_session');
+            if (!sessionData) {
+                console.warn('⚠️ Sessão não encontrada no localStorage antes de redirecionar');
+
+                // Tentar salvar a sessão novamente
+                if (authManager && authManager.isLoggedIn()) {
+                    const currentUser = authManager.getCurrentUser();
+                    console.log('🔄 Recriando sessão para:', currentUser.nome);
+
+                    // Criar sessão manualmente
+                    const session = {
+                        user: currentUser,
+                        loginAt: new Date().toISOString(),
+                        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() // 8 horas
+                    };
+
+                    // Salvar no localStorage
+                    localStorage.setItem('ecoforms_auth_session', JSON.stringify(session));
+                    console.log('✅ Sessão recriada com sucesso');
+                } else {
+                    console.error('❌ Não foi possível recriar a sessão - usuário não está logado');
+                    showAlert('Erro ao acessar o sistema. Tente fazer login novamente.', 'error');
+                    return;
+                }
+            } else {
+                console.log('✅ Sessão encontrada no localStorage:', JSON.parse(sessionData).user.nome);
+            }
+
+            // Solicitar permissão para notificações (em resposta à ação do usuário)
+            if (window.notificationService && 'Notification' in window && Notification.permission === 'default') {
+                try {
+                    await window.notificationService.requestPermission();
+                } catch (error) {
+                    console.warn('Erro ao solicitar permissão para notificações:', error);
+                }
+            }
+
+            // Redirecionar para a aplicação principal
+            window.location.href = 'index.html'; // ou a página principal do app
+        }
+
+        function updateModeIndicator() {
+            const indicator = document.getElementById('mode-indicator');
+            if (!indicator) {
+                console.warn('⚠️ Elemento mode-indicator não encontrado');
+                return;
+            }
+
+            indicator.textContent = `Modo: ${isOnline ? 'Online' : 'Offline'}`;
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+
+            // Remover alert após 5 segundos
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('login-text').classList.toggle('hidden', show);
+            document.getElementById('login-loading').classList.toggle('hidden', !show);
+        }
+
+        // Verificar configuração do dispositivo na inicialização
+        function checkDeviceSetup() {
+            const deviceConfig = localStorage.getItem('ecoforms_device_config');
+            if (!deviceConfig) {
+                // Dispositivo não configurado, redirecionar para setup
+                console.log('📱 Dispositivo não configurado, redirecionando para configuração inicial...');
+                window.location.href = 'device-setup.html';
+                return false;
+            }
+
+            // Dispositivo configurado, mostrar informações
+            const config = JSON.parse(deviceConfig);
+            console.log('📱 Dispositivo configurado:', config);
+            return true;
+        }
+
+        // Atualizar dados do dispositivo manualmente
+        async function updateDeviceData() {
+            const updateBtn = document.getElementById('update-btn');
+            const updateText = document.getElementById('update-text');
+            const updateLoading = document.getElementById('update-loading');
+
+            // Verificar configuração do dispositivo
+            const deviceConfig = localStorage.getItem('ecoforms_device_config');
+            if (!deviceConfig) {
+                showAlert('Dispositivo não configurado. Configure primeiro.', 'error');
+                return;
+            }
+
+            const config = JSON.parse(deviceConfig);
+
+            // Solicitar permissão para notificações (em resposta à ação do usuário)
+            if (window.notificationService && 'Notification' in window && Notification.permission === 'default') {
+                try {
+                    await window.notificationService.requestPermission();
+                } catch (error) {
+                    console.warn('Erro ao solicitar permissão para notificações:', error);
+                }
+            }
+
+            // Mostrar loading
+            updateBtn.disabled = true;
+            updateText.classList.add('hidden');
+            updateLoading.classList.remove('hidden');
+
+            try {
+                // Iniciar sincronização com metadados
+                if (window.systemConfig) {
+                    window.systemConfig.startSync();
+                }
+
+                // Notificar início da sincronização
+                if (window.notificationService) {
+                    window.notificationService.notifySyncStarted();
+                }
+
+                // Atualizar indicador visual
+                updateSyncIndicator('syncing', 'Atualizando dados...');
+
+                showAlert('Iniciando atualização de dados...', 'success');
+
+                // Inicializar cliente Supabase se necessário
+                if (!supabaseClient) {
+                    const metaUrl = document.querySelector('meta[name="supabase-url"]')?.content || '';
+                    const metaKey = document.querySelector('meta[name="supabase-key"]')?.content || '';
+                    const cfg = (window.supabaseConfig) || (window.supabaseIntegration && window.supabaseIntegration.config) || {};
+                    const url = metaUrl || cfg.url || '';
+                    const key = metaKey || cfg.key || '';
+
+                    try {
+                        if (typeof window.getSupabaseClientSync === 'function') {
+                            supabaseClient = window.getSupabaseClientSync(url, key);
+                        }
+                        if (!supabaseClient && window.globalSupabaseClient) {
+                            supabaseClient = window.globalSupabaseClient;
+                        }
+                        if (!supabaseClient && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function' && url && key) {
+                            supabaseClient = supabase.createClient(url, key);
+                        }
+                    } catch (e) {
+                        console.warn('Erro ao criar cliente Supabase (updateDeviceData):', e);
+                    }
+                }
+
+                if (!supabaseClient) {
+                    throw new Error('Cliente Supabase não disponível');
+                }
+
+                // 1. Sincronizar usuários da tabela usuarios do Supabase
+                console.log('👥 Sincronizando usuários da tabela usuarios...');
+                await syncUsersFromSupabase(supabaseClient);
+
+                // 2. Atualizar formulários selecionados
+                await updateSelectedForms(config.selectedForms, supabaseClient);
+
+                // 3. Atualizar dados do sistema
+                await updateSystemData(supabaseClient);
+
+                // 3. Atualizar timestamp da última atualização
+                config.lastUpdate = new Date().toISOString();
+                localStorage.setItem('ecoforms_device_config', JSON.stringify(config));
+
+                showAlert('Dados atualizados com sucesso!', 'success');
+
+                // Completar sincronização com sucesso
+                if (window.systemConfig) {
+                    window.systemConfig.completeSync(true);
+                }
+
+                // Notificar conclusão da sincronização
+                if (window.notificationService) {
+                    const syncStats = window.systemConfig ? window.systemConfig.getSyncStatus() : {};
+                    window.notificationService.notifySyncCompleted(true, {
+                        formsUpdated: syncStats.forms_updated || 0,
+                        dataUpdated: syncStats.data_updated || 0,
+                        duration: syncStats.duration || 0
+                    });
+                }
+
+                // Atualizar indicador visual
+                const duration = window.systemConfig && window.systemConfig.sync_metadata ? (window.systemConfig.sync_metadata.duration || 0) : 0;
+                updateSyncIndicator('synced', `Sincronizado (${Math.round(duration / 1000)}s)`);
+
+                // Limpar caches em memória para forçar reload dos dados atualizados
+                if (window.smartCache && typeof window.smartCache.clearCache === 'function') {
+                    console.log('🔄 Limpando caches em memória do SmartCache...');
+                    // Limpar apenas os caches em memória (Map), não o localStorage
+                    if (window.smartCache.cache) {
+                        window.smartCache.cache.forms.clear();
+                        window.smartCache.cache.data.clear();
+                        console.log('✅ Caches em memória limpos - dados serão recarregados do localStorage');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro na atualização:', error);
+                showAlert('Erro na atualização: ' + error.message, 'error');
+
+                // Completar sincronização com erro
+                if (window.systemConfig) {
+                    window.systemConfig.completeSync(false, [error.message]);
+                }
+
+                // Notificar falha na sincronização
+                if (window.notificationService) {
+                    window.notificationService.notifySyncCompleted(false, {
+                        error: error.message
+                    });
+                }
+
+                // Atualizar indicador visual
+                updateSyncIndicator('error', 'Falha na sincronização');
+            } finally {
+                // Esconder loading
+                updateBtn.disabled = false;
+                updateText.classList.remove('hidden');
+                updateLoading.classList.add('hidden');
+            }
+        }
+
+        // Sincronizar usuários da tabela usuarios do Supabase
+        async function syncUsersFromSupabase(supabaseClient) {
+            try {
+                console.log('👥 Buscando usuários da tabela usuarios...');
+
+                // Buscar todos os usuários da tabela usuarios
+                const { data: users, error } = await supabaseClient
+                    .from('usuarios')
+                    .select('*');
+
+                if (error) {
+                    console.warn('⚠️ Erro ao buscar usuários da tabela usuarios:', error);
+                    // Não falhar completamente - continuar com outros dados
+                    return;
+                }
+
+                if (!users || users.length === 0) {
+                    console.log('📭 Nenhum usuário encontrado na tabela usuarios');
+                    return;
+                }
+
+                console.log(`✅ Encontrados ${users.length} usuários na tabela usuarios`);
+
+                // Converter formato do Supabase para o formato esperado pelo sistema
+                const formattedUsers = users.map(user => ({
+                    id: user.id,
+                    nome: user.nome || user.name || 'Usuário',
+                    username: user.username || user.login || user.email,
+                    login: user.login || user.username || user.email,
+                    password_hash: user.password_hash || user.senha || user.password || '',
+                    password: user.password_hash || user.senha || user.password || '',
+                    senha: user.senha || user.password_hash || user.password || '',
+                    perfil: user.perfil || user.role || 'operador',
+                    formulariosPermitidos: user.formularios_permitidos || user.formulariosPermitidos || [],
+                    formularios_permitidos: user.formularios_permitidos || user.formulariosPermitidos || [],
+                    ativo: user.ativo !== false, // Default true
+                    created_at: user.created_at,
+                    updated_at: user.updated_at
+                }));
+
+                // Atualizar cache local de usuários
+                const cacheKey = 'ecoforms_cache_data_usuarios.json';
+                const cacheData = {
+                    data: formattedUsers,
+                    timestamp: Date.now(),
+                    expires: Date.now() + (365 * 24 * 60 * 60 * 1000), // 1 ano de validade
+                    version: '1.0',
+                    source: 'supabase_tbl_usuarios',
+                    lastSync: new Date().toISOString()
+                };
+
+                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                console.log('✅ Usuários sincronizados e salvos no cache local');
+
+                // Registrar evento de sincronização
+                if (window.systemConfig) {
+                    window.systemConfig.addDataToSync('usuarios.json', 'users');
+                }
+
+                // Notificar sincronização de usuários
+                if (window.notificationService) {
+                    window.notificationService.notifyDataUpdated('usuarios.json', formattedUsers.length);
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao sincronizar usuários:', error);
+                // Não falhar completamente - apenas logar o erro
+            }
+        }
+
+        // Atualizar formulários selecionados
+        async function updateSelectedForms(selectedForms, supabaseClient) {
+            console.log('📋 Atualizando formulários...');
+
+            // Primeiro, tentar obter lista atualizada de formulários do Supabase
+            let updatedFormsList = [...selectedForms]; // Começar com os selecionados
+            try {
+                const { data: files, error } = await supabaseClient.storage
+                    .from('suite')
+                    .list('forms/', {
+                        limit: 100,
+                        offset: 0,
+                        sortBy: { column: 'name', order: 'asc' }
+                    });
+
+                if (!error && files) {
+                    const formFiles = files
+                        .filter(file => file.name.endsWith('.json') && file.name !== 'index.json')
+                        .map(file => file.name);
+
+                    if (formFiles.length > 0) {
+                        updatedFormsList = formFiles;
+                        console.log(`📋 Lista de formulários atualizada do Supabase: ${formFiles.length} formulários`);
+
+                        // Atualizar cache local com a lista atualizada
+                        localStorage.setItem('ecoforms_forms_index', JSON.stringify({
+                            forms: formFiles,
+                            timestamp: Date.now(),
+                            source: 'supabase_update',
+                            lastUpdate: new Date().toISOString()
+                        }));
+                        console.log('✅ Índice de formulários atualizado no cache');
+                    }
+                }
+            } catch (listError) {
+                console.warn('⚠️ Não foi possível atualizar lista de formulários do Supabase:', listError);
+                // Continuar com a lista atual
+            }
+
+            for (const formFile of updatedFormsList) {
+                try {
+                    // Baixar formulário atualizado do Supabase Storage
+                    const { data, error } = await supabaseClient.storage
+                        .from('suite')
+                        .download(`forms/${formFile}`);
+
+                    if (error) {
+                        console.warn(`Erro ao atualizar ${formFile}:`, error);
+                        continue;
+                    }
+
+                    const formData = JSON.parse(await data.text());
+
+                    // Atualizar cache local
+                    const cacheKey = `ecoforms_cache_forms_${formFile}`;
+                    const cacheData = {
+                        data: formData,
+                        timestamp: Date.now(),
+                        expires: Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano de validade
+                    };
+
+                    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                    console.log(`✅ Formulário ${formFile} atualizado`);
+
+                    // Registrar atualização no sistema de metadados
+                    if (window.systemConfig) {
+                        const version = formData._version || formData.version || '1.0';
+                        window.systemConfig.addFormToSync(formFile.replace('.json', ''), version);
+                    }
+
+                    // Notificar atualização de formulário
+                    if (window.notificationService) {
+                        const formName = formData.titulo || formFile.replace('.json', '');
+                        const version = formData._version || formData.version || '1.0';
+                        window.notificationService.notifyFormUpdated(
+                            formFile.replace('.json', ''),
+                            formName,
+                            version
+                        );
+                    }
+
+                } catch (error) {
+                    console.error(`Erro ao atualizar ${formFile}:`, error);
+                }
+            }
+        }
+
+        // Atualizar dados do sistema
+        async function updateSystemData(supabaseClient) {
+            console.log('📊 Atualizando dados do sistema...');
+
+            const dataFiles = [
+                'bairros.json', 'caixas.json', 'cooperados.json', 'cooperados_demo.json',
+                'ecoponto.json', 'equipes.json', 'galpoes.json', 'itens_vistoria.json',
+                'logins.json', 'participantes.json', 'publico_alvo.json', 'residuos.json',
+                'temas.json', 'user.json', 'usuarios.json'
+            ];
+
+            for (const dataFile of dataFiles) {
+                try {
+                    // Baixar arquivo de dados atualizado
+                    const { data, error } = await supabaseClient.storage
+                        .from('suite')
+                        .download(`data/${dataFile}`);
+
+                    if (error) {
+                        console.warn(`Erro ao atualizar ${dataFile}:`, error);
+                        continue;
+                    }
+
+                    const dataContent = JSON.parse(await data.text());
+
+                    // Atualizar cache local
+                    const cacheKey = `ecoforms_cache_data_${dataFile}`;
+                    const cacheData = {
+                        data: dataContent,
+                        timestamp: Date.now(),
+                        expires: Date.now() + (365 * 24 * 60 * 60 * 1000) // 1 ano de validade
+                    };
+
+                    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                    console.log(`✅ Dados ${dataFile} atualizados`);
+
+                    // Registrar atualização de dados no sistema de metadados
+                    if (window.systemConfig) {
+                        const dataType = dataFile.replace('.json', '');
+                        window.systemConfig.addDataToSync(dataFile.replace('.json', ''), dataType);
+                    }
+
+                    // Notificar atualização de dados
+                    if (window.notificationService) {
+                        const dataName = dataFile.replace('.json', '').replace('_', ' ');
+                        window.notificationService.notifyDataUpdated(
+                            dataFile.replace('.json', ''),
+                            dataName
+                        );
+                    }
+
+                } catch (error) {
+                    console.error(`Erro ao atualizar ${dataFile}:`, error);
+                }
+            }
+        }
+
+        // Funções para controle do indicador de sincronização
+        function updateSyncIndicator(status, message = '') {
+            const syncIndicator = document.getElementById('sync-indicator');
+            const syncIcon = document.getElementById('sync-icon');
+            const syncText = document.getElementById('sync-text');
+
+            // Remover classes anteriores
+            syncIndicator.classList.remove('syncing', 'synced', 'error');
+            syncIcon.classList.remove('synced', 'ready');
+
+            switch (status) {
+                case 'syncing':
+                    syncIndicator.classList.add('syncing');
+                    syncText.textContent = message || 'Sincronizando...';
+                    break;
+                case 'synced':
+                    syncIndicator.classList.add('synced');
+                    syncIcon.classList.add('synced');
+                    syncText.textContent = message || 'Sincronizado';
+                    break;
+                case 'error':
+                    syncIndicator.classList.add('error');
+                    syncText.textContent = message || 'Erro na sincronização';
+                    break;
+                case 'ready':
+                default:
+                    syncIcon.classList.add('ready');
+                    syncText.textContent = message || 'Pronto';
+            }
+        }
+
+        // Verificar configuração do dispositivo na inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar configuração primeiro
+            if (!checkDeviceSetup()) {
+                return; // Já redirecionou para setup
+            }
+
+            // Inicializar indicador de sincronização
+            updateSyncIndicator('ready');
+
+            // Configurar listeners de conectividade
+            setupConnectivityListeners();
+
+            // Continuar com inicialização normal
+            initializeAuth().then(() => {
+                if (authManager.isLoggedIn()) {
+                    showLoggedArea();
+                }
+            });
+        });
+
+        // Configurar listeners de conectividade
+        function setupConnectivityListeners() {
+            window.addEventListener('online', () => {
+                isOnline = true;
+                console.log('📡 Conexão restaurada - Modo online');
+
+                // Notificar mudança para online
+                if (window.notificationService) {
+                    window.notificationService.notifyOnline();
+                }
+
+                // Atualizar indicadores
+                updateModeIndicator();
+                const syncIndicator = document.getElementById('sync-indicator');
+                if (!syncIndicator.classList.contains('syncing')) {
+                    updateSyncIndicator('ready', 'Conectado');
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                isOnline = false;
+                console.log('📡 Conexão perdida - Modo offline');
+
+                // Notificar mudança para offline
+                if (window.notificationService) {
+                    window.notificationService.notifyOffline();
+                }
+
+                // Atualizar indicadores
+                updateModeIndicator();
+                updateSyncIndicator('error', 'Sem conexão');
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpar Cache de Formulários</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+      text-align: center;
+    }
+    .info {
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #e8f5e9;
+      border-left: 4px solid #4CAF50;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: all 0.3s;
+    }
+    .btn-clear {
+      background: #f44336;
+      color: white;
+    }
+    .btn-clear:hover {
+      background: #d32f2f;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(244,67,54,0.3);
+    }
+    .btn-reload {
+      background: #4CAF50;
+      color: white;
+    }
+    .btn-reload:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+    }
+    .btn-back {
+      background: #2196F3;
+      color: white;
+    }
+    .btn-back:hover {
+      background: #1976D2;
+    }
+    .cache-list {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .cache-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .count {
+      font-weight: bold;
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Limpar Cache de Formulários</h1>
+
+    <div class="info">
+      <strong>ℹ️ Por que limpar o cache?</strong><br>
+      Quando você atualiza um formulário (adiciona campos, muda configurações), 
+      o navegador pode estar usando uma versão antiga salva no cache. 
+      Limpar o cache força o carregamento da versão mais recente.
+    </div>
+
+    <div class="warning">
+      <strong>⚠️ Atenção:</strong><br>
+      Isso vai remover todos os formulários salvos em cache. 
+      Dados de formulários em andamento serão preservados.
+    </div>
+
+    <div id="cacheInfo" class="cache-list">
+      <div style="text-align: center; color: #999;">
+        Carregando informações do cache...
+      </div>
+    </div>
+
+    <button class="btn-clear" onclick="clearCache()">
+      🗑️ Limpar Cache de Formulários
+    </button>
+
+    <button class="btn-reload" onclick="clearAndReload()" style="display: none;" id="reloadBtn">
+      🔄 Recarregar Página
+    </button>
+
+    <button class="btn-back" onclick="goBack()">
+      ← Voltar ao App
+    </button>
+
+    <div class="success" id="successMsg">
+      <strong>✅ Cache limpo com sucesso!</strong><br>
+      Agora você pode recarregar a página para ver as mudanças.
+    </div>
+  </div>
+
+  <script>
+    // Listar items do cache ao carregar
+    window.addEventListener('load', () => {
+      listCacheItems();
+    });
+
+    function listCacheItems() {
+      const cacheDiv = document.getElementById('cacheInfo');
+      const items = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('ecoforms_form_') || key === 'ecoforms_forms_index') {
+          items.push(key);
+        }
+      }
+
+      if (items.length === 0) {
+        cacheDiv.innerHTML = `
+          <div style="text-align: center; color: #4CAF50;">
+            ✅ Nenhum cache de formulário encontrado.<br>
+            <small>Tudo limpo!</small>
+          </div>
+        `;
+      } else {
+        let html = `<div><strong>Items no cache (<span class="count">${items.length}</span>):</strong></div>`;
+        items.forEach(item => {
+          const size = new Blob([localStorage.getItem(item)]).size;
+          const sizeKB = (size / 1024).toFixed(2);
+          html += `<div class="cache-item">
+            📄 ${item.replace('ecoforms_form_', '')} 
+            <span style="float: right; color: #999;">${sizeKB} KB</span>
+          </div>`;
+        });
+        cacheDiv.innerHTML = html;
+      }
+    }
+
+    function clearCache() {
+      if (!confirm('Tem certeza que deseja limpar o cache de formulários?\n\nIsso vai remover todos os formulários salvos e forçar o carregamento das versões mais recentes.')) {
+        return;
+      }
+
+      const keysToRemove = [];
+      
+      // Identificar todas as chaves relacionadas a formulários
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('ecoforms_form_') || key === 'ecoforms_forms_index') {
+          keysToRemove.push(key);
+        }
+      }
+
+      // Remover as chaves
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log('🗑️ Removido:', key);
+      });
+
+      console.log(`✅ Cache limpo! ${keysToRemove.length} items removidos.`);
+
+      // Mostrar mensagem de sucesso
+      document.getElementById('successMsg').style.display = 'block';
+      document.getElementById('reloadBtn').style.display = 'block';
+      
+      // Atualizar lista
+      listCacheItems();
+    }
+
+    function clearAndReload() {
+      // Redirecionar para o index com parâmetro para forçar reload
+      window.location.href = 'index.html?cache_cleared=' + Date.now();
+    }
+
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Usuários Sincronizados</title>
+</head>
+<body>
+    <h1>Diagnóstico de Usuários Sincronizados</h1>
+    <div id="results"></div>
+
+    <script src="js/vendor/bcrypt.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script>
+        async function diagnoseUsers() {
+            const results = document.getElementById('results');
+
+            try {
+                // Verificar status da sincronização
+                const authManager = new window.AuthManager();
+                const syncStatus = authManager.getSyncStatus();
+
+                results.innerHTML += '<h2>Status da Sincronização:</h2>';
+                results.innerHTML += `<pre>${JSON.stringify(syncStatus, null, 2)}</pre>`;
+
+                // Carregar usuários sincronizados
+                const syncedUsers = await authManager.loadSyncedUsers();
+
+                if (!syncedUsers) {
+                    results.innerHTML += '<p style="color: red;">❌ Nenhum usuário sincronizado encontrado</p>';
+                    return;
+                }
+
+                results.innerHTML += `<h2>Usuários Sincronizados (${syncedUsers.length}):</h2>`;
+
+                syncedUsers.forEach(user => {
+                    results.innerHTML += `
+                        <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                            <h3>${user.username} - ${user.nome}</h3>
+                            <p><strong>ID:</strong> ${user.id}</p>
+                            <p><strong>Perfil:</strong> ${user.perfil}</p>
+                            <p><strong>Ativo:</strong> ${user.ativo}</p>
+                            <p><strong>Formulários:</strong> ${JSON.stringify(user.formulariosPermitidos || [])}</p>
+                            <p><strong>Hash da Senha:</strong> ${user.password || 'N/A'}</p>
+                            <p><strong>É Bcrypt Hash:</strong> ${authManager.isBcryptHash(user.password) ? 'Sim' : 'Não'}</p>
+                            <p><strong>Sincronizado em:</strong> ${user.synced_at || 'N/A'}</p>
+                        </div>
+                    `;
+                });
+
+                // Testar senha para usuário eco1
+                const eco1User = syncedUsers.find(u => u.username === 'eco1');
+                if (eco1User) {
+                    results.innerHTML += '<h2>Teste de Senha para eco1:</h2>';
+
+                    const testPasswords = ['eco1', '123456', 'password', 'admin', 'eco123'];
+
+                    testPasswords.forEach(testPass => {
+                        const isValid = authManager.verifyPassword(testPass, eco1User.password);
+                        results.innerHTML += `<p>Senha "${testPass}": ${isValid ? '✅ VÁLIDA' : '❌ INVÁLIDA'}</p>`;
+                    });
+                }
+
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">❌ Erro no diagnóstico: ${error.message}</p>`;
+                console.error('Erro no diagnóstico:', error);
+            }
+        }
+
+        // Executar diagnóstico quando a página carregar
+        window.addEventListener('load', diagnoseUsers);
+    </script>
+</body>
+</html>

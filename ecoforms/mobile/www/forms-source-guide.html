@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoSuite - Guia de Origem de Formulários</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #4CAF50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .option-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .option-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .option-icon {
+            font-size: 48px;
+            margin-right: 20px;
+        }
+
+        .option-title {
+            flex: 1;
+        }
+
+        .option-title h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .option-title .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .option-content {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .option-content h3 {
+            color: #4CAF50;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .pros {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .cons {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .pros ul, .cons ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .pros li::before {
+            content: "✅ ";
+            margin-right: 5px;
+        }
+
+        .cons li::before {
+            content: "⚠️ ";
+            margin-right: 5px;
+        }
+
+        .use-case {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .use-case h4 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .use-case ul {
+            list-style: none;
+        }
+
+        .use-case li {
+            color: #333;
+            padding: 5px 0;
+        }
+
+        .use-case li::before {
+            content: "▸ ";
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .footer {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .footer p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge.warning {
+            background: #ff9800;
+        }
+
+        .badge.info {
+            background: #2196F3;
+        }
+
+        @media (max-width: 768px) {
+            .option-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .option-icon {
+                margin: 0 0 15px 0;
+            }
+
+            .option-title h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>� Escolha a Origem dos Formulários</h1>
+            <p>Selecione como o EcoSuite deve buscar os formulários durante a instalação</p>
+        </div>
+
+        <!-- OPÇÃO 1: AUTOMÁTICO -->
+        <div class="option-card">
+            <div class="option-header">
+                <div class="option-icon">🔄</div>
+                <div class="option-title">
+                    <h2>Automático <span class="badge">RECOMENDADO</span></h2>
+                    <p class="subtitle">Servidor → Cache → Local</p>
+                </div>
+            </div>
+            <div class="option-content">
+                <div class="pros">
+                    <h3>✨ Vantagens</h3>
+                    <ul>
+                        <li><strong>Rápido:</strong> Usa cache local quando possível</li>
+                        <li><strong>Inteligente:</strong> Só busca do servidor quando necessário</li>
+                        <li><strong>Otimizado:</strong> Melhor balanceamento entre velocidade e atualização</li>
+                        <li><strong>Econômico:</strong> Reduz uso de dados móveis</li>
+                        <li><strong>Funciona offline:</strong> Usa dados em cache</li>
+                    </ul>
+                </div>
+
+                <div class="cons">
+                    <h3>⚡ Considerações</h3>
+                    <ul>
+                        <li>Pode não ter a versão mais recente imediatamente</li>
+                        <li>Requer setup inicial com internet</li>
+                    </ul>
+                </div>
+
+                <div class="use-case">
+                    <h4>📱 Ideal para</h4>
+                    <ul>
+                        <li>Uso geral do sistema</li>
+                        <li>Conexão de internet intermitente</li>
+                        <li>Trabalho em campo com sinal variável</li>
+                        <li>Economia de dados móveis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPÇÃO 2: SERVIDOR PRIMEIRO -->
+        <div class="option-card">
+            <div class="option-header">
+                <div class="option-icon">☁️</div>
+                <div class="option-title">
+                    <h2>Servidor Primeiro <span class="badge info">SEMPRE ATUALIZADO</span></h2>
+                    <p class="subtitle">Supabase → Cache (fallback)</p>
+                </div>
+            </div>
+            <div class="option-content">
+                <div class="pros">
+                    <h3>✨ Vantagens</h3>
+                    <ul>
+                        <li><strong>Sempre fresco:</strong> Garante a versão mais recente</li>
+                        <li><strong>Sincronizado:</strong> Dados consistentes com o servidor</li>
+                        <li><strong>Atualização automática:</strong> Recebe mudanças imediatamente</li>
+                        <li><strong>Fallback seguro:</strong> Usa cache se servidor indisponível</li>
+                    </ul>
+                </div>
+
+                <div class="cons">
+                    <h3>⚡ Considerações</h3>
+                    <ul>
+                        <li>Requer conexão estável à internet</li>
+                        <li>Pode ser mais lento (download do servidor)</li>
+                        <li>Consome mais dados móveis</li>
+                        <li>Dependente de disponibilidade do servidor</li>
+                    </ul>
+                </div>
+
+                <div class="use-case">
+                    <h4>📱 Ideal para</h4>
+                    <ul>
+                        <li>Escritório com WiFi estável</li>
+                        <li>Necessidade de dados mais recentes</li>
+                        <li>Trabalho colaborativo intenso</li>
+                        <li>Formulários atualizados com frequência</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPÇÃO 3: SOMENTE LOCAL -->
+        <div class="option-card">
+            <div class="option-header">
+                <div class="option-icon">📱</div>
+                <div class="option-title">
+                    <h2>Somente Local <span class="badge warning">OFFLINE</span></h2>
+                    <p class="subtitle">Cache → Local (sem rede)</p>
+                </div>
+            </div>
+            <div class="option-content">
+                <div class="pros">
+                    <h3>✨ Vantagens</h3>
+                    <ul>
+                        <li><strong>100% Offline:</strong> Funciona sem internet</li>
+                        <li><strong>Privacidade:</strong> Nenhuma comunicação com servidor</li>
+                        <li><strong>Zero dados:</strong> Não consome internet</li>
+                        <li><strong>Mais rápido:</strong> Sem espera por rede</li>
+                        <li><strong>Independente:</strong> Não depende de servidor</li>
+                    </ul>
+                </div>
+
+                <div class="cons">
+                    <h3>⚡ Considerações</h3>
+                    <ul>
+                        <li><strong>Dados desatualizados:</strong> Não recebe atualizações</li>
+                        <li><strong>Setup inicial obrigatório:</strong> Precisa instalar tudo antes</li>
+                        <li><strong>Sem novos formulários:</strong> Limitado ao que foi instalado</li>
+                        <li><strong>Sem sincronização:</strong> Mudanças não são compartilhadas</li>
+                    </ul>
+                </div>
+
+                <div class="use-case">
+                    <h4>📱 Ideal para</h4>
+                    <ul>
+                        <li>Trabalho em áreas sem cobertura de rede</li>
+                        <li>Uso em campo remoto</li>
+                        <li>Sem plano de dados disponível</li>
+                        <li>Necessidade de máxima privacidade</li>
+                        <li>Demonstrações offline</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h2 style="color: #4CAF50; margin-bottom: 15px;">💡 Como Escolher?</h2>
+            <p>
+                <strong>Tem internet estável?</strong> Use <strong>Servidor Primeiro</strong> para dados sempre atualizados.<br>
+                <strong>Conexão intermitente?</strong> Use <strong>Automático</strong> (recomendado) para melhor experiência.<br>
+                <strong>Trabalha sem internet?</strong> Use <strong>Somente Local</strong> para funcionamento offline completo.<br>
+            </p>
+            <p style="margin-top: 15px; font-size: 14px; color: #999;">
+                Você pode mudar essa configuração depois nas configurações do aplicativo.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoForms - Instalação Completa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .btn-secondary {
+            background: #2196F3;
+        }
+        .btn-secondary:hover {
+            background: #1976D2;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .status::before {
+            content: '✅';
+            margin-right: 10px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 EcoForms - Instalação Completa!</h1>
+
+        <div class="success">
+            <h2>✅ Sistema Instalado com Sucesso</h2>
+            <p>O EcoForms foi completamente instalado neste dispositivo.</p>
+        </div>
+
+        <div class="info">
+            <h3>📋 O que foi instalado:</h3>
+            <div class="status">Usuário administrador (admin/123456)</div>
+            <div class="status">10 formulários locais instalados</div>
+            <div class="status">Configuração completa do dispositivo</div>
+            <div class="status">Dados do sistema prontos para uso</div>
+        </div>
+
+        <div class="info">
+            <h3>🚀 Próximos passos:</h3>
+            <ol>
+                <li>Clique em "Importar Dados" para configurar o navegador</li>
+                <li>Acesse o sistema através do login</li>
+                <li>Configure os usuários permitidos neste dispositivo</li>
+                <li>Comece a usar os formulários!</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="importData()">📥 Importar Dados</button>
+            <button class="btn btn-secondary" onclick="goToApp()">🌐 Ir para o App</button>
+        </div>
+
+        <div class="info">
+            <h3>🔐 Credenciais de Acesso:</h3>
+            <p><strong>Usuário:</strong> admin</p>
+            <p><strong>Senha:</strong> 123456</p>
+        </div>
+
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const localStorageData = {
+  "ecoforms_current_user": "{\"id\":\"admin-001\",\"username\":\"admin\",\"password\":\"123456\",\"nome\":\"Administrador Sistema\",\"perfil\":\"gerente\",\"formulariosPermitidos\":[],\"ativo\":true,\"created_at\":\"2025-01-01T00:00:00Z\",\"installedAt\":\"2025-10-03T17:04:53.822Z\",\"isDefaultAdmin\":true}",
+  "ecoforms_user_admin": "{\"id\":\"admin-001\",\"username\":\"admin\",\"password\":\"123456\",\"nome\":\"Administrador Sistema\",\"perfil\":\"gerente\",\"formulariosPermitidos\":[],\"ativo\":true,\"created_at\":\"2025-01-01T00:00:00Z\",\"installedAt\":\"2025-10-03T17:04:53.822Z\",\"isDefaultAdmin\":true}",
+  "ecoforms_cache_forms_galpaoChamadaForm.json": "{\"data\":{\"id\":\"galpaoChamadaForm\",\"titulo\":\"Chamada de Triadores\",\"descricao\":\"Interface para realizar a chamada de presença dos cooperados em um galpão.\",\"campos\":[{\"label\":\"Selecione o Galpão\",\"type\":\"select\",\"required\":true,\"id\":\"nome_galpao\",\"descricao\":\"Selecione o galpão para realizar a chamada.\",\"dataSource\":\"galpoes\",\"optionValue\":\"nome\",\"optionLabel\":\"nome\",\"sort\":\"label\",\"value\":\"__none__\",\"showEmptyOption\":true,\"emptyOptionValue\":\"__none__\",\"emptyOptionLabel\":\"Selecione...\"},{\"label\":\"Lista de participantes\",\"type\":\"presence_compact\",\"required\":true,\"dataSource\":\"participantes\",\"id\":\"participantes_presentes\",\"descricao\":\"Selecione os participantes presentes na chamada.\",\"groupField\":\"nome_galpao\",\"groupKey\":\"galpao\",\"hideUntilGroup\":true,\"statusSequence\":[\"status4\",\"status3\",\"status2\",\"status1\"],\"statusLabels\":{\"status1\":\"Neutro\",\"status2\":\"Desligado\",\"status3\":\"Ausente\",\"status4\":\"Presente\"},\"statusColors\":{\"status1\":\"#000000\",\"status2\":\"#6b7280\",\"status3\":\"#f59e0b\",\"status4\":\"#0C7A00\"}}]},\"timestamp\":1759511093831,\"expires\":1759597493831,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.831Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_educacaoAmbientalForm.json": "{\"data\":{\"id\":\"educacaoAmbientalForm\",\"titulo\":\"Educação Ambiental\",\"descricao\":\"Ações em Educação Ambiental.\",\"campos\":[{\"label\":\"Data\",\"type\":\"date\",\"required\":true,\"id\":\"data\",\"defaultToNow\":true},{\"label\":\"Hora\",\"type\":\"time\",\"required\":true,\"id\":\"hora\",\"defaultToNow\":true},{\"label\":\"Local da Ação\",\"type\":\"text\",\"required\":true,\"placeholder\":\"Ex: Praça da Paz, Escola Municipal João Silva, Feira do Bairro Centro\",\"id\":\"local\"},{\"label\":\"Localização GPS\",\"type\":\"geolocation\",\"required\":false,\"id\":\"localizacao_gps\",\"descricao\":\"Obtenha automaticamente as coordenadas GPS do local da ação.\"},{\"label\":\"Tipo de Ação\",\"type\":\"select\",\"required\":true,\"options\":[\"Selecione uma Ação\",\"Comunicado de Irregularidade\",\"Divulgação\",\"Palestra\",\"Vistoria\"],\"id\":\"tipo_acao\"},{\"label\":\"Público Alvo\",\"type\":\"chips\",\"required\":true,\"id\":\"publico_alvo\",\"descricao\":\"Selecione o público alvo da ação.\",\"dataSource\":\"publico_alvo\"},{\"label\":\"Equipe Responsável\",\"type\":\"chips\",\"required\":true,\"id\":\"equipe_responsavel\",\"descricao\":\"Selecione os membros da equipe responsáveis pela ação.\",\"dataSource\":\"equipes\"},{\"label\":\"Temas Abordados\",\"type\":\"chips\",\"required\":true,\"id\":\"temas\",\"descricao\":\"Selecione os temas ambientais abordados na ação.\",\"dataSource\":\"temas\"},{\"label\":\"Pessoas Atingidas\",\"type\":\"number\",\"required\":true,\"placeholder\":\"Estimativa ou contagem exata\",\"id\":\"n_pessoas\"},{\"label\":\"Panfletos Entregues\",\"type\":\"number\",\"required\":true,\"placeholder\":\"Quantidade de panfletos entregues\",\"id\":\"n_panfletos\"},{\"label\":\"Fotos do Local\",\"type\":\"camera\",\"required\":false,\"id\":\"foto_local\",\"descricao\":\"Permite o envio de múltiplos arquivos de imagem.\"},{\"label\":\"Observações\",\"type\":\"textarea\",\"required\":false,\"placeholder\":\"Comentários sobre a recepção da comunidade, dificuldades encontradas, sugestões para próximas ações, etc...\",\"id\":\"observacoes\"}]},\"timestamp\":1759511093834,\"expires\":1759597493834,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.834Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_ecopontoForm.json": "{\"data\":{\"id\":\"ecopontoForm\",\"titulo\":\"Atendimento em Ecoponto\",\"descricao\":\"Formulário para registro de atendimentos em ecopontos\",\"campos\":[{\"id\":\"usuario\",\"label\":\"Operador\",\"type\":\"text\",\"required\":true,\"descricao\":\"Nome do operador responsável pelo atendimento (preenchido automaticamente)\",\"placeholder\":\"Nome do operador\"},{\"id\":\"ecoponto\",\"label\":\"Nome do Ecoponto\",\"type\":\"ecoponto_select\",\"required\":false,\"descricao\":\"Selecione o ecoponto ou use a detecção automática por GPS.\",\"dataSource\":\"ecoponto\",\"optionValue\":\"ecoponto_id\",\"optionLabel\":\"nome\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Selecione o ecoponto...\"},{\"id\":\"data\",\"label\":\"Data\",\"type\":\"date\",\"required\":true,\"defaultToNow\":true},{\"id\":\"hora\",\"label\":\"Hora\",\"type\":\"time\",\"required\":true,\"defaultToNow\":true},{\"id\":\"placa\",\"label\":\"Placa do Veículo\",\"type\":\"text\",\"required\":true,\"placeholder\":\"Ex: ABC-1234\",\"uppercase\":true,\"validation\":{\"pattern\":\"^[A-Za-z]{3}-?\\\\d{4}$|^[A-Za-z]{3}\\\\d[A-Za-z]\\\\d{2}$\",\"patternMessage\":\"Placa inválida. Formatos aceitos: antigo (ABC-1234) ou Mercosul (ABC1D23).\"}},{\"id\":\"bairro\",\"label\":\"Bairro\",\"type\":\"select\",\"required\":true,\"descricao\":\"Lista de bairros carregada dinamicamente.\",\"dataSource\":\"bairros\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Selecione...\"},{\"id\":\"residuos\",\"label\":\"Resíduos Entregues\",\"type\":\"chips\",\"required\":true,\"descricao\":\"Lista de tipos de resíduos onde o usuário marca quais foram entregues.\",\"dataSource\":\"residuos\"}]},\"timestamp\":1759511093836,\"expires\":1759597493836,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.836Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_ecopontoCaixasForm.json": "{\"data\":{\"id\":\"ecopontoCaixasForm\",\"titulo\":\"Caixas de Ecoponto\",\"descricao\":\"Caixas de Ecoponto\",\"campos\":[{\"id\":\"ecoponto\",\"label\":\"Ecoponto\",\"type\":\"text\",\"required\":false,\"descricao\":\"Selecione o ecoponto ou use a detecção automática por GPS.\",\"dataSource\":\"ecoponto\",\"optionValue\":\"ecoponto_id\",\"optionLabel\":\"nome\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Selecione o ecoponto...\"},{\"label\":\"Lista de Caixas\",\"type\":\"OccupationSelectorField\",\"required\":false,\"id\":\"caixas_list\",\"description\":\"Lista interativa de caixas. Ao clicar em um item, um modal é aberto para atualização dos dados (nível de ocupação, status, etc.).\",\"boxes\":[{\"id\":1,\"nome\":\"Entulho\"},{\"id\":2,\"nome\":\"Madeira\"},{\"id\":3,\"nome\":\"Poda\"},{\"id\":4,\"nome\":\"Reciclável\"},{\"id\":5,\"nome\":\"Rejeito\"},{\"id\":6,\"nome\":\"Sucata\"},{\"id\":7,\"nome\":\"Vidro\"}],\"occupationStates\":[{\"value\":\"0\",\"label\":\"Vazia (0%)\",\"progress\":0,\"icon\":\"📦\",\"color\":\"#16a34a\"},{\"value\":\"50\",\"label\":\"Meio Cheia (50%)\",\"progress\":50,\"icon\":\"📦\",\"color\":\"#f59e0b\"},{\"value\":\"75\",\"label\":\"Quase Cheia (75%)\",\"progress\":75,\"icon\":\"📦\",\"color\":\"#f97316\"},{\"value\":\"100\",\"label\":\"Cheia (100%)\",\"progress\":100,\"icon\":\"📦\",\"color\":\"#dc2626\"}]}]},\"timestamp\":1759511093838,\"expires\":1759597493838,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.838Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_colocacaoCaixasForm.json": "{\"data\":{\"id\":\"colocacaoCaixasForm\",\"titulo\":\"colocacaoCaixasForm\",\"descricao\":\"Caixas de coleta\",\"campos\":[{\"label\":\"Data\",\"type\":\"date\",\"required\":true,\"id\":\"data\",\"descricao\":\"Data preenchida automaticamente.\"},{\"label\":\"Hora\",\"type\":\"time\",\"required\":true,\"id\":\"hora\",\"descricao\":\"Hora preenchida automaticamente.\"},{\"label\":\"Localização GPS\",\"type\":\"geolocation\",\"required\":false,\"id\":\"localizacao_gps\",\"descricao\":\"Obtenha automaticamente as coordenadas GPS do local da instalação.\"},{\"label\":\"Tipos de Caixas Colocadas\",\"type\":\"select\",\"required\":true,\"dataSource\":\"caixas\",\"valueField\":\"nome\",\"labelField\":\"nome\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Selecione...\",\"multiple\":false,\"id\":\"caixas\",\"descricao\":\"Selecione os tipos de caixas que foram colocadas no local.\"},{\"label\":\"Descrição do Local de Instalação\",\"type\":\"textarea\",\"required\":false,\"placeholder\":\"Descreva o local onde a caixa foi instalada, pontos de referência, orientações de acesso, etc...\",\"id\":\"descricao\"},{\"label\":\"Foto do Local\",\"type\":\"file\",\"required\":false,\"id\":\"foto_local\",\"descricao\":\"Aceita arquivos de imagem.\"},{\"label\":\"Foto da Caixa Instalada\",\"type\":\"file\",\"required\":false,\"id\":\"foto_caixa_instalada\",\"descricao\":\"Aceita arquivos de imagem.\"}]},\"timestamp\":1759511093839,\"expires\":1759597493839,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.839Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_ecopontoRemocao.json": "{\"data\":{\"id\":\"ecopontoRemocaoDashboard\",\"titulo\":\"ecopontoRemocaoDashboard\",\"descricao\":\"Painel para visualização e gerenciamento de remoção de caixas em ecopontos. Os campos abaixo são usados para filtrar os dados exibidos.\",\"campos\":[{\"label\":\"Ecoponto\",\"type\":\"select\",\"required\":false,\"dataSource\":\"ecoponto\",\"options\":[{\"value\":\"Todos os Ecopontos\",\"label\":\"Todos os Ecopontos\"},{\"value\":\"Itacorubi\",\"label\":\"Itacorubi\"}],\"id\":\"filtroEcoponto\",\"descricao\":\"Filtra as caixas por ecoponto.\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Todos\"},{\"label\":\"Status\",\"type\":\"select\",\"required\":false,\"options\":[\"Todos os Status\",\"Urgente\",\"Atenção\",\"Troca Solicitada\",\"Normal\",\"Removida\"],\"id\":\"filtroStatus\",\"descricao\":\"Filtra as caixas por seu status atual.\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Todos\"},{\"label\":\"Tipo de Resíduo\",\"type\":\"select\",\"required\":false,\"dataSource\":\"residuos\",\"options\":[{\"value\":\"Reciclável\",\"label\":\"Reciclável\"},{\"value\":\"Orgânico\",\"label\":\"Orgânico\"},{\"value\":\"Eletrônico\",\"label\":\"Eletrônico\"},{\"value\":\"Vidro\",\"label\":\"Vidro\"}],\"id\":\"filtroTipo\",\"descricao\":\"Filtra as caixas pelo tipo de resíduo que armazenam.\",\"sort\":\"label\",\"showEmptyOption\":true,\"emptyOptionValue\":\"\",\"emptyOptionLabel\":\"Todos\"},{\"label\":\"Marcar como Removida\",\"type\":\"button\",\"required\":false,\"id\":\"marcar_removida_action\",\"descricao\":\"Ação para atualizar o status de uma caixa para 'Removida'.\"}]},\"timestamp\":1759511093841,\"expires\":1759597493841,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.841Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_exemploChecklistHierarquico.json": "{\"data\":{\"id\":\"exemploChecklistHierarquico\",\"nome\":\"Exemplo Checklist Hierarquico\",\"descricao\":\"Formulario de demonstracao do campo checklist hierarquico\",\"version\":\"1.0\",\"campos\":[{\"id\":\"titulo_inspecao\",\"name\":\"titulo_inspecao\",\"tipo\":\"text\",\"label\":\"Titulo da Inspecao\",\"placeholder\":\"Digite o titulo da inspecao\",\"required\":true},{\"id\":\"data_inspecao\",\"name\":\"data_inspecao\",\"tipo\":\"datetime-local\",\"label\":\"Data e Hora da Inspecao\",\"required\":true},{\"id\":\"responsavel\",\"name\":\"responsavel\",\"tipo\":\"text\",\"label\":\"Responsavel pela Inspecao\",\"placeholder\":\"Nome do responsavel\",\"required\":true},{\"id\":\"itens_vistoria\",\"name\":\"itens_vistoria\",\"tipo\":\"checklist-hierarchical\",\"label\":\"Itens de Vistoria\",\"required\":true,\"dataSource\":\"itens_vistoria\",\"help\":\"Selecione o status de cada item da vistoria\"},{\"id\":\"observacoes_gerais\",\"name\":\"observacoes_gerais\",\"tipo\":\"textarea\",\"label\":\"Observacoes Gerais\",\"placeholder\":\"Digite observacoes adicionais sobre a inspecao\",\"rows\":4}],\"configuracoes\":{\"permitir_rascunho\":true,\"validacao_tempo_real\":true,\"salvar_automatico\":false,\"tema\":\"material_3\"},\"metadados\":{\"created_at\":\"2024-01-15\",\"author\":\"Sistema EcoForms\",\"category\":\"inspecao\",\"tags\":[\"vistoria\",\"checklist\",\"inspecao\",\"hierarquico\"]}},\"timestamp\":1759511093843,\"expires\":1759597493843,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.843Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_galpaochecklistForm.json": "{\"data\":{\"id\":\"galpaochecklistForm\",\"titulo\":\"Checklist de Vistoria - Galpões\",\"descricao\":\"Formulário de inspeção estruturada para vistorias em galpões\",\"campos\":[{\"id\":\"galpao_info\",\"tipo\":\"group\",\"label\":\"Informações do Galpão\",\"campos\":[{\"id\":\"galpao_nome\",\"tipo\":\"select\",\"label\":\"Nome do Galpão\",\"required\":true,\"config\":{\"dataSource\":\"galpoes.json\"}},{\"id\":\"data_vistoria\",\"tipo\":\"date\",\"label\":\"Data da Vistoria\",\"required\":true},{\"id\":\"inspetor_nome\",\"tipo\":\"text\",\"label\":\"Nome do Inspetor\",\"required\":true}]},{\"id\":\"checklist_inspecao\",\"tipo\":\"unified_checklist\",\"label\":\"Itens de Inspeção\",\"required\":true,\"config\":{\"mode\":\"vistoria\",\"dataSource\":\"itens_vistoria.json\"}},{\"id\":\"observacoes_gerais\",\"tipo\":\"textarea\",\"label\":\"Observações Gerais\",\"config\":{\"placeholder\":\"Observações adicionais sobre a vistoria...\",\"rows\":4}},{\"id\":\"fotos_vistoria\",\"tipo\":\"camera\",\"label\":\"Fotos da Vistoria\",\"config\":{\"multiple\":true,\"maxFiles\":10}}]},\"timestamp\":1759511093845,\"expires\":1759597493845,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.845Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_inspecaoCompleta.json": "{\"data\":{\"id\":\"inspecaoCompleta\",\"nome\":\"Inspecao Completa de Galpao\",\"descricao\":\"Formulario completo de inspecao com checklist hierarquico e outros campos\",\"version\":\"1.0\",\"campos\":[{\"id\":\"info_basica\",\"name\":\"info_basica\",\"tipo\":\"text\",\"label\":\"📋 Informacoes Basicas\",\"placeholder\":\"Digite informacoes gerais da inspecao\"},{\"id\":\"galpao_selecionado\",\"name\":\"galpao_selecionado\",\"tipo\":\"select\",\"label\":\"🏢 Galpao\",\"required\":true,\"opcoes\":[{\"value\":\"ACMR\",\"label\":\"ACMR\"},{\"value\":\"Amigos da Natureza\",\"label\":\"Amigos da Natureza\"},{\"value\":\"Aresp\",\"label\":\"Aresp\"},{\"value\":\"Sul Recicla\",\"label\":\"Sul Recicla\"}]},{\"id\":\"checklist_vistoria_completa\",\"name\":\"checklist_vistoria_completa\",\"tipo\":\"checklist-hierarchical\",\"label\":\"🔍 Checklist de Vistoria Completa\",\"required\":true,\"dataSource\":\"itens_vistoria\",\"help\":\"Marque o status conforme/não conforme/não aplicável para cada item\",\"showProgress\":true,\"expandedByDefault\":false},{\"id\":\"fotos_evidencia\",\"name\":\"fotos_evidencia\",\"tipo\":\"gallery\",\"label\":\"📸 Fotos de Evidência\",\"help\":\"Tire fotos dos itens não conformes para evidência\"},{\"id\":\"observacoes_tecnicas\",\"name\":\"observacoes_tecnicas\",\"tipo\":\"textarea\",\"label\":\"📝 Observações Técnicas\",\"placeholder\":\"Descreva as não conformidades encontradas e recomendações\",\"rows\":5},{\"id\":\"data_proxima_inspecao\",\"name\":\"data_proxima_inspecao\",\"tipo\":\"date\",\"label\":\"📅 Data da Próxima Inspeção\",\"help\":\"Defina quando deve ser realizada a próxima inspeção\"},{\"id\":\"situacao_geral\",\"name\":\"situacao_geral\",\"tipo\":\"select\",\"label\":\"⚖️ Situação Geral do Galpão\",\"required\":true,\"opcoes\":[{{\"value\":\"adequado\",\"label\":\"✅ Adequado\"},{\"value\":\"adequado_com_observacoes\",\"label\":\"⚠️ Adequado com Obserrvações\"},{\"value\":\"nao_adequado\",\"label\":\"❌ Não Adequado\"}]}],\"configuracoes\":{\"permitir_rascunho\":true,\"validacao_tempo_real\":true,\"salvar_automatico\":true,\"tema\":\"material_3\",\"layout\":\"vertical\"},\"metadados\":{\"created_at\":\"2024-01-15\",\"author\":\"Sistema EcoForms - Checklist Hierárquico\",\"category\":\"inspecao_completa\",\"tags\":[\"vistoria\",\"checklist\",\"inspecao\",\"hierarquico\",\"galpao\",\"completo\"],\"requires_permissions\":[\"camera\",\"location\"]}},\"timestamp\":1759511093847,\"expires\":1759597493847,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.847Z\",\"isLocalInstall\":true}",
+  "ecoforms_cache_forms_remocaoForm.json": "{\"data\":{\"id\":\"remocaoForm\",\"titulo\":\"remocaoForm\",\"descricao\":\"Formulário para registrar a remoção de resíduos de um ponto irregular.\",\"campos\":[{\"label\":\"Data\",\"type\":\"date\",\"required\":true,\"id\":\"data\"},{\"label\":\"Hora\",\"type\":\"time\",\"required\":true,\"id\":\"hora\"},{\"label\":\"Localização GPS\",\"type\":\"geolocation\",\"required\":false,\"id\":\"localizacao_gps\",\"descricao\":\"Obtenha automaticamente as coordenadas GPS do local da remoção.\"},{\"label\":\"Descrição Detalhada\",\"type\":\"textarea\",\"required\":false,\"placeholder\":\"Descreva detalhadamente a situação encontrada, tipos de resíduos, quantidade aproximada, etc...\",\"id\":\"descricao\"},{\"label\":\"Foto ANTES da Remoção\",\"type\":\"file\",\"required\":false,\"id\":\"foto_antes\",\"descricao\":\"Aceita arquivos de imagem.\"},{\"label\":\"Foto DEPOIS da Remoção\",\"type\":\"file\",\"required\":false,\"id\":\"foto_depois\",\"descricao\":\"Aceita arquivos de imagem.\"}]},\"timestamp\":1759511093849,\"expires\":1759597493849,\"version\":\"1.0\",\"installedAt\":\"2025-10-03T17:04:53.849Z\",\"isLocalInstall\":true}",
+  "ecoforms_device_config": "{\"deviceName\":\"Dispositivo Instalado\",\"setupDate\":\"2025-10-03T17:04:53.853Z\",\"deviceId\":\"device_1759511093853_df4ezgjsr\",\"installedForms\":[\"galpaoChamadaForm.json\",\"educacaoAmbientalForm.json\",\"ecopontoForm.json\",\"ecopontoCaixasForm.json\",\"colocacaoCaixasForm.json\",\"ecopontoRemocao.json\",\"exemploChecklistHierarquico.json\",\"galpaochecklistForm.json\",\"inspecaoCompleta.json\",\"remocaoForm.json\"],\"isConfigured\":true}"
+};
+
+        function importData() {
+            const result = document.getElementById('result');
+
+            try {
+                let imported = 0;
+                for (const [key, value] of Object.entries(localStorageData)) {
+                    localStorage.setItem(key, value);
+                    imported++;
+                }
+
+                result.innerHTML = `
+                    <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3>✅ Dados Importados com Sucesso!</h3>
+                        <p>${imported} itens salvos no localStorage</p>
+                        <p><strong>Agora você pode usar o EcoForms!</strong></p>
+                    </div>
+                `;
+
+                // Habilitar botão "Ir para o App"
+                document.querySelector('.btn-secondary').disabled = false;
+
+            } catch (error) {
+                result.innerHTML = `
+                    <div style="background: #f44336; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3>❌ Erro na Importação</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function goToApp() {
+            window.location.href = 'index.html';
+        }
+
+        // Verificar se já está instalado
+        window.addEventListener('load', function() {
+            const isInstalled = localStorage.getItem('ecoforms_device_config');
+            if (isInstalled) {
+                document.querySelector('.btn-secondary').disabled = false;
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #2196F3; color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3>ℹ️ Sistema Já Instalado</h3>
+                        <p>O EcoForms já está configurado neste navegador.</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

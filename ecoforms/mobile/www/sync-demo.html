@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração de Sincronização Avançada - EcoForms</title>
+    <link rel="stylesheet" href="../styles/tailwind.css">
+    <script src="../js/smart-cache.js"></script>
+    <script src="../js/supabase-client.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center">🔄 Demonstração de Sincronização Avançada</h1>
+
+        <!-- Painel de Controle -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🎛️ Painel de Controle</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button id="btnSimulateOffline" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    📴 Simular Offline
+                </button>
+                <button id="btnGoOnline" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    📡 Voltar Online
+                </button>
+                <button id="btnProcessQueue" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    🔄 Processar Fila
+                </button>
+            </div>
+        </div>
+
+        <!-- Estatísticas de Sincronização -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Estatísticas de Sincronização</h2>
+            <div id="syncStats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Estatísticas serão preenchidas dinamicamente -->
+            </div>
+        </div>
+
+        <!-- Demonstração de Operações -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">⚡ Operações de Demonstração</h2>
+            <div class="space-y-4">
+                <div class="flex items-center space-x-4">
+                    <input type="text" id="recordId" placeholder="ID do Registro" class="flex-1 px-3 py-2 border rounded">
+                    <button id="btnCreateRecord" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        ➕ Criar
+                    </button>
+                    <button id="btnUpdateRecord" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                        ✏️ Atualizar
+                    </button>
+                    <button id="btnDeleteRecord" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        🗑️ Deletar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registros com Indicadores -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Registros Demonstrativos</h2>
+            <div id="recordsList" class="space-y-2">
+                <!-- Registros serão adicionados dinamicamente -->
+            </div>
+        </div>
+
+        <!-- Conflitos Pendentes -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">⚠️ Conflitos Pendentes</h2>
+            <div id="conflictsList" class="space-y-2">
+                <!-- Conflitos serão listados dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let smartCache;
+        let demoRecords = [];
+
+        // Inicializar quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Inicializar SmartCache
+                smartCache = new SmartCacheService();
+                await smartCache.init();
+
+                console.log('🚀 Demonstração de sincronização inicializada');
+
+                // Configurar event listeners
+                setupEventListeners();
+
+                // Atualizar estatísticas iniciais
+                updateSyncStats();
+
+                // Criar alguns registros de demonstração
+                createDemoRecords();
+
+            } catch (error) {
+                console.error('❌ Erro ao inicializar demonstração:', error);
+            }
+        });
+
+        function setupEventListeners() {
+            // Botões de controle
+            document.getElementById('btnSimulateOffline').addEventListener('click', simulateOffline);
+            document.getElementById('btnGoOnline').addEventListener('click', goOnline);
+            document.getElementById('btnProcessQueue').addEventListener('click', processQueue);
+
+            // Botões de operações
+            document.getElementById('btnCreateRecord').addEventListener('click', createRecord);
+            document.getElementById('btnUpdateRecord').addEventListener('click', updateRecord);
+            document.getElementById('btnDeleteRecord').addEventListener('click', deleteRecord);
+        }
+
+        function simulateOffline() {
+            // Simular perda de conexão
+            console.log('📴 Simulando modo offline...');
+            window.dispatchEvent(new Event('offline'));
+
+            // Mostrar notificação
+            showNotification('📴 Modo offline ativado', 'warning');
+        }
+
+        function goOnline() {
+            // Simular restauração de conexão
+            console.log('📡 Voltando online...');
+            window.dispatchEvent(new Event('online'));
+
+            // Mostrar notificação
+            showNotification('📡 Conexão restaurada', 'success');
+        }
+
+        async function processQueue() {
+            try {
+                console.log('🔄 Processando fila de operações...');
+                await smartCache.processOfflineQueue();
+
+                showNotification('✅ Fila processada com sucesso', 'success');
+                updateSyncStats();
+
+            } catch (error) {
+                console.error('❌ Erro ao processar fila:', error);
+                showNotification('❌ Erro ao processar fila', 'error');
+            }
+        }
+
+        async function createRecord() {
+            const recordId = document.getElementById('recordId').value.trim();
+            if (!recordId) {
+                showNotification('⚠️ Digite um ID de registro', 'warning');
+                return;
+            }
+
+            try {
+                const data = {
+                    id: recordId,
+                    name: `Registro ${recordId}`,
+                    description: `Descrição do registro ${recordId}`,
+                    created_at: new Date().toISOString(),
+                    version: 1
+                };
+
+                // Adicionar operação offline
+                smartCache.addOfflineOperation('CREATE', 'demo_records', recordId, data);
+
+                // Adicionar à lista visual
+                addRecordToList(recordId, data);
+
+                showNotification(`✅ Registro ${recordId} criado (offline)`, 'success');
+                updateSyncStats();
+
+            } catch (error) {
+                console.error('❌ Erro ao criar registro:', error);
+                showNotification('❌ Erro ao criar registro', 'error');
+            }
+        }
+
+        async function updateRecord() {
+            const recordId = document.getElementById('recordId').value.trim();
+            if (!recordId) {
+                showNotification('⚠️ Digite um ID de registro', 'warning');
+                return;
+            }
+
+            try {
+                const data = {
+                    id: recordId,
+                    name: `Registro ${recordId} (Atualizado)`,
+                    description: `Descrição atualizada do registro ${recordId}`,
+                    updated_at: new Date().toISOString(),
+                    version: 2
+                };
+
+                // Adicionar operação offline
+                smartCache.addOfflineOperation('UPDATE', 'demo_records', recordId, data);
+
+                showNotification(`✅ Registro ${recordId} atualizado (offline)`, 'success');
+                updateSyncStats();
+
+            } catch (error) {
+                console.error('❌ Erro ao atualizar registro:', error);
+                showNotification('❌ Erro ao atualizar registro', 'error');
+            }
+        }
+
+        async function deleteRecord() {
+            const recordId = document.getElementById('recordId').value.trim();
+            if (!recordId) {
+                showNotification('⚠️ Digite um ID de registro', 'warning');
+                return;
+            }
+
+            try {
+                // Adicionar operação offline
+                smartCache.addOfflineOperation('DELETE', 'demo_records', recordId, {});
+
+                showNotification(`✅ Registro ${recordId} marcado para exclusão (offline)`, 'success');
+                updateSyncStats();
+
+            } catch (error) {
+                console.error('❌ Erro ao deletar registro:', error);
+                showNotification('❌ Erro ao deletar registro', 'error');
+            }
+        }
+
+        function addRecordToList(recordId, data) {
+            const recordsList = document.getElementById('recordsList');
+
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded border';
+            recordDiv.id = `record_${recordId}`;
+            recordDiv.setAttribute('data-record-id', `demo_records_${recordId}`);
+
+            recordDiv.innerHTML = `
+                <div>
+                    <strong>${data.name}</strong>
+                    <p class="text-sm text-gray-600">${data.description}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-500">v${data.version}</span>
+                    <!-- Indicador será inserido aqui automaticamente -->
+                </div>
+            `;
+
+            recordsList.appendChild(recordDiv);
+        }
+
+        function updateSyncStats() {
+            const stats = smartCache.getSyncStats();
+            const statsDiv = document.getElementById('syncStats');
+
+            statsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">${stats.queue.total}</div>
+                    <div class="text-sm text-gray-600">Na Fila</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">${stats.indicators.synced}</div>
+                    <div class="text-sm text-gray-600">Sincronizados</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">${stats.indicators.pending}</div>
+                    <div class="text-sm text-gray-600">Pendentes</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600">${stats.conflicts}</div>
+                    <div class="text-sm text-gray-600">Conflitos</div>
+                </div>
+            `;
+
+            // Atualizar lista de conflitos
+            updateConflictsList();
+        }
+
+        function updateConflictsList() {
+            const conflicts = smartCache.getPendingConflicts();
+            const conflictsDiv = document.getElementById('conflictsList');
+
+            if (conflicts.length === 0) {
+                conflictsDiv.innerHTML = '<p class="text-gray-500">Nenhum conflito pendente</p>';
+                return;
+            }
+
+            conflictsDiv.innerHTML = conflicts.map(conflict => `
+                <div class="p-3 bg-red-50 border border-red-200 rounded">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <strong>Conflito em ${conflict.dataSource}:${conflict.recordId}</strong>
+                            <p class="text-sm text-gray-600 mt-1">${conflict.description}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="resolveConflict('${conflict.id}', 'local')"
+                                    class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                                Usar Local
+                            </button>
+                            <button onclick="resolveConflict('${conflict.id}', 'server')"
+                                    class="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600">
+                                Usar Servidor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function resolveConflict(conflictId, resolution) {
+            try {
+                await smartCache.resolveConflict(conflictId, resolution);
+                showNotification(`✅ Conflito resolvido usando ${resolution}`, 'success');
+                updateSyncStats();
+            } catch (error) {
+                console.error('❌ Erro ao resolver conflito:', error);
+                showNotification('❌ Erro ao resolver conflito', 'error');
+            }
+        }
+
+        function createDemoRecords() {
+            // Criar alguns registros de demonstração
+            const demoData = [
+                { id: 'demo1', name: 'Registro Demo 1', description: 'Primeiro registro de demonstração' },
+                { id: 'demo2', name: 'Registro Demo 2', description: 'Segundo registro de demonstração' },
+                { id: 'demo3', name: 'Registro Demo 3', description: 'Terceiro registro de demonstração' }
+            ];
+
+            demoData.forEach(data => {
+                addRecordToList(data.id, { ...data, version: 1 });
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            // Implementação simples de notificação
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            } text-white`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Atualizar estatísticas periodicamente
+        setInterval(updateSyncStats, 5000);
+    </script>
+</body>
+</html>

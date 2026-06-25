@@ -1,0 +1,461 @@
+# Checklist de Gaps — ADRs 040–050
+
+_Gerado de `VERIFICACAO_GAPS_040-050.txt`. `[x]` = verificador encontrou a solução proposta no arquivo; `[ ]` = aberto/parcial/a confirmar. Confira a polaridade de cada gap (bug-a-remover vs. recurso-a-adicionar)._
+
+**Resumo:** 19 marcados como resolvidos · 124 abertos/a verificar · 143 gaps.
+
+## ADR-040-booking-modal-gaps
+
+- [ ] `A VERIFICAR` — 1. SQL inline em `useEffect` (linha 107–109)
+    - símbolo `useEffect`: 113 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 2. `clienteRepository.save(newCliente as any)` (linha 202)
+    - símbolo `clienteRepository.save(newCliente as any)`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 3. Sem guard de capacidade antes de submeter (linha 227)
+- [ ] `A VERIFICAR` — 4. Fallback `clienteId: 'anon'` (linha 231)
+    - símbolo `clienteId: 'anon'`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 5. Erro silenciado no `handleQuickCreate` (linha 220)
+    - símbolo `handleQuickCreate`: 1 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 6. `agendamentoNotificacaoRepo` acessado diretamente na UI (linhas 244–246)
+    - símbolo `agendamentoNotificacaoRepo`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 7. `useEffect` sem cleanup (linhas 105–111)
+    - símbolo `useEffect`: 113 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 8. Estado inconsistente na etapa 3 (linha 528)
+- [ ] `A VERIFICAR` — 9. `formatDate` sem timezone (linha 620–623)
+    - símbolo `formatDate`: 9 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 10. QuickCreate sem validação de documento e telefone
+
+## ADR-041-manifestacoes-gaps
+
+- [ ] `AUSENTE` — Gap 1 — SQL inline em Domain Services (Crítico)
+    - arquivo ProtocoloService.ts -> OK
+    - arquivo SlaCalculator.ts -> OK
+    - solução: SOLUÇÃO AUSENTE (0/3)  presentes=[]
+- [ ] `A VERIFICAR` — Gap 2 — Catch silencioso em componentes (Crítico)
+    - arquivo ManifestacaoDetailPage.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 3 — Catch aninhado silencioso em action de encaminhamento (Crítico)
+    - arquivo encaminhamento.actions.ts -> OK
+- [ ] `A VERIFICAR` — Gap 4 — Lógica de negócio inline no componente React (Médio)
+    - arquivo ManifestacaoDetailPage.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 5 — `DEFAULT_TIPOS` hardcoded em hook React (Médio)
+    - arquivo useManifestacaoCatalogos.ts -> OK
+    - símbolo `DEFAULT_TIPOS`: 1 arquivo(s) em src/
+- [ ] `PARCIAL` — Gap 6 — `getContainerAsync()` chamado 16× sem cache (Baixo)
+    - arquivo useManifestacaoMutations.ts -> OK
+    - símbolo `getContainerAsync()`: 76 arquivo(s) em src/
+    - solução: PARCIAL (1/3)  presentes=['getContainerAsync']
+- [ ] `A VERIFICAR` — Gap 7 — Non-null assertions sem guard (Baixo)
+    - arquivo ManifestacaoDetailPage.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 8 — Ausência de validação de comprimento em texto livre (Baixo)
+    - arquivo ManifestacaoDetailPage.tsx -> OK
+
+## ADR-042-agendamentos-gaps
+
+- [ ] `A VERIFICAR` — 1. Race condition na confirmação automática de booking (linhas 9–25 de `useAgendamentoMuta
+    - símbolo `useAgendamentoMutations.ts`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 2. Ausência de transação em `CreateBookingUseCase` (linhas 84–86)
+    - símbolo `CreateBookingUseCase`: 3 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 3. Falta de idempotência em `ConfirmarAgendamentoUseCase`
+    - símbolo `ConfirmarAgendamentoUseCase`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 4. JSON parse silencioso em `SqliteAgendamentoRepository.rowToEntity`
+    - símbolo `SqliteAgendamentoRepository.rowToEntity`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 5. `vagasSolicitadas` sem validação em `CreateBookingUseCase`
+    - símbolo `vagasSolicitadas`: 11 arquivo(s) em src/
+    - símbolo `CreateBookingUseCase`: 3 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 6. Catch silencioso em `CreateServiceSlotUseCase` — regra de abertura (linhas 43–52)
+    - símbolo `CreateServiceSlotUseCase`: 3 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 7. WhatsApp link gerado com telefone não validado (`NotificacaoService`)
+    - símbolo `NotificacaoService`: 3 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 8. Comparação de datas com string ISO sem parsing em `ServiceSlot.ts` (linha 38)
+    - símbolo `ServiceSlot.ts`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 9. Sem paginação em `SqliteServiceSlotRepository.findAll`
+    - símbolo `SqliteServiceSlotRepository.findAll`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 10. `eslint-disable-next-line react-hooks/exhaustive-deps` em `useServiceSlots` (linha ~24
+    - símbolo `eslint-disable-next-line react-hooks/exhaustive-deps`: 7 arquivo(s) em src/
+    - símbolo `useServiceSlots`: 6 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 11. Inconsistência no padrão de atualização de vagas
+- [ ] `A VERIFICAR` — 12. Lógica de negócio em `BookingModal` (já mapeado no ADR-038, gaps 1–4)
+    - símbolo `BookingModal`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 13. Status de agendamento e slot sem constraint no banco
+- [ ] `A VERIFICAR` — 14. Ausência de auditoria em transições de estado
+- [ ] `A VERIFICAR` — 15. `useAgendamentoById` — erro capturado mas não renderizado
+    - símbolo `useAgendamentoById`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 16. Notificação via Tauri sem fallback para ambiente não-desktop
+- [ ] `A VERIFICAR` — 17. `bairro` obrigatório para `VolumososValidator` mas não forçado no input
+    - símbolo `bairro`: 41 arquivo(s) em src/
+    - símbolo `VolumososValidator`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — 18. Data retroativa permitida em `UpdateServiceSlotUseCase`
+    - símbolo `UpdateServiceSlotUseCase`: 3 arquivo(s) em src/
+
+## ADR-043-ecopontos-gaps
+
+- [ ] `A VERIFICAR` — Gap 1 — Ausência total de domain layer (Crítico)
+- [ ] `A VERIFICAR` — Gap 2 — Tabela `ecopontos` ausente do schema rastreado (Crítico)
+    - símbolo `ecopontos`: 7 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 3 — Bug no fieldMapping de `ecoponto.actions.ts` (Crítico)
+    - arquivo src/application/actions/builtin/ecoponto.actions.ts -> OK
+    - símbolo `ecoponto.actions.ts`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['ecopontoId']
+- [ ] `AUSENTE` — Gap 4 — `PainelCaixas.tsx` parsing de JSON frágil (Importante)
+    - arquivo components/remocao/PainelCaixas.tsx -> OK
+    - símbolo `PainelCaixas.tsx`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [ ] `A VERIFICAR` — Gap 5 — Evento `ecoponto.remocao.agendada` sem handler de sync (Importante)
+    - arquivo src/application/actions/builtin/ecoponto.actions.ts -> OK
+    - símbolo `ecoponto.remocao.agendada`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 6 — `useRemocaoAnalytics` viola separação de camadas (Importante)
+    - arquivo src/interface/hooks/queries/useRemocaoAnalytics.ts -> OK
+    - símbolo `useRemocaoAnalytics`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 7 — Sem página de detalhe do ecoponto (Importante)
+- [ ] `A VERIFICAR` — Gap 8 — RBAC sem granularidade para ecopontos (Médio)
+    - arquivo src-tauri/src/commands/actions.rs -> NÃO ENCONTRADO
+- [ ] `A VERIFICAR` — Gap 9 — `BoardRemocao` filtra Kanban por string literal (Baixo)
+    - arquivo components/remocao/BoardRemocao.tsx -> OK
+    - símbolo `BoardRemocao`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 10 — Sem testes (Baixo)
+
+## ADR-044-tasks-components-gaps
+
+- [x] `PRESENTE` — Gap 1 — `daysBack` não afeta KPIs, usuários nem prioridades (Crítico)
+    - arquivo src/interface/hooks/queries/useTaskMetrics.ts -> OK
+    - símbolo `daysBack`: 5 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (3/3)  presentes=['byPriorityResult', 'byUserResult', 'summaryResult']
+- [x] `PRESENTE` — Gap 2 — Gráfico de tendência limitado a 7 dias hardcoded (Crítico)
+    - arquivo TaskMetricsContent.tsx -> OK
+    - solução: SOLUÇÃO PRESENTE (1/2)  presentes=['recentTrends']
+- [x] `PRESENTE` — Gap 3 — `onStatusChange`, `onArchive`, `onDelete` ausentes em `app/tasks/page.tsx` (Crític
+    - arquivo app/tasks/page.tsx -> OK
+    - símbolo `onStatusChange`: 3 arquivo(s) em src/
+    - símbolo `onArchive`: 8 arquivo(s) em src/
+    - símbolo `onDelete`: 11 arquivo(s) em src/
+    - símbolo `app/tasks/page.tsx`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['handleStatusChange']
+- [ ] `AUSENTE` — Gap 4 — `onDelete` sem confirmação (Importante)
+    - arquivo KanbanBoard.tsx -> OK
+    - símbolo `onDelete`: 11 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [ ] `A VERIFICAR` — Gap 5 — `cancelado` e `solicitacao` sem badge em `getStatusBadge` (Importante)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `cancelado`: 33 arquivo(s) em src/
+    - símbolo `solicitacao`: 20 arquivo(s) em src/
+    - símbolo `getStatusBadge`: 4 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 6 — Imports mortos em `TasksTableView` (Médio)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `TasksTableView`: 3 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 7 — `meu_nivel_acesso` sem fallback na coluna "Acesso" (Médio)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `meu_nivel_acesso`: 8 arquivo(s) em src/
+- [ ] `PARCIAL` — Gap 8 — `formatDate` omite o ano (Médio)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `formatDate`: 9 arquivo(s) em src/
+    - solução: PARCIAL (1/3)  presentes=['toLocaleDateString']
+- [ ] `A VERIFICAR` — Gap 9 — Sem estado de carregamento na tabela (Médio)
+    - arquivo TasksTableView.tsx -> OK
+    - arquivo app/tasks/page.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 10 — `parseRecorrencia` definida dentro do componente (Baixo)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `parseRecorrencia`: 1 arquivo(s) em src/
+- [ ] `AUSENTE` — Gap 11 — `getPriorityBadge` / `formatPriority` duplicados (Baixo)
+    - arquivo TasksTableView.tsx -> OK
+    - arquivo TaskMetricsContent.tsx -> OK
+    - símbolo `getPriorityBadge`: 2 arquivo(s) em src/
+    - símbolo `formatPriority`: 1 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [ ] `A VERIFICAR` — Gap 12 — Campos `num_comentarios`, `num_anexos`, `num_registros` invisíveis (Baixo)
+    - arquivo TasksTableView.tsx -> OK
+    - símbolo `num_comentarios`: 4 arquivo(s) em src/
+    - símbolo `num_anexos`: 4 arquivo(s) em src/
+    - símbolo `num_registros`: 4 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 13 — Sem ordenação, filtro de status ou paginação (Baixo / Roadmap)
+    - arquivo TasksTableView.tsx -> OK
+
+## ADR-045-clientes-gaps
+
+- [ ] `A VERIFICAR` — Gap 1 — `observacoes` nunca persiste (Crítico — Data Loss)
+    - arquivo SqliteClienteRepository.ts -> OK
+    - símbolo `observacoes`: 11 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 2 — N+1 queries em `useClientePhoneSearch` (Crítico)
+    - arquivo useClientes.ts -> OK
+    - símbolo `useClientePhoneSearch`: 3 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/2)  presentes=['findById']
+- [x] `PRESENTE` — Gap 3 — `window.confirm()` não funciona em Tauri (Crítico)
+    - arquivo ClienteDetailPage.tsx -> OK
+    - símbolo `window.confirm()`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (2/2)  presentes=['handleUnlinkPf', 'setUnlinkTarget']
+- [ ] `AUSENTE` — Gap 4 — Erros silenciados em hooks de query (Importante)
+    - arquivo useClientes.ts -> OK
+    - arquivo useClienteById.ts -> NÃO ENCONTRADO
+    - arquivo useClienteContatos.ts -> NÃO ENCONTRADO
+    - arquivo usePfContactsByPj.ts -> NÃO ENCONTRADO
+    - arquivo usePfUnassigned.ts -> NÃO ENCONTRADO
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [ ] `PARCIAL` — Gap 5 — Duplicata de documento não verificada antes de salvar (Importante)
+    - arquivo useClienteMutations.ts -> OK
+    - solução: PARCIAL (1/4)  presentes=['getContainerAsync']
+- [ ] `AUSENTE` — Gap 6 — `window.location.href` em `novo/page.tsx` (Importante)
+    - arquivo novo/page.tsx -> OK
+    - símbolo `window.location.href`: 4 arquivo(s) em src/
+    - símbolo `novo/page.tsx`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [x] `PRESENTE` — Gap 7 — `handleAddContato` exige CPF mesmo sendo campo opcional (Importante)
+    - arquivo ClienteDetailPage.tsx -> OK
+    - símbolo `handleAddContato`: 1 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['docDigits']
+- [ ] `A VERIFICAR` — Gap 8 — `useClienteContatos` (`cliente_contatos`) nunca usado na UI (Importante)
+    - arquivo ClienteDetailPage.tsx -> OK
+    - símbolo `useClienteContatos`: 2 arquivo(s) em src/
+    - símbolo `cliente_contatos`: 5 arquivo(s) em src/
+- [ ] `PARCIAL` — Gap 9 — Busca na lista sem debounce (Médio)
+    - arquivo app/clientes/page.tsx -> OK
+    - solução: PARCIAL (2/6)  presentes=['useClientes', 'useState']
+- [x] `PRESENTE` — Gap 10 — Sem botão "Cancelar" no modo de edição (Médio)
+    - arquivo ClienteDetailPage.tsx -> OK
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['setEditMode']
+- [x] `PRESENTE` — Gap 11 — PF não exibe vínculo com PJ pai (Médio)
+    - arquivo ClienteDetailPage.tsx -> OK
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['useClienteById']
+- [ ] `AUSENTE` — Gap 12 — `maskDocument` e `maskPhone` duplicados (Médio)
+    - arquivo novo/page.tsx -> OK
+    - arquivo ClienteDetailPage.tsx -> OK
+    - símbolo `maskDocument`: 3 arquivo(s) em src/
+    - símbolo `maskPhone`: 3 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/2)  presentes=[]
+- [ ] `PARCIAL` — Gap 13 — `handleCepBlur` duplicado 3 vezes (Médio)
+    - arquivo novo/page.tsx -> OK
+    - arquivo ClienteDetailPage.tsx -> OK
+    - símbolo `handleCepBlur`: 2 arquivo(s) em src/
+    - solução: PARCIAL (2/6)  presentes=['useCallback', 'useState']
+- [ ] `A VERIFICAR` — Gap 14 — `save()` usa COUNT antes de INSERT/UPDATE (Baixo)
+    - arquivo SqliteClienteRepository.ts -> OK
+    - símbolo `save()`: 4 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 15 — `findByDocumento` sem uso na UI (Baixo)
+    - símbolo `findByDocumento`: 2 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 16 — `as any` em `novo/page.tsx` (Baixo)
+    - arquivo novo/page.tsx -> OK
+    - símbolo `as any`: 12 arquivo(s) em src/
+    - símbolo `novo/page.tsx`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['toISOString']
+
+## ADR-046-usuarios-gaps
+
+- [ ] `AUSENTE` — Gap 1 — `password_hash` persistido em localStorage (Crítico — Segurança)
+    - arquivo login/page.tsx -> OK
+    - arquivo AuthContext.tsx -> OK
+    - símbolo `password_hash`: 10 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [x] `PRESENTE` — Gap 2 — Login acessa banco via `db_query` raw, bypassa arquitetura (Crítico)
+    - arquivo login/page.tsx -> OK
+    - símbolo `db_query`: 12 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/2)  presentes=['getContainerAsync']
+- [ ] `A VERIFICAR` — Gap 3 — `syncSupabaseAuth` auto-provisiona contas em falha de signIn (Crítico — Segurança)
+    - arquivo AuthContext.tsx -> OK
+    - símbolo `syncSupabaseAuth`: 1 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 4 — `console.log` de debug persiste em produção com dados sensíveis (Crítico)
+    - arquivo UserDialog.tsx -> OK
+    - símbolo `console.log`: 19 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 5 — N+1 queries em `SqliteUserRepository.findAll()` (Importante)
+    - arquivo SqliteUserRepository.ts -> OK
+    - símbolo `SqliteUserRepository.findAll()`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (2/3)  presentes=['findAll', 'rowToUser']
+- [ ] `A VERIFICAR` — Gap 6 — `USUARIOS_POR_SETOR` usa coluna inexistente `u.setor_id` (Importante)
+    - arquivo src/infrastructure/persistence/sqlite/queries/usuarios.ts -> OK
+    - símbolo `USUARIOS_POR_SETOR`: 2 arquivo(s) em src/
+    - símbolo `u.setor_id`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 7 — `alert()` em 7+ lugares do fluxo de usuários (Importante — Tauri)
+    - arquivo users/page.tsx -> OK
+    - arquivo UserDialog.tsx -> OK
+    - símbolo `alert()`: 0 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 8 — `AuthContext.syncUsersFromSupabase` instancia repositório fora do container (Impor
+    - arquivo AuthContext.tsx -> OK
+    - símbolo `AuthContext.syncUsersFromSupabase`: 0 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (3/3)  presentes=['SupabaseUserSyncService', 'getContainer', 'syncService']
+- [x] `PRESENTE` — Gap 9 — `email` não mapeado em `normalizeUser` (Importante)
+    - arquivo useAdminUsers.ts -> OK
+    - símbolo `email`: 50 arquivo(s) em src/
+    - símbolo `normalizeUser`: 1 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['normalizeUser']
+- [x] `PRESENTE` — Gap 10 — Sem verificação de unicidade de `nome_usuario` (Importante)
+    - arquivo CreateUserUseCase.ts -> OK
+    - arquivo SqliteUserRepository.ts -> OK
+    - símbolo `nome_usuario`: 6 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/2)  presentes=['ValidationError']
+- [ ] `AUSENTE` — Gap 11 — `UserDialog` carrega setores via `db_query` raw (Médio)
+    - arquivo UserDialog.tsx -> OK
+    - símbolo `UserDialog`: 2 arquivo(s) em src/
+    - símbolo `db_query`: 12 arquivo(s) em src/
+    - solução: SOLUÇÃO AUSENTE (0/1)  presentes=[]
+- [ ] `AUSENTE` — Gap 12 — Validação de perfil duplicada na UI (Médio)
+    - arquivo users/page.tsx -> OK
+    - solução: SOLUÇÃO AUSENTE (0/4)  presentes=[]
+- [ ] `A VERIFICAR` — Gap 13 — `admin` não pode criar outro `admin` (Médio — pode ser by design)
+    - arquivo CreateUserUseCase.ts -> OK
+    - símbolo `admin`: 76 arquivo(s) em src/
+    - símbolo `admin`: 76 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 14 — Session validation lê banco diretamente (Médio)
+    - arquivo AuthContext.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 15 — `User` type em `@/types` diverge de `UserProps` em domain (Médio)
+    - símbolo `User`: 85 arquivo(s) em src/
+    - símbolo `@/types`: 84 arquivo(s) em src/
+    - símbolo `UserProps`: 1 arquivo(s) em src/
+
+## ADR-047-setores-gaps
+
+- [ ] `A VERIFICAR` — Gap 1 — `setor_principal_id` referenciado no código mas inexistente no schema (Crítico — R
+    - arquivo SectorQueryUtils.ts -> OK
+    - arquivo resolveSetorId.ts -> OK
+    - arquivo SqliteKanbanRepository.ts -> OK
+    - arquivo crm-datasources.ts -> OK
+    - arquivo HandlerRegistry.ts -> OK
+    - símbolo `setor_principal_id`: 6 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 2 — `pai_id` referenciado no BFS mas inexistente no schema (Crítico — Runtime Error)
+    - arquivo SectorQueryUtils.ts -> OK
+    - símbolo `pai_id`: 4 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 3 — Segregação por setor não aplicada na leitura de tarefas (Crítico — Segurança)
+    - arquivo SqliteKanbanRepository.ts -> OK
+    - arquivo useKanbanData.ts -> OK
+    - solução: SOLUÇÃO PRESENTE (2/4)  presentes=['effectiveSectors', 'getEffectiveSectors']
+- [x] `PRESENTE` — Gap 4 — Inbox usa `buildInboxAccessFilter` sem `effectiveSectors` (Crítico — Segurança)
+    - arquivo useAccessFilters.ts -> OK
+    - arquivo useInboxData.ts -> OK
+    - símbolo `buildInboxAccessFilter`: 2 arquivo(s) em src/
+    - símbolo `effectiveSectors`: 3 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (2/4)  presentes=['buildInboxAccessFilter', 'getInboxAccessFilter']
+- [ ] `A VERIFICAR` — Gap 5 — `buildTaskAccessFilter` e `buildRecordAccessFilter` nunca chamados (Crítico)
+    - arquivo AccessFilterBuilder.ts -> OK
+    - símbolo `buildTaskAccessFilter`: 1 arquivo(s) em src/
+    - símbolo `buildRecordAccessFilter`: 1 arquivo(s) em src/
+- [ ] `PARCIAL` — Gap 6 — `useKanbanData` passa apenas `user.setores?.[0]` (Importante)
+    - arquivo useKanbanData.ts -> OK
+    - símbolo `useKanbanData`: 4 arquivo(s) em src/
+    - símbolo `user.setores?.[0]`: 2 arquivo(s) em src/
+    - solução: PARCIAL (1/3)  presentes=['getKanbanData']
+- [ ] `A VERIFICAR` — Gap 7 — `useSetores.remove` faz hard DELETE sem verificar impacto (Importante)
+    - arquivo useSetores.ts -> OK
+    - símbolo `useSetores.remove`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 8 — Sem domain entity e sem repository para Setor (Importante)
+    - arquivo useSetores.ts -> OK
+- [ ] `A VERIFICAR` — Gap 9 — Sem validação de nome único para setores (Importante)
+    - arquivo useSetores.ts -> OK
+- [ ] `A VERIFICAR` — Gap 10 — Página de setores protegida por `users.view_all` (Médio)
+    - arquivo sectors/page.tsx -> OK
+    - símbolo `users.view_all`: 8 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 11 — Cache de `getEffectiveSectors` não invalida em cascata (Médio)
+    - arquivo SectorQueryUtils.ts -> OK
+    - símbolo `getEffectiveSectors`: 5 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 12 — `useSetores` sem error state (Médio)
+    - arquivo useSetores.ts -> OK
+    - símbolo `useSetores`: 6 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 13 — `SETORES_ATIVOS` retorna `descricao` mas schema usa este nome (Baixo)
+    - arquivo queries/usuarios.ts -> OK
+    - símbolo `SETORES_ATIVOS`: 2 arquivo(s) em src/
+    - símbolo `descricao`: 91 arquivo(s) em src/
+
+## ADR-048-formbuilder-gaps
+
+- [ ] `A VERIFICAR` — Gap 1 — `UserWidgetInstanceRepository` sem implementação (Crítico — Runtime Error)
+    - arquivo desktop/src/domain/widget/UserWidgetInstanceRepository.ts -> OK
+    - arquivo desktop/src/application/widgets/WidgetUseCases.ts -> OK
+    - símbolo `UserWidgetInstanceRepository`: 6 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 2 — `WidgetRegistry.registerWidget()` nunca chamado (Crítico)
+    - arquivo desktop/src/domain/widget/WidgetRegistry.ts -> OK
+    - símbolo `WidgetRegistry.registerWidget()`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 3 — `SchemaDiscoveryService` implementado mas nunca usado (Crítico)
+    - arquivo desktop/src/application/widgets/SchemaDiscoveryService.ts -> OK
+    - símbolo `SchemaDiscoveryService`: 1 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 4 — FormBuilder persiste via SQLite/Tauri sem Supabase (Crítico — Arquitetura)
+    - arquivo desktop/app/forms/edit/page.client.tsx -> OK
+    - arquivo desktop/components/forms/SchemaEditor.tsx -> OK
+- [ ] `A VERIFICAR` — Gap 5 — Tipo `FormField` definido em três lugares sem sincronização (Crítico)
+    - arquivo FieldPropertiesPanel.tsx -> OK
+    - arquivo SchemaEditor.tsx -> OK
+    - arquivo desktop/lib/form/field-type-map.ts -> OK
+    - símbolo `FormField`: 38 arquivo(s) em src/
+- [x] `PRESENTE` — Gap 6 — `JsonEditor` sem validação estrutural (Crítico)
+    - arquivo desktop/components/forms/JsonEditor.tsx -> OK
+    - símbolo `JsonEditor`: 2 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (2/3)  presentes=['onChange', 'setError']
+- [ ] `A VERIFICAR` — Gap 7 — `hasCyclicDependency` sem limite de profundidade (Importante)
+    - arquivo desktop/components/forms/FieldPropertiesPanel.tsx -> OK
+    - símbolo `hasCyclicDependency`: 1 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 8 — `FormAccessModal` sem refetch após edição (Importante)
+    - arquivo desktop/components/forms/FormAccessModal.tsx -> OK
+    - símbolo `FormAccessModal`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 9 — `localStorage` quota exceeded silencioso (Importante)
+    - arquivo desktop/components/forms/SchemaEditor.tsx -> OK
+    - símbolo `localStorage`: 7 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 10 — Zero testes automatizados em todos os componentes (Importante)
+    - arquivo .test.tsx -> NÃO ENCONTRADO
+- [ ] `A VERIFICAR` — Gap 11 — `EcoForms/` vazio (Médio)
+    - símbolo `EcoForms/`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 12 — `VisualEditor.tsx.backup` — refatoração suspensa (Médio)
+    - arquivo desktop/components/forms/VisualEditor.tsx -> OK
+    - símbolo `VisualEditor.tsx.backup`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — Gap 13 — Mobile FormBuilder desacoplado do desktop (Médio)
+- [ ] `A VERIFICAR` — Gap 14 — `UpdateWidgetUseCase` acessa `props` como campo público (Baixo)
+    - arquivo desktop/src/application/widgets/WidgetUseCases.ts -> OK
+    - símbolo `UpdateWidgetUseCase`: 3 arquivo(s) em src/
+
+## ADR-049-modulos-gaps
+
+- [ ] `A VERIFICAR` — GAP-1 · CRÍTICO — Discrepância de nome de tabela sem migration formal
+- [ ] `A VERIFICAR` — GAP-2 · CRÍTICO — Colunas de permissão: inglês no código, português no script de renomeaçã
+- [ ] `A VERIFICAR` — GAP-3 · ALTO — Sem página de edição de módulo (metadados)
+- [ ] `A VERIFICAR` — GAP-4 · ALTO — Sem `ArchiveModuleUseCase` e ação de arquivamento na UI
+    - símbolo `ArchiveModuleUseCase`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-5 · ALTO — `ViewConfigDialog` descarta configuração silenciosamente
+    - símbolo `ViewConfigDialog`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-6 · ALTO — Dois sistemas de visuais paralelos e incompatíveis
+- [ ] `A VERIFICAR` — GAP-7 · MÉDIO — Rota de visuais é query-param, não segmento dinâmico
+- [ ] `A VERIFICAR` — GAP-8 · MÉDIO — `loadRuntimeDto` retorna `view.definition = null` hardcoded
+    - símbolo `loadRuntimeDto`: 4 arquivo(s) em src/
+    - símbolo `view.definition = null`: 0 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-9 · MÉDIO — Permissões exibidas como badge mas não aplicadas na UI
+- [ ] `A VERIFICAR` — GAP-10 · MÉDIO — Sem sincronização outbound de módulos
+- [ ] `A VERIFICAR` — GAP-11 · BAIXO — Sem filtro de status e busca na listagem admin
+- [ ] `A VERIFICAR` — GAP-12 · BAIXO — `ensure-columns.ts` como DDL de bootstrap paralelo
+    - símbolo `ensure-columns.ts`: 2 arquivo(s) em src/
+
+## ADR-050-data-registry-gaps
+
+- [ ] `A VERIFICAR` — GAP-01 — Dois nomes de tabela para o mesmo conceito
+- [ ] `A VERIFICAR` — GAP-02 — `HandlerRegistry` insere colunas que `SqliteDataRegistryRepository` ignora
+    - arquivo src/infrastructure/sync/HandlerRegistry.ts -> OK
+    - símbolo `HandlerRegistry`: 4 arquivo(s) em src/
+    - símbolo `SqliteDataRegistryRepository`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-03 — `GetModuleVisuaisUseCase` usa sintaxe PostgreSQL (`->>`) em SQLite
+    - arquivo src/application/visuals/GetModuleVisuaisUseCase.ts -> OK
+    - símbolo `GetModuleVisuaisUseCase`: 5 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-04 — `versao` no editor nunca é persistido
+    - símbolo `versao`: 25 arquivo(s) em src/
+- [x] `PRESENTE` — GAP-05 — `SqliteModuleRepository` ordena por coluna inexistente
+    - arquivo src/infrastructure/persistence/sqlite/SqliteModuleRepository.ts -> OK
+    - símbolo `SqliteModuleRepository`: 2 arquivo(s) em src/
+    - solução: SOLUÇÃO PRESENTE (1/1)  presentes=['json_extract']
+- [ ] `A VERIFICAR` — GAP-06 — `CountByTypeUseCase` faz full scan O(N)
+    - arquivo src/application/data-registry/CountByTypeUseCase.ts -> OK
+    - símbolo `CountByTypeUseCase`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-07 — 5 queries SQL definidas mas completamente mortas
+    - arquivo src/infrastructure/persistence/sqlite/queries/data-registry.ts -> OK
+- [ ] `A VERIFICAR` — GAP-08 — `chave` e `id` são o mesmo conceito sem clareza
+    - símbolo `chave`: 24 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-09 — `DataRegistrySidebar` — novo tipo é efêmero
+    - arquivo components/registry/DataRegistrySidebar.tsx -> OK
+    - símbolo `DataRegistrySidebar`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-10 — `useDataRegistryAggregated` — fallback silencioso para CRM
+    - arquivo src/interface/hooks/queries/useDataRegistryAggregated.ts -> OK
+    - símbolo `useDataRegistryAggregated`: 9 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-11 — Sem soft delete, sem sync de exclusão
+    - arquivo SqliteDataRegistryRepository.ts -> OK
+- [ ] `A VERIFICAR` — GAP-12 — `SaveDataRegistryUseCase` não preserva `criadoEm` no upsert
+    - arquivo src/application/data-registry/ListItemsUseCase.ts -> OK
+    - símbolo `SaveDataRegistryUseCase`: 2 arquivo(s) em src/
+    - símbolo `criadoEm`: 51 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-13 — `DataRegistryImport` usa `any` explícito (4 ocorrências)
+    - arquivo components/registry/DataRegistryImport.tsx -> OK
+    - símbolo `DataRegistryImport`: 2 arquivo(s) em src/
+- [ ] `A VERIFICAR` — GAP-14 — `detectSchemaFromItems` — schema derivado nunca inclui `chave`/`versao` no formul
+    - arquivo src/lib/registry-schema.ts -> OK
+    - símbolo `detectSchemaFromItems`: 3 arquivo(s) em src/
+    - símbolo `chave`: 24 arquivo(s) em src/
+    - símbolo `versao`: 25 arquivo(s) em src/
+    - RESUMO: {'file-missing': 6, 'sol-present': 19, 'sol-absent': 10, 'n': 152}
+    - Nota: 'símbolo presente' indica que o identificador citado ainda existe no código — interprete conforme a polaridade do gap (bug-a-remover vs. recurso-a-adicionar).

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Sincronização</title>
+    <link href="css/design-system.css" rel="stylesheet">
+    <!-- Mobile Touch Improvements -->
+    <link href="css/mobile-touch-improvements.css" rel="stylesheet" media="(max-width: 768px)">
+    <style>
+        /* Estilos específicos do Dashboard */
+        .metric-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background-color: #10b981;
+        }
+
+        .status-warning {
+            background-color: #f59e0b;
+        }
+
+        .status-error {
+            background-color: #ef4444;
+        }
+
+        .progress-bar {
+            background: #e5e7eb;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #3b82f6;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            margin-left: 0.5rem;
+        }
+
+        .badge-success {
+            background: #10b981;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+        }
+
+        .badge-error {
+            background: #ef4444;
+        }
+
+        .badge-neutral {
+            background: #6b7280;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Scripts necessários -->
+    <script src="js/supabase.js"></script>
+    <!-- Runtime Supabase config (can be injected by host/server). Example values omitted for security. -->
+    <meta name="supabase-url" content="https://vnnimekczkxkpckrydnc.supabase.co">
+    <meta name="supabase-key"
+        content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZubmltZWtjemt4a3Bja3J5ZG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDQ0NjUsImV4cCI6MjA3NzA4MDQ2NX0.RqLwcGIv5B5QnTfxvbemtTEx_Lve9Q6hqbab9SKA6aA">
+    <meta name="supabase-table" content="suite">
+    <!-- Central factory for frontend Supabase client - must load before supabase-config.js -->
+    <script src="js/supabase-client.js"></script>
+    <script src="js/utils/stable-stringify.js"></script>
+    <script src="js/uuidv7.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="supabase-config.js"></script>
+
+    <!-- Dev-only: quick Supabase client creation test (no-op unless enabled)
+                 Enable by adding ?dev_supabase_test=1 to the URL or set localStorage.setItem('dev_supabase_test','1') -->
+    <script>
+        (function () {
+            try {
+                var enabled = new URLSearchParams(window.location.search).get('dev_supabase_test') === '1' || localStorage.getItem('dev_supabase_test') === '1';
+                if (!enabled) return;
+                console.group('Dev Supabase client test');
+                console.log('Dev test enabled via query/localStorage');
+                var metaUrl = document.querySelector('meta[name="supabase-url"]')?.content || '';
+                var metaKey = document.querySelector('meta[name="supabase-key"]')?.content || '';
+                console.log('meta supabase-url present?', !!metaUrl, 'meta supabase-key present?', !!metaKey);
+
+                var url = metaUrl || (window.supabaseConfig && window.supabaseConfig.url) || '';
+                var key = metaKey || (window.supabaseConfig && window.supabaseConfig.key) || '';
+
+                console.time('getSupabaseClientSync');
+                var syncClient = null;
+                try {
+                    if (window.getSupabaseClientSync) syncClient = window.getSupabaseClientSync(url, key);
+                    else if (window.globalSupabaseClient) syncClient = window.globalSupabaseClient;
+                    else if (window.supabase && window.supabase.createClient) syncClient = window.supabase.createClient(url, key);
+                } catch (e) { console.warn('sync create error', e); }
+                console.timeEnd('getSupabaseClientSync');
+                console.log('syncClient ->', syncClient);
+
+                console.time('getSupabaseClient(async)');
+                var asyncGetter = (window.getSupabaseClient) ? window.getSupabaseClient(url, key, 3000) : Promise.resolve(syncClient);
+                asyncGetter.then(function (c) {
+                    console.timeEnd('getSupabaseClient(async)');
+                    console.log('async client ->', c);
+                    if (c && c.auth && c.auth.getUser) {
+                        try { c.auth.getUser().then(function (u) { console.log('auth.getUser ->', u); }); } catch (e) { }
+                    }
+                    console.groupEnd();
+                }).catch(function (err) {
+                    console.timeEnd('getSupabaseClient(async)');
+                    console.error('async getter error', err);
+                    console.groupEnd();
+                });
+            } catch (e) { console.error('Dev supabase test error', e); }
+        })();
+    </script>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Cabeçalho -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">
+                            📊 Dashboard de Sincronização
+                        </h1>
+                        <p class="text-gray-600 mt-2">
+                            Monitoramento em tempo real do sistema de sincronização
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div id="systemStatus" class="text-lg font-semibold mb-2">
+                            <span class="status-dot status-warning"></span>
+                            Carregando...
+                        </div>
+                        <div id="lastUpdate" class="text-sm text-gray-500">
+                            Última atualização: --:--
+                        </div>
+                        <button id="updateFromSupabaseBtn"
+                            class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            🔄 Atualizar do Supabase
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas principais -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+                <!-- Total de registros -->
+                <div class="metric-card">
+                    <div class="metric-label">Total de Registros</div>
+                    <div class="metric-value" id="totalRecords">--</div>
+                    <div class="text-sm text-gray-500 mt-2">
+                        <span id="pendingRecords">--</span> pendentes •
+                        <span id="syncedRecords">--</span> sincronizados
+                    </div>
+                </div>
+
+                <!-- Taxa de sincronização -->
+                <div class="metric-card">
+                    <div class="metric-label">Taxa de Sucesso</div>
+                    <div class="metric-value text-green-600" id="successRate">--%</div>
+                    <div class="progress-bar mt-3">
+                        <div class="progress-fill" id="successProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Conflitos resolvidos -->
+                <div class="metric-card">
+                    <div class="metric-label">Conflitos Resolvidos</div>
+                    <div class="metric-value text-orange-600" id="conflictsResolved">--</div>
+                    <div class="text-sm text-gray-500 mt-2">
+                        Total desde o início
+                    </div>
+                </div>
+
+                <!-- Uptime do sistema -->
+                <div class="metric-card">
+                    <div class="metric-label">Uptime do Sistema</div>
+                    <div class="metric-value text-blue-600" id="systemUptime">--</div>
+                    <div class="text-sm text-gray-500 mt-2">
+                        Tempo ativo
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cache Refresh Status -->
+            <div class="metric-card mb-6">
+                <div class="flex justify-between items-center">
+                    <div class="metric-label">Refresh de Cache (última tentativa)</div>
+                    <div id="cacheRefreshBadge" class="badge badge-neutral">--</div>
+                </div>
+                <div class="flex items-baseline mt-2">
+                    <div class="metric-value" id="cacheRefreshed">--</div>
+                    <div class="text-sm text-gray-500 ml-4" id="cacheRefreshInfo">--</div>
+                </div>
+            </div>
+
+            <!-- Seções detalhadas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                <!-- Status de Sincronização -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        🔄 Status de Sincronização
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span>Última sincronização:</span>
+                            <span id="lastSync" class="font-mono text-sm">--:--</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span>Próxima sincronização:</span>
+                            <span id="nextSync" class="font-mono text-sm">--:--</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span>Registros com erro:</span>
+                            <span id="errorRecords" class="font-semibold text-red-600">--</span>
+                        </div>
+
+                        <div class="mt-6">
+                            <button onclick="forceSyncNow()"
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                                🔄 Sincronizar Agora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Limpeza e Manutenção -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        🧹 Limpeza e Manutenção
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span>Última limpeza:</span>
+                            <span id="lastCleanup" class="font-mono text-sm">--:--</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span>Registros removidos:</span>
+                            <span id="recordsRemoved" class="font-semibold">--</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span>Cache limpo:</span>
+                            <span id="cacheCleared" class="font-semibold">-- itens</span>
+                        </div>
+
+                        <div class="mt-6">
+                            <button onclick="forceCleanup()"
+                                class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded">
+                                🧹 Limpeza Forçada
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Log de atividades -->
+            <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        📝 Log de Atividades
+                    </h2>
+                    <button onclick="clearLog()" class="text-red-500 hover:text-red-600 text-sm">
+                        Limpar Log
+                    </button>
+                </div>
+
+                <div id="activityLog" class="bg-gray-50 rounded p-4 h-64 overflow-y-auto font-mono text-sm">
+                    <div class="text-gray-500">Aguardando atividades...</div>
+                </div>
+            </div>
+
+            <!-- Ações rápidas -->
+            <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    ⚡ Ações Rápidas
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button onclick="exportData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                        📤 Exportar Dados
+                    </button>
+
+                    <button onclick="showStats()"
+                        class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                        📈 Estatísticas
+                    </button>
+
+                    <button onclick="testConnection()"
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+                        🔌 Testar Conexão
+                    </button>
+
+                    <button onclick="window.location.href='form-editor.html'"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                        📝 Editor de Formulários
+                    </button>
+
+                    <button onclick="goToMainApp()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                        🏠 App Principal
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let dashboard = {
+            updateInterval: null,
+
+            async init() {
+                console.log('📊 Inicializando dashboard...');
+
+                // Aguardar serviços estarem prontos
+                await this.waitForServices();
+
+                // Primeira atualização
+                await this.updateMetrics();
+
+                // Iniciar atualizações automáticas
+                this.startAutoUpdate();
+
+                console.log('✅ Dashboard inicializado');
+                this.log('Dashboard inicializado com sucesso');
+            },
+
+            async waitForServices() {
+                return new Promise((resolve) => {
+                    const check = () => {
+                        if (window.dataService && window.syncManager) {
+                            resolve();
+                        } else {
+                            setTimeout(check, 100);
+                        }
+                    };
+                    check();
+                });
+            },
+
+            startAutoUpdate() {
+                // Atualizar a cada 5 segundos
+                this.updateInterval = setInterval(() => {
+                    this.updateMetrics();
+                }, 5000);
+            },
+
+            async updateMetrics() {
+                try {
+                    // Obter estatísticas
+                    const dataStats = await window.dataService.getStats();
+                    const syncStats = window.syncManager ? window.syncManager.getStats() : {};
+
+                    // Atualizar métricas principais
+                    document.getElementById('totalRecords').textContent = dataStats.total || 0;
+                    document.getElementById('pendingRecords').textContent = dataStats.pending || 0;
+                    document.getElementById('syncedRecords').textContent = dataStats.synced || 0;
+                    document.getElementById('errorRecords').textContent = dataStats.errors || 0;
+
+                    // Taxa de sucesso
+                    const total = dataStats.total || 1;
+                    const synced = dataStats.synced || 0;
+                    const successRate = Math.round((synced / total) * 100);
+                    document.getElementById('successRate').textContent = successRate + '%';
+                    document.getElementById('successProgress').style.width = successRate + '%';
+
+                    // Conflitos e uptime
+                    document.getElementById('conflictsResolved').textContent = syncStats.conflicts || 0;
+                    document.getElementById('systemUptime').textContent = syncStats.uptime || '0m';
+
+                    // Status do sistema
+                    const pending = dataStats.pending || 0;
+                    const errors = dataStats.errors || 0;
+                    this.updateSystemStatus(pending, errors);
+
+                    // Timestamps
+                    this.updateTimestamps(syncStats);
+
+                    // Limpeza
+                    const cleanupStats = syncStats.cleanupStats || {};
+                    document.getElementById('lastCleanup').textContent =
+                        cleanupStats.lastCleanup ? new Date(cleanupStats.lastCleanup).toLocaleString() : '--';
+                    document.getElementById('recordsRemoved').textContent = cleanupStats.recordsRemoved || 0;
+                    document.getElementById('cacheCleared').textContent = cleanupStats.cacheCleared || 0;
+
+                    // Cache refresh stats (smartCache)
+                    try {
+                        if (window.smartCache && typeof window.smartCache.getRefreshStats === 'function') {
+                            const r = window.smartCache.getRefreshStats();
+                            document.getElementById('cacheRefreshed').textContent = r.refreshed || 0;
+                            const ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : '--:--';
+                            document.getElementById('cacheRefreshInfo').textContent = `${r.failed || 0} falhas • ${r.pending || 0} pendentes • ${ts}`;
+                        } else {
+                            document.getElementById('cacheRefreshed').textContent = '--';
+                            document.getElementById('cacheRefreshInfo').textContent = '--';
+                        }
+                    } catch (e) {
+                        console.warn('Erro ao obter cache refresh stats', e);
+                    }
+
+                    // Atualizar badge visual de refresh
+                    try {
+                        const badge = document.getElementById('cacheRefreshBadge');
+                        if (!badge) {
+                            // nada a fazer
+                        } else if (window.smartCache && typeof window.smartCache.getRefreshStats === 'function') {
+                            const r = window.smartCache.getRefreshStats();
+                            // limpar classes
+                            badge.className = 'badge';
+                            if (!r || !r.timestamp) {
+                                badge.classList.add('badge-neutral');
+                                badge.textContent = 'Nenhum';
+                            } else if (r.refreshed > 0 && r.failed === 0) {
+                                badge.classList.add('badge-success');
+                                badge.textContent = `${r.refreshed} atualizados`;
+                            } else if (r.refreshed > 0 && r.failed > 0) {
+                                badge.classList.add('badge-warning');
+                                badge.textContent = `${r.refreshed} ✓ / ${r.failed} ✖`;
+                            } else if (r.refreshed === 0 && r.failed > 0) {
+                                badge.classList.add('badge-error');
+                                badge.textContent = `${r.failed} falhas`;
+                            } else {
+                                badge.classList.add('badge-neutral');
+                                badge.textContent = '--';
+                            }
+                        } else {
+                            badge.className = 'badge badge-neutral';
+                            badge.textContent = '--';
+                        }
+                    } catch (e) {
+                        console.warn('Erro ao atualizar badge de cache refresh', e);
+                    }
+
+                    // Última atualização
+                    document.getElementById('lastUpdate').textContent =
+                        'Última atualização: ' + new Date().toLocaleTimeString();
+
+                } catch (error) {
+                    console.error('Erro ao atualizar métricas:', error);
+                    this.log('Erro ao atualizar métricas: ' + error.message, 'error');
+                }
+            },
+
+            updateSystemStatus(pending, errors) {
+                const statusEl = document.getElementById('systemStatus');
+
+                if (errors > 0) {
+                    statusEl.innerHTML = '<span class="status-dot status-error"></span>Sistema com Erros';
+                    statusEl.className = 'text-lg font-semibold mb-2 text-red-600';
+                } else if (pending > 5) {
+                    statusEl.innerHTML = '<span class="status-dot status-warning"></span>Sincronizando';
+                    statusEl.className = 'text-lg font-semibold mb-2 text-orange-600';
+                } else {
+                    statusEl.innerHTML = '<span class="status-dot status-active"></span>Sistema OK';
+                    statusEl.className = 'text-lg font-semibold mb-2 text-green-600';
+                }
+            },
+
+            updateTimestamps(syncStats) {
+                const lastSync = syncStats.lastSync ?
+                    new Date(syncStats.lastSync).toLocaleTimeString() : '--:--';
+                document.getElementById('lastSync').textContent = lastSync;
+
+                // Próxima sincronização (30s após a última)
+                if (syncStats.lastSync) {
+                    const nextSync = new Date(new Date(syncStats.lastSync).getTime() + 30000);
+                    document.getElementById('nextSync').textContent = nextSync.toLocaleTimeString();
+                } else {
+                    document.getElementById('nextSync').textContent = '--:--';
+                }
+            },
+
+            log(message, type = 'info') {
+                const logEl = document.getElementById('activityLog');
+                const timestamp = new Date().toLocaleTimeString();
+                const icon = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : '✅';
+
+                const logEntry = `[${timestamp}] ${icon} ${message}\n`;
+                logEl.textContent += logEntry;
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+        };
+
+        // Funções de ação
+        async function forceSyncNow() {
+            dashboard.log('Iniciando sincronização manual...');
+            try {
+                if (window.syncManager) {
+                    const result = await window.syncManager.smartSync();
+                    dashboard.log(`Sincronização concluída: ${result.synced} registros enviados`);
+                } else if (window.dataService) {
+                    const result = await window.dataService.syncPendingData();
+                    dashboard.log(`Sincronização concluída: ${result.synced} registros enviados`);
+                }
+                dashboard.updateMetrics();
+            } catch (error) {
+                dashboard.log(`Erro na sincronização: ${error.message}`, 'error');
+            }
+        }
+
+        async function forceCleanup() {
+            dashboard.log('Iniciando limpeza forçada...');
+            try {
+                if (window.syncManager && window.syncManager.cleanupManager) {
+                    const result = await window.syncManager.cleanupManager.forceCleanup();
+                    dashboard.log(`Limpeza concluída: ${result.recordsRemoved} registros removidos`);
+                } else {
+                    const result = await window.dataService.cleanupSyncedData();
+                    dashboard.log(`Limpeza básica concluída: ${result} registros removidos`);
+                }
+                dashboard.updateMetrics();
+            } catch (error) {
+                dashboard.log(`Erro na limpeza: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('activityLog').textContent = '';
+            dashboard.log('Log limpo');
+        }
+
+        async function exportData() {
+            try {
+                const data = await window.dataService.getAllFormData();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dados_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                dashboard.log(`Exportados ${data.length} registros`);
+            } catch (error) {
+                dashboard.log(`Erro na exportação: ${error.message}`, 'error');
+            }
+        }
+
+        function showStats() {
+            if (window.syncManager) {
+                const stats = window.syncManager.getStats();
+                alert(JSON.stringify(stats, null, 2));
+            } else {
+                alert('SyncManager não disponível');
+            }
+        }
+
+        async function testConnection() {
+            dashboard.log('Testando conexão com Supabase...');
+            try {
+                if (window.dataService && window.dataService.supabaseClient) {
+                    // Teste simples de conexão
+                    const { data, error } = await window.dataService.supabaseClient
+                        .from(window.dataService.tableName)
+                        .select('count', { count: 'exact' });
+
+                    if (error) throw error;
+                    dashboard.log('✅ Conexão com Supabase OK');
+                } else {
+                    dashboard.log('⚠️ Cliente Supabase não configurado', 'warning');
+                }
+            } catch (error) {
+                dashboard.log(`❌ Erro de conexão: ${error.message}`, 'error');
+            }
+        }
+
+        function goToMainApp() {
+            window.location.href = 'index.html';
+        }
+
+        async function updateFromSupabase() {
+            const btn = document.getElementById('updateFromSupabaseBtn');
+            const originalText = btn.innerHTML;
+
+            try {
+                btn.innerHTML = '⏳ Atualizando...';
+                btn.disabled = true;
+
+                dashboard.log('🔄 Iniciando atualização do Supabase...');
+
+                // Usar o SmartPreloader se disponível para baixar formulários
+                if (typeof window.SmartPreloader !== 'undefined') {
+                    const smartPreloader = new SmartPreloader();
+
+                    // Carregar lista de formulários disponíveis no Supabase
+                    const availableForms = await smartPreloader.loadAvailableForms();
+
+                    if (availableForms && availableForms.length > 0) {
+                        dashboard.log(`📋 Encontrados ${availableForms.length} formulários no Supabase`);
+
+                        // Baixar e instalar formulários
+                        const result = await smartPreloader.startSmartPreloading(availableForms);
+
+                        if (result.success) {
+                            dashboard.log(`✅ Atualização concluída! ${result.downloaded} arquivos baixados`);
+                            alert(`🎉 Sistema atualizado com sucesso!\n${result.downloaded} arquivos foram baixados do Supabase.`);
+                        } else {
+                            throw new Error('Falha no pré-carregamento');
+                        }
+                    } else {
+                        dashboard.log('⚠️ Nenhum formulário encontrado no Supabase', 'warning');
+                        alert('Nenhum formulário novo encontrado no Supabase.');
+                    }
+                } else {
+                    // Fallback: tentar método direto
+                    dashboard.log('ℹ️ SmartPreloader não disponível, tentando método direto...');
+
+                    if (window.dataService && window.dataService.supabaseClient) {
+                        const { data, error } = await window.dataService.supabaseClient.storage
+                            .from('suite')
+                            .list('forms');
+
+                        if (error) throw error;
+
+                        dashboard.log(`📋 Encontrados ${data.length} formulários no Supabase`);
+
+                        // Baixar formulários (simplificado)
+                        let downloaded = 0;
+                        for (const file of data) {
+                            if (file.name.endsWith('.json')) {
+                                try {
+                                    const { data: formData, error: downloadError } = await window.dataService.supabaseClient.storage
+                                        .from('suite')
+                                        .download(`forms/${file.name}`);
+
+                                    if (!downloadError) {
+                                        const formJson = await formData.text();
+                                        const cacheKey = `ecoforms_cache_forms_${file.name}`;
+                                        const cacheData = {
+                                            data: JSON.parse(formJson),
+                                            timestamp: Date.now(),
+                                            expires: Date.now() + (24 * 60 * 60 * 1000),
+                                            version: 'supabase',
+                                            installedAt: new Date().toISOString(),
+                                            isFromSupabase: true
+                                        };
+
+                                        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                                        downloaded++;
+                                    }
+                                } catch (e) {
+                                    console.warn(`Erro ao baixar ${file.name}:`, e);
+                                }
+                            }
+                        }
+
+                        dashboard.log(`✅ ${downloaded} formulários atualizados do Supabase`);
+                        alert(`🎉 ${downloaded} formulários foram atualizados do Supabase!`);
+                    } else {
+                        throw new Error('Cliente Supabase não disponível');
+                    }
+                }
+
+            } catch (error) {
+                dashboard.log(`❌ Erro na atualização: ${error.message}`, 'error');
+                alert(`Erro durante a atualização: ${error.message}`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard.init();
+
+            // Adicionar event listener para o botão de atualização
+            const updateBtn = document.getElementById('updateFromSupabaseBtn');
+            if (updateBtn) {
+                updateBtn.addEventListener('click', updateFromSupabase);
+            }
+        });
+
+        // Limpar interval ao sair
+        window.addEventListener('beforeunload', () => {
+            if (dashboard.updateInterval) {
+                clearInterval(dashboard.updateInterval);
+            }
+        });
+    </script>
+
+</body>
+
+</html>

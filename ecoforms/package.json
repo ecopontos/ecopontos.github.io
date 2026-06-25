@@ -1,0 +1,16 @@
+{
+  "name": "ecoforms",
+  "version": "1.0.1",
+  "private": true,
+  "workspaces": ["desktop", "mobile", "packages/core"],
+  "scripts": {
+    "desktop": "npm run dev --prefix desktop",
+    "mobile:dev": "npm run dev --prefix mobile",
+    "mobile:serve": "npm run serve --prefix mobile",
+    "build:desktop": "npm run build --prefix desktop",
+    "build:mobile": "npm run build --prefix mobile",
+    "build:mobile:debug": "npm run build-debug --prefix mobile",
+    "test:mobile": "npm run test --prefix mobile",
+    "test:desktop": "npm run test --prefix desktop"
+  }
+}
