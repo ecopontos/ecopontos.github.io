@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +23,14 @@ export default function LogisticsMap() {
 
     const geoData = useGeoDataLayers(mapRef);
     const execLayers = useExecucaoLayers(mapRef, geoData.selectedRoteiroId);
-    const { isSatellite, setIsSatellite } = useMapInstance(mapContainer, mapRef, geoData.renderDataLayers);
+
+    const onStyleLoad = useCallback((map: maplibregl.Map) => {
+        geoData.renderDataLayers(map);
+        execLayers.renderAllExecLayers(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const { isSatellite, setIsSatellite } = useMapInstance(mapContainer, mapRef, onStyleLoad);
 
     const layerActions = useLayerActions({
         mapRef,
@@ -36,7 +43,6 @@ export default function LogisticsMap() {
         itinerarioVisRef: geoData.itinerarioVisRef,
     });
 
-    // Tipos de terreno presentes nos dados (para legenda dinâmica)
     const tiposPresentes = [...new Set(geoData.terrenos.map(t => t.tipo))];
 
     return (

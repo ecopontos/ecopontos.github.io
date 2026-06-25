@@ -123,6 +123,37 @@ export const TERRENO_SOFT_DELETE: QueryDef = {
   returns: 'void',
 };
 
+export const CLIENTES_GEO_IN_VIEWPORT: QueryDef = {
+  sql: `SELECT c.id, c.nome,
+              COALESCE(t.centroid_lat, c.latitude)  AS latitude,
+              COALESCE(t.centroid_lng, c.longitude) AS longitude,
+              c.tipo, c.categoria, c.endereco,
+              c.terreno_id, t.nome AS terreno_nome
+       FROM clientes c
+       LEFT JOIN terrenos t ON t.id = c.terreno_id
+       WHERE (t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
+         AND (t.centroid_lng IS NOT NULL OR c.longitude IS NOT NULL)
+         AND c.ativo = 1
+         AND COALESCE(t.centroid_lng, c.longitude) >= ?
+         AND COALESCE(t.centroid_lng, c.longitude) <= ?
+         AND COALESCE(t.centroid_lat, c.latitude)  >= ?
+         AND COALESCE(t.centroid_lat, c.latitude)  <= ?
+       ORDER BY c.nome`,
+  description: 'Clientes no viewport via bbox filter — useClientesGeoInViewport',
+  params: ['min_lng', 'max_lng', 'min_lat', 'max_lat'],
+  use: 'operacional',
+  returns: 'ClienteGeo[]',
+};
+
+export const CLIENTES_GEO_COUNT: QueryDef = {
+  sql: `SELECT COUNT(*) AS count FROM clientes WHERE ativo = 1
+        AND (latitude IS NOT NULL OR terreno_id IN (SELECT id FROM terrenos WHERE centroid_lat IS NOT NULL))`,
+  description: 'Contagem de clientes com posição — decide se usa viewport loading',
+  params: [],
+  use: 'medida',
+  returns: '{ count: number }',
+};
+
 export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
   sql: `SELECT rc.ordem,
               c.id  AS cliente_id,
