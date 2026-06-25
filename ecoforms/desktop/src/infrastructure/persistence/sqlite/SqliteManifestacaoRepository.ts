@@ -14,6 +14,7 @@ import type {
     HistoricoAlteracao,
     ModeloResposta,
     EnvioResposta,
+    Cobranca,
 } from '../../../domain/ouvidoria/ManifestacaoRepository';
 import { ProtocoloService } from '../../../domain/ouvidoria/ProtocoloService';
 import { SlaCalculator } from '../../../domain/ouvidoria/SlaCalculator';
@@ -102,6 +103,33 @@ function rowToSummary(row: ManifestacaoRow): ManifestacaoSummary {
     };
 }
 
+const BASE_SELECT = `
+    SELECT
+        m.id, m.protocolo, m.tipo_id, tm.nome AS tipo_nome,
+        m.origem_id, o.nome AS origem_nome,
+        m.classificacao_id, c.nome AS classificacao_nome,
+        m.solicitante_nome, m.solicitante_email, m.solicitante_telefone,
+        m.assunto, m.descricao, m.status, m.prioridade,
+        m.situacao_id, s.nome AS situacao_nome,
+        m.responsavel_id, u.nome AS responsavel_nome,
+        m.setor_id, se.nome AS setor_nome,
+        m.cliente_id, cl.nome AS cliente_nome,
+        m.criado_em, m.atualizado_em, m.encerrado_em,
+        m.anonimo, m.sigiloso,
+        m.atribuido_em, m.aceite_em, m.avaliacao_satisfacao, m.manifestacao_origem_id,
+        m.prazo_limite,
+        m.competencia, m.motivo_incompetencia, m.orgao_destino, m.data_competencia,
+        m.subassunto_id, m.subunidade_id, m.programa_orcamentario_id
+    FROM manifestacoes m
+    LEFT JOIN tipos_manifestacao tm ON m.tipo_id = tm.id
+    LEFT JOIN origens o ON m.origem_id = o.id
+    LEFT JOIN classificacoes c ON m.classificacao_id = c.id
+    LEFT JOIN situacoes s ON m.situacao_id = s.id
+    LEFT JOIN usuarios u ON m.responsavel_id = u.id
+    LEFT JOIN setores se ON m.setor_id = se.id
+    LEFT JOIN clientes cl ON m.cliente_id = cl.id
+`;
+
 export class SqliteManifestacaoRepository implements ManifestacaoRepository {
     private readonly protocoloService: ProtocoloService;
     private readonly slaCalculator: SlaCalculator;
@@ -130,100 +158,19 @@ export class SqliteManifestacaoRepository implements ManifestacaoRepository {
         if (filter?.dataInicio) { conditions.push('m.criado_em >= ?'); params.push(filter.dataInicio); }
         if (filter?.dataFim) { conditions.push('m.criado_em <= ?'); params.push(filter.dataFim); }
 
-        const sql = `
-            SELECT
-                m.id, m.protocolo, m.tipo_id, tm.nome AS tipo_nome,
-                m.origem_id, o.nome AS origem_nome,
-                m.classificacao_id, c.nome AS classificacao_nome,
-                m.solicitante_nome, m.solicitante_email, m.solicitante_telefone,
-                m.assunto, m.descricao, m.status, m.prioridade,
-                m.situacao_id, s.nome AS situacao_nome,
-                m.responsavel_id, u.nome AS responsavel_nome,
-                m.setor_id, se.nome AS setor_nome,
-                m.cliente_id, cl.nome AS cliente_nome,
-                m.criado_em, m.atualizado_em, m.encerrado_em,
-                m.anonimo, m.sigiloso,
-                m.atribuido_em, m.aceite_em, m.avaliacao_satisfacao, m.manifestacao_origem_id,
-                m.prazo_limite,
-                m.competencia, m.motivo_incompetencia, m.orgao_destino, m.data_competencia,
-                m.subassunto_id, m.subunidade_id, m.programa_orcamentario_id
-            FROM manifestacoes m
-            LEFT JOIN tipos_manifestacao tm ON m.tipo_id = tm.id
-            LEFT JOIN origens o ON m.origem_id = o.id
-            LEFT JOIN classificacoes c ON m.classificacao_id = c.id
-            LEFT JOIN situacoes s ON m.situacao_id = s.id
-            LEFT JOIN usuarios u ON m.responsavel_id = u.id
-            LEFT JOIN setores se ON m.setor_id = se.id
-            LEFT JOIN clientes cl ON m.cliente_id = cl.id
-            WHERE ${conditions.join(' AND ')}
-            ORDER BY m.criado_em DESC
-        `;
+        const sql = `${BASE_SELECT} WHERE ${conditions.join(' AND ')} ORDER BY m.criado_em DESC`;
         const rows = await this.db.query<ManifestacaoRow>(sql, params);
         return rows.map(rowToSummary);
     }
 
     async findById(id: string): Promise<ManifestacaoSummary | null> {
-        const sql = `
-            SELECT
-                m.id, m.protocolo, m.tipo_id, tm.nome AS tipo_nome,
-                m.origem_id, o.nome AS origem_nome,
-                m.classificacao_id, c.nome AS classificacao_nome,
-                m.solicitante_nome, m.solicitante_email, m.solicitante_telefone,
-                m.assunto, m.descricao, m.status, m.prioridade,
-                m.situacao_id, s.nome AS situacao_nome,
-                m.responsavel_id, u.nome AS responsavel_nome,
-                m.setor_id, se.nome AS setor_nome,
-                m.cliente_id, cl.nome AS cliente_nome,
-                m.criado_em, m.atualizado_em, m.encerrado_em,
-                m.anonimo, m.sigiloso,
-                m.atribuido_em, m.aceite_em, m.avaliacao_satisfacao, m.manifestacao_origem_id,
-                m.prazo_limite,
-                m.competencia, m.motivo_incompetencia, m.orgao_destino, m.data_competencia,
-                m.subassunto_id, m.subunidade_id, m.programa_orcamentario_id
-            FROM manifestacoes m
-            LEFT JOIN tipos_manifestacao tm ON m.tipo_id = tm.id
-            LEFT JOIN origens o ON m.origem_id = o.id
-            LEFT JOIN classificacoes c ON m.classificacao_id = c.id
-            LEFT JOIN situacoes s ON m.situacao_id = s.id
-            LEFT JOIN usuarios u ON m.responsavel_id = u.id
-            LEFT JOIN setores se ON m.setor_id = se.id
-            LEFT JOIN clientes cl ON m.cliente_id = cl.id
-            WHERE m.id = ?
-            LIMIT 1
-        `;
-        const rows2 = await this.db.query<ManifestacaoRow>(sql, [id]);
-        return rows2[0] ? rowToSummary(rows2[0]) : null;
+        const sql = `${BASE_SELECT} WHERE m.id = ? LIMIT 1`;
+        const rows = await this.db.query<ManifestacaoRow>(sql, [id]);
+        return rows[0] ? rowToSummary(rows[0]) : null;
     }
 
     async findByProtocolo(protocolo: string): Promise<ManifestacaoSummary | null> {
-        const sql = `
-            SELECT
-                m.id, m.protocolo, m.tipo_id, tm.nome AS tipo_nome,
-                m.origem_id, o.nome AS origem_nome,
-                m.classificacao_id, c.nome AS classificacao_nome,
-                m.solicitante_nome, m.solicitante_email, m.solicitante_telefone,
-                m.assunto, m.descricao, m.status, m.prioridade,
-                m.situacao_id, s.nome AS situacao_nome,
-                m.responsavel_id, u.nome AS responsavel_nome,
-                m.setor_id, se.nome AS setor_nome,
-                m.cliente_id, cl.nome AS cliente_nome,
-                m.criado_em, m.atualizado_em, m.encerrado_em,
-                m.anonimo, m.sigiloso,
-                m.atribuido_em, m.aceite_em, m.avaliacao_satisfacao, m.manifestacao_origem_id,
-                m.prazo_limite,
-                m.competencia, m.motivo_incompetencia, m.orgao_destino, m.data_competencia,
-                m.subassunto_id, m.subunidade_id, m.programa_orcamentario_id
-            FROM manifestacoes m
-            LEFT JOIN tipos_manifestacao tm ON m.tipo_id = tm.id
-            LEFT JOIN origens o ON m.origem_id = o.id
-            LEFT JOIN classificacoes c ON m.classificacao_id = c.id
-            LEFT JOIN situacoes s ON m.situacao_id = s.id
-            LEFT JOIN usuarios u ON m.responsavel_id = u.id
-            LEFT JOIN setores se ON m.setor_id = se.id
-            LEFT JOIN clientes cl ON m.cliente_id = cl.id
-            WHERE m.protocolo = ?
-            LIMIT 1
-        `;
+        const sql = `${BASE_SELECT} WHERE m.protocolo = ? LIMIT 1`;
         const rows = await this.db.query<ManifestacaoRow>(sql, [protocolo]);
         return rows[0] ? rowToSummary(rows[0]) : null;
     }
@@ -342,7 +289,12 @@ export class SqliteManifestacaoRepository implements ManifestacaoRepository {
     }
 
     async delete(id: string): Promise<void> {
-        await this.db.execute('DELETE FROM manifestacoes WHERE id = ?', [id]);
+        const now = new Date().toISOString();
+        await this.db.execute(
+            "UPDATE manifestacoes SET status = 'cancelada', atualizado_em = ? WHERE id = ?",
+            [now, id],
+        );
+        await this.sync?.write('manifestacao.status_atualizado', { manifestacaoId: id, status: 'cancelada' }, { aggregateId: id });
     }
 
     // --- Tramitacoes ---
@@ -614,5 +566,25 @@ export class SqliteManifestacaoRepository implements ManifestacaoRepository {
             'INSERT INTO envios_resposta (id, resposta_id, manifestacao_id, canal, destinatario, status_envio, data_envio, erro) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [e.id, e.respostaId, e.manifestacaoId, e.canal, e.destinatario ?? null, e.statusEnvio, e.dataEnvio ?? null, e.erro ?? null],
         );
+    }
+
+    // --- Cobranças ---
+    async listCobranças(manifestacaoId: string): Promise<Cobranca[]> {
+        const rows = await this.db.query<{
+            id: string; mensagem: string; criado_em: string; usuario_nome: string;
+        }>(
+            `SELECT n.id, n.mensagem, n.criado_em, u.nome AS usuario_nome
+             FROM notificacoes n
+             LEFT JOIN usuarios u ON n.usuario_id = u.id
+             WHERE n.manifestacao_id = ? AND n.prazo_id IS NOT NULL
+             ORDER BY n.criado_em DESC`,
+            [manifestacaoId],
+        );
+        return rows.map(r => ({
+            id: r.id,
+            mensagem: r.mensagem,
+            criadoEm: r.criado_em,
+            usuarioNome: r.usuario_nome,
+        }));
     }
 }
