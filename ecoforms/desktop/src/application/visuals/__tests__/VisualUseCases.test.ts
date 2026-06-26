@@ -448,7 +448,7 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb: SqlitePort = {
             query: async (_sql: string) => {
                 capturedQuery = _sql;
-                if (_sql.includes('view_registry')) return [{ widgets: JSON.stringify([{ source: 'module_visual', visual_type: 'table' }]) }] as any;
+                if (_sql.includes('registro_visualizacoes')) return [{ widgets: JSON.stringify([{ source: 'module_visual', visual_type: 'table' }]) }] as any;
                 if (_sql.includes('module_registry')) return [{
                     id: 'mod-1', slug: 'inspecoes', name: 'Inspeções', entity_type: 'inspecao',
                     status: 'published',
@@ -471,7 +471,7 @@ describe('GetModuleVisuaisUseCase', () => {
         const cache = new VisualQueryCache();
         const sut = new GetModuleVisuaisUseCase(mockDb, repo, cache);
         const result = await sut.execute('inspecoes', 'user-1', 'admin', undefined, 'dash-1');
-        expect(capturedQuery).toContain('view_registry');
+        expect(capturedQuery).toContain('registro_visualizacoes');
         expect(result!.visuais.length).toBe(1);
     });
 });

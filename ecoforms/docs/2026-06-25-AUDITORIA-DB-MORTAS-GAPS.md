@@ -13,6 +13,10 @@ runtime **não detectados** na auditoria anterior, além do mapeamento de tabela
 
 Todos os achados abaixo foram **verificados** lendo arquivo:linha e cruzando com a definição real da tabela.
 
+> **Atualização 2026-06-25 (commit `6da5e2c`):** os 5 críticos **CR-1..CR-5 foram corrigidos**.
+> Verificação por revisão estática (ambiente sem `node_modules` para `tsc`/testes). Tabelas mortas,
+> migrations órfãs e incoerências intrínsecas (seções 2–5) **permanecem em aberto**.
+
 ---
 
 ## RESUMO POR PRIORIDADE
@@ -27,7 +31,7 @@ Todos os achados abaixo foram **verificados** lendo arquivo:linha e cruzando com
 
 ## 1. CRÍTICOS — Falhas em runtime (NOVOS, não cobertos antes)
 
-### CR-1. Handler `ecoforms.registro.criado` insere colunas inexistentes
+### CR-1. Handler `ecoforms.registro.criado` insere colunas inexistentes — ✅ RESOLVIDO (`6da5e2c`)
 
 **Arquivo:** `desktop/src/infrastructure/sync/HandlerRegistry.ts:133-147`
 
@@ -51,7 +55,7 @@ formulário sincronizados de outros dispositivos **nunca são persistidos no des
 
 ---
 
-### CR-2. Handler `task.arquivada` atualiza coluna inexistente
+### CR-2. Handler `task.arquivada` atualiza coluna inexistente — ✅ RESOLVIDO (`6da5e2c`)
 
 **Arquivo:** `desktop/src/infrastructure/sync/HandlerRegistry.ts:199-202`
 
@@ -68,7 +72,7 @@ Tarefas arquivadas em outro dispositivo nunca são marcadas como arquivadas no d
 
 ---
 
-### CR-3. Handler `demanda.encaminhada` atualiza 3 colunas inexistentes
+### CR-3. Handler `demanda.encaminhada` atualiza 3 colunas inexistentes — ✅ RESOLVIDO (`6da5e2c`)
 
 **Arquivo:** `desktop/src/infrastructure/sync/HandlerRegistry.ts:225-235`
 
@@ -86,7 +90,7 @@ O estado de encaminhamento nunca é persistido.
 
 ---
 
-### CR-4. Repositórios de Views e Decisions consultam tabelas que não existem
+### CR-4. Repositórios de Views e Decisions consultam tabelas que não existem — ✅ RESOLVIDO (`6da5e2c`)
 
 **Arquivos:**
 - `desktop/src/infrastructure/persistence/sqlite/SqliteDecisionRegistryRepository.ts` — consulta
@@ -106,7 +110,7 @@ Caso duplo: as tabelas PT-BR ficam **mortas** (ninguém as usa) e os repos ficam
 
 ---
 
-### CR-5. Limpeza de export usa nomes de tabela obsoletos — dado sensível vaza no backup
+### CR-5. Limpeza de export usa nomes de tabela obsoletos — dado sensível vaza no backup — ✅ RESOLVIDO (`6da5e2c`)
 
 **Arquivo:** `desktop/src-tauri/src/database.rs:398-405`
 

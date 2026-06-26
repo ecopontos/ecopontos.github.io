@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import type { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, EyeOff, Layers, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { CATEGORIA_LABELS } from '@/lib/map-styles';
 import type { GeoLayer } from '@/src/interface/hooks/queries/useMapData';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface CamadasGenericasPanelProps {
     geoLayers: GeoLayer[];
@@ -21,6 +26,7 @@ export function CamadasGenericasPanel({
     geoLayers, loadingLayers, refetchLayers,
     fileInputRef, uploading, onFileUpload, onToggleLayer, onDeleteLayer,
 }: CamadasGenericasPanelProps) {
+    const [deleteTarget, setDeleteTarget] = useState<GeoLayer | null>(null);
     return (
         <section className="space-y-2">
             <div className="flex items-center justify-between">
@@ -54,7 +60,7 @@ export function CamadasGenericasPanel({
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onToggleLayer(layer)}>
                                     {layer.visivel ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3 text-muted-foreground" />}
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDeleteLayer(layer)}>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(layer)}>
                                     <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
@@ -67,6 +73,25 @@ export function CamadasGenericasPanel({
                     </div>
                 ))}
             </div>
+
+            <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remover camada</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Remover a camada &quot;{deleteTarget?.nome}&quot;? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => { if (deleteTarget) onDeleteLayer(deleteTarget); setDeleteTarget(null); }}
+                        >
+                            Remover
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </section>
     );
 }

@@ -30,6 +30,23 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     const intercorrVisRef  = useRef(intercorrenciasLayerVisible);   intercorrVisRef.current = intercorrenciasLayerVisible;
     const checklistVisRef  = useRef(checklistLayerVisible);         checklistVisRef.current = checklistLayerVisible;
 
+    // Registra listeners de camada UMA vez por instância de mapa. `setStyle`
+    // (troca de satélite) recria as sources mas não remove os `map.on(...)`;
+    // sem este guard cada troca re-registrava os handlers e um clique abria
+    // N popups. Ver useGeoDataLayers para o mesmo padrão.
+    const boundRef = useRef<Set<string>>(new Set());
+    function bindOnce(
+        map: maplibregl.Map,
+        type: 'click' | 'mouseenter' | 'mouseleave',
+        layer: string,
+        fn: (e: maplibregl.MapLayerMouseEvent) => void,
+    ) {
+        const key = `${type}:${layer}`;
+        if (boundRef.current.has(key)) return;
+        boundRef.current.add(key);
+        map.on(type, layer, fn);
+    }
+
     function renderExecucaoLayer(map: maplibregl.Map, points: ExecucaoClienteGeo[]) {
         const vis = execucaoVisRef.current ? 'visible' : 'none';
         const geo: FeatureCollection = {
@@ -56,7 +73,7 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'exec-points', (e) => {
+            bindOnce(map, 'click', 'exec-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
@@ -95,8 +112,8 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'exec-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'exec-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'exec-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'exec-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('exec-points')) map.setLayoutProperty('exec-points', 'visibility', vis);
     }
@@ -128,7 +145,7 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'interc-points', (e) => {
+            bindOnce(map, 'click', 'interc-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
@@ -168,8 +185,8 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'interc-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'interc-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'interc-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'interc-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('interc-points')) map.setLayoutProperty('interc-points', 'visibility', vis);
     }
@@ -199,7 +216,7 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'checklist-points', (e) => {
+            bindOnce(map, 'click', 'checklist-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
@@ -234,8 +251,8 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'checklist-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'checklist-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'checklist-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'checklist-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('checklist-points')) map.setLayoutProperty('checklist-points', 'visibility', vis);
     }

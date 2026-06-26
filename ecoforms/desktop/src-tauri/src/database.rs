@@ -395,14 +395,19 @@ pub fn db_export_for_mobile(
         .execute("PRAGMA foreign_keys = OFF", [])
         .ok();
 
-    export_conn.execute("DELETE FROM tbl_audit_log", []).ok();
-    export_conn.execute("DELETE FROM sync_event_queue", []).ok();
-    export_conn.execute("DELETE FROM sync_device_log", []).ok();
-    export_conn.execute("DELETE FROM sync_gap_log", []).ok();
-    export_conn.execute("DELETE FROM sync_cursor", []).ok();
-    export_conn.execute("DELETE FROM sync_manifest", []).ok();
-    export_conn.execute("DELETE FROM sync_status", []).ok();
-    export_conn.execute("DELETE FROM sync_applied_log", []).ok();
+    // Nomes reais das tabelas (PT-BR, ver scripts/ensure-columns.ts). Antes
+    // estes DELETEs usavam nomes EN obsoletos (tbl_audit_log, sync_event_queue,
+    // ...) que não existem; com `.ok()` o erro era silenciado e os dados
+    // sensíveis (audit log, fila de eventos, manifests) PERMANECIAM no backup
+    // exportado. `sync_status` foi removido (não existe no schema).
+    export_conn.execute("DELETE FROM log_auditoria", []).ok();
+    export_conn.execute("DELETE FROM fila_eventos_sync", []).ok();
+    export_conn.execute("DELETE FROM fila_eventos_lan", []).ok();
+    export_conn.execute("DELETE FROM log_dispositivos_sync", []).ok();
+    export_conn.execute("DELETE FROM log_gaps_sync", []).ok();
+    export_conn.execute("DELETE FROM cursor_sync", []).ok();
+    export_conn.execute("DELETE FROM manifesto_sync", []).ok();
+    export_conn.execute("DELETE FROM log_eventos_aplicados", []).ok();
 
     // Remover dados sensíveis de usuários
     export_conn

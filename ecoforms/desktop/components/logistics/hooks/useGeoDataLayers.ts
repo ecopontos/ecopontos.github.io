@@ -18,14 +18,16 @@ import { useViewport } from './useViewport';
 
 function hashTerrenos(terrenos: TerrenoGeo[], zoom: number): string {
     if (terrenos.length === 0) return '';
-    let h = terrenos.length + zoom * 100000;
-    for (let i = 0; i < Math.min(terrenos.length, 100); i++) {
+    // Hash do id COMPLETO (não só do 1º caractere) amostrado ao longo do array,
+    // mais area/ativo — evita colisões que deixariam o cache de geojson defasado.
+    let h = (terrenos.length * 2654435761 + zoom * 40503) | 0;
+    const step = Math.max(1, Math.floor(terrenos.length / 200));
+    for (let i = 0; i < terrenos.length; i += step) {
         const t = terrenos[i];
-        h = ((h << 5) - h + t.id.charCodeAt(0) + (t.area_m2 ?? 0) + (t.ativo ?? 0)) | 0;
-    }
-    if (terrenos.length > 0) {
-        const last = terrenos[terrenos.length - 1];
-        h = ((h << 5) - h + last.id.charCodeAt(0)) | 0;
+        for (let j = 0; j < t.id.length; j++) {
+            h = ((h << 5) - h + t.id.charCodeAt(j)) | 0;
+        }
+        h = ((h << 5) - h + (t.area_m2 ?? 0) + (t.ativo ?? 0)) | 0;
     }
     return String(h);
 }
@@ -61,6 +63,28 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
 
     const terrenosGeoCache = useRef<{ hash: string; data: FeatureCollection }>({ hash: '', data: { type: 'FeatureCollection', features: [] } });
 
+    // Enquadramento inicial: guardado em ref (sobrevive a setStyle/troca de
+    // satélite). Antes era uma source fake `_fitted` que o setStyle apagava,
+    // fazendo o mapa re-enquadrar (resetando o pan/zoom) a cada troca de estilo.
+    const fittedRef = useRef(false);
+
+    // Listeners de camada (click/hover) são registrados UMA vez por instância
+    // de mapa. `setStyle` recria as sources/layers mas NÃO remove os listeners
+    // de `map.on(type, layerId, fn)`; sem este guard, cada troca de satélite
+    // re-registrava os handlers e um clique abria N popups (vazamento).
+    const boundRef = useRef<Set<string>>(new Set());
+    const bindOnce = useCallback((
+        map: maplibregl.Map,
+        type: 'click' | 'mouseenter' | 'mouseleave',
+        layer: string,
+        fn: (e: maplibregl.MapLayerMouseEvent) => void,
+    ) => {
+        const key = `${type}:${layer}`;
+        if (boundRef.current.has(key)) return;
+        boundRef.current.add(key);
+        map.on(type, layer, fn);
+    }, []);
+
     const renderDataLayers = useCallback((map: maplibregl.Map) => {
         const hash = hashTerrenos(terrenosRef.current, zoomRef.current);
         if (hash !== terrenosGeoCache.current.hash) {
@@ -92,7 +116,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     TIPO_CORES.outro],
                     'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 1.5] },
                 layout: { visibility: terrVis } });
-            map.on('click', 'terrenos-fill', (e) => {
+            bindOnce(map, 'click', 'terrenos-fill', (e) => {
                 const f = e.features?.[0];
                 if (!f) return;
                 const p = f.properties as Record<string, string | number | null>;
@@ -137,13 +161,13 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'terrenos-fill', (e) => {
+            bindOnce(map, 'mouseenter', 'terrenos-fill', (e) => {
                 map.getCanvas().style.cursor = 'pointer';
                 if (e.features?.[0]) {
                     map.setFeatureState({ source: 'terrenos', id: e.features[0].id }, { hover: true });
                 }
             });
-            map.on('mouseleave', 'terrenos-fill', (e) => {
+            bindOnce(map, 'mouseleave', 'terrenos-fill', (e) => {
                 map.getCanvas().style.cursor = '';
                 if (e.features?.[0]) {
                     map.setFeatureState({ source: 'terrenos', id: e.features[0].id }, { hover: false });
@@ -191,7 +215,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
                 },
                 layout: { visibility: cliVis } });
-            map.on('click', 'clientes-point', (e) => {
+            bindOnce(map, 'click', 'clientes-point', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | null>;
@@ -230,7 +254,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('click', 'clientes-cluster', async (e) => {
+            bindOnce(map, 'click', 'clientes-cluster', async (e) => {
                 const features = map.queryRenderedFeatures(e.point, { layers: ['clientes-cluster'] });
                 const clusterId = features[0]?.properties?.cluster_id;
                 if (clusterId == null) return;
@@ -242,8 +266,8 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                 } catch { /* cluster expandido */ }
             });
             ['clientes-point', 'clientes-cluster'].forEach(id => {
-                map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
-                map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+                bindOnce(map, 'mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+                bindOnce(map, 'mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
             });
         }
         if (map.getLayer('clientes-cluster'))       map.setLayoutProperty('clientes-cluster',       'visibility', cliVis);
@@ -256,7 +280,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
         // 4. Itinerário (linha de rota + pins numerados)
         renderItinerary(map, itinerarioRef.current);
 
-        if (!map.getSource('_fitted')) {
+        if (!fittedRef.current) {
             const bounds = new maplibregl.LngLatBounds();
             if (clientesRef.current.length > 0) {
                 clientesRef.current.forEach(c => bounds.extend([c.longitude, c.latitude]));
@@ -266,7 +290,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                 bounds.extend([e.maxLng, e.maxLat]);
             }
             if (!bounds.isEmpty()) {
-                map.addSource('_fitted', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+                fittedRef.current = true;
                 map.fitBounds(bounds, { padding: 60, maxZoom: 14, animate: false });
             }
         }
@@ -314,7 +338,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     visibility: itiVis,
                 },
                 paint: { 'text-color': '#fff' } });
-            map.on('click', 'itinerary-circle', (e) => {
+            bindOnce(map, 'click', 'itinerary-circle', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | null>;
@@ -346,8 +370,8 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'itinerary-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'itinerary-circle', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'itinerary-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'itinerary-circle', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('itinerary-line'))   map.setLayoutProperty('itinerary-line',   'visibility', itiVis);
         if (map.getLayer('itinerary-circle')) map.setLayoutProperty('itinerary-circle', 'visibility', itiVis);
