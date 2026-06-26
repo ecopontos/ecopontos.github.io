@@ -14,6 +14,13 @@ aba **Mapa** (`/logistica` → tab "Mapa" → `LogisticsMap`).
 
 Todos os achados foram verificados em arquivo:linha.
 
+> **Atualização 2026-06-25 (commit `a10c50d`):** **N1, N2, N3, N5 e N6 corrigidos**.
+> **N4** (fetch duplicado) **adiado** — página e mapa usam filtros diferentes em `useRoteiros`/
+> `useExecucoes`, então não são duplicatas reais; dedupe seguro exige cache compartilhado.
+> **N7** (unificação dos 3 setups MapLibre): **parcial** — `OSM_STYLE` unificado + helper
+> `createBaseMap` (ver N7). Verificação por revisão estática (ambiente sem `node_modules`).
+> Gaps funcionais G1–G3, G6 permanecem abertos.
+
 ---
 
 ## 0. STATUS DO RELATÓRIO ANTERIOR (2026-06-13)
@@ -31,7 +38,7 @@ Todos os achados foram verificados em arquivo:linha.
 
 ## 1. BUGS NOVOS (não cobertos antes)
 
-### N1. Acúmulo de listeners a cada troca de satélite/OSM → múltiplos popups (ALTO)
+### N1. Acúmulo de listeners a cada troca de satélite/OSM → múltiplos popups (ALTO) — ✅ RESOLVIDO (`a10c50d`)
 
 **Arquivos:** `components/logistics/hooks/useGeoDataLayers.ts` e `useExecucaoLayers.ts`
 
@@ -57,7 +64,7 @@ o setup do mapa em `useMapInstance`.
 
 ---
 
-### N2. Câmera reseta ao trocar satélite (MÉDIO)
+### N2. Câmera reseta ao trocar satélite (MÉDIO) — ✅ RESOLVIDO (`a10c50d`)
 
 **Arquivo:** `useGeoDataLayers.ts:259-271`
 
@@ -72,7 +79,7 @@ navegação.
 
 ---
 
-### N3. Upload de GeoJSON sem limite de tamanho/complexidade (BAIXO)
+### N3. Upload de GeoJSON sem limite de tamanho/complexidade (BAIXO) — ✅ RESOLVIDO (`a10c50d`)
 
 **Arquivo:** `useLayerActions.ts:41-68`
 
@@ -86,7 +93,7 @@ simplificação no import (diferente dos terrenos, que usam `simplifyGeometry` e
 
 ---
 
-### N4. Fetch duplicado de roteiros e execuções (BAIXO)
+### N4. Fetch duplicado de roteiros e execuções (BAIXO) — ⏸️ ADIADO (precisa de cache compartilhado)
 
 **Arquivos:** `useLogistics.ts:5-33,65+`, `page.tsx:28-29`, `useGeoDataLayers.ts:41`, `useExecucaoLayers.ts:21`
 
@@ -99,7 +106,7 @@ chave por filtro.
 
 ---
 
-### N5. `hashTerrenos` fraco → terrenos atualizados podem não re-renderizar (BAIXO)
+### N5. `hashTerrenos` fraco → terrenos atualizados podem não re-renderizar (BAIXO) — ✅ RESOLVIDO (`a10c50d`)
 
 **Arquivo:** `useGeoDataLayers.ts:19-31`
 
@@ -113,14 +120,22 @@ mapa mostra dados **defasados**.
 
 ## 2. QUALIDADE / ARQUITETURA
 
-### N6. `alert()` / `confirm()` nativos divergem do padrão do app (MÉDIO)
+### N6. `alert()` / `confirm()` nativos divergem do padrão do app (MÉDIO) — ✅ RESOLVIDO (`a10c50d`)
 
 **Arquivo:** `useLayerActions.ts:54` (`alert`), `:85` e `:93` (`confirm`)
 
 O resto do app usa `sonner` (`toast`) e `Dialog`/`AlertDialog`. Os diálogos nativos bloqueiam a thread e quebram
 a consistência visual. Trocar por `toast.error(...)` + `AlertDialog` de confirmação.
 
-### N7. Tripla duplicação de setup MapLibre persiste (ex-B2/B3) (MÉDIO)
+### N7. Tripla duplicação de setup MapLibre persiste (ex-B2/B3) (MÉDIO) — 🟡 PARCIAL
+
+**Feito:** `OSM_STYLE` agora é **único** em `lib/map-styles.ts` (3 → 1); os dois modais
+(`ItinerarioMap`, `RoteiroMap`) deixaram de ter cópias inline e a criação do mapa+controles
+(antes byte-a-byte idêntica) foi extraída para `createBaseMap` em `lib/map-base.ts`.
+**Pendente (maior esforço / decisão visual):** helpers compartilhados de popup/route-line e
+unificação da paleta de cores (itinerário/logística/agendamento ainda usam cores próprias).
+
+
 
 A aba Mapa já centralizou estilos em `lib/map-styles.ts` (`OSM_STYLE`/`SATELLITE_STYLE`), mas
 `ItinerarioMap.tsx:10` e `RoteiroMap.tsx:10` ainda **definem o próprio `OSM_STYLE` inline** e instanciam mapas
