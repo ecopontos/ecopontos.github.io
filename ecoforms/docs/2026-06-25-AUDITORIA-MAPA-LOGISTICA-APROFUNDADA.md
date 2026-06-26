@@ -18,9 +18,11 @@ Todos os achados foram verificados em arquivo:linha.
 > **N4** (fetch duplicado) **adiado** — página e mapa usam filtros diferentes em `useRoteiros`/
 > `useExecucoes`, então não são duplicatas reais; dedupe seguro exige cache compartilhado.
 > **N7** (unificação dos 3 setups MapLibre): **parcial** — `OSM_STYLE` unificado + helper
-> `createBaseMap` (ver N7). **Gaps funcionais G1, G2, G3 resolvidos** e **G6 parcial** (distância
-> em linha reta) — ver seção 0. Verificação por revisão estática (ambiente sem `node_modules`).
-> Restam G4 (camadas de execução no detalhe) e G5 (deep-link aba Mapa).
+> `createBaseMap` (ver N7). **Gaps funcionais G1, G2, G3, G5 resolvidos** e **G6 parcial** (distância
+> em linha reta) — ver seção 0. **G4 endereçado por navegação** (botão "Mapa" nas execuções abre a aba
+> Mapa com a execução pré-selecionada); embutir as camadas de execução no mapa do detalhe segue opcional.
+> Verificação por revisão estática (ambiente sem `node_modules`). Pendentes: N4, roteamento viário (G6),
+> e a parte restante do N7 (popup/route-line + paleta).
 
 ---
 
