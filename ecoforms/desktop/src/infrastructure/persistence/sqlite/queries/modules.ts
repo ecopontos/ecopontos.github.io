@@ -9,7 +9,7 @@ export const MODULO_POR_SLUG: QueryDef = {
 };
 
 export const DASHBOARD_WIDGETS: QueryDef = {
-  sql: `SELECT widgets FROM view_registry WHERE id = ? LIMIT 1`,
+  sql: `SELECT widgets FROM registro_visualizacoes WHERE id = ? LIMIT 1`,
   description: 'Widgets de um dashboard por ID',
   params: ['id'],
   use: 'operacional',

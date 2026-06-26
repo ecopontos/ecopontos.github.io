@@ -75,7 +75,7 @@ export class GetModuleVisuaisUseCase {
         let filteredConfigs = visualConfigs;
         if (dashboardId) {
             const dashRows = await this.db.query<Record<string, unknown>>(
-                'SELECT widgets FROM view_registry WHERE id = ? LIMIT 1', [dashboardId],
+                'SELECT widgets FROM registro_visualizacoes WHERE id = ? LIMIT 1', [dashboardId],
             );
             if (dashRows[0]) {
                 const widgets = typeof dashRows[0].widgets === 'string'

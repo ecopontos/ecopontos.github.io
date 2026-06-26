@@ -41,9 +41,11 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
 
     async findById(id: string): Promise<DecisionRegistry | null> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry WHERE id = ? AND ativo = 1 LIMIT 1`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes WHERE id = ? AND ativo = 1 LIMIT 1`,
             [id],
         );
         return rows[0] ? rowToDecision(rows[0]) : null;
@@ -51,9 +53,11 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
 
     async findByTargetType(targetType: string): Promise<DecisionRegistry[]> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry WHERE target_type = ? AND ativo = 1 ORDER BY action`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes WHERE tipo_alvo = ? AND ativo = 1 ORDER BY acao`,
             [targetType],
         );
         return rows.map(rowToDecision);
@@ -61,9 +65,11 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
 
     async findByAction(action: string): Promise<DecisionRegistry[]> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry WHERE action = ? AND ativo = 1 ORDER BY target_type`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes WHERE acao = ? AND ativo = 1 ORDER BY tipo_alvo`,
             [action],
         );
         return rows.map(rowToDecision);
@@ -71,9 +77,11 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
 
     async findByPerfilAndTargetType(perfil: string, targetType: string): Promise<DecisionRegistry[]> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry WHERE target_type = ? AND perfis LIKE ? AND ativo = 1 ORDER BY action`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes WHERE tipo_alvo = ? AND perfis LIKE ? AND ativo = 1 ORDER BY acao`,
             [targetType, `%"${perfil}"%`],
         );
         return rows.filter((row) => {
@@ -88,18 +96,22 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
 
     async findActive(): Promise<DecisionRegistry[]> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry WHERE ativo = 1 ORDER BY target_type, action`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes WHERE ativo = 1 ORDER BY tipo_alvo, acao`,
         );
         return rows.map(rowToDecision);
     }
 
     async findAll(): Promise<DecisionRegistry[]> {
         const rows = await this.db.query<DecisionRow>(
-            `SELECT id, target_type, action, perfis, enabled_when, steps, params,
-                    consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em
-             FROM decision_registry ORDER BY target_type, action`,
+            `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                    passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                    padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                    ativo, criado_em, atualizado_em
+             FROM registro_decisoes ORDER BY tipo_alvo, acao`,
         );
         return rows.map(rowToDecision);
     }
@@ -107,21 +119,21 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
     async save(decision: DecisionRegistry): Promise<void> {
         const row = decision.toRow();
         const exists = await this.db.query<{ id: string }>(
-            `SELECT id FROM decision_registry WHERE id = ? LIMIT 1`,
+            `SELECT id FROM registro_decisoes WHERE id = ? LIMIT 1`,
             [row.id],
         );
         if (exists.length === 0) {
             await this.db.execute(
-                `INSERT INTO decision_registry (id, target_type, action, perfis, enabled_when, steps, params,
-                  consequence_type, consequence_pattern, consequence_config, ativo, criado_em, atualizado_em)
+                `INSERT INTO registro_decisoes (id, tipo_alvo, acao, perfis, ativado_quando, passos, parametros,
+                  tipo_consequencia, padrao_consequencia, config_consequencia, ativo, criado_em, atualizado_em)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, datetime('now')), datetime('now'))`,
                 [row.id, row.target_type, row.action, row.perfis, row.enabled_when, row.steps, row.params,
                  row.consequence_type, row.consequence_pattern, row.consequence_config, row.ativo, row.criado_em],
             );
         } else {
             await this.db.execute(
-                `UPDATE decision_registry SET target_type = ?, action = ?, perfis = ?, enabled_when = ?, steps = ?,
-                 params = ?, consequence_type = ?, consequence_pattern = ?, consequence_config = ?, ativo = ?,
+                `UPDATE registro_decisoes SET tipo_alvo = ?, acao = ?, perfis = ?, ativado_quando = ?, passos = ?,
+                 parametros = ?, tipo_consequencia = ?, padrao_consequencia = ?, config_consequencia = ?, ativo = ?,
                  atualizado_em = datetime('now') WHERE id = ?`,
                 [row.target_type, row.action, row.perfis, row.enabled_when, row.steps, row.params,
                  row.consequence_type, row.consequence_pattern, row.consequence_config, row.ativo, row.id],
@@ -130,6 +142,6 @@ export class SqliteDecisionRegistryRepository implements DecisionRegistryReposit
     }
 
     async delete(id: string): Promise<void> {
-        await this.db.execute(`DELETE FROM decision_registry WHERE id = ?`, [id]);
+        await this.db.execute(`DELETE FROM registro_decisoes WHERE id = ?`, [id]);
     }
 }

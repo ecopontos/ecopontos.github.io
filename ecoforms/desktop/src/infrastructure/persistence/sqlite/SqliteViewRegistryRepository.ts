@@ -33,8 +33,8 @@ export class SqliteViewRegistryRepository implements ViewRegistryRepository {
 
     async findById(id: string): Promise<ViewRegistry | null> {
         const rows = await this.db.query<ViewRow>(
-            `SELECT id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em
-             FROM view_registry WHERE id = ? AND ativo = 1 LIMIT 1`,
+            `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, ativo, criado_em, atualizado_em
+             FROM registro_visualizacoes WHERE id = ? AND ativo = 1 LIMIT 1`,
             [id],
         );
         return rows[0] ? rowToView(rows[0]) : null;
@@ -42,8 +42,8 @@ export class SqliteViewRegistryRepository implements ViewRegistryRepository {
 
     async findByModuleType(moduleType: string): Promise<ViewRegistry[]> {
         const rows = await this.db.query<ViewRow>(
-            `SELECT id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em
-             FROM view_registry WHERE module_type = ? AND ativo = 1 ORDER BY titulo`,
+            `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, ativo, criado_em, atualizado_em
+             FROM registro_visualizacoes WHERE tipo_modulo = ? AND ativo = 1 ORDER BY titulo`,
             [moduleType],
         );
         return rows.map(rowToView);
@@ -51,8 +51,8 @@ export class SqliteViewRegistryRepository implements ViewRegistryRepository {
 
     async findByPerfil(perfil: string): Promise<ViewRegistry[]> {
         const rows = await this.db.query<ViewRow>(
-            `SELECT id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em
-             FROM view_registry WHERE perfis LIKE ? AND ativo = 1 ORDER BY titulo`,
+            `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, ativo, criado_em, atualizado_em
+             FROM registro_visualizacoes WHERE perfis LIKE ? AND ativo = 1 ORDER BY titulo`,
             [`%"${perfil}"%`],
         );
         return rows.filter((row) => {
@@ -67,16 +67,16 @@ export class SqliteViewRegistryRepository implements ViewRegistryRepository {
 
     async findActive(): Promise<ViewRegistry[]> {
         const rows = await this.db.query<ViewRow>(
-            `SELECT id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em
-             FROM view_registry WHERE ativo = 1 ORDER BY titulo`,
+            `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, ativo, criado_em, atualizado_em
+             FROM registro_visualizacoes WHERE ativo = 1 ORDER BY titulo`,
         );
         return rows.map(rowToView);
     }
 
     async findAll(): Promise<ViewRegistry[]> {
         const rows = await this.db.query<ViewRow>(
-            `SELECT id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em
-             FROM view_registry ORDER BY titulo`,
+            `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, ativo, criado_em, atualizado_em
+             FROM registro_visualizacoes ORDER BY titulo`,
         );
         return rows.map(rowToView);
     }
@@ -84,24 +84,24 @@ export class SqliteViewRegistryRepository implements ViewRegistryRepository {
     async save(view: ViewRegistry): Promise<void> {
         const row = view.toRow();
         const exists = await this.db.query<{ id: string }>(
-            `SELECT id FROM view_registry WHERE id = ? LIMIT 1`,
+            `SELECT id FROM registro_visualizacoes WHERE id = ? LIMIT 1`,
             [row.id],
         );
         if (exists.length === 0) {
             await this.db.execute(
-                `INSERT INTO view_registry (id, titulo, perfis, layout, widgets, module_type, ativo, criado_em, atualizado_em)
+                `INSERT INTO registro_visualizacoes (id, titulo, perfis, layout, widgets, tipo_modulo, ativo, criado_em, atualizado_em)
                  VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(?, datetime('now')), datetime('now'))`,
                 [row.id, row.titulo, row.perfis, row.layout, row.widgets, row.module_type, row.ativo, row.criado_em],
             );
         } else {
             await this.db.execute(
-                `UPDATE view_registry SET titulo = ?, perfis = ?, layout = ?, widgets = ?, module_type = ?, ativo = ?, atualizado_em = datetime('now') WHERE id = ?`,
+                `UPDATE registro_visualizacoes SET titulo = ?, perfis = ?, layout = ?, widgets = ?, tipo_modulo = ?, ativo = ?, atualizado_em = datetime('now') WHERE id = ?`,
                 [row.titulo, row.perfis, row.layout, row.widgets, row.module_type, row.ativo, row.id],
             );
         }
     }
 
     async delete(id: string): Promise<void> {
-        await this.db.execute(`DELETE FROM view_registry WHERE id = ?`, [id]);
+        await this.db.execute(`DELETE FROM registro_visualizacoes WHERE id = ?`, [id]);
     }
 }
