@@ -45,6 +45,9 @@ export type EcoFormsEventType =
   | 'task.concluida'
   | 'task.atualizada'
   | 'task.arquivada'
+  | 'task.desarquivada'
+  | 'task.excluida'
+  | 'task.comentario_adicionado'
   | 'module.publicado'
   | 'module.arquivado'
   | 'agendamento.criado'
@@ -97,6 +100,9 @@ export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'task.concluida',
   'task.atualizada',
   'task.arquivada',
+  'task.desarquivada',
+  'task.excluida',
+  'task.comentario_adicionado',
   'module.publicado',
   'module.arquivado',
   'agendamento.criado',
