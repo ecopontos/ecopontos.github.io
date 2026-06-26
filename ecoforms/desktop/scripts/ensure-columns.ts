@@ -1643,6 +1643,16 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
         VALUES ('lan_sync_path', '', 'Caminho da pasta LAN para sincronização local (vazio = desativado)')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_host', '172.16.76.202', 'Host do PostgreSQL legado (sync roteiros/pesagens)')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_port', '5432', 'Porta do PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_db', 'geo_fpolis', 'Nome do banco PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_user', 'smma', 'Usuário do PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_password', '', 'Senha do PostgreSQL legado')`).catch(() => {});
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tbl_email_config (
@@ -1811,18 +1821,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_service_types_ativo ON tbl_service_types(ativo)`);
     await execute(`ALTER TABLE tbl_service_types ADD COLUMN setor_id TEXT REFERENCES setores(id)`).catch(() => {});
 
-    try {
-        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
-        if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tbl_service_types (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
-                ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
-                ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
-                ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
-            `);
-            console.log('[Seed] tbl_service_types OK');
-        }
-    } catch (e) { console.warn('[Seed] tbl_service_types:', e); }
-
     await execute(`
         CREATE TABLE IF NOT EXISTS tbl_service_slots (
             id              TEXT PRIMARY KEY,
@@ -1855,6 +1853,20 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ADR-053: Flag requerMapa para exibição de roteiro geográfico
     await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     await execute(`UPDATE tbl_service_types SET requer_mapa = 1 WHERE id IN ('volumosos', 'evento')`).catch(() => {});
+
+    // Seed: executa APÓS o ALTER que adiciona `requer_mapa` (referenciado no INSERT).
+    try {
+        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
+        if (c[0]?.n === 0) {
+            await execute(`INSERT INTO tbl_service_types (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
+                ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
+                ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
+                ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
+            `);
+            console.log('[Seed] tbl_service_types OK');
+        }
+    } catch (e) { console.warn('[Seed] tbl_service_types:', e); }
+
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN abertura_em TEXT`).catch(() => {});
     await execute(`ALTER TABLE tarefas ADD COLUMN agendamento_id TEXT`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_abertura ON tbl_service_slots(abertura_em)`).catch(() => {});

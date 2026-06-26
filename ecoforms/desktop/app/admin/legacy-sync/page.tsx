@@ -19,9 +19,11 @@ import { ArrowDownToLine, Database, RefreshCcw, Weight } from "lucide-react";
 import {
     useLegacySyncActions,
     useLegacySyncData,
+    usePgLegacyConfig,
     DEFAULT_FILTERS,
     type LegacySyncFilters,
 } from "@/src/interface/hooks/queries/useLegacySyncData";
+import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 const SELECT_ALL_VALUE = "__all__";
 
@@ -62,11 +64,13 @@ function isoDateDaysAgo(days: number): string {
     return d.toISOString().slice(0, 10);
 }
 
+
 export default function LegacySyncPage() {
     const [filters, setFilters] = useState<LegacySyncFilters>(DEFAULT_FILTERS);
     const [pesagemDataInicio, setPesagemDataInicio] = useState(() => isoDateDaysAgo(7));
     const [pesagemDataFim, setPesagemDataFim] = useState(() => isoDateDaysAgo(0));
 
+    const { config, saving, saveConfig } = usePgLegacyConfig();
     const { roteiros, pesagens, filterOptions, loading, refetch } = useLegacySyncData(filters);
     const {
         syncingRoteiros,
@@ -76,7 +80,7 @@ export default function LegacySyncPage() {
         error: syncError,
         syncRoteiros,
         syncPesagens,
-    } = useLegacySyncActions();
+    } = useLegacySyncActions(config);
 
     const updateFilter = useCallback((key: keyof LegacySyncFilters, value: string) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -108,6 +112,8 @@ export default function LegacySyncPage() {
                         Atualizar dados
                     </Button>
                 </div>
+
+                <PgConfigCard config={config} saving={saving} onSave={saveConfig} />
 
                 {(syncError || roteiroResult || pesagemResult) && (
                     <div className="space-y-2">

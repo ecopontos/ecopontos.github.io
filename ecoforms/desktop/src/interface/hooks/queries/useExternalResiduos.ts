@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import type { PgLegacyConfig } from "@/src/interface/hooks/queries/useLegacySyncData";
 
 export interface ResiduoExterno {
     id_cad_residuo: number;
@@ -24,17 +25,9 @@ interface SyncResult {
     mensagem: string;
 }
 
-const PG_CONFIG = {
-    pgHost: "172.16.76.202",
-    pgPort: 5432,
-    pgDb: "geo_fpolis",
-    pgUser: "smma",
-    pgPassword: "H6N3pNTVcr",
-};
-
-export function useExternalResiduos() {
+export function useExternalResiduos(config: PgLegacyConfig, configReady: boolean) {
     const [residuos, setResiduos] = useState<ResiduoExterno[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [syncResult, setSyncResult] = useState<string | null>(null);
@@ -44,7 +37,7 @@ export function useExternalResiduos() {
         setLoading(true);
         setError(null);
         try {
-            const result = await invoke<FetchResiduosResult>("fetch_residuos_externos", PG_CONFIG);
+            const result = await invoke<FetchResiduosResult>("fetch_residuos_externos", config);
             setResiduos(result.dados);
             setTotal(result.total);
         } catch (e: unknown) {
@@ -53,14 +46,14 @@ export function useExternalResiduos() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [config]);
 
     const sync = useCallback(async () => {
         setSyncing(true);
         setError(null);
         setSyncResult(null);
         try {
-            const result = await invoke<SyncResult>("sync_residuos_externos", PG_CONFIG);
+            const result = await invoke<SyncResult>("sync_residuos_externos", config);
             setSyncResult(result.mensagem);
             await fetch();
             return result;
@@ -70,11 +63,11 @@ export function useExternalResiduos() {
         } finally {
             setSyncing(false);
         }
-    }, [fetch]);
+    }, [config, fetch]);
 
     useEffect(() => {
-        fetch();
-    }, [fetch]);
+        if (configReady) fetch();
+    }, [configReady, fetch]);
 
     return { residuos, total, loading, syncing, error, syncResult, refetch: fetch, sync };
 }

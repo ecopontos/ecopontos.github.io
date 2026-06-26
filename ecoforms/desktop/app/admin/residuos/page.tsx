@@ -12,6 +12,8 @@ import { Database, Download, LayoutDashboard, Loader2, Recycle, RefreshCcw, Sear
 import { useRouter } from "next/navigation";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
 import { useExternalResiduos } from "@/src/interface/hooks/queries/useExternalResiduos";
+import { usePgLegacyConfig } from "@/src/interface/hooks/queries/useLegacySyncData";
+import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 type FilterMode = "all" | "ativo" | "inativo";
 
@@ -19,7 +21,8 @@ export default function TiposResiduoPage() {
     const [filterMode, setFilterMode] = useState<FilterMode>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const router = useRouter();
-    const { residuos, total, loading, syncing, error, syncResult, refetch, sync } = useExternalResiduos();
+    const { config, loading: configLoading, saving, saveConfig } = usePgLegacyConfig();
+    const { residuos, total, loading, syncing, error, syncResult, refetch, sync } = useExternalResiduos(config, !configLoading);
 
     const filtered = useMemo(() => {
         let list = residuos;
@@ -72,6 +75,8 @@ export default function TiposResiduoPage() {
                         </Button>
                     </div>
                 </div>
+
+                <PgConfigCard config={config} saving={saving} onSave={saveConfig} />
 
                 {error && (
                     <Alert variant="destructive">

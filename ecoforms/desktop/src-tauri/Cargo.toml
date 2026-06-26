@@ -24,7 +24,7 @@ log = "0.4"
 # devtools: em Tauri v2, devtools são automáticas em builds de debug.
 # O feature "devtools" só força devtools em RELEASE — omitido por segurança
 # (hardening pré-produção). O comando toggle_devtools já é gated por cfg(debug_assertions).
-tauri = { version = "2.9.5" }
+tauri = { version = "2.9.5", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"

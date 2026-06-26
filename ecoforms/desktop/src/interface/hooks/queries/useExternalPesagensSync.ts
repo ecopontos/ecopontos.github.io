@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { usePgLegacyConfig } from "./useLegacySyncData";
 
 interface SyncPesagensResult {
     inseridos: number;
@@ -13,15 +14,8 @@ interface SyncPesagensResult {
     detalhes_erros: string[];
 }
 
-const DEFAULT_CONFIG = {
-    pgHost: "172.16.76.202",
-    pgPort: 5432,
-    pgDb: "geo_fpolis",
-    pgUser: "smma",
-    pgPassword: "H6N3pNTVcr",
-};
-
 export function useExternalPesagensSync() {
+    const { config } = usePgLegacyConfig();
     const [syncing, setSyncing] = useState(false);
     const [lastResult, setLastResult] = useState<SyncPesagensResult | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -31,7 +25,7 @@ export function useExternalPesagensSync() {
         setError(null);
         try {
             const result = await invoke<SyncPesagensResult>("sync_pesagens_externas", {
-                ...DEFAULT_CONFIG,
+                ...config,
                 dataInicio,
                 dataFim,
             });
@@ -43,7 +37,7 @@ export function useExternalPesagensSync() {
         } finally {
             setSyncing(false);
         }
-    }, []);
+    }, [config]);
 
     return { syncing, lastResult, error, sync };
 }
