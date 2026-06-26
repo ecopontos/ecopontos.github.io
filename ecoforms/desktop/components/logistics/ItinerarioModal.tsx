@@ -516,11 +516,11 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                 />
               </div>
               <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: "#ef4444" }} /> No roteiro</span>
+                <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: "#f97316" }} /> No roteiro</span>
                 <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full opacity-40" style={{ backgroundColor: "#22c55e" }} /> PF</span>
                 <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full opacity-40" style={{ backgroundColor: "#3b82f6" }} /> PJ</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "#ef4444" }} /> Rota</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 border border-red-500 opacity-60" style={{ backgroundColor: "#ef4444", opacity: 0.3 }} /> Terreno</span>
+                <span className="flex items-center gap-1"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "#f97316" }} /> Rota</span>
+                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 border border-orange-500 opacity-60" style={{ backgroundColor: "#f97316", opacity: 0.3 }} /> Terreno</span>
               </div>
             </div>
           )}

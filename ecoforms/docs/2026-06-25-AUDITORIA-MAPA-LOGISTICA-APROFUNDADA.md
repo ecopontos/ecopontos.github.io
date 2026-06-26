@@ -135,8 +135,11 @@ a consistência visual. Trocar por `toast.error(...)` + `AlertDialog` de confirm
 **Feito:** `OSM_STYLE` agora é **único** em `lib/map-styles.ts` (3 → 1); os dois modais
 (`ItinerarioMap`, `RoteiroMap`) deixaram de ter cópias inline e a criação do mapa+controles
 (antes byte-a-byte idêntica) foi extraída para `createBaseMap` em `lib/map-base.ts`.
-**Pendente (maior esforço / decisão visual):** helpers compartilhados de popup/route-line e
-unificação da paleta de cores (itinerário/logística/agendamento ainda usam cores próprias).
+**Paleta (parcial):** o tema do itinerário no `ItinerarioMap`/modal foi unificado para o **laranja
+`#f97316`** do mapa principal — antes o mesmo roteiro aparecia vermelho no modal e laranja na aba Mapa.
+O `RoteiroMap` (agendamentos) mantém suas cores **de status** (semânticas, não divergência).
+**Pendente:** helpers compartilhados de popup/route-line (refactor) e centralização dos hex em
+`lib/map-styles`.
 
 
 
