@@ -76,7 +76,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         filter: ["==", ["get", "in_route"], 1],
         paint: {
           "circle-radius": 12,
-          "circle-color": "#ef4444",
+          "circle-color": "#f97316",
           "circle-opacity": 0.18,
         },
       });
@@ -92,7 +92,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           ],
           "circle-color": [
             "case",
-            ["==", ["get", "in_route"], 1], "#ef4444",
+            ["==", ["get", "in_route"], 1], "#f97316",
             ["match", ["get", "tipo"], "PF", "#22c55e", "PJ", "#3b82f6", "#6b7280"],
           ],
           "circle-stroke-width": [
@@ -126,7 +126,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
 
         if (inRoute) {
           const badge = document.createElement('span');
-          badge.style.cssText = 'background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px';
+          badge.style.cssText = 'background:#f97316;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px';
           badge.textContent = 'NO ROTEIRO';
           container.appendChild(badge);
         }
@@ -179,7 +179,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           type: "line",
           source: "route",
           paint: {
-            "line-color": "#ef4444",
+            "line-color": "#f97316",
             "line-width": 3,
             "line-opacity": 0.6,
           },
@@ -237,7 +237,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           "text-offset": [0, 1],
           "text-allow-overlap": true,
         },
-        paint: { "text-color": "#fff", "text-halo-width": 2, "text-halo-color": "#ef4444" },
+        paint: { "text-color": "#fff", "text-halo-width": 2, "text-halo-color": "#f97316" },
       });
       map.addLayer({
         id: "stops-ordem-text",
@@ -251,7 +251,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           "text-offset": [0, 1],
           "text-allow-overlap": true,
         },
-        paint: { "text-color": "#ef4444" },
+        paint: { "text-color": "#f97316" },
       });
     }
 
@@ -287,13 +287,13 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         id: "terrenos-route-fill",
         type: "fill",
         source: "terrenos-route",
-        paint: { "fill-color": "#ef4444", "fill-opacity": 0.12 },
+        paint: { "fill-color": "#f97316", "fill-opacity": 0.12 },
       }, "clients-in-route-glow");
       map.addLayer({
         id: "terrenos-route-outline",
         type: "line",
         source: "terrenos-route",
-        paint: { "line-color": "#ef4444", "line-width": 1.5, "line-opacity": 0.6 },
+        paint: { "line-color": "#f97316", "line-width": 1.5, "line-opacity": 0.6 },
       }, "clients-in-route-glow");
     }
 
