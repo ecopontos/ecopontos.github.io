@@ -42,7 +42,9 @@ export function useExternalRoteiroSync() {
     const checkStatus = useCallback(async () => {
         try {
             setError(null);
-            const s = await invoke<SyncStatus>("sync_roteiros_status", DEFAULT_CONFIG);
+            const s = await invoke<SyncStatus>("sync_roteiros_status", {
+                ...DEFAULT_CONFIG,
+            });
             setStatus(s);
             return s;
         } catch (e: unknown) {
@@ -56,7 +58,9 @@ export function useExternalRoteiroSync() {
         setSyncing(true);
         setError(null);
         try {
-            const result = await invoke<SyncResult>("sync_roteiros_externos", DEFAULT_CONFIG);
+            const result = await invoke<SyncResult>("sync_roteiros_externos", {
+                ...DEFAULT_CONFIG,
+            });
             setLastResult(result);
             const now = new Date();
             window.localStorage.setItem(LAST_SYNC_KEY, now.toISOString());

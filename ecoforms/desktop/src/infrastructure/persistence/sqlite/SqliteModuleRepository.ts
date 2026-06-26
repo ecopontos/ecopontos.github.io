@@ -14,13 +14,13 @@ interface ModuleRow {
   ordem: number;
   status: ModuleStatus;
   versao: number;
+  config_version: number | null;
   configuracao: string;
   config_suite: string | null;
   criado_em: string;
   atualizado_em: string;
   publicado_em: string | null;
 }
-
 interface PermissionRow {
   profile: string;
   can_view: number;
@@ -28,6 +28,36 @@ interface PermissionRow {
   can_edit: number;
   can_approve: number;
   can_delete: number;
+}
+
+interface ViewRegistryRow {
+  id: string;
+  titulo: string;
+  perfis: string;
+  layout: string;
+  widgets: string;
+  module_type: string | null;
+  user_id: string | null;
+  is_template: number;
+  ativo: number;
+  criado_em: string | null;
+  atualizado_em: string | null;
+}
+
+interface DecisionRegistryRow {
+  id: string;
+  target_type: string;
+  action: string;
+  perfis: string;
+  enabled_when: string;
+  steps: string;
+  params: string;
+  consequence_type: string;
+  consequence_pattern: string | null;
+  consequence_config: string;
+  ativo: number;
+  criado_em: string | null;
+  atualizado_em: string | null;
 }
 
 function safeJsonParse<T>(val: string | null | undefined, fallback: T): T {
@@ -48,6 +78,7 @@ function rowToModule(row: ModuleRow): ModuleRegistry {
     ordem: row.ordem,
     status: row.status,
     version: row.versao,
+    config_version: row.config_version ?? 1,
     config: safeJsonParse<ModuleConfig>(row.configuracao, {}),
     suite_config: row.config_suite ? safeJsonParse<Record<string, unknown> | null>(row.config_suite, null) : null,
     criado_em: row.criado_em,
@@ -93,35 +124,40 @@ export class SqliteModuleRepository implements ModuleRepository {
   }
 
   async save(module: ModuleRegistry): Promise<void> {
-    const exists = await this.db.query<{ id: string }>(
-      `SELECT id FROM registro_modulos WHERE id = ? LIMIT 1`,
-      [module.id],
+    // UPSERT atômico — elimina a race TOCTOU do SELECT-then-INSERT/UPDATE.
+    // criado_em: respeita o valor do domínio no INSERT (fallback datetime('now'))
+    // e preserva o existente no ON CONFLICT (nunca sobrescreve a data de criação).
+    await this.db.execute(
+      `INSERT INTO registro_modulos
+         (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, config_version, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, datetime('now')), datetime('now'), ?)
+       ON CONFLICT(id) DO UPDATE SET
+         slug = excluded.slug,
+         nome = excluded.nome,
+         descricao = excluded.descricao,
+         tipo_entidade = excluded.tipo_entidade,
+         icon = excluded.icon,
+         color = excluded.color,
+         prefix = excluded.prefix,
+         ordem = excluded.ordem,
+         status = excluded.status,
+         versao = excluded.versao,
+         config_version = excluded.config_version,
+         configuracao = excluded.configuracao,
+         config_suite = excluded.config_suite,
+         criado_em = registro_modulos.criado_em,
+         atualizado_em = datetime('now'),
+         publicado_em = excluded.publicado_em`,
+      [
+        module.id, module.slug, module.name, module.description, module.entity_type,
+        module.icon, module.color, module.prefix, module.ordem, module.status,
+        module.version, module.config_version ?? 1, JSON.stringify(module.config),
+        module.suite_config ? JSON.stringify(module.suite_config) : null,
+        module.criado_em,
+        module.publicado_em,
+      ],
     );
-
-    if (exists.length === 0) {
-      await this.db.execute(
-        `INSERT INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), ?)`,
-        [
-          module.id, module.slug, module.name, module.description, module.entity_type,
-          module.icon, module.color, module.prefix, module.ordem, module.status,
-          module.version, JSON.stringify(module.config), module.suite_config ? JSON.stringify(module.suite_config) : null,
-          module.publicado_em,
-        ],
-      );
-    } else {
-      await this.db.execute(
-        `UPDATE registro_modulos SET slug = ?, nome = ?, descricao = ?, tipo_entidade = ?, icon = ?, color = ?, prefix = ?, ordem = ?, status = ?, versao = ?, configuracao = ?, config_suite = ?, atualizado_em = datetime('now'), publicado_em = ? WHERE id = ?`,
-        [
-          module.slug, module.name, module.description, module.entity_type,
-          module.icon, module.color, module.prefix, module.ordem, module.status,
-          module.version, JSON.stringify(module.config), module.suite_config ? JSON.stringify(module.suite_config) : null,
-          module.publicado_em, module.id,
-        ],
-      );
-    }
   }
-
   async delete(id: string): Promise<void> {
     await this.db.execute(`DELETE FROM registro_modulos WHERE id = ?`, [id]);
   }
@@ -142,14 +178,17 @@ export class SqliteModuleRepository implements ModuleRepository {
   }
 
   async setPermissions(moduleId: string, permissions: ModulePermissionConfig[]): Promise<void> {
-    await this.db.execute(`DELETE FROM permissoes_modulos WHERE module_id = ?`, [moduleId]);
-    for (const p of permissions) {
-      await this.db.execute(
-        `INSERT INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [moduleId, p.profile, p.can_view ? 1 : 0, p.can_create ? 1 : 0, p.can_edit ? 1 : 0, p.can_approve ? 1 : 0, p.can_delete ? 1 : 0],
-      );
-    }
+    // Transação — DELETE + INSERTs atômicos: falha no meio não zera as permissões.
+    await this.db.transaction(async () => {
+      await this.db.execute(`DELETE FROM permissoes_modulos WHERE module_id = ?`, [moduleId]);
+      for (const p of permissions) {
+        await this.db.execute(
+          `INSERT INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [moduleId, p.profile, p.can_view ? 1 : 0, p.can_create ? 1 : 0, p.can_edit ? 1 : 0, p.can_approve ? 1 : 0, p.can_delete ? 1 : 0],
+        );
+      }
+    });
   }
 
   async loadRuntimeDto(slug: string, userProfile: string): Promise<ModuleRuntimeDto | null> {
@@ -160,6 +199,20 @@ export class SqliteModuleRepository implements ModuleRepository {
     const userPerm = permissions.find(p => p.profile === userProfile) || {
       can_view: false, can_create: false, can_edit: false, can_approve: false, can_delete: false,
     };
+    const isAdmin = userProfile === 'admin';
+    if (!isAdmin && !userPerm.can_view) {
+      return null;
+    }
+
+    const effectivePerm = isAdmin
+      ? {
+        can_view: true,
+        can_create: true,
+        can_edit: true,
+        can_approve: true,
+        can_delete: true,
+      }
+      : userPerm;
 
     const config = mod.config;
 
@@ -205,17 +258,74 @@ export class SqliteModuleRepository implements ModuleRepository {
       }
     }
 
-    const views: ModuleRuntimeDto['views'] = (config.views || []).map(v => ({
-      view_id: v.view_id,
-      context: v.context,
-      order: v.order,
-      definition: null,
-    }));
+    const views: ModuleRuntimeDto['views'] = [];
+    if (config.views && config.views.length > 0) {
+      const viewIds = config.views.map(v => v.view_id);
+      const placeholders = viewIds.map(() => '?').join(',');
+      const viewRows = await this.db.query<ViewRegistryRow>(
+        `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, id_usuario AS user_id, modelo AS is_template, ativo, criado_em, atualizado_em
+         FROM registro_visualizacoes WHERE id IN (${placeholders}) AND ativo = 1`,
+        viewIds,
+      );
+      const viewMap = new Map(viewRows.map(row => [row.id, {
+        id: row.id,
+        titulo: row.titulo,
+        perfis: safeJsonParse<string[]>(row.perfis, []),
+        layout: row.layout,
+        widgets: safeJsonParse<unknown[]>(row.widgets, []),
+        module_type: row.module_type,
+        user_id: row.user_id,
+        is_template: row.is_template === 1,
+        ativo: row.ativo === 1,
+        criado_em: row.criado_em,
+        atualizado_em: row.atualizado_em,
+      }]));
 
-    const decisions: ModuleRuntimeDto['decisions'] = (config.decisions || []).map(d => ({
-      decision_id: d.decision_id,
-      definition: null,
-    }));
+      for (const v of config.views) {
+        views.push({
+          view_id: v.view_id,
+          context: v.context,
+          order: v.order,
+          definition: viewMap.get(v.view_id) ?? null,
+        });
+      }
+    }
+
+    const decisions: ModuleRuntimeDto['decisions'] = [];
+    if (config.decisions && config.decisions.length > 0) {
+      const decisionIds = config.decisions.map(d => d.decision_id);
+      const placeholders = decisionIds.map(() => '?').join(',');
+      const decisionRows = await this.db.query<DecisionRegistryRow>(
+        `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
+                passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
+                padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
+                ativo, criado_em, atualizado_em
+         FROM registro_decisoes WHERE id IN (${placeholders}) AND ativo = 1`,
+        decisionIds,
+      );
+      const decisionMap = new Map(decisionRows.map(row => [row.id, {
+        id: row.id,
+        target_type: row.target_type,
+        action: row.action,
+        perfis: safeJsonParse<string[]>(row.perfis, []),
+        enabled_when: safeJsonParse<unknown[]>(row.enabled_when, []),
+        steps: safeJsonParse<unknown[]>(row.steps, []),
+        params: safeJsonParse<Record<string, unknown>>(row.params, {}),
+        consequence_type: row.consequence_type,
+        consequence_pattern: row.consequence_pattern,
+        consequence_config: safeJsonParse<Record<string, unknown>>(row.consequence_config, {}),
+        ativo: row.ativo === 1,
+        criado_em: row.criado_em,
+        atualizado_em: row.atualizado_em,
+      }]));
+
+      for (const d of config.decisions) {
+        decisions.push({
+          decision_id: d.decision_id,
+          definition: decisionMap.get(d.decision_id) ?? null,
+        });
+      }
+    }
 
     return {
       id: mod.id,
@@ -229,7 +339,7 @@ export class SqliteModuleRepository implements ModuleRepository {
       ordem: mod.ordem,
       status: mod.status,
       version: mod.version,
-      permissions: userPerm,
+      permissions: effectivePerm,
       forms,
       data_catalogs,
       views,

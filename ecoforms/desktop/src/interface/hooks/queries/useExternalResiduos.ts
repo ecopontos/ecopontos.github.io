@@ -37,7 +37,9 @@ export function useExternalResiduos(config: PgLegacyConfig, configReady: boolean
         setLoading(true);
         setError(null);
         try {
-            const result = await invoke<FetchResiduosResult>("fetch_residuos_externos", config);
+            const result = await invoke<FetchResiduosResult>("fetch_residuos_externos", {
+                ...config,
+            });
             setResiduos(result.dados);
             setTotal(result.total);
         } catch (e: unknown) {
@@ -53,7 +55,9 @@ export function useExternalResiduos(config: PgLegacyConfig, configReady: boolean
         setError(null);
         setSyncResult(null);
         try {
-            const result = await invoke<SyncResult>("sync_residuos_externos", config);
+            const result = await invoke<SyncResult>("sync_residuos_externos", {
+                ...config,
+            });
             setSyncResult(result.mensagem);
             await fetch();
             return result;

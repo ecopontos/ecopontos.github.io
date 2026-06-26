@@ -20,22 +20,27 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
             id            TEXT PRIMARY KEY,
             slug          TEXT NOT NULL UNIQUE,
             nome          TEXT NOT NULL,
-            descricao   TEXT,
-            tipo_entidade   TEXT NOT NULL,
+            descricao     TEXT,
+            tipo_entidade TEXT NOT NULL UNIQUE,
             icon          TEXT,
             color         TEXT,
             prefix        TEXT NOT NULL DEFAULT '',
             ordem         INTEGER NOT NULL DEFAULT 0,
             status        TEXT NOT NULL DEFAULT 'draft'
                               CHECK(status IN ('draft','published','archived')),
-            versao       INTEGER NOT NULL DEFAULT 1,
-            configuracao        TEXT NOT NULL DEFAULT '{}',
+            versao        INTEGER NOT NULL DEFAULT 1,
+            config_version INTEGER NOT NULL DEFAULT 1,
+            configuracao  TEXT NOT NULL DEFAULT '{}',
             config_suite  TEXT,
             criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
             publicado_em  TEXT
         )
     `);
+    await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_prefix ON registro_modulos(prefix)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_module_registry_status ON registro_modulos(status)`);
+    await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_entity_type ON registro_modulos(tipo_entidade)`);
+    await execute(`ALTER TABLE registro_modulos ADD COLUMN config_version INTEGER NOT NULL DEFAULT 1`).catch(() => {});
 
     await execute(`
         CREATE TABLE IF NOT EXISTS permissoes_modulos (
@@ -46,9 +51,11 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
             can_edit    INTEGER NOT NULL DEFAULT 0,
             can_approve INTEGER NOT NULL DEFAULT 0,
             can_delete  INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (module_id, profile)
+            PRIMARY KEY (module_id, profile),
+            CHECK (can_create = 0 OR can_view = 1)
         )
     `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_module_permissions_module_id ON permissoes_modulos(module_id)`);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS visuais_modulos (
@@ -1965,7 +1972,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // Integra o domínio de agendamento ao sistema dinâmico de módulos
     // ================================================================
     await execute(`
-        INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
+        INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, config_version, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
         VALUES (
             'mod-agendamento',
             'agendamento',
@@ -1977,6 +1984,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             'AGD',
             20,
             'published',
+            1,
             1,
             '{}',
             NULL,

@@ -23,8 +23,8 @@ export class ModuleSyncHandler {
         if (!d?.id) return;
         await this.db.execute(
             `INSERT OR REPLACE INTO registro_modulos
-             (id, slug, nome, tipo_entidade, status, versao, configuracao, publicado_em, atualizado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, slug, nome, tipo_entidade, status, versao, config_version, configuracao, publicado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 d.id,
                 d.slug ?? '',
@@ -32,6 +32,7 @@ export class ModuleSyncHandler {
                 d.entity_type ?? '',
                 d.status ?? 'published',
                 d.version ?? 1,
+                d.config_version ?? 1,
                 typeof d.config === 'string' ? d.config : JSON.stringify(d.config ?? {}),
                 d.publicado_em ?? env.time,
                 env.time,
@@ -54,7 +55,7 @@ export class ModuleSyncHandler {
         if (!d?.id) return;
         await this.db.execute(
             `INSERT OR REPLACE INTO visuais_modulos
-             (id, module_id, tipo_visual, nome, configuracao, padrao, id_usuario, status_sinc, criado_em, atualizado_em)
+             (id, module_id, visual_type, name, config, is_default, user_id, sync_status, criado_em, atualizado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, datetime('now')), datetime('now'))`,
             [
                 d.id,
@@ -74,8 +75,8 @@ export class ModuleSyncHandler {
         const d = env.data as Record<string, unknown>;
         if (!d?.id) return;
         await this.db.execute(
-            `UPDATE visuais_modulos SET nome = ?, configuracao = ?, padrao = ?,
-             status_sinc = ?, atualizado_em = datetime('now') WHERE id = ?`,
+            `UPDATE visuais_modulos SET name = ?, config = ?, is_default = ?,
+             sync_status = ?, atualizado_em = datetime('now') WHERE id = ?`,
             [d.name, d.config, d.is_default ?? 0, d.sync_status ?? 'synced', d.id],
         );
     }

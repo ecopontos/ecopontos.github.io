@@ -45,6 +45,30 @@ export class InMemoryModuleRepository implements ModuleRepository {
         const userPerm = perms.find(p => p.profile === userProfile) ?? {
             can_view: false, can_create: false, can_edit: false, can_approve: false, can_delete: false,
         };
+        const isAdmin = userProfile === 'admin';
+        if (!isAdmin && !userPerm.can_view) {
+            return null;
+        }
+        const effectivePerm = isAdmin
+            ? {
+                can_view: true,
+                can_create: true,
+                can_edit: true,
+                can_approve: true,
+                can_delete: true,
+            }
+            : userPerm;
+        const views = (mod.config.views || []).map(v => ({
+            view_id: v.view_id,
+            context: v.context,
+            order: v.order,
+            definition: null,
+        }));
+        const decisions = (mod.config.decisions || []).map(d => ({
+            decision_id: d.decision_id,
+            definition: null,
+        }));
+
         return {
             id: mod.id,
             slug: mod.slug,
@@ -57,11 +81,11 @@ export class InMemoryModuleRepository implements ModuleRepository {
             ordem: mod.ordem,
             status: mod.status,
             version: mod.version,
-            permissions: userPerm,
+            permissions: effectivePerm,
             forms: [],
             data_catalogs: [],
-            views: [],
-            decisions: [],
+            views,
+            decisions,
         };
     }
 

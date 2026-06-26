@@ -42,6 +42,7 @@ export interface ModuleRegistry {
   ordem: number;
   status: ModuleStatus;
   version: number;
+  config_version: number;
   config: ModuleConfig;
   suite_config: Record<string, unknown> | null;
   criado_em: string;

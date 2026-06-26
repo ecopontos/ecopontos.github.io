@@ -181,7 +181,9 @@ export function useLegacySyncActions(config: PgLegacyConfig) {
         try {
             const result = await invoke<{ inseridos: number; atualizados: number; erros: number; total_externo: number; mensagem: string }>(
                 "sync_roteiros_externos",
-                config,
+                {
+                    ...config,
+                },
             );
             setRoteiroResult(result.mensagem);
         } catch (e: unknown) {

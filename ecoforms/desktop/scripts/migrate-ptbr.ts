@@ -129,23 +129,9 @@ const MIGRATION_STEPS: [string, string][] = [
 
     ['suite_historico → historico_pacotes',    'ALTER TABLE suite_historico RENAME TO historico_pacotes'],
 
-    ['module_permissions → permissoes_modulos','ALTER TABLE module_permissions RENAME TO permissoes_modulos'],
-    ['permissoes_modulos.profile',             'ALTER TABLE permissoes_modulos RENAME COLUMN profile TO perfil'],
-    ['permissoes_modulos.can_view',            'ALTER TABLE permissoes_modulos RENAME COLUMN can_view TO pode_visualizar'],
-    ['permissoes_modulos.can_create',          'ALTER TABLE permissoes_modulos RENAME COLUMN can_create TO pode_criar'],
-    ['permissoes_modulos.can_edit',            'ALTER TABLE permissoes_modulos RENAME COLUMN can_edit TO pode_editar'],
-    ['permissoes_modulos.can_approve',         'ALTER TABLE permissoes_modulos RENAME COLUMN can_approve TO pode_aprovar'],
-    ['permissoes_modulos.can_delete',          'ALTER TABLE permissoes_modulos RENAME COLUMN can_delete TO pode_excluir'],
+    ['module_permissions -> permissoes_modulos','ALTER TABLE module_permissions RENAME TO permissoes_modulos'],
 
-    ['module_visual_views → visuais_modulos',  'ALTER TABLE module_visual_views RENAME TO visuais_modulos'],
-    ['visuais_modulos.visual_type',            'ALTER TABLE visuais_modulos RENAME COLUMN visual_type TO tipo_visual'],
-    ['visuais_modulos.name',                   'ALTER TABLE visuais_modulos RENAME COLUMN name TO nome'],
-    ['visuais_modulos.config',                 'ALTER TABLE visuais_modulos RENAME COLUMN config TO configuracao'],
-    ['visuais_modulos.is_default',             'ALTER TABLE visuais_modulos RENAME COLUMN is_default TO padrao'],
-    ['visuais_modulos.user_id',                'ALTER TABLE visuais_modulos RENAME COLUMN user_id TO id_usuario'],
-    ['visuais_modulos.parent_view_id',         'ALTER TABLE visuais_modulos RENAME COLUMN parent_view_id TO id_visao_pai'],
-    ['visuais_modulos.sync_status',            'ALTER TABLE visuais_modulos RENAME COLUMN sync_status TO status_sinc'],
-    ['visuais_modulos.position',               'ALTER TABLE visuais_modulos RENAME COLUMN position TO posicao'],
+    ['module_visual_views -> visuais_modulos',  'ALTER TABLE module_visual_views RENAME TO visuais_modulos'],
 
     ['user_widget_instances → instancias_widgets_usuario', 'ALTER TABLE user_widget_instances RENAME TO instancias_widgets_usuario'],
     ['instancias_widgets_usuario.user_id',     'ALTER TABLE instancias_widgets_usuario RENAME COLUMN user_id TO id_usuario'],
