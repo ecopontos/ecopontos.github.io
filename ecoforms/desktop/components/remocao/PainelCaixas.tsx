@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RefreshCw, LayoutGrid, List as ListIcon, Info, TrendingUp, Clock, Truck, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/src/interface/hooks/tauri/useTauriInvoke";
 import { toast } from "sonner";
 
 interface CaixasRemovidas {

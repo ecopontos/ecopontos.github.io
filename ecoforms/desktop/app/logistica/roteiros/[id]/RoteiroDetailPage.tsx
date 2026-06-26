@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { Fragment, useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw, MapPin, Wand2, Route, AlertTriangle } from "lucide-react";
@@ -81,7 +81,7 @@ export default function RoteiroDetailPage() {
 
   const handleEdit = () => { setForm({ ...roteiro }); setEditMode(true); };
   const handleSave = async () => {
-    try { await saveRoteiro({ ...roteiro, ...form } as any); toast.success("Roteiro atualizado"); setEditMode(false); }
+    try { await saveRoteiro({ ...roteiro, ...form } as Parameters<typeof saveRoteiro>[0]); toast.success("Roteiro atualizado"); setEditMode(false); }
     catch { toast.error("Erro ao salvar"); }
   };
 

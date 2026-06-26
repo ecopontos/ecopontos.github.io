@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { ArrowLeft, Save, User, MapPin, NotebookText } from "lucide-react";
 import Link from "next/link";

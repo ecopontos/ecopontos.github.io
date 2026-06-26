@@ -127,7 +127,7 @@ export default function EscalasPage() {
                             </div>
                         ) : escalas.length === 0 ? (
                             <p className="text-center py-8 text-muted-foreground text-sm">
-                                Nenhuma escala cadastrada. Clique em "Nova Escala" para começar.
+                                Nenhuma escala cadastrada. Clique em &quot;Nova Escala&quot; para começar.
                             </p>
                         ) : (
                             <div className="rounded-md border">
@@ -259,7 +259,7 @@ export default function EscalasPage() {
                 <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Remover escala "{deleteTarget?.nome}"?</AlertDialogTitle>
+                            <AlertDialogTitle>Remover escala &quot;{deleteTarget?.nome}&quot;?</AlertDialogTitle>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>

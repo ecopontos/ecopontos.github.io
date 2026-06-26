@@ -1,9 +1,10 @@
 import type { SqlitePort } from '../ports/SqlitePort';
-import { USUARIO_DADOS } from '../../infrastructure/persistence/sqlite/queries/usuarios';
-import { TAREFAS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
-import { AGENDAMENTOS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
-import { MANIFESTACOES_BY_CLIENTE } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
-import { LOG_ACOES_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
+
+const SQL_USUARIO = `SELECT id, nome, email, username, perfil, ativo, criado_em, atualizado_em FROM usuarios WHERE id = ?`;
+const SQL_TAREFAS = `SELECT id, titulo, status, prioridade, prazo, criado_em, atualizado_em FROM tarefas WHERE criado_por = ? OR atribuido_para = ? ORDER BY criado_em DESC`;
+const SQL_AGENDAMENTOS = `SELECT a.id, a.status, a.cliente_nome, a.vagas_solicitadas, a.criado_em, ss.titulo AS slot_titulo, ss.data_inicio, st.nome AS tipo_nome FROM tbl_agendamentos a JOIN tbl_service_slots ss ON ss.id = a.slot_id JOIN tbl_service_types st ON st.id = a.service_type_id WHERE a.cliente_id = ? OR a.criado_por = ? ORDER BY a.criado_em DESC`;
+const SQL_MANIFESTACOES = `SELECT id, protocolo, tipo_id, situacao_id, solicitante_nome, criado_em FROM manifestacoes WHERE cliente_id = ? ORDER BY criado_em DESC`;
+const SQL_LOG_ACOES = `SELECT id, id_acao, tipo_alvo, id_alvo, id_usuario, resultado, erro, criado_em FROM log_acoes WHERE id_usuario = ? ORDER BY criado_em DESC`;
 
 export interface DadosTitular {
     exportadoEm: string;
@@ -24,26 +25,11 @@ export class ExportacaoDadosTitularUseCase {
         if (!userId?.trim()) throw new Error('userId é obrigatório.');
 
         const [usuarios, tarefas, agendamentos, manifestacoes, log_acoes] = await Promise.all([
-            this.sqlite.query<Record<string, unknown>>(
-                USUARIO_DADOS.sql,
-                [userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                TAREFAS_BY_USER.sql,
-                [userId, userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                AGENDAMENTOS_BY_USER.sql,
-                [userId, userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                MANIFESTACOES_BY_CLIENTE.sql,
-                [userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                LOG_ACOES_BY_USER.sql,
-                [userId],
-            ),
+            this.sqlite.query<Record<string, unknown>>(SQL_USUARIO, [userId]),
+            this.sqlite.query<Record<string, unknown>>(SQL_TAREFAS, [userId, userId]),
+            this.sqlite.query<Record<string, unknown>>(SQL_AGENDAMENTOS, [userId, userId]),
+            this.sqlite.query<Record<string, unknown>>(SQL_MANIFESTACOES, [userId]),
+            this.sqlite.query<Record<string, unknown>>(SQL_LOG_ACOES, [userId]),
         ]);
 
         return {

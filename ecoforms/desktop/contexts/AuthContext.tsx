@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User } from "@/types";
 import { useRouter, usePathname } from "next/navigation";

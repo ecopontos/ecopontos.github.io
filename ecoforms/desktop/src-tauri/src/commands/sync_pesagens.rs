@@ -24,6 +24,7 @@ pub struct SyncPesagensResult {
 /// local `execucao_pesagens`, criando/atualizando a `execucao_coleta` correspondente
 /// e recalculando os agregados (peso_total, numero_viagens, id_despacho, codigo_despacho).
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn sync_pesagens_externas(
     state: State<'_, DbState>,
     pg_host: String,

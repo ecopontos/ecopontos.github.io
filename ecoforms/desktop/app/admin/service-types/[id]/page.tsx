@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useServiceTypeById, useServiceTypeMutations } from "@/src/interface/hooks/catalog/service";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import type { Setor } from "@/src/domain/setor/Setor";
 
 export default function EditServiceTypePage() {

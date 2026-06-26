@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 

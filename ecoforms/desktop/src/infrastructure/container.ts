@@ -415,9 +415,9 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
     return _columnsPromise;
 }
 
-export interface ContainerBootstrapOptions {
-    // syncIndexFactory removed — not available in current codebase
-}
+export type ContainerBootstrapOptions = Record<string, unknown>;
+// syncIndexFactory removed — not available in current codebase. Reservado
+// para opções futuras de bootstrap do container DI.
 
 function buildContainer(overrides: Partial<Container> = {}, bootstrap: ContainerBootstrapOptions = {}): Container {
     const sqlite = overrides.sqlite ?? new TauriSqliteAdapter();

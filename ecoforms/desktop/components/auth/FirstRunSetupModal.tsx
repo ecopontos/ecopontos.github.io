@@ -16,6 +16,7 @@ import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
 import { useAuth } from "@/contexts/AuthContext";
 import { uuidv7 } from "ecoforms-core";
 import { fetchUsuarioAuth, saveSistemaConfig } from "@/src/interface/hooks/queries/lookups";
+import type { User } from "@/types";
 
 interface FirstRunSetupModalProps {
     open: boolean;
@@ -99,7 +100,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
                 for (const u of seed.users) {
                     const id = u.id ?? uuidv7();
                     try {
-                        await (c as any).sqliteUserRepository.createUserFromSeed({
+                        await (c as unknown as { sqliteUserRepository: { createUserFromSeed: (input: Record<string, unknown>) => Promise<unknown> } }).sqliteUserRepository.createUserFromSeed({
                             id,
                             nome: u.nome,
                             username: u.username,
@@ -253,7 +254,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
                 ativo: userRow.ativo === 1 || userRow.ativo === true,
                 org_id: userRow.id_organizacao,
             };
-            login(user as any, loginPassword.trim());
+            login(user as unknown as User, loginPassword.trim());
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
             setError(msg);

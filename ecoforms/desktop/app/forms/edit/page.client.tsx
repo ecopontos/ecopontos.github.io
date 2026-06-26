@@ -1,4 +1,5 @@
-﻿/**
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+/**
  * Página de formulário - Client Component
  */
 

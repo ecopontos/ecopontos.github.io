@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useServiceTypes } from "@/src/interface/hooks/catalog/service";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import type { Setor } from "@/src/domain/setor/Setor";
 
 function SetorBadge({ setorId, setores }: { setorId: string | null | undefined; setores: Setor[] }) {

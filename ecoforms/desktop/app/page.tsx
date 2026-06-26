@@ -53,7 +53,7 @@ import { useWidgetMutations } from "@/src/interface/hooks/mutations/useWidgetMut
 import { getAvailableWidgets } from "@/src/application/widgets/WidgetRegistry";
 import type { WidgetConfig } from "@/src/application/widgets/WidgetRegistry";
 import type { UserRole } from "@/src/interface/hooks/utils/usePermissions";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import { closePacotes } from "@/src/interface/hooks/queries/lookups";
 import {
   useInboxData,

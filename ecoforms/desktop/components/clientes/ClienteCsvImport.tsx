@@ -40,8 +40,8 @@ import { uuidv7 } from "ecoforms-core";
 import type { Cliente, CategoriaCliente } from "@/types/clientes";
 import { parseCSVText } from "@/lib/import/excel-parser";
 import { ImportPreview } from "@/components/registry/ImportPreview";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { openDialog } from "@/src/interface/hooks/tauri/useTauriDialog";
+import { readTextFile } from "@/src/interface/hooks/tauri/tauriFs";
 
 type Step = "upload" | "mapping" | "validation" | "result";
 

@@ -1,5 +1,5 @@
 import type { ManifestacaoRepository } from '../../domain/ouvidoria/ManifestacaoRepository';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../task/TaskProjectionService';
 import { ManifestacaoStateMachine } from '../../domain/ouvidoria/ManifestacaoStateMachine';
 

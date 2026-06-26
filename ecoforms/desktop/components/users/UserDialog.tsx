@@ -1,8 +1,8 @@
 ﻿"use client"
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { invoke } from "@tauri-apps/api/core"
+import { invoke } from "@/src/interface/hooks/tauri/useTauriInvoke"
 import { fetchSetoresAll, fetchEscalas } from "@/src/interface/hooks/queries/lookups"
 import {
     Dialog,

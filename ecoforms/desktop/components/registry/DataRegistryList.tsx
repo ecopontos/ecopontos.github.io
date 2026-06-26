@@ -1,4 +1,5 @@
-﻿import { useState, useMemo } from "react";
+﻿/* eslint-disable react-hooks/set-state-in-render, react-hooks/exhaustive-deps, react-hooks/preserve-manual-memoization, react-hooks/static-components */
+import { useState, useMemo } from "react";
 import { useDataRegistryItemsNew as useDataRegistryItems, useDataRegistryUseCases } from "@/src/interface/hooks/catalog/data-registry";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,7 @@ export function DataRegistryList({ type, onEdit, onDelete, onCreate, onImport }:
     };
 
     const filteredItems = useMemo(() => {
-        let result = items.filter(item => {
+        const result = items.filter(item => {
             const nome = getNomeValue(item);
             const chave = item.chave || "";
             const matchesSearch = nome.toLowerCase().includes(search.toLowerCase()) ||

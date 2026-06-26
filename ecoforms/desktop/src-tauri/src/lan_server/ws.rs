@@ -60,7 +60,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
                                         "type": "presence",
                                         "peers": peers,
                                     });
-                                    let _ = socket.send(Message::Text(presence.to_string().into())).await;
+                                    let _ = socket.send(Message::Text(presence.to_string())).await;
                                 }
                                 "ping" => {
                                     if let Some(ref did) = device_id {
@@ -82,7 +82,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
             broadcast_msg = rx.recv() => {
                 match broadcast_msg {
                     Ok(msg) => {
-                        if socket.send(Message::Text(msg.into())).await.is_err() {
+                        if socket.send(Message::Text(msg)).await.is_err() {
                             break;
                         }
                     }

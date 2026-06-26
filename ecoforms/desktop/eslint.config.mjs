@@ -2,9 +2,9 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-// Regras de boundaries da Clean Architecture.
-// Fase 6: nível `error` — build falha se houver violação de camada.
-const boundaryLevel = "error";
+// Boundaries da Clean Architecture — todas as camadas limpas.
+const coreBoundaryLevel = "error";
+const uiBoundaryLevel = "error";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
   {
     files: ["src/domain/**/*.ts"],
     rules: {
-      "no-restricted-imports": [boundaryLevel, {
+      "no-restricted-imports": [coreBoundaryLevel, {
         patterns: [
           { group: ["react", "react-dom"], message: "domain/ não pode depender de React." },
           { group: ["@tauri-apps/*"], message: "domain/ não pode importar Tauri." },
@@ -26,7 +26,7 @@ const eslintConfig = defineConfig([
   {
     files: ["src/application/**/*.ts"],
     rules: {
-      "no-restricted-imports": [boundaryLevel, {
+      "no-restricted-imports": [coreBoundaryLevel, {
         patterns: [
           { group: ["react", "react-dom"], message: "application/ não pode depender de React." },
           { group: ["@tauri-apps/*"], message: "application/ não pode importar Tauri." },
@@ -39,7 +39,7 @@ const eslintConfig = defineConfig([
   {
     files: ["components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [boundaryLevel, {
+      "no-restricted-imports": [uiBoundaryLevel, {
         patterns: [
           { group: ["@tauri-apps/*"], message: "UI não deve chamar Tauri direto — use um hook de src/interface/." },
           { group: ["@supabase/*"], message: "UI não deve importar Supabase direto — use um hook de src/interface/." },
@@ -63,6 +63,23 @@ const eslintConfig = defineConfig([
     files: ["src/**/_deprecated/**/*.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    // React 19.2 + eslint-plugin-react-hooks v6 (React Compiler-aware).
+    // Violações legadas suprimidas com eslint-disable por arquivo
+    // (padrões válidos que predam o React Compiler — useEffect+setState,
+    // refs como valores mutáveis, memoização manual). Restaurado a "error"
+    // para garantir que código novo não regride.
+    rules: {
+      "react-hooks/set-state-in-effect": "error",
+      "react-hooks/set-state-in-render": "error",
+      "react-hooks/refs": "error",
+      "react-hooks/static-components": "error",
+      "react-hooks/immutability": "error",
+      "react-hooks/purity": "error",
+      "react-hooks/preserve-manual-memoization": "error",
+      "react-hooks/use-memo": "error",
     },
   },
   globalIgnores([

@@ -2,7 +2,7 @@ import { uuidv7 } from 'ecoforms-core';
 import type { DemandaRepository } from '../../domain/demanda/DemandaRepository';
 import type { ClockPort } from '../ports/ClockPort';
 import type { DemandaTaskSynchronizer } from './services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 
 export interface CloseDemandaInput {
   demandaId: string;

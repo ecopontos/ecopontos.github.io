@@ -7,7 +7,7 @@ import { Demanda } from '../../../domain/demanda/Demanda';
 import { Task } from '../../../domain/task/Task';
 import type { DemandaProps } from '../../../domain/demanda/Demanda';
 import type { DemandaTaskSynchronizer } from '../services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../../ports/SyncOutboxPort';
 
 function makeFakeSyncOutbox() {
     const writes: Array<{ type: string; data: Record<string, unknown> }> = [];

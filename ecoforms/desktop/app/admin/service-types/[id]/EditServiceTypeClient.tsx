@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useServiceTypeById, useServiceTypeMutations } from "@/src/interface/hooks/catalog/service";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import type { Setor } from "@/src/domain/setor/Setor";
 
 export default function EditServiceTypeClient() {

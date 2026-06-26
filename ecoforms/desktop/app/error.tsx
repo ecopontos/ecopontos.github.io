@@ -32,10 +32,10 @@ export default function ErrorPage({
                     Ocorreu um erro ao carregar esta página.
                     Tente novamente ou recarregue a aplicação.
                 </p>
-                {error.message && (
-                    <pre className="mt-3 rounded-md bg-gray-50 border px-4 py-3 text-left text-xs text-gray-600 overflow-auto max-h-32">
-                        {error.message}
-                    </pre>
+                {error.digest && (
+                    <p className="mt-3 text-xs text-gray-400">
+                        Código: {error.digest}
+                    </p>
                 )}
             </div>
             <div className="flex gap-3">

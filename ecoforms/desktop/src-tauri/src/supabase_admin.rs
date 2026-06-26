@@ -36,7 +36,7 @@ impl SupabaseAdminState {
             return Err("Supabase credentials are empty".to_string());
         }
 
-        Ok(format!("{}", url))
+        Ok(url.to_string())
     }
 
     fn api_key(&self) -> Result<String, String> {
@@ -182,12 +182,12 @@ pub async fn supabase_admin_query(
                     // Extract users array from response
                     let users = data
                         .get("users")
-                        .or_else(|| Some(&data))
+                        .or(Some(&data))
                         .cloned();
 
                     Ok(AdminOperationResponse {
                         success: true,
-                        message: format!("Users fetched from Supabase Auth"),
+                        message: "Users fetched from Supabase Auth".to_string(),
                         data: users,
                     })
                 }

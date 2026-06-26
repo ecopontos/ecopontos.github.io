@@ -26,12 +26,12 @@ interface DataRegistryImportProps {
 export function DataRegistryImport({ open, onOpenChange, type, schema, onComplete }: DataRegistryImportProps) {
     const [step, setStep] = useState<Step>("upload");
     const [fileName, setFileName] = useState("");
-    const [rawRows, setRawRows] = useState<Record<string, any>[]>([]);
+    const [rawRows, setRawRows] = useState<Record<string, unknown>[]>([]);
     const [csvColumns, setCsvColumns] = useState<string[]>([]);
     const [mapping, setMapping] = useState<Record<string, string>>({});
     const [keyColumn, setKeyColumn] = useState<string>("");
     const [validationResult, setValidationResult] = useState<{
-        valid: { chave: string; conteudo: any }[];
+        valid: { chave: string; conteudo: Record<string, unknown> }[];
         errors: { row: number; message: string }[];
     }>({ valid: [], errors: [] });
     const [importResult, setImportResult] = useState<{ inserted: number; updated: number; errors: string[] } | null>(null);
@@ -114,7 +114,7 @@ export function DataRegistryImport({ open, onOpenChange, type, schema, onComplet
     );
 
     const handleValidate = () => {
-        const valid: { chave: string; conteudo: any }[] = [];
+        const valid: { chave: string; conteudo: Record<string, unknown> }[] = [];
         const errors: { row: number; message: string }[] = [];
 
         for (let i = 0; i < rawRows.length; i++) {
@@ -126,7 +126,7 @@ export function DataRegistryImport({ open, onOpenChange, type, schema, onComplet
                 continue;
             }
 
-            const conteudo: Record<string, any> = {};
+            const conteudo: Record<string, unknown> = {};
             for (const [csvCol, targetKey] of Object.entries(mapping)) {
                 if (!targetKey) continue;
                 let val = row[csvCol];
@@ -331,7 +331,7 @@ export function DataRegistryImport({ open, onOpenChange, type, schema, onComplet
                                                 {validationResult.valid.slice(0, 5).map((item, i) => (
                                                     <TableRow key={i}>
                                                         <TableCell className="text-xs font-mono">{item.chave}</TableCell>
-                                                        <TableCell className="text-xs">{item.conteudo.nome}</TableCell>
+                                                        <TableCell className="text-xs">{String(item.conteudo.nome ?? "")}</TableCell>
                                                         <TableCell className="text-xs text-gray-500 max-w-[300px] truncate">
                                                             {JSON.stringify(item.conteudo)}
                                                         </TableCell>

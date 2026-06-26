@@ -1,7 +1,8 @@
 import { registerAction } from "../ActionRegistry";
 import type { ActionDemandaClose } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';
-import { LOG_ACAO_INSERT } from '../../../infrastructure/persistence/sqlite/queries/log_acoes';
+
+const SQL_LOG_ACAO = `INSERT INTO log_acoes (id, id_acao, tipo_alvo, id_alvo, id_usuario, resultado, criado_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
 
 export function registerDemandaActions() {
   registerAction({
@@ -55,7 +56,7 @@ export function registerDemandaActions() {
 
         // Registra em log_acoes (rastro operacional — log_auditoria via Rust não é chamado neste fluxo)
         await ctx.container.sqlite.execute(
-          LOG_ACAO_INSERT.sql,
+          SQL_LOG_ACAO,
           [uuidv7(), "demanda_encerrar", ctx.targetType, demanda.id, ctx.userId, '{"status":"encerrada"}'],
         );
 

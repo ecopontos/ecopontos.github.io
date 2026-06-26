@@ -29,7 +29,7 @@ export function expandRecurrence(
         const startSunday = new Date(dataInicio);
         startSunday.setDate(startSunday.getDate() - startSunday.getDay());
 
-        let weekStart = new Date(startSunday);
+        const weekStart = new Date(startSunday);
         const firstOcc = new Date(dataInicio);
 
         while (weekStart <= endDate && occurrences.length < MAX) {
@@ -46,7 +46,7 @@ export function expandRecurrence(
             weekStart.setDate(weekStart.getDate() + 7 * Math.max(1, config.intervalo));
         }
     } else {
-        let current = new Date(dataInicio);
+        const current = new Date(dataInicio);
         while (current <= endDate && occurrences.length < MAX) {
             occurrences.push({
                 dataInicio: current.toISOString(),

@@ -1,12 +1,12 @@
 import { registerAction } from "../ActionRegistry";
 import type { ActionContext, ActionResult } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';
-import {
-  PACOTE_INACTIVATE_ATUAL,
-  PACOTE_NEW_VERSION_DISPATCHED,
-} from "../../../infrastructure/persistence/sqlite/queries/pacotes";
-import { TAREFA_SET_DEMANDA } from "../../../infrastructure/persistence/sqlite/queries/tarefas";
-import { LOG_ACAO_INSERT, LOG_ACAO_INSERT_ERRO } from "../../../infrastructure/persistence/sqlite/queries/log_acoes";
+
+const SQL_PACOTE_INACTIVATE = `UPDATE pacotes SET atual = 0 WHERE id_pacote = ? AND atual = 1`;
+const SQL_PACOTE_DISPATCHED = `INSERT INTO pacotes (id_pacote, num_versao, tipo_modulo, tipo_recurso, status, id_proprietario, atual, ref_id_pacote, id_entidade, tipo_entidade, carga_json, criado_em, fechado_em) SELECT ?, 1, tipo_modulo, tipo_recurso, 'dispatched', ?, 1, ?, id_entidade, tipo_entidade, carga_json, ?, NULL FROM pacotes WHERE id_pacote = ? AND atual = 0 ORDER BY num_versao DESC LIMIT 1`;
+const SQL_TAREFA_SET_DEMANDA = `UPDATE tarefas SET demanda_id = ?, atualizado_em = datetime('now') WHERE id = ?`;
+const SQL_LOG_ACAO = `INSERT INTO log_acoes (id, id_acao, tipo_alvo, id_alvo, id_usuario, resultado, criado_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+const SQL_LOG_ACAO_ERRO = `INSERT INTO log_acoes (id, id_acao, tipo_alvo, id_alvo, id_usuario, erro, criado_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
 
 /**
  * Acao: Reencaminhar — transferencia total de propriedade.
@@ -62,14 +62,14 @@ export function registerReencaminharAction() {
       try {
         // 1. Marcar registro original como transferido (perde posse total)
         await ctx.container.sqlite.execute(
-          PACOTE_INACTIVATE_ATUAL.sql,
+          SQL_PACOTE_INACTIVATE,
           [origemId]
         );
 
         // 2. Criar nova suite com status dispatched + transfer
         const novoId = uuidv7();
         await ctx.container.sqlite.execute(
-          PACOTE_NEW_VERSION_DISPATCHED.sql,
+          SQL_PACOTE_DISPATCHED,
           [novoId, destinatarioId, origemId, now, origemId]
         );
 
@@ -87,14 +87,14 @@ export function registerReencaminharAction() {
         // 4. Vincula a demanda à tarefa de origem
         if (ctx.targetType === 'task') {
           await ctx.container.sqlite.execute(
-            TAREFA_SET_DEMANDA.sql,
+            SQL_TAREFA_SET_DEMANDA,
             [demanda.id, origemId]
           );
         }
 
         // 5. Registrar em log_acoes
         await ctx.container.sqlite.execute(
-          LOG_ACAO_INSERT.sql,
+          SQL_LOG_ACAO,
           [
             uuidv7(),
             "reencaminhar",
@@ -122,7 +122,7 @@ export function registerReencaminharAction() {
       } catch (err) {
         try {
           await ctx.container.sqlite.execute(
-            LOG_ACAO_INSERT_ERRO.sql,
+            SQL_LOG_ACAO_ERRO,
             [
               uuidv7(),
               "reencaminhar",

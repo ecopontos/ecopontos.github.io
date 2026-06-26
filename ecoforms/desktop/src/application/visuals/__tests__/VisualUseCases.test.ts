@@ -332,7 +332,7 @@ describe('GetModuleVisuaisUseCase', () => {
     function createMockSqlite(modules: Record<string, unknown>[]): SqlitePort {
         return {
             query: async (_sql: string, _params?: unknown[]) => {
-                if (_sql.includes('module_registry')) return modules as any;
+                if (_sql.includes('registro_modulos')) return modules as any;
                 if (_sql.includes('data_registry')) return [
                     { id: 'r1', tipo: 'inspecao', conteudo: '{"status":"ativo"}' },
                     { id: 'r2', tipo: 'inspecao', conteudo: '{"status":"inativo"}' },
@@ -364,9 +364,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin', 'gerente'] } },
@@ -396,9 +396,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Admin Table', position: { w: 12 }, permissions: { can_view: ['admin'] } },
@@ -418,9 +418,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin'] } },
@@ -449,10 +449,10 @@ describe('GetModuleVisuaisUseCase', () => {
             query: async (_sql: string) => {
                 capturedQuery = _sql;
                 if (_sql.includes('registro_visualizacoes')) return [{ widgets: JSON.stringify([{ source: 'module_visual', visual_type: 'table' }]) }] as any;
-                if (_sql.includes('module_registry')) return [{
-                    id: 'mod-1', slug: 'inspecoes', name: 'Inspeções', entity_type: 'inspecao',
+                if (_sql.includes('registro_modulos')) return [{
+                    id: 'mod-1', slug: 'inspecoes', nome: 'Inspeções', tipo_entidade: 'inspecao',
                     status: 'published',
-                    config: JSON.stringify({
+                    configuracao: JSON.stringify({
                         entity_type: 'inspecao',
                         visuais: [
                             { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin'] } },

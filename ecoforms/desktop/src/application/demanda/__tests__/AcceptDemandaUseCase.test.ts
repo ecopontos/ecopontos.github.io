@@ -6,7 +6,7 @@ import { FixedClock } from '../../../test/fakes/FixedClock';
 import { TaskProjectionService } from '../../task/TaskProjectionService';
 import { Demanda } from '../../../domain/demanda/Demanda';
 import type { DemandaProps } from '../../../domain/demanda/Demanda';
-import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../../ports/SyncOutboxPort';
 
 function makeDemanda(partial: Partial<DemandaProps> & { id: string }): Demanda {
   return Demanda.fromProps({

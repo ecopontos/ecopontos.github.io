@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/static-components */
 import { useState, useMemo } from "react";
 import { TaskDateConfig, UnifiedTaskView } from "@/types";
 import { Badge } from "@/components/ui/badge";

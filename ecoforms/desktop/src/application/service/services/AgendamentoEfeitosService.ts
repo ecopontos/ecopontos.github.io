@@ -2,7 +2,7 @@ import type { Agendamento } from '../../../domain/service/Agendamento';
 import type { AgendamentoRepository } from '../../../domain/service/AgendamentoRepository';
 import type { ServiceSlotRepository } from '../../../domain/service/ServiceSlotRepository';
 import type { ServiceTypeRepository } from '../../../domain/service/ServiceTypeRepository';
-import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../../task/TaskProjectionService';
 import type { NotificacaoService } from './NotificacaoService';
 import { formatDateBR } from '../../../lib/date';

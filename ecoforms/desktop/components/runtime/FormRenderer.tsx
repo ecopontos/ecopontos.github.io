@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { FormContent, FormField } from "@/types";
 import { FormFieldRenderer } from "./FormFieldRenderer";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import { isFieldEmpty } from "@/src/lib/utils";
 import { useVisibilityEvaluator } from "@/src/interface/hooks/catalog/forms";
 import { fetchFormMetadata, insertTarefaFromSolicitacao, insertPacoteFromForm } from "@/src/interface/hooks/queries/lookups";

@@ -111,7 +111,7 @@ function formatDate(iso: string) {
     }
 }
 
-function renderMetadata(metadata: Record<string, any> | null, tipo: string): React.ReactNode {
+function renderMetadata(metadata: Record<string, string | string[] | number | null> | null, tipo: string): React.ReactNode {
     if (!metadata) return null;
 
     if (tipo === "status" && metadata.de && metadata.para) {
@@ -276,7 +276,7 @@ export function TaskHistoryTab({
                                     {/* metadata detail */}
                                     {event.metadata && (
                                         <div className="mt-0.5">
-                                            {renderMetadata(event.metadata, event.tipo)}
+                                            {renderMetadata(event.metadata as Record<string, string | string[] | number | null>, event.tipo)}
                                         </div>
                                     )}
                                 </li>

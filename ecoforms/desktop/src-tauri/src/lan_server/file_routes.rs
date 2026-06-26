@@ -89,9 +89,8 @@ pub async fn upload_file(
                     filename = fname.to_string();
                 }
             }
-            match field.bytes().await {
-                Ok(b) => file_bytes = Some(b.to_vec()),
-                Err(_) => {}
+            if let Ok(b) = field.bytes().await {
+                file_bytes = Some(b.to_vec());
             }
         } else {
             let val: String = field.text().await.unwrap_or_default();

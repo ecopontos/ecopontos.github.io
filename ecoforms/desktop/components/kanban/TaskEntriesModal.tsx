@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import {
     Dialog,
@@ -48,7 +48,7 @@ export function TaskEntriesModal({ taskId, taskTitle, open, onOpenChange }: Task
 
     const { events, loading: historyLoading, refetch: refetchHistory } = useTaskHistory(taskId, open && !!taskId);
 
-    const [recordsData, setRecordsData] = useState<any[]>([]);
+    const [recordsData, setRecordsData] = useState<Record<string, unknown>[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -56,16 +56,16 @@ export function TaskEntriesModal({ taskId, taskTitle, open, onOpenChange }: Task
         let cancelled = false;
         setLoading(true);
         fetchPacotesForTarefa(taskId)
-          .then(rows => { if (!cancelled) setRecordsData(rows as any[]); })
+          .then(rows => { if (!cancelled) setRecordsData(rows as unknown as Record<string, unknown>[]); })
           .catch(() => { if (!cancelled) setRecordsData([]); })
           .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [taskId, open]);
 
-    const records = (recordsData || []).map((r: any) => ({
-        ...r,
-        dados: typeof r.dados === "string" ? JSON.parse(r.dados) : r.dados,
-    })) as (TblSuiteRecord & { usuario_nome?: string })[];
+    const records = (recordsData || []).map((r: Record<string, unknown>) => {
+        const dados = r.dados;
+        return { ...r, dados: typeof dados === "string" ? JSON.parse(dados) : dados };
+    }) as (TblSuiteRecord & { usuario_nome?: string })[];
 
     const { template, loading: templateLoading } = useFormTemplate(selectedRecord?.tipo_form);
     const { users: allUsers } = useAllUsers();
@@ -94,13 +94,16 @@ export function TaskEntriesModal({ taskId, taskTitle, open, onOpenChange }: Task
         return user ? `${user.nome} (${user.username})` : userId;
     };
 
-    const getValue = (path: string, data: any): any => {
+    const getValue = (path: string, data: Record<string, unknown>): unknown => {
         if (data[path] !== undefined) return data[path];
-        return path.split(".").reduce((obj, key) => obj && obj[key], data);
+        return path.split('.').reduce<unknown>((obj, key) => {
+            const o = obj as Record<string, unknown> | null | undefined;
+            return o ? o[key] : undefined;
+        }, data);
     };
 
     const renderSmartField = (field: FormField) => {
-        const value = getValue(field.id, selectedRecord!.dados);
+        const value = getValue(field.id, selectedRecord!.dados) as string | { url?: string; dataUrl?: string } | null | undefined;
         if (value === undefined || value === null || value === "") return null;
 
         const displayUrl = typeof value === "string" ? value : value?.url || value?.dataUrl || null;

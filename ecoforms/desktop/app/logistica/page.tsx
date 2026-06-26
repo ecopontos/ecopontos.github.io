@@ -315,7 +315,7 @@ export default function LogisticaPage() {
                 Mapa de Logística
               </CardTitle>
               <CardDescription>
-                Pontos de coleta, clientes e camadas geoprocessadas. Use "Importar GeoJSON" para adicionar terrenos e pontos GPS.
+                Pontos de coleta, clientes e camadas geoprocessadas. Use &quot;Importar GeoJSON&quot; para adicionar terrenos e pontos GPS.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -19,7 +19,7 @@ import { useDataRegistryTypesNew as useDataRegistryTypes } from "@/src/interface
 import { useDataRegistryAggregated } from "@/src/interface/hooks/queries/useDataRegistryAggregated";
 import { detectSchemaFromItems } from "@/src/lib/registry-schema";
 import { useMemo } from "react";
-import { getCrmDataSourceNames } from "@/src/infrastructure/config/crm-datasources";
+import { getCrmDataSourceNames } from "@/src/interface/hooks/queries/useDataRegistryAggregated";
 
 interface FieldOption {
     label: string;
@@ -76,7 +76,7 @@ function DataSourceSchemaPreview({ tipo }: { tipo: string }) {
         return (
             <div className="border border-dashed border-amber-300 bg-amber-50 p-2 rounded">
                 <p className="text-[10px] text-amber-700">
-                    ⚠️ Tipo "{tipo}" não possui dados no registry. As opções aparecerão vazias.
+                    ⚠️ Tipo &quot;{tipo}&quot; não possui dados no registry. As opções aparecerão vazias.
                 </p>
             </div>
         );

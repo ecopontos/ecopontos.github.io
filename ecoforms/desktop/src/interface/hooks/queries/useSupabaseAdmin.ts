@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/src/infrastructure/persistence/supabase/supabaseClient';
 import type { ProfileSyncResult } from '@/src/infrastructure/sync/SupabaseUserSyncService';
+export type { ProfileSyncResult };
 
 interface AdminResponse {
     success: boolean;

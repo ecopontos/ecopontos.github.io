@@ -30,10 +30,10 @@ export default function GlobalErrorPage({
                             Um erro inesperado impediu o carregamento da aplicação.
                             Recarregue a página ou contate o suporte.
                         </p>
-                        {error.message && (
-                            <pre className="mt-3 rounded-md bg-white border px-4 py-3 text-left text-xs text-gray-600 overflow-auto max-h-32">
-                                {error.message}
-                            </pre>
+                        {error.digest && (
+                            <p className="mt-3 text-xs text-gray-400">
+                                Código: {error.digest}
+                            </p>
                         )}
                     </div>
                     <Button variant="outline" size="sm" onClick={reset}>

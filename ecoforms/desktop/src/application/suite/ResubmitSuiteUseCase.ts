@@ -1,6 +1,6 @@
 import type { SuiteRepository } from '../../domain/suite/SuiteRepository';
 import type { ClockPort } from '../ports/ClockPort';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 
 export interface ResubmitSuiteInput {
     packageId: string;

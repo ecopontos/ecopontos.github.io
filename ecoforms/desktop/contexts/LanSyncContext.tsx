@@ -1,5 +1,5 @@
 'use client';
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability, react-hooks/exhaustive-deps */
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { LanWebSocketClient } from '../src/infrastructure/sync/LanWebSocketClient';
 

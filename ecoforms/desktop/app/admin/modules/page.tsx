@@ -129,7 +129,7 @@ export default function AdminModulesPage() {
                 ))}
                 {modules.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
-                        Nenhum módulo criado. Clique em "Novo Módulo" para começar.
+                        Nenhum módulo criado. Clique em &quot;Novo Módulo&quot; para começar.
                     </div>
                 )}
             </div>

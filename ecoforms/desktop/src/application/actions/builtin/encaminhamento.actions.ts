@@ -1,8 +1,10 @@
 import { registerAction } from "../ActionRegistry";
 import type { ActionContext, ActionResult } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';
-import { LOG_ACAO_INSERT, LOG_ACAO_INSERT_ERRO } from "../../../infrastructure/persistence/sqlite/queries/log_acoes";
-import { TAREFA_SET_DEMANDA } from "../../../infrastructure/persistence/sqlite/queries/tarefas";
+
+const SQL_LOG_ACAO = `INSERT INTO log_acoes (id, id_acao, tipo_alvo, id_alvo, id_usuario, resultado, criado_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+const SQL_LOG_ACAO_ERRO = `INSERT INTO log_acoes (id, id_acao, tipo_alvo, id_alvo, id_usuario, erro, criado_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+const SQL_TAREFA_SET_DEMANDA = `UPDATE tarefas SET demanda_id = ?, atualizado_em = datetime('now') WHERE id = ?`;
 
 /**
  * Ação: Encaminhar para outro setor via criação de Demanda.
@@ -63,13 +65,13 @@ export function registerEncaminhamentoActions() {
 
         // 2. Vincula a demanda à tarefa de origem
         await ctx.container.sqlite.execute(
-          TAREFA_SET_DEMANDA.sql,
+          SQL_TAREFA_SET_DEMANDA,
           [demanda.id, origemId]
         );
 
         // 3. Registra em log_acoes
         await ctx.container.sqlite.execute(
-          LOG_ACAO_INSERT.sql,
+          SQL_LOG_ACAO,
           [
             uuidv7(),
             "encaminhar_para_setor",
@@ -88,7 +90,7 @@ export function registerEncaminhamentoActions() {
         // Log de erro
         try {
           await ctx.container.sqlite.execute(
-            LOG_ACAO_INSERT_ERRO.sql,
+            SQL_LOG_ACAO_ERRO,
             [
               uuidv7(),
               "encaminhar_para_setor",

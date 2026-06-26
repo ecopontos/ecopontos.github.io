@@ -1,8 +1,7 @@
 import type { ServiceTypeRepository } from '../../domain/service/ServiceTypeRepository';
 import type { SqlitePort } from '../ports/SqlitePort';
-import { getEffectiveSectors } from '../../infrastructure/persistence/SectorQueryUtils';
+import { getEffectiveSectors } from '../shared/SectorQueryUtils';
 import { ForbiddenError } from '../../domain/shared/errors';
-import { USUARIO_PERFIL } from '../../infrastructure/persistence/sqlite/queries/usuarios';
 
 export interface UpdateServiceTypeInput {
     id: string;
@@ -79,7 +78,7 @@ export class UpdateServiceTypeUseCase {
 
     private async isUserAdmin(userId: string): Promise<boolean> {
         const rows = await this.db.query<{ perfil: string }>(
-            USUARIO_PERFIL.sql,
+            `SELECT perfil FROM usuarios WHERE id = ? LIMIT 1`,
             [userId],
         );
         return rows[0]?.perfil === 'admin';

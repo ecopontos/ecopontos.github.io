@@ -1,8 +1,7 @@
 import type { ServiceType } from '../../domain/service/ServiceType';
 import type { ServiceTypeRepository } from '../../domain/service/ServiceTypeRepository';
 import type { SqlitePort } from '../ports/SqlitePort';
-import { getEffectiveSectors } from '../../infrastructure/persistence/SectorQueryUtils';
-import { USUARIO_PERFIL } from '../../infrastructure/persistence/sqlite/queries/usuarios';
+import { getEffectiveSectors } from '../shared/SectorQueryUtils';
 
 export class ListServiceTypesUseCase {
     constructor(
@@ -22,7 +21,7 @@ export class ListServiceTypesUseCase {
 
     private async isUserAdmin(userId: string): Promise<boolean> {
         const rows = await this.db.query<{ perfil: string }>(
-            USUARIO_PERFIL.sql,
+            `SELECT perfil FROM usuarios WHERE id = ? LIMIT 1`,
             [userId],
         );
         return rows[0]?.perfil === 'admin';

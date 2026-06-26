@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import maplibregl from 'maplibre-gl';

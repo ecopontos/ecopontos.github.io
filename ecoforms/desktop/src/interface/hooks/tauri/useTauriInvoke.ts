@@ -27,3 +27,6 @@ function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 export function useTauriInvoke() {
     return useMemo(() => safeInvoke, []);
 }
+
+/** Para event handlers (não-hooks) que precisam chamar invoke diretamente. */
+export { safeInvoke as invoke };

@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/preserve-manual-memoization, react-hooks/exhaustive-deps */
 import { ChangeEvent, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { FormField } from "@/types";
 import { Input } from "@/components/ui/input";

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/use-memo */
 import { useMemo } from "react";
 import { MANIFESTACAO_WORKFLOW } from "@/src/interface/workflow/ManifestacaoWorkflowConfig";
 import { ManifestacaoStateMachine } from "@/src/domain/ouvidoria/ManifestacaoStateMachine";

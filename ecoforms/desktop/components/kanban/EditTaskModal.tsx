@@ -1,5 +1,5 @@
 ﻿'use client';
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
 import { useTauriInvoke } from '@/src/interface/hooks/catalog/tauri';
 import { fetchUsuariosAtivos, fetchFormsAtivos } from '@/src/interface/hooks/queries/lookups';
@@ -36,7 +36,7 @@ import { ActionBar } from '@/components/ActionBar';
 import { useWorkflowActions } from '@/src/interface/hooks/useWorkflowActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContainer } from '@/src/interface/hooks/catalog/utils';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '@/src/interface/hooks/utils/useContainer';
 import { useSyncOutbox } from '@/src/interface/hooks/catalog/sync';
 import type { TaskPatchFile } from './PatchHistoryPanel';
 

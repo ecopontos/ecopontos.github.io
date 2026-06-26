@@ -68,7 +68,7 @@ pub fn create_first_admin(
 
     // 3. Gerar ID, hash da senha e sync_salt
     let user_id = format!("{:x}", rand::random::<u128>());
-    let password_hash = bcrypt::hash(&password, 12)
+    let password_hash = bcrypt::hash(password, 12)
         .map_err(|e| format!("Erro ao hash senha: {}", e))?;
 
     let salt: [u8; 32] = rand::thread_rng().gen();

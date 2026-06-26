@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/static-components */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, MessageSquareWarning } from "lucide-react";

@@ -11,3 +11,6 @@ export function useTauriDialog() {
         save: saveDialog,
     }), []);
 }
+
+/** Para event handlers (não-hooks) que precisam abrir diálogo de arquivo diretamente. */
+export { openDialog, saveDialog };

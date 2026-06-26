@@ -2,7 +2,6 @@ import type { DataRegistryRepository } from '../../domain/data-registry/DataRegi
 import type { ClockPort } from '../ports/ClockPort';
 import type { SqlitePort } from '../ports/SqlitePort';
 import { uuidv7 } from 'ecoforms-core';
-import { FORM_REGISTRY_GET } from '../../infrastructure/persistence/sqlite/queries/forms';
 
 export interface RegistryMapping {
     fieldId: string;
@@ -125,7 +124,7 @@ export class ResolveFormDataSourceTypesUseCase {
 
     async execute(formId: string): Promise<string[]> {
         const rows = await this.sqlite.query<{ conteudo: string }>(
-            FORM_REGISTRY_GET.sql,
+            `SELECT * FROM registro_formularios WHERE form_id = ?`,
             [formId],
         );
         const conteudo = rows[0]?.conteudo;

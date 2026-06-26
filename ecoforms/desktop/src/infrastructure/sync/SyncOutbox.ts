@@ -1,6 +1,7 @@
+import type { SyncOutbox as ISyncOutbox } from '../../application/ports/SyncOutboxPort';
 import { getTransport, getLanTransport } from './lazy-sync';
 
-export class SyncOutbox {
+export class SyncOutbox implements ISyncOutbox {
     async write(
         type: string,
         data: Record<string, unknown>,

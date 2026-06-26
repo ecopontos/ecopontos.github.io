@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 interface ImportPreviewProps {
     columns: string[];
-    rows: Record<string, any>[];
+    rows: Record<string, unknown>[];
     maxRows?: number;
 }
 

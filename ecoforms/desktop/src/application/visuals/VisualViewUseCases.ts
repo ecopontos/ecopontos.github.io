@@ -1,7 +1,7 @@
 import type { ModuleVisualViewRepository } from '../../domain/visual/ModuleVisualViewRepository';
 import { ModuleVisualView } from '../../domain/visual/ModuleVisualView';
 import type { VisualType } from '../../domain/visual/ModuleVisualView';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import { validateViewConfig } from './validation';
 import { uuidv7 } from 'ecoforms-core';
 

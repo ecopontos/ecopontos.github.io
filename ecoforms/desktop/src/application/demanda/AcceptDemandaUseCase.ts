@@ -1,6 +1,6 @@
 import type { DemandaRepository } from '../../domain/demanda/DemandaRepository';
 import type { ClockPort } from '../ports/ClockPort';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../task/TaskProjectionService';
 import { uuidv7 } from 'ecoforms-core';
 

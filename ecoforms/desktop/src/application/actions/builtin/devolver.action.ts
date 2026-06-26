@@ -1,8 +1,7 @@
 import { registerAction } from "../ActionRegistry";
-import {
-  PACOTE_INACTIVATE_ATUAL,
-  PACOTE_NEW_VERSION_FROM_LAST,
-} from "../../../infrastructure/persistence/sqlite/queries/pacotes";
+
+const SQL_PACOTE_INACTIVATE = `UPDATE pacotes SET atual = 0 WHERE id_pacote = ? AND atual = 1`;
+const SQL_PACOTE_NEW_VERSION_REFUTED = `INSERT INTO pacotes (id_pacote, num_versao, tipo_modulo, tipo_recurso, status, id_proprietario, atual, id_entidade, tipo_entidade, carga_json, criado_em, fechado_em) SELECT id_pacote, (SELECT COALESCE(MAX(num_versao), 0) + 1 FROM pacotes WHERE id_pacote = ?), tipo_modulo, tipo_recurso, 'refuted', id_proprietario, 1, id_entidade, tipo_entidade, carga_json, ?, NULL FROM pacotes WHERE id_pacote = ? AND atual = 0 ORDER BY num_versao DESC LIMIT 1`;
 
 export function registerDevolverAction() {
   registerAction({
@@ -22,12 +21,12 @@ export function registerDevolverAction() {
 
         // Versionamento: invalidar versão atual e criar nova com status refuted
         await ctx.container.sqlite.execute(
-          PACOTE_INACTIVATE_ATUAL.sql,
+          SQL_PACOTE_INACTIVATE,
           [id]
         );
 
         await ctx.container.sqlite.execute(
-          PACOTE_NEW_VERSION_FROM_LAST.sql,
+          SQL_PACOTE_NEW_VERSION_REFUTED,
           [id, now, id]
         );
 

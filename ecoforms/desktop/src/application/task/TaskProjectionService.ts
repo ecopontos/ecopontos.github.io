@@ -2,7 +2,7 @@ import { Task } from '../../domain/task/Task';
 import type { TaskRepository } from '../../domain/task/TaskRepository';
 import type { TarefaFormulario } from '../../domain/demanda/TarefaFormulario';
 import type { ClockPort } from '../ports/ClockPort';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskCriadaPayload } from 'ecoforms-core/sync';
 import { uuidv7 } from 'ecoforms-core';
 

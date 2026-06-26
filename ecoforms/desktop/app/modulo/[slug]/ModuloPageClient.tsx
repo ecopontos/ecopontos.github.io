@@ -49,7 +49,7 @@ export default function ModuloPageClient() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <h1 className="text-2xl font-bold">Módulo não encontrado</h1>
-        <p className="text-muted-foreground">O módulo "{slug}" não existe ou não está publicado.</p>
+        <p className="text-muted-foreground">O módulo &quot;{slug}&quot; não existe ou não está publicado.</p>
       </div>
     );
   }

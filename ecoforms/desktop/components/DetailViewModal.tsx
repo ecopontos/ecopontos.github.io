@@ -62,16 +62,19 @@ export function DetailViewModal({ record, open, onOpenChange, hideActions = fals
 
 
     // Helper to find value in data by field path/id
-    const getValue = (path: string, data: any): any => {
+    const getValue = (path: string, data: Record<string, unknown>): unknown => {
         // Simple case: direct key access
         if (data[path] !== undefined) return data[path];
         
         // Nested case (e.g. "group.field")
-        return path.split('.').reduce((obj, key) => obj && obj[key], data);
+        return path.split('.').reduce<unknown>((obj, key) => {
+            const o = obj as Record<string, unknown> | null | undefined;
+            return o ? o[key] : undefined;
+        }, data);
     }
 
     const renderSmartField = (field: FormField) => {
-        const value = getValue(field.id, record.dados);
+        const value = getValue(field.id, record.dados) as string | { url?: string; dataUrl?: string } | null | undefined;
         if (value === undefined || value === null || value === '') return null;
 
         // Suporte para objetos de imagem (resultado do upload ou CameraFieldV2)
@@ -95,12 +98,12 @@ export function DetailViewModal({ record, open, onOpenChange, hideActions = fals
                                 alt={field.label} 
                                 className="max-w-full h-auto max-h-64 object-contain mx-auto"
                                 onError={(e) => {
-                                    (e.target as any).style.display = 'none';
-                                    const parent = (e.target as any).parentElement;
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    const parent = (e.target as HTMLImageElement).parentElement;
                                     const fallback = document.createElement('p');
                                     fallback.className = 'p-4 text-xs text-slate-400 text-center italic';
                                     fallback.innerText = 'Imagem indisponível ou erro no carregamento.';
-                                    parent.appendChild(fallback);
+                                    parent?.appendChild(fallback);
                                 }}
                             />
                         </div>

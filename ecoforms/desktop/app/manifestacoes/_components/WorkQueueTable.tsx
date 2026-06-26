@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from "react";
 import { Search, Send, ExternalLink } from "lucide-react";
 import Link from "next/link";

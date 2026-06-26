@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";

@@ -7,7 +7,8 @@ import { UserDialog } from "@/components/users/UserDialog"
 import { Button } from "@/components/ui/button"
 import { Plus, LayoutDashboard, Users, RefreshCw } from "lucide-react"
 import { useSupabaseAdmin } from "@/src/interface/hooks/catalog/auth"
-import type { ProfileSyncResult } from "@/src/infrastructure/sync/SupabaseUserSyncService"
+import type { UserRole } from "@/src/interface/hooks/utils/usePermissions"
+import type { ProfileSyncResult } from "@/src/interface/hooks/queries/useSupabaseAdmin"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { ProtectedPage, RequirePermission } from "@/components/auth/PermissionGuards"
@@ -79,7 +80,7 @@ export default function UsersPage() {
 
             // Validação: apenas admin pode elevar para admin/gerente
             if (userData.perfil && userData.perfil !== selectedUser.perfil) {
-                const newRole = userData.perfil as any;
+                const newRole: string = userData.perfil;
                 const isElevation = ['admin', 'gerente'].includes(newRole);
                 const isAdmin = permissions.isAdmin?.() ?? false;
                 const isManager = permissions.isManager?.() ?? false;
@@ -102,7 +103,7 @@ export default function UsersPage() {
             if (!permissions.hasPermission("users.create")) {
                 throw new Error("Você não tem permissão para criar usuários")
             }
-            if (userData.perfil && !permissions.canCreateUserWithRole(userData.perfil as any)) {
+            if (userData.perfil && !permissions.canCreateUserWithRole(userData.perfil as UserRole)) {
                 throw new Error(
                     "Você não tem permissão para criar usuários com este perfil. " +
                     "Gerentes só podem criar coordenadores, campo e operadores."

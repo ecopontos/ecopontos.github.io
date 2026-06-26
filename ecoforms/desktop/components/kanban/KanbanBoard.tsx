@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/purity */
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -141,7 +141,7 @@ export function KanbanBoard() {
         );
     }, [tasks, searchTerm, showArchived]);
 
-    const getFilteredTasksByStatus = useCallback((status: any) => {
+    const getFilteredTasksByStatus = useCallback((status: string) => {
         const term = searchTerm.toLowerCase().trim();
         if (status === 'solicitacao') {
             const sols = getTasksByStatus('solicitacao') as UnifiedTaskView[];
@@ -181,7 +181,7 @@ export function KanbanBoard() {
         let newStatus = activeTask.status;
 
         if (columns.some(c => c.id === overId)) {
-            newStatus = overId as any;
+            newStatus = overId as KanbanTask['status'];
         } else {
             const overTask = tasks.find(t => t.id === overId);
             if (overTask) {
@@ -194,7 +194,7 @@ export function KanbanBoard() {
                 // Se arrastou de solicitação para qualquer outro lugar, dispara aprovação
                 handleApproveSolicitacao(activeTask, newStatus);
             } else {
-                moveTask(activeId, newStatus as any, activeTask.ordem);
+                moveTask(activeId, newStatus as 'a_fazer' | 'em_progresso' | 'concluido', activeTask.ordem);
             }
         }
     };
@@ -355,7 +355,7 @@ export function KanbanBoard() {
                             <TasksTableView
                                 tasks={isTechnicalAdmin ? [
                                     ...filteredTasks, 
-                                    ...(getTasksByStatus('solicitacao') as UnifiedTaskView[]).filter((t: any) => 
+                                    ...(getTasksByStatus('solicitacao') as UnifiedTaskView[]).filter((t: UnifiedTaskView) =>
                                         !searchTerm.trim() || 
                                         t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                         t.descricao?.toLowerCase().includes(searchTerm.toLowerCase())

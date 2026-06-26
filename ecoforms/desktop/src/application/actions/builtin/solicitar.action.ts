@@ -1,9 +1,8 @@
 import { registerAction } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';
-import {
-  PACOTE_BY_ID_ATUAL,
-  PACOTE_SOLICITAR_INSERT,
-} from "../../../infrastructure/persistence/sqlite/queries/pacotes";
+
+const SQL_PACOTE_BY_ID = `SELECT tipo_modulo, tipo_recurso, id_proprietario, id_entidade, tipo_entidade, carga_json FROM pacotes WHERE id_pacote = ? AND atual = 1 LIMIT 1`;
+const SQL_PACOTE_SOLICITAR = `INSERT INTO pacotes (id_pacote, num_versao, tipo_modulo, tipo_recurso, status, id_proprietario, atual, ref_id_pacote, id_entidade, tipo_entidade, carga_json, criado_em, fechado_em) VALUES (?, 1, ?, ?, 'current', ?, 1, ?, ?, ?, ?, ?, NULL)`;
 
 export function registerSolicitarAction() {
   registerAction({
@@ -30,7 +29,7 @@ export function registerSolicitarAction() {
           id_entidade: string;
           tipo_entidade: string;
           carga_json: string;
-        }>(PACOTE_BY_ID_ATUAL.sql, [origemId]);
+        }>(SQL_PACOTE_BY_ID, [origemId]);
 
         if (!rows || rows.length === 0) {
           throw new Error("Registro de origem não encontrado");
@@ -39,7 +38,7 @@ export function registerSolicitarAction() {
         const origem = rows[0];
 
         await ctx.container.sqlite.execute(
-          PACOTE_SOLICITAR_INSERT.sql,
+          SQL_PACOTE_SOLICITAR,
           [
             novoId,
             origem.tipo_modulo,

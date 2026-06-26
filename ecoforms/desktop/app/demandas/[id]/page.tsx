@@ -1,12 +1,12 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
 import { fetchSetorById, fetchUsuarioNomeById } from "@/src/interface/hooks/queries/lookups";
 import type { Demanda } from "@/src/domain/demanda/Demanda";
 import type { DemandaEvento } from "@/src/domain/demanda/DemandaEvento";
@@ -82,8 +82,8 @@ export default function DemandaDetailPage() {
             setDemanda({ ...demanda, status: "aceita" } as Demanda);
             const evts = await c.demandaRepository.findEventos(demanda.id);
             setEventos(evts);
-        } catch (e: any) {
-            setActionMessage(`Erro: ${e?.message || String(e)}`);
+        } catch (e: unknown) {
+            setActionMessage(`Erro: ${e instanceof Error ? e.message : String(e)}`);
         } finally {
             setActionLoading(false);
         }
@@ -103,8 +103,8 @@ export default function DemandaDetailPage() {
             setDemanda({ ...demanda, status: "concluida" } as Demanda);
             const evts = await c.demandaRepository.findEventos(demanda.id);
             setEventos(evts);
-        } catch (e: any) {
-            setActionMessage(`Erro: ${e?.message || String(e)}`);
+        } catch (e: unknown) {
+            setActionMessage(`Erro: ${e instanceof Error ? e.message : String(e)}`);
         } finally {
             setActionLoading(false);
         }

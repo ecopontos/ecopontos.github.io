@@ -47,13 +47,13 @@ fn hmac_sha256(key: &[u8], message: &[u8]) -> Vec<u8> {
     }
 
     let mut inner = Sha256::new();
-    inner.update(&i_key_pad);
+    inner.update(i_key_pad);
     inner.update(message);
     let inner_hash = inner.finalize();
 
     let mut outer = Sha256::new();
-    outer.update(&o_key_pad);
-    outer.update(&inner_hash);
+    outer.update(o_key_pad);
+    outer.update(inner_hash);
     outer.finalize().to_vec()
 }
 
