@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 interface StorageFile {
     name: string;
     id: string | null;
-    updated_at: string;
-    created_at: string;
-    last_accessed_at: string;
+    updated_at: string | null;
+    created_at: string | null;
+    last_accessed_at: string | null;
     metadata: Record<string, any> | null;
 }
 

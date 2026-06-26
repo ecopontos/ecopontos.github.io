@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { invoke } from "@tauri-apps/api/core"
 import { fetchSetoresAll, fetchEscalas } from "@/src/interface/hooks/queries/lookups"
 import {
     Dialog,

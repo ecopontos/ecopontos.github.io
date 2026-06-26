@@ -260,7 +260,7 @@ export default function ViewSubmissionClient({ paramsId }: { paramsId?: string }
 
             if (!formRow) throw new Error("Formulário não encontrado para tipo: " + submissionData.tipo_form);
 
-            const formData = toFormRegistryRecord(formRow);
+            const formData = formRow;
 
             setFormConfig(formData);
         } catch (err: unknown) {

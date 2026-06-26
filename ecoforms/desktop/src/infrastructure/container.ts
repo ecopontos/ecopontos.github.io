@@ -142,8 +142,9 @@ import {
     CopyViewToPersonalUseCase,
     SyncPersonalViewUseCase,
 } from '../application/visuals/VisualViewUseCases';
-import { getTransport, getSyncTransportService, LazySyncAdapter, setSyncEventIndexFactory, type SyncEventIndexFactory } from './sync/lazy-sync';
-import type { SyncTransportService } from './sync/SyncTransportService';
+import { getTransport, LazySyncAdapter } from './sync/lazy-sync';
+import type { TransportService } from './sync/TransportService';
+import { LanPullService } from './sync/LanPullService';
 
 export interface TaskUseCases {
     create: CreateTaskUseCase;
@@ -206,9 +207,6 @@ export interface ModuleUseCases {
     list: import('../application/module/ListModulesUseCase').ListModulesUseCase;
     getRuntime: import('../application/module/GetModuleRuntimeUseCase').GetModuleRuntimeUseCase;
     updateConfig: import('../application/module/UpdateModuleConfigUseCase').UpdateModuleConfigUseCase;
-    listAccessible: import('../application/module/ListAccessibleModulesUseCase').ListAccessibleModulesUseCase;
-    setUserOverride: import('../application/module/SetModulePermissionOverrideUseCase').SetModulePermissionOverrideUseCase;
-    getAccessMatrix: import('../application/module/GetUserAccessMatrixUseCase').GetUserAccessMatrixUseCase;
 }
 
 export interface ViewRegistryUseCases {
@@ -257,7 +255,7 @@ export interface Container {
     clock: ClockPort;
     logger: LoggerPort;
     sync: SyncPort;
-    syncTransportService: SyncTransportService | null;
+    syncTransportService: TransportService | null;
     syncOutbox: SyncOutbox;
     taskRepository: TaskRepository;
     suiteRepository: SuiteRepository;
@@ -316,6 +314,7 @@ export interface Container {
     taskProjection: TaskProjectionService;
     // LAN sync
     lanFileStorage: import('./storage/LanFileStorage').LanFileStorage;
+    lanPullService: LanPullService;
     sqliteUserRepository: import('./persistence/sqlite/SqliteUserRepository').SqliteUserRepository;
     // Catálogos e configurações
     hierarquiaPerfilRepository: import('../domain/hierarquia-perfil/HierarquiaPerfilRepository').HierarquiaPerfilRepository;
@@ -417,27 +416,24 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
 }
 
 export interface ContainerBootstrapOptions {
-    syncIndexFactory?: SyncEventIndexFactory;
+    // syncIndexFactory removed — not available in current codebase
 }
 
 function buildContainer(overrides: Partial<Container> = {}, bootstrap: ContainerBootstrapOptions = {}): Container {
-    if (bootstrap.syncIndexFactory) {
-        setSyncEventIndexFactory(bootstrap.syncIndexFactory);
-    }
-
     const sqlite = overrides.sqlite ?? new TauriSqliteAdapter();
     const clock = overrides.clock ?? new SystemClock();
     const logger = overrides.logger ?? new ConsoleLogger();
     const fileStorage = overrides.fileStorage ?? new SupabaseFileStorage();
 
-    const syncOutbox = new SyncOutbox(sqlite, getTransport);
+    const syncOutbox = new SyncOutbox();
     const sync = overrides.sync ?? new LazySyncAdapter(sqlite, fileStorage, clock);
-    const syncTransportService = getSyncTransportService();
+    const syncTransportService = getTransport();
 
     const taskRepository = overrides.taskRepository ?? new SqliteTaskRepository(sqlite);
     const suiteRepository = overrides.suiteRepository ?? new SqliteSuiteRepository(sqlite);
     const lanFileStorage = new LanFileStorage(sqlite);
     const lanDomainSyncService = new LanDomainSyncService(lanFileStorage);
+    const lanPullService = new LanPullService(lanDomainSyncService, sqlite);
     const userSnapshotService = new UserSnapshotService(sqlite, lanDomainSyncService, lanFileStorage);
     const sqliteUserRepository = new SqliteUserRepository(sqlite, () => {
         userSnapshotService.publishUserSnapshot();
@@ -609,6 +605,7 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
         eliminacaoTitularUseCase, exportacaoDadosTitularUseCase,
         taskProjection,
         lanFileStorage,
+        lanPullService,
         sqliteUserRepository,
         hierarquiaPerfilRepository,
         ecopontoRepository,

@@ -124,3 +124,16 @@ export const AGENDAMENTOS_NOTIFICACOES: QueryDef = {
   returns: 'AgendamentoNotificacaoRow[]',
 };
 
+export const AGENDAMENTOS_POR_USUARIO_EXPORT: QueryDef = {
+  sql: `SELECT a.id, a.status, a.cliente_nome, a.vagas_solicitadas, a.criado_em,
+        ss.titulo AS slot_titulo, ss.data_inicio, st.nome AS tipo_nome
+ FROM tbl_agendamentos a
+ JOIN tbl_service_slots ss ON ss.id = a.slot_id
+ JOIN tbl_service_types st ON st.id = a.service_type_id
+ WHERE a.cliente_id = ? OR a.criado_por = ?
+ ORDER BY a.criado_em DESC`,
+  description: 'Agendamentos de um usuário para exportação GDPR',
+  params: ['cliente_id', 'criado_por'],
+  use: 'operacional',
+  returns: '{ id, status, cliente_nome, vagas_solicitadas, criado_em, slot_titulo, data_inicio, tipo_nome }[]',
+};

@@ -33,6 +33,7 @@ import {
     Send,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getValidTransitions, type TaskStatus } from "@/src/domain/task/TaskStatus";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -46,6 +47,12 @@ type SortField = 'prazo' | 'prioridade' | null;
 type SortDir = 'asc' | 'desc';
 
 const PRIORIDADE_ORDEM: Record<string, number> = { alta: 3, media: 2, baixa: 1 };
+
+const TASK_STATUS_ACTIONS = [
+    { status: 'a_fazer' as const, label: 'A Fazer', icon: Clock },
+    { status: 'em_progresso' as const, label: 'Em Progresso', icon: Clock },
+    { status: 'concluido' as const, label: 'Concluído', icon: CheckCircle2 },
+];
 
 // ADR-044 gap 10: função pura movida para o escopo do módulo (não recriada a cada render)
 function parseRecorrencia(value: UnifiedTaskView["recorrencia"]): TaskDateConfig["recorrencia"] | undefined {
@@ -178,6 +185,11 @@ export function TasksTableView({
             default:
                 return <Badge variant="outline">{status}</Badge>;
         }
+    };
+
+    const getStatusActions = (status: string) => {
+        const validTransitions = getValidTransitions(status as TaskStatus);
+        return TASK_STATUS_ACTIONS.filter(action => validTransitions.includes(action.status));
     };
 
     const formatDate = (dateStr?: string | null) => {
@@ -399,15 +411,17 @@ export function TasksTableView({
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => onStatusChange?.(task.id, 'a_fazer')}>
-                                        <Clock className="h-4 w-4 mr-2" /> A Fazer
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onStatusChange?.(task.id, 'em_progresso')}>
-                                        <Clock className="h-4 w-4 mr-2" /> Em Progresso
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onStatusChange?.(task.id, 'concluido')}>
-                                        <CheckCircle2 className="h-4 w-4 mr-2" /> Concluído
-                                    </DropdownMenuItem>
+                                    {getStatusActions(task.status).map((action) => {
+                                        const Icon = action.icon;
+                                        return (
+                                            <DropdownMenuItem key={action.status} onClick={() => onStatusChange?.(task.id, action.status)}>
+                                                <Icon className="h-4 w-4 mr-2" /> {action.label}
+                                            </DropdownMenuItem>
+                                        );
+                                    })}
+                                    {getStatusActions(task.status).length === 0 && (
+                                        <DropdownMenuItem disabled>Nenhuma transição disponível</DropdownMenuItem>
+                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => onArchive?.(task.id)}>
                                         <Archive className="h-4 w-4 mr-2" /> Arquivar

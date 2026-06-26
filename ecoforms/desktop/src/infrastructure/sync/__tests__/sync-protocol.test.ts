@@ -25,9 +25,9 @@ import { CryptoLayer } from '../CryptoLayer';
 import { TransportService } from '../TransportService';
 import { InboundService } from '../InboundService';
 import { createEnvelope, buildChecksum } from '../EventEnvelope';
+import type { EcoFormsEventType, EventEnvelope } from '../EventEnvelope';
 import { InMemorySqlitePort } from '../../../test/fakes/InMemorySqlitePort';
 import { FakeSyncEventIndex } from '../../../test/fakes/FakeSyncEventIndex';
-import type { EventEnvelope } from '../EventEnvelope';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -423,8 +423,8 @@ describe('Correções de gaps', () => {
 
         const gaps = sqlite.getTable('log_gaps_sync');
         expect(gaps).toHaveLength(1);
-        expect(gaps[0].routing_id).toBe(remoteRoutingId);
-        expect(gaps[0].missing_seq).toBe(2);
+        expect(gaps[0].id_roteamento).toBe(remoteRoutingId);
+        expect(gaps[0].sequencia_faltante).toBe(2);
     });
 
     it('purgeOldSentEvents() remove eventos sent antigos', async () => {
@@ -443,11 +443,81 @@ describe('Correções de gaps', () => {
         const afterPurge = sqlite.getTable('fila_eventos_sync');
         expect(afterPurge).toHaveLength(0);
     });
+
+    // ─── F3: Gap recovery ────────────────────────────────────────────────────
+
+    it('listGaps() retorna gaps pendentes', async () => {
+        const crypto = await makeCrypto();
+        const { sqlite, index } = makeInfra();
+        const remoteRoutingId = 'setor-campo';
+
+        const env1 = makeEnvelope('task.criada', { id: 't1' }, 1, remoteRoutingId);
+        const env3 = makeEnvelope('task.criada', { id: 't3' }, 3, remoteRoutingId);
+        await seedEvent(index, crypto, remoteRoutingId, env1);
+        await seedEvent(index, crypto, remoteRoutingId, env3);
+
+        const inbound = new InboundService(crypto, sqlite, index, ROUTING_ID);
+        inbound.on('task.criada', async () => {});
+        await inbound.pull([remoteRoutingId]);
+
+        const gaps = await inbound.listGaps();
+        expect(gaps).toHaveLength(1);
+        expect(gaps[0].sequencia_faltante).toBe(2);
+        expect(gaps[0].situacao).toBe('pending');
+    });
+
+    it('retryGap() resolve gap quando o evento faltante chega ao index', async () => {
+        const crypto = await makeCrypto();
+        const { sqlite, index } = makeInfra();
+        const remoteRoutingId = 'setor-campo';
+
+        const env1 = makeEnvelope('task.criada', { id: 't1' }, 1, remoteRoutingId);
+        const env3 = makeEnvelope('task.criada', { id: 't3' }, 3, remoteRoutingId);
+        await seedEvent(index, crypto, remoteRoutingId, env1);
+        await seedEvent(index, crypto, remoteRoutingId, env3);
+
+        let handlerCalls = 0;
+        const inbound = new InboundService(crypto, sqlite, index, ROUTING_ID);
+        inbound.on('task.criada', async () => { handlerCalls++; });
+        await inbound.pull([remoteRoutingId]);
+        expect(handlerCalls).toBe(1);
+
+        // Agora o evento faltante (seq=2) chega ao index
+        const env2 = makeEnvelope('task.criada', { id: 't2' }, 2, remoteRoutingId);
+        await seedEvent(index, crypto, remoteRoutingId, env2);
+
+        const recovered = await inbound.retryGap(remoteRoutingId, 2);
+        expect(recovered).toBe(true);
+        expect(handlerCalls).toBe(2);
+
+        const gaps = await inbound.listGaps();
+        expect(gaps[0].situacao).toBe('resolved');
+    });
+
+    it('resolveGap(accepted=true) marca gap como accepted sem reprocessar', async () => {
+        const crypto = await makeCrypto();
+        const { sqlite, index } = makeInfra();
+        const remoteRoutingId = 'setor-campo';
+
+        const env1 = makeEnvelope('task.criada', { id: 't1' }, 1, remoteRoutingId);
+        const env3 = makeEnvelope('task.criada', { id: 't3' }, 3, remoteRoutingId);
+        await seedEvent(index, crypto, remoteRoutingId, env1);
+        await seedEvent(index, crypto, remoteRoutingId, env3);
+
+        const inbound = new InboundService(crypto, sqlite, index, ROUTING_ID);
+        inbound.on('task.criada', async () => {});
+        await inbound.pull([remoteRoutingId]);
+
+        await inbound.resolveGap(remoteRoutingId, 2, true);
+
+        const gaps = await inbound.listGaps();
+        expect(gaps[0].situacao).toBe('accepted');
+    });
 });
 
 // ─── Helpers locais ───────────────────────────────────────────────────────────
 
-function makeEnvelope(type: string, data: unknown, seq: number, routingId: string): EventEnvelope {
+function makeEnvelope(type: EcoFormsEventType, data: Record<string, unknown>, seq: number, routingId: string): EventEnvelope {
     const env = createEnvelope(
         { type, data },
         seq,
@@ -472,7 +542,7 @@ async function seedEvent(
         event_type: envelope.type,
         aggregate_type: envelope.aggregate.type,
         aggregate_id: envelope.aggregate.id,
-        device_id: envelope.source.device_id,
+        device_id: envelope.source.device_id ?? '',
         checksum: envelope.checksum,
         prev_event_id: envelope.prev_event_id,
         payload_enc,

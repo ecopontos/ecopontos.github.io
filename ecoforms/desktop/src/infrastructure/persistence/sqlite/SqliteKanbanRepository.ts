@@ -371,7 +371,7 @@ export class SqliteKanbanRepository implements KanbanRepository {
             taskParams.push(isAdminMgr ? 1 : 0, userId, userId, userId, userId);
         } else if (currentProjectId) {
             taskSql = `${baseSelect} WHERE ${baseWhere} AND t.projeto_id = ? AND (? OR t.criado_por = ? OR t.atribuido_para = ? OR EXISTS (SELECT 1 FROM tarefas_interessados ti WHERE ti.tarefa_id = t.id AND ti.usuario_id = ?) OR EXISTS (SELECT 1 FROM projetos_interessados pi WHERE pi.projeto_id = t.projeto_id AND pi.usuario_id = ?))${sectorClause} ORDER BY t.ordem ASC`;
-            taskParams.unshift(currentProjectId, isAdminMgr ? 1 : 0, userId, userId, userId, userId);
+            taskParams.push(currentProjectId, isAdminMgr ? 1 : 0, userId, userId, userId, userId);
         } else {
             taskSql = `${baseSelect} WHERE ${baseWhere} AND t.projeto_id IS NULL AND (? OR t.criado_por = ? OR t.atribuido_para = ? OR EXISTS (SELECT 1 FROM tarefas_interessados ti WHERE ti.tarefa_id = t.id AND ti.usuario_id = ?) OR EXISTS (SELECT 1 FROM projetos_interessados pi WHERE pi.projeto_id = t.projeto_id AND pi.usuario_id = ?))${sectorClause} ORDER BY t.ordem ASC`;
             taskParams.push(isAdminMgr ? 1 : 0, userId, userId, userId, userId);

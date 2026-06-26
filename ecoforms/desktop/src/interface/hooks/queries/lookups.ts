@@ -120,15 +120,15 @@ export interface FormSchemaRow {
 
 export interface TarefaRow {
   id: string;
-  projeto_id: string;
+  projeto_id: string | null;
   titulo: string;
   status: string;
   prioridade: string;
   atribuido_para: string;
-  created_at: string;
-  prazo: string;
-  setor_id: string;
-  demanda_id: string;
+  criado_em: string;
+  prazo: string | null;
+  setor_id: string | null;
+  demanda_id: string | null;
 }
 
 export interface PacoteRow {
@@ -297,12 +297,12 @@ export async function fetchEscalas(): Promise<{ id: string; nome: string }[]> {
 
 /** Pacotes (entradas de suite) vinculados a uma tarefa. */
 export async function fetchPacotesForTarefa(
-  suiteIdOrRef: string,
-): Promise<Record<string, unknown>[]> {
+  tarefaId: string,
+): Promise<PacoteRow[]> {
   const c = await getContainerAsync();
-  return c.sqlite.query<Record<string, unknown>>(
+  return c.sqlite.query<PacoteRow>(
     PACOTES_FOR_TAREFA.sql,
-    [suiteIdOrRef, suiteIdOrRef],
+    [tarefaId, tarefaId],
   );
 }
 

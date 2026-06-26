@@ -1,0 +1,72 @@
+# Logs e arquivos temporários
+*.log
+app_*.log
+app_*.txt
+android_*.log
+android_*.txt
+tauri-dev*.err
+
+# Node modules
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+temp/
+tmp/
+scratch/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.keystore
+
+# Local SQLite databases
+*.db
+*.sqlite
+
+# Arquivos de análise / IA
+.agents/
+.claude/
+.kilo/
+.opencode/
+.reversa/
+
+# Relatórios e saídas geradas
+reports/
+changes/
+EcoForms/
+
+# Arquivos compactados
+*.rar
+*.zip
+
+# Dados sensíveis e de teste
+ecoforms/download/
+ecoforms/mobile/www/data/usuarios.json
+ecoforms/_analysis_output.json
+ecoforms/ecoponto-config.json
+
+# Arquivos de configuração local
+meu-supabase-mcp/.env
+
+# Junk
+nul

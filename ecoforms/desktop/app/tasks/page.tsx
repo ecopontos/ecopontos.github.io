@@ -15,6 +15,7 @@ export default function TasksPage() {
     const { tasks, solicitacoes, setTasks, isLoading, refetchTasks, refetchSolicitacoes, refetchProjects } = useKanbanData(true, null);
     const { moveTask, archiveTask, deleteTask } = useKanbanMutations(
         tasks, solicitacoes, setTasks, null, refetchTasks, refetchSolicitacoes, refetchProjects,
+        { runtimeValidation: false, autoSync: false },
     );
 
     const handleTabChange = (value: string) => {
