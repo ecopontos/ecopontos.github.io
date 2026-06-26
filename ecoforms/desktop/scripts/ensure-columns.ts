@@ -585,20 +585,12 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    // 2.4 Templates de resposta
-    await execute(`
-        CREATE TABLE IF NOT EXISTS modelos_resposta (
-            id            TEXT PRIMARY KEY,
-            titulo        TEXT NOT NULL,
-            corpo         TEXT NOT NULL,
-            tipo_id       TEXT REFERENCES tipos_manifestacao(id),
-            ativo         INTEGER NOT NULL DEFAULT 1,
-            criado_por    TEXT NOT NULL REFERENCES usuarios(id),
-            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
-            atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-    `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_modelos_resposta_tipo ON modelos_resposta(tipo_manifestacao_id)`).catch(() => {});
+    // 2.4 Templates de resposta — `modelos_resposta` JÁ é definida acima
+    // (id, tipo_manifestacao_id, assunto_id, titulo, corpo, ativo + idx_modelos_tipo).
+    // Esta 2ª definição era SILENCIOSAMENTE IGNORADA pelo CREATE TABLE IF NOT EXISTS
+    // e usava colunas (tipo_id, criado_por, criado_em, atualizado_em) que nenhum
+    // código consome — além de um índice sobre uma coluna inexistente nela. Removida
+    // para eliminar a incoerência. Único consumidor: SqliteManifestacaoRepository.listModelosResposta.
 
     // 3.2 Notificações ao solicitante (rastreamento de canal)
     await execute(`

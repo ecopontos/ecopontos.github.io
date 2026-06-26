@@ -183,7 +183,7 @@ cruzar):
 
 | Item | Local | Ref. doc anterior |
 |---|---|---|
-| `modelos_resposta` definida 2× com schemas diferentes (a 2ª é ignorada por `IF NOT EXISTS`) | `ensure-columns.ts:479` e `:590` | M4 |
+| ✅ **RESOLVIDO** — `modelos_resposta` definida 2× com schemas diferentes (a 2ª, ignorada, removida; canônica = `:479`, a que o código usa) | `ensure-columns.ts:479` | M4 |
 | `pacotes` sem `PRIMARY KEY` | `ensure-columns.ts:1070` | M5 |
 | Colunas só via `ADD COLUMN`, ausentes do `CREATE TABLE` (`manifestacoes`, `respostas`, `anexos`) — em banco novo dependem do guard | vários | M6 |
 | Naming misto de timestamps PT-BR (`criado_em`) vs EN (`created_at`) — `tbl_suite`, `anexos_cache`, `anexos_refs`, `tarefas_anexos` | vários | B2 |
