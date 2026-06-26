@@ -18,7 +18,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Search, X, Users, MapIcon } from "lucide-react";
+import { GripVertical, Trash2, Search, X, Users, MapIcon, Wand2, Route, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { useClientesGeo, useItinerario, useTerrenos } from "@/src/interface/hook
 import type { RoteiroCliente } from "@/src/domain/logistics/LogisticsRepository";
 import type { Cliente } from "@/types/clientes";
 import ItinerarioMap from "./ItinerarioMap";
+import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
 
 const PAGE_SIZE = 50;
 
@@ -241,6 +242,43 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
     }
   };
 
+  // Stops do roteiro com coordenadas (join clienteId → geocódigo do itinerário).
+  const geoStops: GeoStop[] = useMemo(() => {
+    const coordById = new Map(
+      (itinerario || []).map((s) => [s.cliente_id, { lat: s.latitude, lng: s.longitude }]),
+    );
+    return sorted.map((c) => ({
+      id: c.clienteId,
+      lat: coordById.get(c.clienteId)?.lat ?? null,
+      lng: coordById.get(c.clienteId)?.lng ?? null,
+    }));
+  }, [sorted, itinerario]);
+
+  const semLoc = countSemLocalizacao(geoStops);
+  const totalKm = totalRouteKm(geoStops);
+
+  const handleOptimize = async () => {
+    if (geoStops.filter((s) => s.lat != null && s.lng != null).length < 3) {
+      toast.error("Pontos com localização insuficientes para otimizar.");
+      return;
+    }
+    const orderedIds = nearestNeighborOrder(geoStops);
+    const changes = orderedIds
+      .map((cid, i) => ({ clienteId: cid, ordem: i + 1 }))
+      .filter((c) => sorted.find((s) => s.clienteId === c.clienteId)?.ordem !== c.ordem);
+    if (changes.length === 0) {
+      toast.info("Rota já está otimizada.");
+      return;
+    }
+    try {
+      await updateClienteOrdemBatch(roteiroId, changes);
+      toast.success("Rota otimizada por proximidade");
+      refetch();
+    } catch {
+      toast.error("Erro ao otimizar rota");
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setVisibleCount(PAGE_SIZE);
@@ -385,9 +423,41 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
 
           {/* Right panel: collection points */}
           <div className={`flex flex-col gap-1.5 min-h-0 p-4 pt-2 border-l border-border ${showMap ? "w-[30%]" : "w-1/2"}`}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Pontos de coleta{sorted.length > 0 ? ` (${sorted.length})` : ""}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Pontos de coleta{sorted.length > 0 ? ` (${sorted.length})` : ""}
+              </p>
+              {sorted.length >= 3 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-xs gap-1"
+                  onClick={handleOptimize}
+                  disabled={saving}
+                  title="Reordenar por proximidade (vizinho mais próximo)"
+                >
+                  <Wand2 className="h-3 w-3" />
+                  Otimizar
+                </Button>
+              )}
+            </div>
+            {(totalKm > 0 || semLoc > 0) && (
+              <div className="flex items-center gap-3 text-[10px] flex-wrap">
+                {totalKm > 0 && (
+                  <span className="text-muted-foreground inline-flex items-center gap-1">
+                    <Route className="h-3 w-3" />{totalKm.toFixed(1)} km (linha reta)
+                  </span>
+                )}
+                {semLoc > 0 && (
+                  <span
+                    className="text-amber-600 inline-flex items-center gap-1"
+                    title="Pontos sem coordenada não aparecem no mapa nem entram na otimização"
+                  >
+                    <AlertTriangle className="h-3 w-3" />{semLoc} de {sorted.length} sem localização
+                  </span>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-[1.5rem_2rem_1fr_8.5rem_2.5rem_1.5rem] gap-1 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span></span>
               <span className="text-right">Ord</span>

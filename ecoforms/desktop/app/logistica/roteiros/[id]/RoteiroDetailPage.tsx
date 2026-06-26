@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw, MapPin, Wand2, Route, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,9 @@ import { useExecucaoClientesMutations } from "@/src/interface/hooks/mutations/us
 import type { Roteiro, RoteiroCliente, ExecucaoColeta } from "@/src/domain/logistics/LogisticsRepository";
 import { ExecucaoColetaStateMachine } from "@/src/domain/logistics/ExecucaoColetaStateMachine";
 import { NovaExecucaoDialog } from "@/components/logistics/NovaExecucaoDialog";
+import ItinerarioMap from "@/components/logistics/ItinerarioMap";
+import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/queries/useMapData";
+import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -37,11 +40,33 @@ export default function RoteiroDetailPage() {
   const deepLinkExecId = searchParams.get("exec");
   const deepLinkPanel = searchParams.get("panel");
   const { roteiro, loading } = useRoteiroById(id);
-  const { saveRoteiro, addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
+  const { saveRoteiro, addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateClienteOrdemBatch, transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
   const { data: clientesRoteiro, refetch: refetchClientes } = useClientesByRoteiro(id);
   const { data: execucoes, refetch: refetchExecucoes } = useExecucoes(id ? { roteiroId: id } : undefined);
   const { user } = useAuth();
   const { users: usuarios } = useAllUsers();
+
+  // Aba Mapa (G1/G2/G3): itinerário geocodificado + camadas reutilizando ItinerarioMap.
+  const { data: itinerario } = useItinerario(id);
+  const { data: clientesGeo } = useClientesGeo();
+  const { data: terrenosGeo } = useTerrenos();
+  const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
+
+  const geoStops: GeoStop[] = useMemo(() => {
+    const coordById = new Map(
+      (itinerario || []).map((s) => [s.cliente_id, { lat: s.latitude, lng: s.longitude }]),
+    );
+    return [...(clientesRoteiro || [])]
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((c) => ({
+        id: c.clienteId,
+        lat: coordById.get(c.clienteId)?.lat ?? null,
+        lng: coordById.get(c.clienteId)?.lng ?? null,
+      }));
+  }, [clientesRoteiro, itinerario]);
+
+  const semLocMapa = countSemLocalizacao(geoStops);
+  const totalKmMapa = totalRouteKm(geoStops);
 
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<Partial<typeof roteiro>>({});
@@ -66,6 +91,27 @@ export default function RoteiroDetailPage() {
       toast.success("Cliente removido");
       refetchClientes();
     } catch { toast.error("Erro ao remover cliente"); }
+  };
+
+  const handleOptimizeRota = async () => {
+    if (geoStops.filter((s) => s.lat != null && s.lng != null).length < 3) {
+      toast.error("Pontos com localização insuficientes para otimizar.");
+      return;
+    }
+    const sortedNow = [...clientesRoteiro].sort((a, b) => a.ordem - b.ordem);
+    const orderedIds = nearestNeighborOrder(geoStops);
+    const changes = orderedIds
+      .map((cid, i) => ({ clienteId: cid, ordem: i + 1 }))
+      .filter((c) => sortedNow.find((s) => s.clienteId === c.clienteId)?.ordem !== c.ordem);
+    if (changes.length === 0) {
+      toast.info("Rota já está otimizada.");
+      return;
+    }
+    try {
+      await updateClienteOrdemBatch(id!, changes);
+      toast.success("Rota otimizada por proximidade");
+      refetchClientes();
+    } catch { toast.error("Erro ao otimizar rota"); }
   };
 
   const handleMoveUp = async (clienteId: string, currentOrdem: number) => {
@@ -147,6 +193,7 @@ export default function RoteiroDetailPage() {
       <Tabs defaultValue={deepLinkExecId ? "execucoes" : "clientes"}>
         <TabsList>
           <TabsTrigger value="clientes"><Users className="h-4 w-4 mr-1" />Clientes</TabsTrigger>
+          <TabsTrigger value="mapa"><MapPin className="h-4 w-4 mr-1" />Mapa</TabsTrigger>
           <TabsTrigger value="execucoes"><Truck className="h-4 w-4 mr-1" />Execuções</TabsTrigger>
         </TabsList>
 
@@ -209,6 +256,50 @@ export default function RoteiroDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="mapa" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+              <div>
+                <CardTitle className="flex items-center gap-2"><MapPin className="h-4 w-4" />Mapa do Itinerário</CardTitle>
+                <CardDescription className="flex items-center gap-3 mt-1 flex-wrap">
+                  {totalKmMapa > 0 && (
+                    <span className="inline-flex items-center gap-1"><Route className="h-3 w-3" />{totalKmMapa.toFixed(1)} km (linha reta)</span>
+                  )}
+                  {semLocMapa > 0 && (
+                    <span className="text-amber-600 inline-flex items-center gap-1" title="Pontos sem coordenada não aparecem no mapa nem entram na otimização">
+                      <AlertTriangle className="h-3 w-3" />{semLocMapa} de {clientesRoteiro.length} sem localização
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOptimizeRota}
+                disabled={saving || clientesRoteiro.length < 3}
+                title="Reordenar por proximidade (vizinho mais próximo)"
+              >
+                <Wand2 className="h-4 w-4 mr-1" />Otimizar rota
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {clientesRoteiro.length === 0 ? (
+                <p className="text-muted-foreground">Nenhum cliente vinculado — adicione pontos na aba Clientes.</p>
+              ) : (
+                <div className="h-[60vh] min-h-[420px] rounded-md overflow-hidden border">
+                  <ItinerarioMap
+                    clientesGeo={clientesGeo || []}
+                    itinerario={itinerario || []}
+                    terrenosGeo={terrenosGeo || []}
+                    selectedClienteId={mapSelectedId}
+                    onClienteClick={setMapSelectedId}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>

@@ -18,8 +18,9 @@ Todos os achados foram verificados em arquivo:linha.
 > **N4** (fetch duplicado) **adiado** — página e mapa usam filtros diferentes em `useRoteiros`/
 > `useExecucoes`, então não são duplicatas reais; dedupe seguro exige cache compartilhado.
 > **N7** (unificação dos 3 setups MapLibre): **parcial** — `OSM_STYLE` unificado + helper
-> `createBaseMap` (ver N7). Verificação por revisão estática (ambiente sem `node_modules`).
-> Gaps funcionais G1–G3, G6 permanecem abertos.
+> `createBaseMap` (ver N7). **Gaps funcionais G1, G2, G3 resolvidos** e **G6 parcial** (distância
+> em linha reta) — ver seção 0. Verificação por revisão estática (ambiente sem `node_modules`).
+> Restam G4 (camadas de execução no detalhe) e G5 (deep-link aba Mapa).
 
 ---
 
@@ -28,11 +29,11 @@ Todos os achados foram verificados em arquivo:linha.
 | Item | Status atual | Evidência |
 |---|---|---|
 | **B1** — satélite derruba camadas de execução | ✅ **RESOLVIDO** | `LogisticsMap.tsx:27-31` agora chama `geoData.renderDataLayers` **e** `execLayers.renderAllExecLayers` no `onStyleLoad`; `useMapInstance.ts:22-23,41` usa `onStyleLoadRef`. **Porém o fix reintroduz N1 abaixo.** |
-| **G1** — sem mapa no `RoteiroDetailPage` | 🔴 Aberto | `app/logistica/roteiros/[id]` não importa nenhum mapa. |
-| **G2** — sem otimização de rota | 🔴 Aberto | Nenhuma referência a `otimizar`/nearest-neighbor. |
-| **G3** — pontos sem coordenada somem silenciosamente | 🔴 Aberto | Nenhum badge "sem localização" em `components/logistics`/`agendamentos`. `renderItinerary` ainda filtra `latitude != null` (`useGeoDataLayers.ts:277`) sem contar excluídos. |
-| **G6** — rota em linha reta | 🔴 Aberto | Segmentos `LineString` diretos (`useGeoDataLayers.ts:283-287`). |
-| **B2/B3/B4** — duplicação dos 3 setups MapLibre | 🔴 Aberto | `ItinerarioMap.tsx:10` e `RoteiroMap.tsx:10` ainda têm `OSM_STYLE` próprio + `new maplibregl.Map` standalone (ver N7). |
+| **G1** — sem mapa no `RoteiroDetailPage` | ✅ **RESOLVIDO** | Nova aba **Mapa** em `RoteiroDetailPage` reutilizando `ItinerarioMap` (itinerário + clientes + terrenos). |
+| **G2** — sem otimização de rota | ✅ **RESOLVIDO** | Botão **Otimizar rota** (vizinho-mais-próximo) no `ItinerarioModal` e na aba Mapa do detalhe; lógica em `lib/itinerary.ts` (`nearestNeighborOrder`). |
+| **G3** — pontos sem coordenada somem silenciosamente | ✅ **RESOLVIDO** | Badge "**N de M sem localização**" no modal e na aba Mapa do detalhe (`countSemLocalizacao`). |
+| **G6** — rota em linha reta | 🟡 **PARCIAL** | Agora exibe **distância total em linha reta** (`totalRouteKm`) no modal e detalhe. Roteamento por rede viária (OSRM/Valhalla) segue pendente. |
+| **B2/B3/B4** — duplicação dos 3 setups MapLibre | 🟡 **PARCIAL** | `OSM_STYLE` unificado + `createBaseMap` (ver N7); helpers de popup/route-line e paleta ainda pendentes. |
 
 ---
 
