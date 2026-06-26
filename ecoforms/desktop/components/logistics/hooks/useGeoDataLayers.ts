@@ -32,7 +32,7 @@ function hashTerrenos(terrenos: TerrenoGeo[], zoom: number): string {
     return String(h);
 }
 
-export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
+export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>, initialRoteiroId: string | null = null) {
     const [terrenosVisible, setTerrenosVisible] = useState(true);
     const [clientesVisible, setClientesVisible] = useState(true);
     const [itinerarioVisible, setItinerarioVisible] = useState(true);
@@ -41,7 +41,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
     const { data: clientes, loading: loadingClientes } = useClientesGeo(bbox);
     const { data: geoLayers, loading: loadingLayers, refetch: refetchLayers } = useGeoLayers();
     const { data: roteiros } = useRoteiros();
-    const [selectedRoteiroId, setSelectedRoteiroId] = useState<string | null>(null);
+    const [selectedRoteiroId, setSelectedRoteiroId] = useState<string | null>(initialRoteiroId);
     const { data: itinerario } = useItinerario(selectedRoteiroId);
 
     const { data: terrenos, loading: loadingTerrenos, refetch: refetchTerrenosViewport } = useTerrenosInViewport(bbox, zoom);

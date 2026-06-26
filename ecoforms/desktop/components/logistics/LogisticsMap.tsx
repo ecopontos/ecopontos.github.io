@@ -16,13 +16,20 @@ import { ItinerarioPanel } from './panels/ItinerarioPanel';
 import { TerrenosPanel } from './panels/TerrenosPanel';
 import { CamadasGenericasPanel } from './panels/CamadasGenericasPanel';
 
-export default function LogisticsMap() {
+interface LogisticsMapProps {
+    /** Pré-seleção via deep-link (?roteiro=). */
+    initialRoteiroId?: string | null;
+    /** Pré-seleção via deep-link (?exec=). */
+    initialExecucaoId?: string | null;
+}
+
+export default function LogisticsMap({ initialRoteiroId = null, initialExecucaoId = null }: LogisticsMapProps = {}) {
     const { user } = useAuth();
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
 
-    const geoData = useGeoDataLayers(mapRef);
-    const execLayers = useExecucaoLayers(mapRef, geoData.selectedRoteiroId);
+    const geoData = useGeoDataLayers(mapRef, initialRoteiroId);
+    const execLayers = useExecucaoLayers(mapRef, geoData.selectedRoteiroId, initialExecucaoId);
 
     const onStyleLoad = useCallback((map: maplibregl.Map) => {
         geoData.renderDataLayers(map);

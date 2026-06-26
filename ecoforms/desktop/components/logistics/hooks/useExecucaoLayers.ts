@@ -12,8 +12,8 @@ import {
 } from '@/src/interface/hooks/queries/useMapData';
 import { useExecucoes } from '@/src/interface/hooks/catalog/logistica';
 
-export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null) {
-    const [selectedExecucaoId, setSelectedExecucaoId] = useState<string | null>(null);
+export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null, initialExecucaoId: string | null = null) {
+    const [selectedExecucaoId, setSelectedExecucaoId] = useState<string | null>(initialExecucaoId);
     const [execucaoLayerVisible, setExecucaoLayerVisible] = useState(true);
     const [intercorrenciasLayerVisible, setIntercorrenciasLayerVisible] = useState(true);
     const [checklistLayerVisible, setChecklistLayerVisible] = useState(true);
@@ -318,8 +318,11 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [execucaoGeo]);
 
-    // Limpar seleção de execução ao trocar roteiro
+    // Limpar seleção de execução ao trocar roteiro — mas não no mount, para
+    // preservar a seleção inicial vinda de deep-link (?exec=).
+    const roteiroMountRef = useRef(true);
     useEffect(() => {
+        if (roteiroMountRef.current) { roteiroMountRef.current = false; return; }
         setSelectedExecucaoId(null);
     }, [selectedRoteiroId]);
 

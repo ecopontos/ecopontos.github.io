@@ -352,6 +352,11 @@ export default function RoteiroDetailPage() {
                              <Button size="sm" variant={pesagensExpandida === e.id ? "secondary" : "ghost"} className="h-7 text-xs gap-1" title="Pesagens (despacho/balança)" onClick={() => { setPesagensExpandida(pesagensExpandida === e.id ? null : e.id); setColetaExpandida(null); }}>
                                <Scale className="h-3.5 w-3.5" />Pesagens
                             </Button>
+                             <Link href={`/logistica?tab=mapa&roteiro=${e.roteiroId}&exec=${e.id}`}>
+                               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" title="Ver execução no mapa (coleta, intercorrências, checklist)">
+                                 <MapPin className="h-3.5 w-3.5" />Mapa
+                               </Button>
+                             </Link>
                           </TableCell>
                         </TableRow>
 
