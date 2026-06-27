@@ -2,6 +2,7 @@ import type { ViewRegistryRepository } from '@/src/domain/view/ViewRegistryRepos
 import type { ViewRegistry } from '@/src/domain/view/ViewRegistry';
 import { ViewRegistry as ViewRegistryEntity } from '../../domain/view/ViewRegistry';
 import type { SqlitePort } from '@/src/application/ports/SqlitePort';
+import { MODULO_TIPO_ENTIDADE_PUBLICADO } from '../../infrastructure/persistence/sqlite/queries/modules';
 import { uuidv7 } from 'ecoforms-core';
 
 export interface ModuleDashboardWidget {
@@ -179,7 +180,7 @@ export class GetModuleDashboardDataUseCase {
 
     async execute(params: { slug: string; dashboardId: string; userId: string; userProfile: string }): Promise<ModuleDashboardVisualDto[]> {
         const modRows = await this.db.query<Record<string, unknown>>(
-            `SELECT tipo_entidade FROM registro_modulos WHERE slug = ? AND status = 'published' LIMIT 1`,
+            MODULO_TIPO_ENTIDADE_PUBLICADO.sql,
             [params.slug],
         );
         const entityType = modRows[0]?.tipo_entidade as string | undefined;

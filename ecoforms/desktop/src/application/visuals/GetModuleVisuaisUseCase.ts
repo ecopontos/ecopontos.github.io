@@ -3,6 +3,7 @@ import type { ModuleVisualViewRepository } from '../../domain/visual/ModuleVisua
 import type { ModuleVisualView } from '../../domain/visual/ModuleVisualView';
 import { resolveBind, type ViewContext } from './resolveBind';
 import { VisualQueryCache } from './VisualQueryCache';
+import { DASHBOARD_WIDGETS, MODULO_POR_SLUG } from '../../infrastructure/persistence/sqlite/queries/modules';
 
 export interface JoinDescriptor {
     table: string;
@@ -59,7 +60,7 @@ export class GetModuleVisuaisUseCase {
         dashboardId?: string,
     ): Promise<ModuleVisuaisDto | null> {
         const modRows = await this.db.query<Record<string, unknown>>(
-            `SELECT id, slug, nome, tipo_entidade, configuracao FROM registro_modulos WHERE slug = ? AND status = 'published' LIMIT 1`,
+            MODULO_POR_SLUG.sql,
             [slug],
         );
         if (!modRows[0]) return null;
@@ -75,7 +76,7 @@ export class GetModuleVisuaisUseCase {
         let filteredConfigs = visualConfigs;
         if (dashboardId) {
             const dashRows = await this.db.query<Record<string, unknown>>(
-                'SELECT widgets FROM registro_visualizacoes WHERE id = ? LIMIT 1', [dashboardId],
+                DASHBOARD_WIDGETS.sql, [dashboardId],
             );
             if (dashRows[0]) {
                 const widgets = typeof dashRows[0].widgets === 'string'

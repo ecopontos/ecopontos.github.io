@@ -290,4 +290,66 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             ativo: true,
         });
     });
+
+    it('loadRuntimeDto() carrega data catalogs em batch com colunas explicitas', async () => {
+        const queries: Array<{ sql: string; params?: unknown[] }> = [];
+        const db = {
+            query: async (sql: string, params?: unknown[]) => {
+                queries.push({ sql, params });
+                if (sql.includes('FROM registro_modulos')) {
+                    return [{
+                        id: 'mod-1',
+                        slug: 'fiscalizacao',
+                        nome: 'Fiscalizacao',
+                        descricao: null,
+                        tipo_entidade: 'fiscalizacao',
+                        icon: null,
+                        color: null,
+                        prefix: '/fiscal',
+                        ordem: 1,
+                        status: 'draft',
+                        versao: 1,
+                        config_version: 1,
+                        configuracao: JSON.stringify({
+                            data_catalogs: [
+                                { catalog_id: 'tipo_residuo', required: true },
+                                { catalog_id: 'setor', required: false },
+                            ],
+                        }),
+                        config_suite: null,
+                        criado_em: '2026-01-01T00:00:00.000Z',
+                        atualizado_em: '2026-01-01T00:00:00.000Z',
+                        publicado_em: null,
+                    }];
+                }
+                if (sql.includes('FROM permissoes_modulos')) {
+                    return [{ profile: 'operador', can_view: 1, can_create: 0, can_edit: 0, can_approve: 0, can_delete: 0 }];
+                }
+                if (sql.includes('FROM registro_dados')) {
+                    return [
+                        { id: 'dado-1', tipo: 'tipo_residuo', chave: 'plastico', conteudo: '{"nome":"Plastico"}', versao: 1, criado_em: '2026-01-01', atualizado_em: '2026-01-01' },
+                        { id: 'dado-2', tipo: 'setor', chave: 'centro', conteudo: '{"nome":"Centro"}', versao: 1, criado_em: '2026-01-01', atualizado_em: '2026-01-01' },
+                    ];
+                }
+                return [];
+            },
+            execute: async () => {},
+            all: async () => [],
+            transaction: async <T>(cb: () => Promise<T>) => cb(),
+        } as unknown as SqlitePort;
+
+        const repo = new SqliteModuleRepository(db);
+        const dto = await repo.loadRuntimeDto('fiscalizacao', 'operador');
+
+        const dataQueries = queries.filter(q => q.sql.includes('FROM registro_dados'));
+        expect(dataQueries).toHaveLength(1);
+        expect(dataQueries[0].sql).toContain('tipo IN (?,?)');
+        expect(dataQueries[0].sql).not.toContain('SELECT *');
+        expect(dataQueries[0].params).toEqual(['tipo_residuo', 'setor']);
+        expect(dto!.data_catalogs).toEqual([
+            { catalog_id: 'tipo_residuo', required: true, items: [expect.objectContaining({ id: 'dado-1', tipo: 'tipo_residuo' })] },
+            { catalog_id: 'setor', required: false, items: [expect.objectContaining({ id: 'dado-2', tipo: 'setor' })] },
+        ]);
+    });
+
 });

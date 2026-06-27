@@ -1,6 +1,18 @@
 import type { ModuleRepository } from '../../../domain/module/ModuleRepository';
 import type { ModuleRegistry, ModuleRuntimeDto, ModulePermissionConfig, ModuleConfig, ModuleStatus } from '../../../domain/module/ModuleRegistry';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
+import {
+  DECISOES_MODULO_POR_IDS,
+  FORMULARIOS_MODULO_POR_IDS,
+  ITENS_CATALOGOS_MODULO_POR_TIPOS,
+  MODULO_POR_ID,
+  MODULO_POR_TIPO_ENTIDADE,
+  MODULO_REGISTRY_POR_SLUG,
+  MODULOS_POR_STATUS,
+  MODULOS_TODOS,
+  PERMISSOES_MODULO,
+  VISUALIZACOES_MODULO_POR_IDS,
+} from './queries/modules';
 
 interface ModuleRow {
   id: string;
@@ -28,6 +40,16 @@ interface PermissionRow {
   can_edit: number;
   can_approve: number;
   can_delete: number;
+}
+
+interface DataRegistryRow extends Record<string, unknown> {
+  id: string;
+  tipo: string;
+  chave: string;
+  conteudo: string | null;
+  versao: number | null;
+  criado_em: string;
+  atualizado_em: string;
 }
 
 interface ViewRegistryRow {
@@ -91,35 +113,24 @@ export class SqliteModuleRepository implements ModuleRepository {
   constructor(private readonly db: SqlitePort) {}
 
   async findById(id: string): Promise<ModuleRegistry | null> {
-    const rows = await this.db.query<ModuleRow>(
-      `SELECT * FROM registro_modulos WHERE id = ? LIMIT 1`,
-      [id],
-    );
+    const rows = await this.db.query<ModuleRow>(MODULO_POR_ID.sql, [id]);
     return rows[0] ? rowToModule(rows[0]) : null;
   }
 
   async findBySlug(slug: string): Promise<ModuleRegistry | null> {
-    const rows = await this.db.query<ModuleRow>(
-      `SELECT * FROM registro_modulos WHERE slug = ? LIMIT 1`,
-      [slug],
-    );
+    const rows = await this.db.query<ModuleRow>(MODULO_REGISTRY_POR_SLUG.sql, [slug]);
     return rows[0] ? rowToModule(rows[0]) : null;
   }
 
   async findByEntityType(entityType: string): Promise<ModuleRegistry | null> {
-    const rows = await this.db.query<ModuleRow>(
-      `SELECT * FROM registro_modulos WHERE tipo_entidade = ? LIMIT 1`,
-      [entityType],
-    );
+    const rows = await this.db.query<ModuleRow>(MODULO_POR_TIPO_ENTIDADE.sql, [entityType]);
     return rows[0] ? rowToModule(rows[0]) : null;
   }
 
   async findAll(status?: ModuleStatus): Promise<ModuleRegistry[]> {
-    const sql = status
-      ? `SELECT * FROM registro_modulos WHERE status = ? ORDER BY ordem ASC`
-      : `SELECT * FROM registro_modulos ORDER BY ordem ASC`;
+    const query = status ? MODULOS_POR_STATUS : MODULOS_TODOS;
     const params = status ? [status] : [];
-    const rows = await this.db.query<ModuleRow>(sql, params);
+    const rows = await this.db.query<ModuleRow>(query.sql, params);
     return rows.map(rowToModule);
   }
 
@@ -163,10 +174,7 @@ export class SqliteModuleRepository implements ModuleRepository {
   }
 
   async getPermissions(moduleId: string): Promise<ModulePermissionConfig[]> {
-    const rows = await this.db.query<PermissionRow>(
-      `SELECT profile, can_view, can_create, can_edit, can_approve, can_delete FROM permissoes_modulos WHERE module_id = ?`,
-      [moduleId],
-    );
+    const rows = await this.db.query<PermissionRow>(PERMISSOES_MODULO.sql, [moduleId]);
     return rows.map(r => ({
       profile: r.profile,
       can_view: r.can_view === 1,
@@ -225,10 +233,7 @@ export class SqliteModuleRepository implements ModuleRepository {
         form_id: string;
         titulo: string;
         conteudo: string;
-      }>(
-        `SELECT form_id, titulo, conteudo FROM registro_formularios WHERE form_id IN (${placeholders})`,
-        formIds,
-      );
+      }>(FORMULARIOS_MODULO_POR_IDS(placeholders).sql, formIds);
       const formMap = new Map(formRows.map(f => [f.form_id, f]));
       for (const f of config.forms) {
         const formData = formMap.get(f.form_id);
@@ -245,15 +250,23 @@ export class SqliteModuleRepository implements ModuleRepository {
     // Load data catalogs
     const data_catalogs: ModuleRuntimeDto['data_catalogs'] = [];
     if (config.data_catalogs && config.data_catalogs.length > 0) {
+      const catalogIds = [...new Set(config.data_catalogs.map(dc => dc.catalog_id))];
+      const placeholders = catalogIds.map(() => '?').join(',');
+      const catalogRows = await this.db.query<DataRegistryRow>(
+        ITENS_CATALOGOS_MODULO_POR_TIPOS(placeholders).sql,
+        catalogIds,
+      );
+      const itemsByType = new Map<string, Array<Record<string, unknown>>>();
+      for (const row of catalogRows) {
+        const rows = itemsByType.get(row.tipo) ?? [];
+        rows.push(row);
+        itemsByType.set(row.tipo, rows);
+      }
       for (const dc of config.data_catalogs) {
-        const items = await this.db.query<Record<string, unknown>>(
-          `SELECT * FROM registro_dados WHERE tipo = ? ORDER BY json_extract(conteudo, '$.nome') ASC`,
-          [dc.catalog_id],
-        );
         data_catalogs.push({
           catalog_id: dc.catalog_id,
           required: dc.required,
-          items,
+          items: itemsByType.get(dc.catalog_id) ?? [],
         });
       }
     }
@@ -263,8 +276,7 @@ export class SqliteModuleRepository implements ModuleRepository {
       const viewIds = config.views.map(v => v.view_id);
       const placeholders = viewIds.map(() => '?').join(',');
       const viewRows = await this.db.query<ViewRegistryRow>(
-        `SELECT id, titulo, perfis, layout, widgets, tipo_modulo AS module_type, id_usuario AS user_id, modelo AS is_template, ativo, criado_em, atualizado_em
-         FROM registro_visualizacoes WHERE id IN (${placeholders}) AND ativo = 1`,
+        VISUALIZACOES_MODULO_POR_IDS(placeholders).sql,
         viewIds,
       );
       const viewMap = new Map(viewRows.map(row => [row.id, {
@@ -296,11 +308,7 @@ export class SqliteModuleRepository implements ModuleRepository {
       const decisionIds = config.decisions.map(d => d.decision_id);
       const placeholders = decisionIds.map(() => '?').join(',');
       const decisionRows = await this.db.query<DecisionRegistryRow>(
-        `SELECT id, tipo_alvo AS target_type, acao AS action, perfis, ativado_quando AS enabled_when,
-                passos AS steps, parametros AS params, tipo_consequencia AS consequence_type,
-                padrao_consequencia AS consequence_pattern, config_consequencia AS consequence_config,
-                ativo, criado_em, atualizado_em
-         FROM registro_decisoes WHERE id IN (${placeholders}) AND ativo = 1`,
+        DECISOES_MODULO_POR_IDS(placeholders).sql,
         decisionIds,
       );
       const decisionMap = new Map(decisionRows.map(row => [row.id, {
