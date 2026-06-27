@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import type { GeoLayer, TerrenoGeo } from '@/src/interface/hooks/queries/useMapData';
+import type { GeoLayer, TerrenoGeo } from '@/src/interface/hooks/catalog/logistica';
 import { simplifyGeometry, countVertices, getTolerance } from '@/lib/geo/simplify';
 
 export function addGeoLayerToMap(map: maplibregl.Map, layer: GeoLayer) {

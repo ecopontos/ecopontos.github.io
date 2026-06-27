@@ -5,4 +5,5 @@ export { useServiceTypeMutations } from '../mutations/useServiceTypeMutations';
 export { useBookingTasks } from '../queries/useBookingTasks';
 export { useAgendamentos } from '../queries/useAgendamentos';
 export { useAgendamentoById } from '../queries/useAgendamentoById';
+export { useAgendamentoMapData, type AgendamentoMapPoint } from '../queries/useAgendamentoMapData';
 export { useAgendamentoMutations } from '../mutations/useAgendamentoMutations';

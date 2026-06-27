@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { useClientes } from "@/src/interface/hooks/catalog/clientes";
 import { useClientesByRoteiro, useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
-import { useClientesGeo, useItinerario, useTerrenos } from "@/src/interface/hooks/queries/useMapData";
+import { useClientesGeo, useItinerario, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
 import type { RoteiroCliente } from "@/src/domain/logistics/LogisticsRepository";
 import type { Cliente } from "@/types/clientes";
 import ItinerarioMap from "./ItinerarioMap";

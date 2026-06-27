@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { fetchSetorById, fetchUsuarioNomeById } from "@/src/interface/hooks/queries/lookups";
 import type { Demanda } from "@/src/domain/demanda/Demanda";
 import type { DemandaEvento } from "@/src/domain/demanda/DemandaEvento";

@@ -3,12 +3,19 @@ export function uuidv7(): string {
   crypto.getRandomValues(bytes);
 
   const ts = BigInt(Date.now());
-  bytes[0] = Number((ts >> 40n) & 0xFFn);
-  bytes[1] = Number((ts >> 32n) & 0xFFn);
-  bytes[2] = Number((ts >> 24n) & 0xFFn);
-  bytes[3] = Number((ts >> 16n) & 0xFFn);
-  bytes[4] = Number((ts >> 8n) & 0xFFn);
-  bytes[5] = Number(ts & 0xFFn);
+  const b40 = BigInt(40);
+  const b32 = BigInt(32);
+  const b24 = BigInt(24);
+  const b16 = BigInt(16);
+  const b8 = BigInt(8);
+  const mask = BigInt(0xff);
+
+  bytes[0] = Number((ts >> b40) & mask);
+  bytes[1] = Number((ts >> b32) & mask);
+  bytes[2] = Number((ts >> b24) & mask);
+  bytes[3] = Number((ts >> b16) & mask);
+  bytes[4] = Number((ts >> b8) & mask);
+  bytes[5] = Number(ts & mask);
 
   bytes[6] = (bytes[6] & 0x0f) | 0x70;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, ArrowLeft, Loader2, FileJson } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
 import Link from "next/link";
 import type { DadosTitular } from "@/src/application/usuario/ExportacaoDadosTitularUseCase";

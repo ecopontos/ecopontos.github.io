@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useModules } from '@/src/interface/hooks/queries/useModules';
+import { useModules } from '@/src/interface/hooks/catalog/modules-views';
 import { fetchFormsAtivos, fetchDataRegistryTipos } from '@/src/interface/hooks/queries/lookups';
 import type { ModuleConfig, ModulePermissionConfig } from '@/src/domain/module/ModuleRegistry';
 import { Button } from '@/components/ui/button';

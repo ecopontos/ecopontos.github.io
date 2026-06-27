@@ -12,7 +12,7 @@ import {
     type TerrenoGeo,
     type ClienteGeo,
     type ItinerarioStop,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { removeGeoLayerFromMap } from '../map-layers';
 
 interface UseLayerActionsParams {

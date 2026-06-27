@@ -18,8 +18,8 @@ import {
     HardDrive,
     Wifi,
 } from "lucide-react";
-import { useTauriInvoke } from "@/src/interface/hooks/tauri/useTauriInvoke";
-import { useSqlite } from "@/src/interface/hooks/queries/useSqlite";
+import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
+import { useSqlite } from "@/src/interface/hooks/catalog/tauri";
 import { toast } from "sonner";
 
 interface ExportMeta {

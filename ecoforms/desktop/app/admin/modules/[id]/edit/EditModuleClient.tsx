@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import type { ModuleRegistry } from "@/src/domain/module/ModuleRegistry";
 
 export default function EditModuleClient() {

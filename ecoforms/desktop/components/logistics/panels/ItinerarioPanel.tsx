@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Route, Eye, EyeOff } from 'lucide-react';
 import type { Roteiro } from '@/src/domain/logistics/LogisticsRepository';
-import type { ItinerarioStop } from '@/src/interface/hooks/queries/useMapData';
+import type { ItinerarioStop } from '@/src/interface/hooks/catalog/logistica';
 
 interface ItinerarioPanelProps {
     roteiros: Roteiro[];

@@ -7,8 +7,8 @@ import { ArrowLeft, MapPin, Building, BarChart2, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
-import { useRemocaoAnalytics } from "@/src/interface/hooks/queries/useRemocaoAnalytics";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
+import { useRemocaoAnalytics } from "@/src/interface/hooks/catalog/logistica";
 import type { Ecoponto } from "@/src/domain/ecoponto/Ecoponto";
 
 export default function EcopontoDetailPage() {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useManifestacaoById, useManifestacaoTramitacoes, useManifestacaoRespostas, useManifestacaoDespachos, useManifestacaoPrazos, useManifestacaoAnexos, useManifestacaoCobranças, useManifestacaoEnvios } from "@/src/interface/hooks/catalog/manifestacoes";
-import { useNotificacoesSolicitante } from "@/src/interface/hooks/queries/useNotificacoesSolicitante";
+import { useNotificacoesSolicitante } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useManifestacaoCatalogos } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useSubassuntos, useSubunidades, useProgramasOrcamentarios } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useAuth } from "@/contexts/AuthContext";

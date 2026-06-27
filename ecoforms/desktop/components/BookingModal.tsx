@@ -11,10 +11,10 @@ import { Loader2, Users, UserPlus, CheckCircle, MessageCircle, ExternalLink } fr
 import { ClientePhoneSearch, type SelectedCliente } from "@/components/clientes/ClientePhoneSearch";
 import { QuickCreateClientForm } from "@/components/clientes/QuickCreateClientForm";
 import { FormRenderer } from "@/components/runtime/FormRenderer";
-import { useFormTemplate } from "@/src/interface/hooks/queries/useFormTemplate";
-import { useServiceSlotById } from "@/src/interface/hooks/queries/useServiceSlots";
-import { useServiceTypes } from "@/src/interface/hooks/queries/useServiceTypes";
-import { useAgendamentoMutations } from "@/src/interface/hooks/mutations/useAgendamentoMutations";
+import { useFormTemplate } from "@/src/interface/hooks/catalog/forms";
+import { useServiceSlotById } from "@/src/interface/hooks/catalog/service";
+import { useServiceTypes } from "@/src/interface/hooks/catalog/service";
+import { useAgendamentoMutations } from "@/src/interface/hooks/catalog/service";
 import { useAdminUsers } from "@/src/interface/hooks/catalog/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import type { FormFieldValue } from "@/components/runtime/FormFieldRenderer";

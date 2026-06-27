@@ -11,8 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Database, Download, LayoutDashboard, Loader2, Recycle, RefreshCcw, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
-import { useExternalResiduos } from "@/src/interface/hooks/queries/useExternalResiduos";
-import { usePgLegacyConfig } from "@/src/interface/hooks/queries/useLegacySyncData";
+import { useExternalResiduos } from "@/src/interface/hooks/catalog/logistica";
+import { usePgLegacyConfig } from "@/src/interface/hooks/catalog/logistica";
 import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 type FilterMode = "all" | "ativo" | "inativo";

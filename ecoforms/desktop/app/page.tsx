@@ -48,12 +48,12 @@ import { useFormPermissions } from "@/src/interface/hooks/catalog/auth";
 import { HideForRole } from "@/components/auth/PermissionGuards";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DynamicDashboard } from "@/components/DynamicDashboard";
-import { useDashboardWidgets } from "@/src/interface/hooks/useDashboardWidgets";
-import { useWidgetMutations } from "@/src/interface/hooks/mutations/useWidgetMutations";
+import { useDashboardWidgets } from "@/src/interface/hooks/catalog/modules-views";
+import { useWidgetMutations } from "@/src/interface/hooks/catalog/modules-views";
 import { getAvailableWidgets } from "@/src/application/widgets/WidgetRegistry";
 import type { WidgetConfig } from "@/src/application/widgets/WidgetRegistry";
-import type { UserRole } from "@/src/interface/hooks/utils/usePermissions";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import type { UserRole } from "@/src/interface/hooks/catalog/auth";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { closePacotes } from "@/src/interface/hooks/queries/lookups";
 import {
   useInboxData,

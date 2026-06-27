@@ -33,10 +33,10 @@ import { StakeholdersSelect } from './StakeholdersSelect';
 import { PatchHistoryPanel } from './PatchHistoryPanel';
 import { Interessado } from '@/types';
 import { ActionBar } from '@/components/ActionBar';
-import { useWorkflowActions } from '@/src/interface/hooks/useWorkflowActions';
+import { useWorkflowActions } from '@/src/interface/hooks/catalog/kanban';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContainer } from '@/src/interface/hooks/catalog/utils';
-import { getContainerAsync } from '@/src/interface/hooks/utils/useContainer';
+import { getContainerAsync } from '@/src/interface/hooks/catalog/utils';
 import { useSyncOutbox } from '@/src/interface/hooks/catalog/sync';
 import type { TaskPatchFile } from './PatchHistoryPanel';
 

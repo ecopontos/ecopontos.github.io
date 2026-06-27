@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings } from "lucide-react";
-import type { PgLegacyConfig } from "@/src/interface/hooks/queries/useLegacySyncData";
+import type { PgLegacyConfig } from "@/src/interface/hooks/catalog/logistica";
 
 export function PgConfigCard({
     config,

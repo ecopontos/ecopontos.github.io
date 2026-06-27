@@ -16,10 +16,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { VisibilityRulesEditor } from "./VisibilityRulesEditor";
 import { useDataRegistryTypesNew as useDataRegistryTypes } from "@/src/interface/hooks/catalog/data-registry";
-import { useDataRegistryAggregated } from "@/src/interface/hooks/queries/useDataRegistryAggregated";
+import { useDataRegistryAggregated } from "@/src/interface/hooks/catalog/data-registry";
 import { detectSchemaFromItems } from "@/src/lib/registry-schema";
 import { useMemo } from "react";
-import { getCrmDataSourceNames } from "@/src/interface/hooks/queries/useDataRegistryAggregated";
+import { getCrmDataSourceNames } from "@/src/interface/hooks/catalog/data-registry";
 
 interface FieldOption {
     label: string;

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { isFieldEmpty } from "@/src/lib/utils";
 import { useVisibilityEvaluator } from "@/src/interface/hooks/catalog/forms";
 import { fetchFormMetadata, insertTarefaFromSolicitacao, insertPacoteFromForm } from "@/src/interface/hooks/queries/lookups";

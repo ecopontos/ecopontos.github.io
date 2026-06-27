@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useCaixasData } from "@/src/interface/hooks/catalog/forms";
-import { useRemocaoAnalytics } from "@/src/interface/hooks/queries/useRemocaoAnalytics";
+import { useRemocaoAnalytics } from "@/src/interface/hooks/catalog/logistica";
 import { useSetores } from "@/src/interface/hooks/catalog/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RefreshCw, LayoutGrid, List as ListIcon, Info, TrendingUp, Clock, Truck, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
-import { invoke } from "@/src/interface/hooks/tauri/useTauriInvoke";
+import { invoke } from "@/src/interface/hooks/catalog/tauri";
 import { toast } from "sonner";
 
 interface CaixasRemovidas {

@@ -17,6 +17,7 @@
  *   data-registry — Tipos, itens e operações em lote no data registry
  *   modules-views — Módulos dinâmicos, views, widgets de dashboard
  *   forms         — Formulários, solicitações, submissões, demandas
+ *   admin         — Cadastros administrativos transversais
  *   tauri         — Infraestrutura Tauri, SQLite, runtime detection
  *   utils         — Utilitários transversais (teclado, DI, CEP…)
  */
@@ -30,6 +31,7 @@ export * from './auth';
 export * from './data-registry';
 export * from './modules-views';
 export * from './forms';
+export * from './admin';
 export * from './tauri';
 export * from './utils';
 export * from './service';

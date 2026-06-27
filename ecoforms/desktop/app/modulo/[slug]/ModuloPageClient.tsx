@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useModuleRuntime } from '@/src/interface/hooks/queries/useModuleRuntime';
-import { useModuleVisuals } from '@/src/interface/hooks/queries/useModuleVisuals';
+import { useModuleRuntime } from '@/src/interface/hooks/catalog/modules-views';
+import { useModuleVisuals } from '@/src/interface/hooks/catalog/modules-views';
 import { useActiveViews } from '@/src/interface/hooks/catalog/modules-views';
-import { useSuiteUseCases } from '@/src/interface/hooks/domain/useSuiteUseCases';
+import { useSuiteUseCases } from '@/src/interface/hooks/catalog/forms';
 import type { ModuleRuntimeDto } from '@/src/domain/module/ModuleRegistry';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

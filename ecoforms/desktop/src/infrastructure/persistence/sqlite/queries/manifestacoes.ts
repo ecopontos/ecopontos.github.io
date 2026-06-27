@@ -185,6 +185,22 @@ export const PRAZOS_VENCIDOS_NAO_COBRADOS: QueryDef = {
   returns: '{ id, manifestacao_id, tipo_prazo, data_limite }[]',
 };
 
+export const NOTIFICACAO_PRAZO_INSERT: QueryDef = {
+  sql: `INSERT INTO notificacoes (id, usuario_id, manifestacao_id, mensagem, lida, criado_em, prazo_id) VALUES (?, ?, ?, ?, 0, ?, ?)`,
+  description: 'Insere notificacao de cobranca de prazo vencido',
+  params: ['id', 'usuario_id', 'manifestacao_id', 'mensagem', 'criado_em', 'prazo_id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const PRAZO_MARCAR_COBRANCA_ENVIADA: QueryDef = {
+  sql: `UPDATE prazos SET cobranca_enviada = 1, data_cobranca = ? WHERE id = ?`,
+  description: 'Marca prazo como cobrado',
+  params: ['data_cobranca', 'id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
 export const MANIFESTACOES_POR_USUARIO_EXPORT: QueryDef = {
   sql: `SELECT id, protocolo, tipo_id, situacao_id, solicitante_nome, criado_em FROM manifestacoes WHERE cliente_id = ? ORDER BY criado_em DESC`,
   description: 'Manifestações de um usuário para exportação GDPR',

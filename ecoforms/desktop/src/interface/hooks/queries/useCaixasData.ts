@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { getContainerAsync } from "@/src/infrastructure/container";
+import { PACOTES_ECOPONTO_CAIXAS_ATUAIS } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
 
 interface CaixasRow {
     id: string;
@@ -19,10 +20,7 @@ export function useCaixasData() {
         try {
             const c = await getContainerAsync();
             const rows = await c.sqlite.query<CaixasRow>(
-                `SELECT id_pacote AS id, criado_em, carga_json AS dados, id_proprietario AS user_id
-                 FROM pacotes
-                 WHERE tipo_modulo = 'ecopontoCaixasForm' AND atual = 1
-                 ORDER BY criado_em DESC`
+                PACOTES_ECOPONTO_CAIXAS_ATUAIS.sql
             );
             setRawData(rows);
         } catch {

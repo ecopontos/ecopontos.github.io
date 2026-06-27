@@ -124,6 +124,17 @@ export const PACOTES_RECENT_ATUAL: QueryDef = {
   returns: '{ id_pacote, tipo_modulo, carga_json, criado_em, status, id_proprietario }[]',
 };
 
+export const PACOTES_ECOPONTO_CAIXAS_ATUAIS: QueryDef = {
+  sql: `SELECT id_pacote AS id, criado_em, carga_json AS dados, id_proprietario AS user_id
+ FROM pacotes
+ WHERE tipo_modulo = 'ecopontoCaixasForm' AND atual = 1
+ ORDER BY criado_em DESC`,
+  description: 'Pacotes atuais do formulario de caixas de ecoponto',
+  params: [],
+  use: 'operacional',
+  returns: '{ id, criado_em, dados, user_id }[]',
+};
+
 export const PACOTE_BY_ID: QueryDef = {
   sql: `SELECT * FROM pacotes WHERE id = ? LIMIT 1`,
   description: 'Pacote completo por id (app/view). NOTA: usa coluna `id` (preserva comportamento original do app/view — investigar se é alias de id_pacote).',

@@ -1,4 +1,5 @@
 import type { SqlitePort } from '../ports/SqlitePort';
+import { TIPO_MANIFESTACAO_UPSERT } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
 
 /**
  * ADR-041 Gap 5 — Seed dos tipos padrão de manifestação.
@@ -28,7 +29,7 @@ export class SeedManifestacaoCatalogUseCase {
     async execute(): Promise<void> {
         for (const tipo of DEFAULT_TIPOS_MANIFESTACAO) {
             await this.db.execute(
-                `INSERT OR IGNORE INTO tipos_manifestacao (id, nome, descricao, prazo_dias_corridos, prazo_urgente_dias) VALUES (?, ?, ?, ?, ?)`,
+                TIPO_MANIFESTACAO_UPSERT.sql,
                 [tipo.id, tipo.nome, tipo.descricao, tipo.prazo_dias_corridos, tipo.prazo_urgente_dias],
             );
         }

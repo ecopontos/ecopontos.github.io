@@ -1,14 +1,12 @@
+import { MAPEAMENTO_USUARIO_DELETE, USUARIO_DELETE, USUARIO_MAPEAMENTO_SUPABASE } from '../../infrastructure/persistence/sqlite/queries/usuarios';
+import { TAREFAS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
+import { AGENDAMENTOS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
+import { MANIFESTACOES_DELETE_BY_CLIENTE } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
+import { LOG_ACOES_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
+import { LOG_AUDITORIA_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_auditoria';
 import type { SqlitePort } from '../ports/SqlitePort';
 import type { FileStoragePort } from '../ports/FileStoragePort';
 
-const SQL_MAPEAMENTO = `SELECT id_supabase FROM mapeamento_usuarios_supabase WHERE local_id = ?`;
-const SQL_DEL_AGENDAMENTOS = `DELETE FROM tbl_agendamentos WHERE cliente_id = ? OR criado_por = ?`;
-const SQL_DEL_MANIFESTACOES = `DELETE FROM manifestacoes WHERE cliente_id = ?`;
-const SQL_DEL_TAREFAS = `DELETE FROM tarefas WHERE criado_por = ? OR atribuido_para = ?`;
-const SQL_DEL_LOG_ACOES = `DELETE FROM log_acoes WHERE id_usuario = ?`;
-const SQL_DEL_LOG_AUDITORIA = `DELETE FROM log_auditoria WHERE id_ator = ?`;
-const SQL_DEL_MAPEAMENTO = `DELETE FROM mapeamento_usuarios_supabase WHERE local_id = ?`;
-const SQL_DEL_USUARIO = `DELETE FROM usuarios WHERE id = ?`;
 
 export interface EliminacaoTitularResult {
     userId: string;
@@ -36,20 +34,20 @@ export class EliminacaoTitularUseCase {
 
         // 1 — Obtém o supabase_id antes de deletar o mapeamento
         const mapRows = await this.sqlite.query<{ id_supabase: string }>(
-            SQL_MAPEAMENTO,
+            USUARIO_MAPEAMENTO_SUPABASE.sql,
             [userId],
         ).catch(() => []);
         const supabaseId = mapRows[0]?.id_supabase ?? null;
 
         // 2 — Cascade local
         const deletes: Array<[string, string, unknown[]]> = [
-            [SQL_DEL_AGENDAMENTOS, 'tbl_agendamentos', [userId, userId]],
-            [SQL_DEL_MANIFESTACOES, 'manifestacoes', [userId]],
-            [SQL_DEL_TAREFAS, 'tarefas', [userId, userId]],
-            [SQL_DEL_LOG_ACOES, 'log_acoes', [userId]],
-            [SQL_DEL_LOG_AUDITORIA, 'log_auditoria', [userId]],
-            [SQL_DEL_MAPEAMENTO, 'mapeamento_usuarios_supabase', [userId]],
-            [SQL_DEL_USUARIO, 'usuarios', [userId]],
+            [AGENDAMENTOS_DELETE_BY_USER.sql, 'tbl_agendamentos', [userId, userId]],
+            [MANIFESTACOES_DELETE_BY_CLIENTE.sql, 'manifestacoes', [userId]],
+            [TAREFAS_DELETE_BY_USER.sql, 'tarefas', [userId, userId]],
+            [LOG_ACOES_DELETE_BY_USER.sql, 'log_acoes', [userId]],
+            [LOG_AUDITORIA_DELETE_BY_USER.sql, 'log_auditoria', [userId]],
+            [MAPEAMENTO_USUARIO_DELETE.sql, 'mapeamento_usuarios_supabase', [userId]],
+            [USUARIO_DELETE.sql, 'usuarios', [userId]],
         ];
 
         for (const [sql, tabela, params] of deletes) {

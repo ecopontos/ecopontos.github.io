@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDemandas } from "@/src/interface/hooks/queries/useDemandas";
+import { useDemandas } from "@/src/interface/hooks/catalog/forms";
 import type { DemandaListItem } from "@/src/domain/demanda/DemandaRepository";
 import type { DemandaStatus } from "@/src/domain/demanda/Demanda";
 import { Badge } from "@/components/ui/badge";

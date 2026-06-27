@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Loader2, Clock } from "lucide-react";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
-import { useEscalas, type Escala } from "@/src/interface/hooks/queries/useEscalas";
+import { useEscalas, type Escala } from "@/src/interface/hooks/catalog/admin";
 import { toast } from "sonner";
 
 type EscalaForm = Omit<Escala, 'id' | 'criado_em' | 'atualizado_em'>;

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { invoke } from "@/src/interface/hooks/tauri/useTauriInvoke"
+import { invoke } from "@/src/interface/hooks/catalog/tauri"
 import { fetchSetoresAll, fetchEscalas } from "@/src/interface/hooks/queries/lookups"
 import {
     Dialog,

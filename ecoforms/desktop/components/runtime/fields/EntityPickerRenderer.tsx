@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { FormField } from "@/types";
-import { useCrmDataSource } from "@/src/interface/hooks/utils/useCrmDataSource";
+import { useCrmDataSource } from "@/src/interface/hooks/catalog/utils";
 
 interface EntityRow {
     id: string | number;

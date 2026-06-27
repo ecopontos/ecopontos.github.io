@@ -22,7 +22,7 @@ import {
     usePgLegacyConfig,
     DEFAULT_FILTERS,
     type LegacySyncFilters,
-} from "@/src/interface/hooks/queries/useLegacySyncData";
+} from "@/src/interface/hooks/catalog/logistica";
 import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 const SELECT_ALL_VALUE = "__all__";

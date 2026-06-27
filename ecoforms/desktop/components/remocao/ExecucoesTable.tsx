@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Truck, MapPin, CheckCircle2, XCircle } from "lucide-react";
-import { useExecucoesClientes } from "@/src/interface/hooks/queries/useExecucoesClientes";
+import { useExecucoesClientes } from "@/src/interface/hooks/catalog/logistica";
 
 export default function ExecucoesTable() {
     const { data: execucoes, loading } = useExecucoesClientes();

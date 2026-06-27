@@ -24,9 +24,11 @@ export {
   useAllUsers,                                                           // ativo — lista todos os usuários
 } from '../queries/useAdminUsers';
 export { useSetores } from '../queries/useSetores';                      // ativo — setores ativos
+export type { Setor } from '../queries/useSetores';
 
 // --- Supabase Admin ---
 export { useSupabaseAdmin } from '../queries/useSupabaseAdmin';          // ativo — sync Supabase → SQLite (admin)
+export type { ProfileSyncResult } from '../queries/useSupabaseAdmin';
 
 // --- Use cases (DI) ---
 export { useUserUseCases } from '../domain/useUserUseCases';             // ativo

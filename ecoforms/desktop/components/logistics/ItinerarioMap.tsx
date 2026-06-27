@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
-import type { ClienteGeo, ItinerarioStop, TerrenoGeo } from "@/src/interface/hooks/queries/useMapData";
+import type { ClienteGeo, ItinerarioStop, TerrenoGeo } from "@/src/interface/hooks/catalog/logistica";
 import { createBaseMap } from "@/lib/map-base";
 
 interface Props {

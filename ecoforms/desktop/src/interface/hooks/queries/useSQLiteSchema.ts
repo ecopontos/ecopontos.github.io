@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSqlite } from './useSqlite';
+import { SQLITE_TABLE_INFO } from '@/src/infrastructure/persistence/sqlite/queries/system';
 
 export function useSQLiteColumnExists(tableName: string, columnName: string) {
     const sqlite = useSqlite();
-    const safeName = useMemo(() => tableName.replace(/'/g, "''"), [tableName]);
     const [hasColumn, setHasColumn] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export function useSQLiteColumnExists(tableName: string, columnName: string) {
         const load = async () => {
             if (!cancelled) setLoading(true);
             try {
-                const rows = await sqlite.query<{ name: string }>(`SELECT * FROM pragma_table_info('${safeName}')`);
+                const rows = await sqlite.query<{ name: string }>(SQLITE_TABLE_INFO.sql, [tableName]);
                 if (!cancelled) setHasColumn(rows.some(r => r.name === columnName));
             } catch (e) {
                 if (!cancelled) setError(String(e));
@@ -25,7 +25,7 @@ export function useSQLiteColumnExists(tableName: string, columnName: string) {
         };
         load();
         return () => { cancelled = true; };
-    }, [sqlite, safeName, columnName]);
+    }, [sqlite, tableName, columnName]);
 
     return { hasColumn, loading, error };
 }

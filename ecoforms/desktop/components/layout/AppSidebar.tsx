@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ShowForManager, HideForRole } from "@/components/auth/PermissionGuards";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { DatabaseStatus } from "@/components/database/DatabaseSelector";
-import { usePendingSolicitacoesCount } from "@/src/interface/hooks/queries/usePendingSolicitacoesCount";
+import { usePendingSolicitacoesCount } from "@/src/interface/hooks/catalog/forms";
 
 
 import { useModules } from "@/src/interface/hooks/catalog/modules-views";

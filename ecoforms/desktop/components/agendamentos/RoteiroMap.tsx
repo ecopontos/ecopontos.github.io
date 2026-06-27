@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
-import type { AgendamentoMapPoint } from "@/src/interface/hooks/queries/useAgendamentoMapData";
+import type { AgendamentoMapPoint } from "@/src/interface/hooks/catalog/service";
 import { createBaseMap } from "@/lib/map-base";
 
 const STATUS_COLORS: Record<string, string> = {

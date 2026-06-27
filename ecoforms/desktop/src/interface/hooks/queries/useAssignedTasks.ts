@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { getContainerAsync } from "@/src/infrastructure/container";
+import { TAREFAS_ATRIBUIDAS_NOTIFICACAO } from "@/src/infrastructure/persistence/sqlite/queries/tarefas";
 
 export interface AssignedTaskNotification {
     id: string;
@@ -26,21 +27,7 @@ export function useAssignedTasks(userId: string | undefined) {
         try {
             const c = await getContainerAsync();
             const result = await c.sqlite.query<AssignedTaskNotification>(
-                `SELECT
-                    t.id, t.titulo, t.status, t.prioridade, t.prazo,
-                    COALESCE(p.nome, 'Projeto Geral') AS projeto_nome,
-                    COUNT(*) OVER() AS abertas_count,
-                    SUM(CASE WHEN t.status = 'a_fazer' THEN 1 ELSE 0 END) OVER() AS a_fazer_count,
-                    SUM(CASE WHEN t.status = 'em_progresso' THEN 1 ELSE 0 END) OVER() AS em_progresso_count,
-                    SUM(CASE WHEN t.prazo IS NOT NULL AND date(t.prazo) < date('now') THEN 1 ELSE 0 END) OVER() AS atrasadas_count
-                 FROM tarefas t
-                 LEFT JOIN projetos p ON p.id = t.projeto_id
-                 WHERE t.arquivado = 0 AND t.atribuido_para = ? AND t.status != 'concluido'
-                 ORDER BY
-                   CASE WHEN t.prazo IS NOT NULL AND date(t.prazo) < date('now') THEN 0
-                        WHEN t.prazo IS NOT NULL AND date(t.prazo) <= date('now', '+2 days') THEN 1 ELSE 2 END,
-                   CASE WHEN t.prazo IS NULL THEN 1 ELSE 0 END, date(t.prazo) ASC, t.atualizado_em DESC
-                 LIMIT 6`,
+                TAREFAS_ATRIBUIDAS_NOTIFICACAO.sql,
                 [userId]
             );
             setTasks(result);

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, MapPin, CheckCircle2, XCircle, AlertTriangle, ExternalLink, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/interface/hooks/utils/useContainer";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { uuidv7 } from "ecoforms-core";
 import { toast } from "sonner";
 import type { TarefaCampoRow } from "@/src/domain/kanban/KanbanRepository";

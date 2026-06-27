@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, EyeOff, Layers, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { CATEGORIA_LABELS } from '@/lib/map-styles';
-import type { GeoLayer } from '@/src/interface/hooks/queries/useMapData';
+import type { GeoLayer } from '@/src/interface/hooks/catalog/logistica';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,

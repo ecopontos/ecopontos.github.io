@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Eye, EyeOff, RefreshCw, Trash2, Filter } from 'lucide-react';
 import { TIPO_CORES } from '@/lib/map-styles';
-import type { TerrenoGeo } from '@/src/interface/hooks/queries/useMapData';
+import type { TerrenoGeo } from '@/src/interface/hooks/catalog/logistica';
 import TerrenoImport from '../TerrenoImport';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

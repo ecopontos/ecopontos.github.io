@@ -17,13 +17,13 @@ import { usePesagensByExecucao, useExternalPesagensSync } from "@/src/interface/
 import { useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
 import { useClientes } from "@/src/interface/hooks/catalog/clientes";
 import { useAllUsers } from "@/src/interface/hooks/catalog/auth";
-import { useExecucaoClientes } from "@/src/interface/hooks/queries/useExecucaoClientes";
-import { useExecucaoClientesMutations } from "@/src/interface/hooks/mutations/useExecucaoClientesMutations";
+import { useExecucaoClientes } from "@/src/interface/hooks/catalog/logistica";
+import { useExecucaoClientesMutations } from "@/src/interface/hooks/catalog/logistica";
 import type { Roteiro, RoteiroCliente, ExecucaoColeta } from "@/src/domain/logistics/LogisticsRepository";
 import { ExecucaoColetaStateMachine } from "@/src/domain/logistics/ExecucaoColetaStateMachine";
 import { NovaExecucaoDialog } from "@/components/logistics/NovaExecucaoDialog";
 import ItinerarioMap from "@/components/logistics/ItinerarioMap";
-import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/queries/useMapData";
+import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
 import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";

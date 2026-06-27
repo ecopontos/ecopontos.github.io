@@ -10,7 +10,7 @@ import {
     type ExecucaoClienteGeo,
     type IntercorrenciaGeo,
     type ChecklistGeo,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { useExecucoes } from '@/src/interface/hooks/catalog/logistica';
 
 export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null, initialExecucaoId: string | null = null) {

@@ -5,7 +5,7 @@ import { MapIcon, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useAgendamentoMapData } from "@/src/interface/hooks/queries/useAgendamentoMapData";
+import { useAgendamentoMapData } from "@/src/interface/hooks/catalog/service";
 import RoteiroMap from "./RoteiroMap";
 
 const STATUS_LABELS: Record<string, string> = {

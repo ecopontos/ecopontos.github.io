@@ -9,7 +9,7 @@ import {
     useGeoLayers,
     useItinerario,
     type TerrenoGeo,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { useRoteiros } from '@/src/interface/hooks/catalog/logistica';
 import { TIPO_CORES } from '@/lib/map-styles';
 import { escapeHtml } from '@/lib/map-popup';

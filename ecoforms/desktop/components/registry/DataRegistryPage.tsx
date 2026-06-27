@@ -9,7 +9,7 @@ import type { DataRegistryItemView } from "@/src/interface/hooks/catalog/data-re
 import type { FormFieldValue } from "@/components/runtime/FormFieldRenderer";
 import { detectSchemaFromItems } from "@/src/lib/registry-schema";
 import { toast } from "sonner";
-import { useFormDependencies } from "@/src/interface/hooks/queries/useFormDependencies";
+import { useFormDependencies } from "@/src/interface/hooks/catalog/data-registry";
 
 interface DataRegistrySavePayload {
     id?: string;
