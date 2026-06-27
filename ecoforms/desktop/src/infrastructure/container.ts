@@ -28,6 +28,7 @@ import { ArchiveTaskUseCase } from '../application/task/ArchiveTaskUseCase';
 import { AssignTaskUseCase } from '../application/task/AssignTaskUseCase';
 import { CreateTaskUseCase } from '../application/task/CreateTaskUseCase';
 import { DeleteTaskUseCase } from '../application/task/DeleteTaskUseCase';
+import { UnarchiveTaskUseCase } from '../application/task/UnarchiveTaskUseCase';
 import { ListTasksByProjectUseCase } from '../application/task/ListTasksByProjectUseCase';
 import { MoveTaskUseCase } from '../application/task/MoveTaskUseCase';
 import { AddTaskCommentUseCase, FindAssignedActiveFormsUseCase } from '../application/task/TaskCommentUseCases';
@@ -151,6 +152,7 @@ export interface TaskUseCases {
     move: MoveTaskUseCase;
     assign: AssignTaskUseCase;
     archive: ArchiveTaskUseCase;
+    unarchive: UnarchiveTaskUseCase;
     delete: DeleteTaskUseCase;
     listByProject: ListTasksByProjectUseCase;
     addComment: AddTaskCommentUseCase;
@@ -463,9 +465,10 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
         move: new MoveTaskUseCase(taskRepository, demandaTaskSynchronizer, syncOutbox),
         assign: new AssignTaskUseCase(taskRepository),
         archive: new ArchiveTaskUseCase(taskRepository, demandaTaskSynchronizer, syncOutbox),
-        delete: new DeleteTaskUseCase(taskRepository),
+        unarchive: new UnarchiveTaskUseCase(taskRepository, syncOutbox),
+        delete: new DeleteTaskUseCase(taskRepository, syncOutbox),
         listByProject: new ListTasksByProjectUseCase(taskRepository),
-        addComment: new AddTaskCommentUseCase(taskRepository),
+        addComment: new AddTaskCommentUseCase(taskRepository, syncOutbox),
         findAssignedActiveForms: new FindAssignedActiveFormsUseCase(taskRepository),
         metricsSummary: new GetTaskMetricsSummaryUseCase(taskMetricsRepository),
         metricsByUser: new GetTaskMetricsByUserUseCase(taskMetricsRepository),

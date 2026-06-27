@@ -458,7 +458,7 @@ export function useKanbanMutations(
             if (archived) {
                 await taskUseCases.archive.execute(taskId);
             } else {
-                await kanban.unarchiveTask(taskId);
+                await taskUseCases.unarchive.execute(taskId);
             }
             await insertTaskEvent(taskId, 'arquivamento', archived ? 'Tarefa arquivada' : 'Tarefa restaurada', { arquivado: archived });
             scheduleTaskSync();

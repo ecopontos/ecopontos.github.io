@@ -206,6 +206,33 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
+    inbound.on('task.desarquivada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tarefas SET arquivado = 0, atualizado_em = ? WHERE id = ?`,
+            [env.time, tarefaId],
+        );
+    });
+
+    inbound.on('task.excluida', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        await db.execute(`DELETE FROM tarefas WHERE id = ?`, [tarefaId]);
+    });
+
+    inbound.on('task.comentario_adicionado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId;
+        if (!tarefaId) return;
+        // id do comentário = id do envelope → INSERT OR IGNORE torna o replay idempotente.
+        await db.execute(
+            `INSERT OR IGNORE INTO tarefas_comentarios (id, tarefa_id, usuario_id, comentario, criado_em)
+             VALUES (?, ?, ?, ?, ?)`,
+            [env.id, tarefaId, d.usuario_id ?? d.usuarioId ?? '', d.comentario ?? '', env.time],
+        );
+    });
+
     inbound.on('demanda.aceita', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
