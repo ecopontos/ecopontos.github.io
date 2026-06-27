@@ -3,6 +3,7 @@
   "version": "0.1.8",
   "private": true,
   "scripts": {
+    "prebuild": "npm --prefix ../packages/core run build",
     "dev": "npm run dev:clean && next dev -p 3001",
     "dev:clean": "node -e \"const fs=require('fs'); if(fs.existsSync('.next')) fs.rmSync('.next',{recursive:true,force:true});\" ",
     "clean:desktop": "node -e \"const fs=require('fs'); const rm=(p)=>{ if(fs.existsSync(p)){ fs.rmSync(p,{recursive:true,force:true}); }}; rm('.next'); rm('src-tauri/target');\"",

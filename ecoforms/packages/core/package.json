@@ -21,6 +21,10 @@
     "./repositories": {
       "import": "./dist/repositories/index.js",
       "types": "./dist/repositories/index.d.ts"
+    },
+    "./permissions": {
+      "import": "./dist/permissions/index.js",
+      "types": "./dist/permissions/index.d.ts"
     }
   },
   "scripts": {

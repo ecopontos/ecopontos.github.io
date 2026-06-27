@@ -37,21 +37,6 @@
       ],
       "@/interface/*": [
         "./src/interface/*"
-      ],
-      "ecoforms-core/sync": [
-        "../packages/core/src/sync/index.ts"
-      ],
-      "ecoforms-core/permissions": [
-        "../packages/core/src/permissions/index.ts"
-      ],
-      "ecoforms-core/ports": [
-        "../packages/core/src/ports/SqlitePort.ts"
-      ],
-      "ecoforms-core/repositories": [
-        "../packages/core/src/repositories/index.ts"
-      ],
-      "ecoforms-core": [
-        "../packages/core/src/index.ts"
       ]
     }
   },
