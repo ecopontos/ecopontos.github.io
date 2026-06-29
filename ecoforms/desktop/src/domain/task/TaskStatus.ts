@@ -16,6 +16,10 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
     cancelado: 'Cancelado',
 };
 
+export function getValidTransitions(from: TaskStatus): TaskStatus[] {
+    return [...(VALID_TRANSITIONS[from] ?? [])];
+}
+
 export function isValidTransition(from: TaskStatus, to: TaskStatus): boolean {
     return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }

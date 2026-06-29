@@ -2,9 +2,8 @@ import { uuidv7 } from 'ecoforms-core';
 import { ServiceType } from '../../domain/service/ServiceType';
 import type { ServiceTypeRepository } from '../../domain/service/ServiceTypeRepository';
 import type { SqlitePort } from '../ports/SqlitePort';
-import { getEffectiveSectors } from '../../infrastructure/persistence/SectorQueryUtils';
+import { getEffectiveSectors } from '../shared/SectorQueryUtils';
 import { ForbiddenError } from '../../domain/shared/errors';
-import { USUARIO_SETOR_PRINCIPAL } from '../../infrastructure/persistence/sqlite/queries/usuarios';
 
 export interface CreateServiceTypeInput {
     nome: string;
@@ -57,7 +56,7 @@ export class CreateServiceTypeUseCase {
     private async validateSetor(setorId: string | null, userId: string): Promise<string | null> {
         if (!setorId) {
             const rows = await this.db.query<{ setor_principal_id: string | null }>(
-                USUARIO_SETOR_PRINCIPAL.sql,
+                `SELECT setor_principal_id FROM usuarios WHERE id = ?`,
                 [userId],
             );
             return rows[0]?.setor_principal_id ?? null;

@@ -1,5 +1,21 @@
 import type { QueryDef } from './_types';
 
+export const SQLITE_TABLE_INFO: QueryDef = {
+  sql: `SELECT * FROM pragma_table_info(?)`,
+  description: 'Metadados das colunas de uma tabela SQLite',
+  params: ['table_name'],
+  use: 'operacional',
+  returns: '{ cid, name, type, notnull, dflt_value, pk }[]',
+};
+
+export const SQLITE_DATABASE_LIST: QueryDef = {
+  sql: `PRAGMA database_list`,
+  description: 'Lista bancos anexados na conexao SQLite',
+  params: [],
+  use: 'operacional',
+  returns: '{ seq, name, file }[]',
+};
+
 export const SISTEMA_CONFIG_SAVE: QueryDef = {
   sql: `INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em)
  VALUES (?, ?, datetime('now'))

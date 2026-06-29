@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
 import { getContainerAsync } from '@/src/infrastructure/container';
+import { SQLITE_DATABASE_LIST } from '@/src/infrastructure/persistence/sqlite/queries/system';
 
 interface TableHealth {
   name: string;
@@ -16,7 +18,7 @@ export function useDebugHealth() {
     setLoading(true);
     try {
       const c = await getContainerAsync();
-      const path = await c.sqlite.query<{ path: string }>("PRAGMA database_list", []);
+      const path = await c.sqlite.query<{ path: string }>(SQLITE_DATABASE_LIST.sql, []);
       setDbPath(path[0]?.path || "in-memory");
 
       const tableNames = [

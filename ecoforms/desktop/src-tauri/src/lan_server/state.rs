@@ -1,11 +1,12 @@
-use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 use std::time::Instant;
+
+use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, oneshot, RwLock};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -54,6 +55,7 @@ pub struct LanServerState {
     pub hub_addr: RwLock<Option<SocketAddr>>,
     pub ws_broadcast: broadcast::Sender<String>,
     pub db_path: RwLock<Option<PathBuf>>,
+    pub auth_token: RwLock<Option<String>>,
     pub app_data_dir: RwLock<Option<PathBuf>>,
     pub shutdown_tx: Mutex<Option<oneshot::Sender<()>>>,
 }
@@ -70,6 +72,7 @@ impl LanServerState {
             hub_addr: RwLock::new(None),
             ws_broadcast,
             db_path: RwLock::new(None),
+            auth_token: RwLock::new(None),
             app_data_dir: RwLock::new(None),
             shutdown_tx: Mutex::new(None),
         }

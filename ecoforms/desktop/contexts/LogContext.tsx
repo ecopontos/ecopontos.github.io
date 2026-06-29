@@ -27,21 +27,21 @@ export function LogProvider({ children }: { children: ReactNode }) {
         const originalWarn = console.warn;
 
         // Override console.log to capture logs
-        console.log = (...args: any[]) => {
+        console.log = (...args: unknown[]) => {
             originalLog(...args);
             addLog(args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
             ).join(' '));
         };
 
-        console.error = (...args: any[]) => {
+        console.error = (...args: unknown[]) => {
             originalError(...args);
             addLog(`ERROR: ${args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
             ).join(' ')}`);
         };
 
-        console.warn = (...args: any[]) => {
+        console.warn = (...args: unknown[]) => {
             originalWarn(...args);
             addLog(`WARN: ${args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg) : String(arg)

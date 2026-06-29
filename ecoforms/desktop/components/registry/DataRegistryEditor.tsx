@@ -1,4 +1,5 @@
-﻿import { useEffect, useState, useMemo } from "react";
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

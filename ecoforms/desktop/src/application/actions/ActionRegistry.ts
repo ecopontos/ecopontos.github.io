@@ -20,6 +20,8 @@ export interface ActionDemandaClose {
 
 export interface ActionContainer {
   sqlite: {
+    query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+    all<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
     execute(sql: string, params?: unknown[]): Promise<unknown>;
   };
   /** Typed for review — cast to specific use case for other operations */

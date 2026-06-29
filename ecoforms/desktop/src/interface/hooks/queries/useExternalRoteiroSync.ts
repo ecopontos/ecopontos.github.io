@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -18,13 +18,9 @@ interface SyncResult {
     detalhes_erros: string[];
 }
 
-const DEFAULT_CONFIG = {
-    pgHost: "172.16.76.202",
-    pgPort: 5432,
-    pgDb: "geo_fpolis",
-    pgUser: "smma",
-    pgPassword: "H6N3pNTVcr",
-};
+function isTauri() {
+    return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 const LAST_SYNC_KEY = "ecoforms.sync.roteiros.lastSyncAt";
 
@@ -40,9 +36,10 @@ export function useExternalRoteiroSync() {
     });
 
     const checkStatus = useCallback(async () => {
+        if (!isTauri()) return null;
         try {
             setError(null);
-            const s = await invoke<SyncStatus>("sync_roteiros_status", DEFAULT_CONFIG);
+            const s = await invoke<SyncStatus>("sync_roteiros_status");
             setStatus(s);
             return s;
         } catch (e: unknown) {
@@ -53,13 +50,16 @@ export function useExternalRoteiroSync() {
     }, []);
 
     const sync = useCallback(async () => {
+        if (!isTauri()) return null;
         setSyncing(true);
         setError(null);
         try {
-            const result = await invoke<SyncResult>("sync_roteiros_externos", DEFAULT_CONFIG);
+            const result = await invoke<SyncResult>("sync_roteiros_externos");
             setLastResult(result);
             const now = new Date();
-            window.localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
+            if (typeof window !== "undefined") {
+                window.localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
+            }
             setLastSyncAt(now);
             await checkStatus();
             return result;

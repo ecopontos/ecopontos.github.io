@@ -1,24 +1,11 @@
 "use client";
-
+/* eslint-disable react-hooks/refs */
 import { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { StyleSpecification } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import type { AgendamentoMapPoint } from "@/src/interface/hooks/queries/useAgendamentoMapData";
-
-const OSM_STYLE: StyleSpecification = {
-    version: 8,
-    sources: {
-        osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "&copy; OpenStreetMap contributors",
-        },
-    },
-    layers: [{ id: "osm-tiles", type: "raster", source: "osm" }],
-};
+import type { AgendamentoMapPoint } from "@/src/interface/hooks/catalog/service";
+import { createBaseMap } from "@/lib/map-base";
 
 const STATUS_COLORS: Record<string, string> = {
     pendente: "#f59e0b",
@@ -177,15 +164,7 @@ export default function RoteiroMap({ points, selectedId, onPointClick }: Props) 
 
     useEffect(() => {
         if (!containerRef.current) return;
-        const map = new maplibregl.Map({
-            container: containerRef.current,
-            style: OSM_STYLE,
-            attributionControl: false,
-            zoom: 12,
-            center: [-48.5, -27.6],
-        });
-        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+        const map = createBaseMap(containerRef.current);
 
         map.on("load", () => {
             mapRef.current = map;

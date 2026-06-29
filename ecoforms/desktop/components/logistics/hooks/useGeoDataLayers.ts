@@ -9,52 +9,48 @@ import {
     useGeoLayers,
     useItinerario,
     type TerrenoGeo,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { useRoteiros } from '@/src/interface/hooks/catalog/logistica';
 import { TIPO_CORES } from '@/lib/map-styles';
+import { escapeHtml } from '@/lib/map-popup';
 import { addGeoLayerToMap, buildTerrenosGeojson } from '../map-layers';
 import { useViewport } from './useViewport';
 
 function hashTerrenos(terrenos: TerrenoGeo[], zoom: number): string {
     if (terrenos.length === 0) return '';
-    let h = terrenos.length + zoom * 100000;
-    for (let i = 0; i < Math.min(terrenos.length, 100); i++) {
+    // Hash do id COMPLETO (não só do 1º caractere) amostrado ao longo do array,
+    // mais area/ativo — evita colisões que deixariam o cache de geojson defasado.
+    let h = (terrenos.length * 2654435761 + zoom * 40503) | 0;
+    const step = Math.max(1, Math.floor(terrenos.length / 200));
+    for (let i = 0; i < terrenos.length; i += step) {
         const t = terrenos[i];
-        h = ((h << 5) - h + t.id.length + (t.geojson?.length ?? 0)) | 0;
+        for (let j = 0; j < t.id.length; j++) {
+            h = ((h << 5) - h + t.id.charCodeAt(j)) | 0;
+        }
+        h = ((h << 5) - h + (t.area_m2 ?? 0) + (t.ativo ?? 0)) | 0;
     }
     return String(h);
 }
 
-/**
- * Camadas "estáticas" do mapa: terrenos, clientes (pontos de coleta com
- * clustering), camadas genéricas (geo_layers) e itinerário do roteiro
- * selecionado. Expõe `renderDataLayers` — callback estável usada como
- * `onStyleLoad` por `useMapInstance` (recriada em cada `style.load`, seja
- * na carga inicial ou na troca satélite/OSM).
- */
-export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
+export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>, initialRoteiroId: string | null = null) {
     const [terrenosVisible, setTerrenosVisible] = useState(true);
     const [clientesVisible, setClientesVisible] = useState(true);
     const [itinerarioVisible, setItinerarioVisible] = useState(true);
 
-    const { data: clientes, loading: loadingClientes } = useClientesGeo();
+    const { bbox, zoom } = useViewport(mapRef);
+    const { data: clientes, loading: loadingClientes } = useClientesGeo(bbox);
     const { data: geoLayers, loading: loadingLayers, refetch: refetchLayers } = useGeoLayers();
     const { data: roteiros } = useRoteiros();
-    const [selectedRoteiroId, setSelectedRoteiroId] = useState<string | null>(null);
+    const [selectedRoteiroId, setSelectedRoteiroId] = useState<string | null>(initialRoteiroId);
     const { data: itinerario } = useItinerario(selectedRoteiroId);
 
-    // Viewport-based loading para terrenos no mapa
-    const { bbox, zoom } = useViewport(mapRef);
     const { data: terrenos, loading: loadingTerrenos, refetch: refetchTerrenosViewport } = useTerrenosInViewport(bbox, zoom);
-    // Extent agregado (bbox) de todos os terrenos ativos — usado apenas para
-    // centralizar/fit-bounds inicial do mapa, sem precisar buscar as 100k+ linhas.
     const { extent: terrenosExtent, refetch: refetchTerrenosExtent } = useTerrenosExtent();
 
     const refetchTerrenos = useCallback(async () => {
         await Promise.all([refetchTerrenosViewport(), refetchTerrenosExtent()]);
     }, [refetchTerrenosViewport, refetchTerrenosExtent]);
 
-    // Refs para closures no style.load
     const clientesRef      = useRef(clientes);        clientesRef.current = clientes;
     const terrenosRef      = useRef(terrenos);        terrenosRef.current = terrenos;
     const terrenosExtentRef = useRef(terrenosExtent); terrenosExtentRef.current = terrenosExtent;
@@ -65,11 +61,31 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
     const itinerarioVisRef    = useRef(itinerarioVisible); itinerarioVisRef.current = itinerarioVisible;
     const zoomRef             = useRef(zoom);              zoomRef.current = zoom;
 
-    // Cache de terrenosGeo para evitar rebuild desnecessário
     const terrenosGeoCache = useRef<{ hash: string; data: FeatureCollection }>({ hash: '', data: { type: 'FeatureCollection', features: [] } });
 
+    // Enquadramento inicial: guardado em ref (sobrevive a setStyle/troca de
+    // satélite). Antes era uma source fake `_fitted` que o setStyle apagava,
+    // fazendo o mapa re-enquadrar (resetando o pan/zoom) a cada troca de estilo.
+    const fittedRef = useRef(false);
+
+    // Listeners de camada (click/hover) são registrados UMA vez por instância
+    // de mapa. `setStyle` recria as sources/layers mas NÃO remove os listeners
+    // de `map.on(type, layerId, fn)`; sem este guard, cada troca de satélite
+    // re-registrava os handlers e um clique abria N popups (vazamento).
+    const boundRef = useRef<Set<string>>(new Set());
+    const bindOnce = useCallback((
+        map: maplibregl.Map,
+        type: 'click' | 'mouseenter' | 'mouseleave',
+        layer: string,
+        fn: (e: maplibregl.MapLayerMouseEvent) => void,
+    ) => {
+        const key = `${type}:${layer}`;
+        if (boundRef.current.has(key)) return;
+        boundRef.current.add(key);
+        map.on(type, layer, fn);
+    }, []);
+
     const renderDataLayers = useCallback((map: maplibregl.Map) => {
-        // 1. Terrenos (polígonos do cadastro) — com cache e simplificação
         const hash = hashTerrenos(terrenosRef.current, zoomRef.current);
         if (hash !== terrenosGeoCache.current.hash) {
             terrenosGeoCache.current = { hash, data: buildTerrenosGeojson(terrenosRef.current, zoomRef.current) };
@@ -100,29 +116,58 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     TIPO_CORES.outro],
                     'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 1.5] },
                 layout: { visibility: terrVis } });
-            map.on('click', 'terrenos-fill', (e) => {
+            bindOnce(map, 'click', 'terrenos-fill', (e) => {
                 const f = e.features?.[0];
                 if (!f) return;
                 const p = f.properties as Record<string, string | number | null>;
                 const areaStr = p.area ? ` · ${Math.round(Number(p.area)).toLocaleString('pt-BR')} m²` : '';
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.6';
+
+                const strong = document.createElement('strong');
+                strong.textContent = String(p.nome ?? '');
+                container.appendChild(strong);
+
+                if (p.codigo) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.textContent = `Código: ${p.codigo}`;
+                    container.appendChild(span);
+                }
+                if (p.bairro) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.textContent = String(p.bairro);
+                    container.appendChild(span);
+                }
+                container.appendChild(document.createElement('br'));
+                const meta = document.createElement('span');
+                meta.style.cssText = 'color:#888;font-size:11px';
+                meta.textContent = `${p.tipo}${areaStr}`;
+                container.appendChild(meta);
+
+                const linkDiv = document.createElement('div');
+                linkDiv.style.marginTop = '6px';
+                const link = document.createElement('a');
+                link.href = `/logistica/terreno/${escapeHtml(p.id)}`;
+                link.style.cssText = 'color:#2563eb;font-size:12px';
+                link.textContent = 'Ver detalhes →';
+                linkDiv.appendChild(link);
+                container.appendChild(linkDiv);
+
                 new maplibregl.Popup({ maxWidth: '280px' })
                     .setLngLat(e.lngLat)
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.6">
-                        <strong>${p.nome}</strong><br/>
-                        ${p.codigo ? `Código: <code>${p.codigo}</code><br/>` : ''}
-                        ${p.bairro ? `${p.bairro}<br/>` : ''}
-                        <span style="color:#888;font-size:11px">${p.tipo}${areaStr}</span>
-                        <div style="margin-top:6px"><a href="/logistica/terreno/${p.id}" style="color:#2563eb;font-size:12px">Ver detalhes →</a></div>
-                    </div>`)
+                    .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'terrenos-fill', (e) => {
+            bindOnce(map, 'mouseenter', 'terrenos-fill', (e) => {
                 map.getCanvas().style.cursor = 'pointer';
                 if (e.features?.[0]) {
                     map.setFeatureState({ source: 'terrenos', id: e.features[0].id }, { hover: true });
                 }
             });
-            map.on('mouseleave', 'terrenos-fill', (e) => {
+            bindOnce(map, 'mouseleave', 'terrenos-fill', (e) => {
                 map.getCanvas().style.cursor = '';
                 if (e.features?.[0]) {
                     map.setFeatureState({ source: 'terrenos', id: e.features[0].id }, { hover: false });
@@ -170,22 +215,46 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
                 },
                 layout: { visibility: cliVis } });
-            map.on('click', 'clientes-point', (e) => {
+            bindOnce(map, 'click', 'clientes-point', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | null>;
                 const coords = f.geometry.coordinates as [number, number];
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+                const strong = document.createElement('strong');
+                strong.style.fontSize = '14px';
+                strong.textContent = String(p.nome ?? '');
+                container.appendChild(strong);
+
+                if (p.terreno_nome) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.color = '#555';
+                    span.textContent = `📍 ${p.terreno_nome}`;
+                    container.appendChild(span);
+                }
+                if (p.endereco) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.color = '#555';
+                    span.textContent = String(p.endereco);
+                    container.appendChild(span);
+                }
+                container.appendChild(document.createElement('br'));
+                const meta = document.createElement('span');
+                meta.style.cssText = 'color:#888;font-size:12px';
+                meta.textContent = `${p.tipo ?? ''}${p.categoria ? ` · ${p.categoria}` : ''}`;
+                container.appendChild(meta);
+
                 new maplibregl.Popup({ maxWidth: '260px' })
                     .setLngLat(coords)
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
-                        <strong style="font-size:14px">${p.nome}</strong><br/>
-                        ${p.terreno_nome ? `<span style="color:#555">📍 ${p.terreno_nome}</span><br/>` : ''}
-                        ${p.endereco ? `<span style="color:#555">${p.endereco}</span><br/>` : ''}
-                        <span style="color:#888;font-size:12px">${p.tipo}${p.categoria ? ` · ${p.categoria}` : ''}</span>
-                    </div>`)
+                    .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('click', 'clientes-cluster', async (e) => {
+            bindOnce(map, 'click', 'clientes-cluster', async (e) => {
                 const features = map.queryRenderedFeatures(e.point, { layers: ['clientes-cluster'] });
                 const clusterId = features[0]?.properties?.cluster_id;
                 if (clusterId == null) return;
@@ -194,11 +263,11 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     if (features[0].geometry.type === 'Point') {
                         map.easeTo({ center: features[0].geometry.coordinates as [number, number], zoom });
                     }
-                } catch { /* silencioso */ }
+                } catch { /* cluster expandido */ }
             });
             ['clientes-point', 'clientes-cluster'].forEach(id => {
-                map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
-                map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+                bindOnce(map, 'mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+                bindOnce(map, 'mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
             });
         }
         if (map.getLayer('clientes-cluster'))       map.setLayoutProperty('clientes-cluster',       'visibility', cliVis);
@@ -211,10 +280,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
         // 4. Itinerário (linha de rota + pins numerados)
         renderItinerary(map, itinerarioRef.current);
 
-        // Fit bounds na primeira carga com dados: prioriza clientes; na ausência
-        // (ou poucos), usa a extensão (bbox agregado) dos terrenos cadastrados
-        // para que o mapa já abra na região onde o cadastro foi importado.
-        if (!map.getSource('_fitted')) {
+        if (!fittedRef.current) {
             const bounds = new maplibregl.LngLatBounds();
             if (clientesRef.current.length > 0) {
                 clientesRef.current.forEach(c => bounds.extend([c.longitude, c.latitude]));
@@ -224,7 +290,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                 bounds.extend([e.maxLng, e.maxLat]);
             }
             if (!bounds.isEmpty()) {
-                map.addSource('_fitted', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+                fittedRef.current = true;
                 map.fitBounds(bounds, { padding: 60, maxZoom: 14, animate: false });
             }
         }
@@ -238,13 +304,11 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
         const routeGeo: FeatureCollection = {
             type: 'FeatureCollection',
             features: [
-                // Linha de rota
                 ...(valid.length >= 2 ? [{
                     type: 'Feature' as const,
                     geometry: { type: 'LineString' as const, coordinates: valid.map(s => [s.longitude!, s.latitude!]) },
                     properties: { _type: 'route' },
                 }] : []),
-                // Pins numerados
                 ...valid.map(s => ({
                     type: 'Feature' as const,
                     geometry: { type: 'Point' as const, coordinates: [s.longitude!, s.latitude!] },
@@ -274,42 +338,58 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
                     visibility: itiVis,
                 },
                 paint: { 'text-color': '#fff' } });
-            map.on('click', 'itinerary-circle', (e) => {
+            bindOnce(map, 'click', 'itinerary-circle', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | null>;
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+                const strong = document.createElement('strong');
+                strong.textContent = `#${p.ordem} — ${p.nome ?? ''}`;
+                container.appendChild(strong);
+
+                if (p.terreno) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.color = '#555';
+                    span.textContent = `📍 ${p.terreno}`;
+                    container.appendChild(span);
+                }
+                if (p.codigo) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.cssText = 'color:#888;font-size:11px';
+                    span.textContent = String(p.codigo);
+                    container.appendChild(span);
+                }
+
                 new maplibregl.Popup({ maxWidth: '240px' })
                     .setLngLat(f.geometry.coordinates as [number, number])
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
-                        <strong>#${p.ordem} — ${p.nome}</strong><br/>
-                        ${p.terreno ? `<span style="color:#555">📍 ${p.terreno}</span><br/>` : ''}
-                        ${p.codigo ? `<span style="color:#888;font-size:11px">${p.codigo}</span>` : ''}
-                    </div>`)
+                    .setDOMContent(container)
                     .addTo(map);
             });
-            map.on('mouseenter', 'itinerary-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'itinerary-circle', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'itinerary-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'itinerary-circle', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('itinerary-line'))   map.setLayoutProperty('itinerary-line',   'visibility', itiVis);
         if (map.getLayer('itinerary-circle')) map.setLayoutProperty('itinerary-circle', 'visibility', itiVis);
         if (map.getLayer('itinerary-label'))  map.setLayoutProperty('itinerary-label',  'visibility', itiVis);
     }
 
-    // Re-renderiza ao receber dados ou zoom
     useEffect(() => {
         if (!mapRef.current?.isStyleLoaded()) return;
         renderDataLayers(mapRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientes, terrenos, terrenosExtent, geoLayers, zoom]);
 
-    // Itinerário atualiza sozinho
     useEffect(() => {
         if (!mapRef.current?.isStyleLoaded()) return;
         renderItinerary(mapRef.current, itinerario);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itinerario]);
 
-    // Toggle visibilidade de terrenos
     useEffect(() => {
         const map = mapRef.current;
         if (!map?.isStyleLoaded()) return;
@@ -319,7 +399,6 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [terrenosVisible]);
 
-    // Toggle visibilidade de clientes
     useEffect(() => {
         const map = mapRef.current;
         if (!map?.isStyleLoaded()) return;
@@ -330,7 +409,6 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientesVisible]);
 
-    // Toggle visibilidade do itinerário
     useEffect(() => {
         const map = mapRef.current;
         if (!map?.isStyleLoaded()) return;
@@ -341,7 +419,6 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itinerarioVisible]);
 
-    // Fit bounds do itinerário selecionado
     useEffect(() => {
         const valid = itinerario.filter(s => s.latitude != null && s.longitude != null);
         if (!valid.length || !mapRef.current?.isStyleLoaded()) return;

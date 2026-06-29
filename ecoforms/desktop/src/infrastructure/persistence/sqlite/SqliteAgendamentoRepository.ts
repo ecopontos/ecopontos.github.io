@@ -1,5 +1,5 @@
 import { Agendamento, type StatusAgendamento } from '../../../domain/service/Agendamento';
-import type { AgendamentoRepository, AgendamentoFiltros } from '../../../domain/service/AgendamentoRepository';
+import type { AgendamentoRepository, AgendamentoFiltros, AgendamentoWithDetails, AgendamentoMapPoint } from '../../../domain/service/AgendamentoRepository';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
 
 interface AgendamentoRow {
@@ -57,6 +57,24 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         return rows[0] ? rowToEntity(rows[0]) : null;
     }
 
+    async findByIdWithDetails(id: string): Promise<AgendamentoWithDetails | null> {
+        const rows = await this.db.query<AgendamentoWithDetails>(
+            `SELECT ag.cliente_nome AS clienteNome, ag.cliente_email AS clienteEmail,
+                    ag.cliente_telefone AS clienteTelefone,
+                    ag.bairro, ag.vagas_solicitadas AS vagasSolicitadas,
+                    ag.status, ag.dados_formulario AS dadosFormulario,
+                    sl.titulo AS slotTitulo, sl.local,
+                    sl.data_inicio AS dataInicio, sl.data_fim AS dataFim,
+                    st.nome AS serviceTypeNome
+             FROM tbl_agendamentos ag
+             JOIN tbl_service_slots sl ON sl.id = ag.slot_id
+             JOIN tbl_service_types st ON st.id = ag.service_type_id
+             WHERE ag.id = ? LIMIT 1`,
+            [id],
+        );
+        return rows[0] ?? null;
+    }
+
     async findBySlotId(slotId: string): Promise<Agendamento[]> {
         const rows = await this.db.query<AgendamentoRow>(
             `SELECT * FROM tbl_agendamentos WHERE slot_id = ? ORDER BY criado_em ASC`,
@@ -84,11 +102,35 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         if (filtros?.setorId)       { conditions.push('setor_id = ?');        params.push(filtros.setorId); }
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        const rows = await this.db.query<AgendamentoRow>(
-            `SELECT * FROM tbl_agendamentos ${where} ORDER BY criado_em DESC`,
-            params,
-        );
+        let sql = `SELECT * FROM tbl_agendamentos ${where} ORDER BY criado_em DESC`;
+        if (filtros?.limit != null) {
+            sql += ` LIMIT ?`;
+            params.push(filtros.limit);
+            if (filtros.offset != null) {
+                sql += ` OFFSET ?`;
+                params.push(filtros.offset);
+            }
+        }
+        const rows = await this.db.query<AgendamentoRow>(sql, params);
         return rows.map(rowToEntity);
+    }
+
+    async findMapDataBySlotId(slotId: string): Promise<AgendamentoMapPoint[]> {
+        return this.db.query<AgendamentoMapPoint>(
+            `SELECT a.id, a.cliente_id AS clienteId, a.cliente_nome AS clienteNome,
+                    a.bairro, a.status, a.vagas_solicitadas AS vagasSolicitadas,
+                    c.endereco, c.numero, c.cidade,
+                    COALESCE(t.centroid_lat, c.latitude)  AS latitude,
+                    COALESCE(t.centroid_lng, c.longitude) AS longitude
+             FROM tbl_agendamentos a
+             JOIN clientes c ON c.id = a.cliente_id
+             LEFT JOIN terrenos t ON t.id = c.terreno_id
+             WHERE a.slot_id = ?
+               AND a.status != 'cancelado'
+               AND (t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
+             ORDER BY a.criado_em`,
+            [slotId],
+        );
     }
 
     async existeParaClienteESlot(clienteId: string, slotId: string): Promise<boolean> {
@@ -102,14 +144,14 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async confirmIfPendente(id: string, atualizadoEm: string): Promise<boolean> {
         let claimed = false;
-        await this.db.transaction(async () => {
-            const rows = await this.db.query<{ status: string }>(
-                `SELECT status FROM tbl_agendamentos WHERE id = ? LIMIT 1`,
+        await this.db.transaction(async (tx) => {
+            const rows = await tx.query<{ status: string }>(
+                'SELECT status FROM tbl_agendamentos WHERE id = ? LIMIT 1',
                 [id],
             );
             if (rows[0]?.status === 'pendente') {
-                await this.db.execute(
-                    `UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
+                await tx.execute(
+                    "UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?",
                     [atualizadoEm, id],
                 );
                 claimed = true;
@@ -117,7 +159,6 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         });
         return claimed;
     }
-
     async save(agendamento: Agendamento): Promise<void> {
         const r = agendamento.toRow();
         await this.db.execute(
@@ -141,5 +182,9 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
                 r.criado_por, r.criado_em, r.atualizado_em,
             ],
         );
+    }
+
+    async transaction<T>(fn: (tx: AgendamentoRepository) => Promise<T>): Promise<T> {
+        return this.db.transaction(async (tx) => fn(new SqliteAgendamentoRepository(tx)));
     }
 }

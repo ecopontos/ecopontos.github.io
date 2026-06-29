@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '@/src/interface/hooks/catalog/utils';
 import { toast } from 'sonner';
 
 interface ViewSyncAlertProps {

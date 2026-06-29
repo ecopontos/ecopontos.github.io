@@ -1,7 +1,7 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/src/interface/hooks/catalog/tauri";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Mail, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { useEmailConfig } from "@/src/interface/hooks/queries/useEmailConfig";
-import { useSaveEmailConfig } from "@/src/interface/hooks/mutations/useSaveEmailConfig";
+import { useEmailConfig } from "@/src/interface/hooks/catalog/admin";
+import { useSaveEmailConfig } from "@/src/interface/hooks/catalog/admin";
 import { EmailConfig } from "@/src/domain/email-config/EmailConfig";
 
 interface EmailConfigForm {

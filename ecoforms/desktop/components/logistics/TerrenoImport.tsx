@@ -4,7 +4,7 @@ import { useRef, useState, useCallback } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { Button } from '@/components/ui/button';
 import { Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { computeCentroid, computeAreaM2, saveTerrenosBatch } from '@/src/interface/hooks/queries/useMapData';
+import { computeCentroid, computeAreaM2, saveTerrenosBatch } from '@/src/interface/hooks/catalog/logistica';
 import { useAuth } from '@/contexts/AuthContext';
 import { EPSG_31981, EPSG_31982, looksProjected, reprojectGeometry } from '@/lib/geo/reproject';
 

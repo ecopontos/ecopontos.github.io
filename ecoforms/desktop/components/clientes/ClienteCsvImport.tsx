@@ -40,8 +40,7 @@ import { uuidv7 } from "ecoforms-core";
 import type { Cliente, CategoriaCliente } from "@/types/clientes";
 import { parseCSVText } from "@/lib/import/excel-parser";
 import { ImportPreview } from "@/components/registry/ImportPreview";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { invoke, openDialog } from "@/src/interface/hooks/catalog/tauri";
 
 type Step = "upload" | "mapping" | "validation" | "result";
 
@@ -251,7 +250,7 @@ export function ClienteCsvImport({
       }
 
       const name = filePath.split(/[\\/]/).pop() || "arquivo.csv";
-      const text = await readTextFile(filePath);
+      const text = await invoke<string>('read_csv_text_file', { path: filePath });
       const result = parseCSVText(text);
 
       if (result.rows.length === 0) {

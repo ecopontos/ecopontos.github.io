@@ -49,5 +49,5 @@ export interface DemandaRepository {
   allTarefasObrigatoriasConcluidasParaDemanda(demandaId: string): Promise<boolean>;
 
   // Transações
-  transaction<T>(fn: () => Promise<T>): Promise<T>;
+  transaction<T>(fn: (tx: DemandaRepository) => Promise<T>): Promise<T>;
 }

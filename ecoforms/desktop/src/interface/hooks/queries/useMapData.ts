@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { extractBbox } from '@/lib/geo/bbox';
 import {
   fetchClientesGeo,
+  fetchClientesGeoInViewport,
+  fetchClientesGeoCount,
   fetchTerrenosAtivos,
   fetchTerrenosInViewportCentroid,
   fetchTerrenosInViewportRtree,
@@ -124,30 +127,62 @@ export function computeAreaM2(geojson: GeoJSON.Geometry): number | null {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-export function useClientesGeo() {
+const VIEWPORT_CLIENT_THRESHOLD = 2000;
+
+export function useClientesGeo(bbox?: [number, number, number, number] | null) {
     const [data, setData] = useState<ClienteGeo[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [useViewportMode, setUseViewportMode] = useState<boolean | null>(null);
 
     useEffect(() => {
-        fetchClientesGeo()
-            .then(rows => setData(Array.isArray(rows) ? (rows as unknown as ClienteGeo[]) : []))
-            .catch(() => setData([]))
-            .finally(() => setLoading(false));
+        fetchClientesGeoCount()
+            .then(count => setUseViewportMode(count > VIEWPORT_CLIENT_THRESHOLD))
+            .catch(() => setUseViewportMode(false));
     }, []);
 
-    return { data, loading };
+    const refetch = useCallback(async () => {
+        if (useViewportMode === null) return;
+        setLoading(true);
+        setError(null);
+        try {
+            let rows: Record<string, unknown>[];
+            if (useViewportMode && bbox) {
+                rows = await fetchClientesGeoInViewport(bbox);
+            } else {
+                rows = await fetchClientesGeo();
+            }
+            setData(Array.isArray(rows) ? (rows as unknown as ClienteGeo[]) : []);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar clientes';
+            console.error('[useClientesGeo]', msg);
+            setError(msg);
+            setData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [useViewportMode, bbox]);
+
+    useEffect(() => { refetch(); }, [refetch]);
+
+    return { data, loading, error, refetch };
 }
 
 export function useTerrenos() {
     const [data, setData] = useState<TerrenoGeo[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const refetch = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const rows = await fetchTerrenosAtivos();
             setData(Array.isArray(rows) ? (rows as unknown as TerrenoGeo[]) : []);
-        } catch {
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar terrenos';
+            console.error('[useTerrenos]', msg);
+            setError(msg);
             setData([]);
         } finally {
             setLoading(false);
@@ -155,7 +190,7 @@ export function useTerrenos() {
     }, []);
 
     useEffect(() => { refetch(); }, [refetch]);
-    return { data, loading, refetch };
+    return { data, loading, error, refetch };
 }
 
 /**
@@ -169,14 +204,14 @@ export function useTerrenosInViewport(
 ) {
     const [data, setData] = useState<TerrenoGeo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchData = useCallback(async () => {
         if (!bbox) { setLoading(false); return; }
 
         setLoading(true);
+        setError(null);
 
-        // At zoom >= 12, use R-Tree bbox intersection (fast)
-        // At lower zoom, use centroid-based filtering (cheaper, fewer results expected)
         const useRtree = zoom >= 12;
 
         try {
@@ -184,7 +219,10 @@ export function useTerrenosInViewport(
                 ? await fetchTerrenosInViewportRtree(bbox)
                 : await fetchTerrenosInViewportCentroid(bbox);
             setData(Array.isArray(rows) ? (rows as unknown as TerrenoGeo[]) : []);
-        } catch {
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar terrenos do viewport';
+            console.error('[useTerrenosInViewport]', msg);
+            setError(msg);
             setData([]);
         } finally {
             setLoading(false);
@@ -193,7 +231,7 @@ export function useTerrenosInViewport(
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    return { data, loading, refetch: fetchData };
+    return { data, loading, error, refetch: fetchData };
 }
 
 export interface TerrenosExtent {
@@ -203,17 +241,14 @@ export interface TerrenosExtent {
     maxLat: number;
 }
 
-/**
- * Lightweight aggregate query for the bounding extent of all active terrenos.
- * Used to center/fit the map on the cadastro region without fetching the
- * full (potentially huge) terrenos dataset.
- */
 export function useTerrenosExtent() {
     const [extent, setExtent] = useState<TerrenosExtent | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const refetch = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const r = await fetchTerrenosExtent();
             if (r && r.min_lng != null && r.min_lat != null && r.max_lng != null && r.max_lat != null) {
@@ -221,7 +256,10 @@ export function useTerrenosExtent() {
             } else {
                 setExtent(null);
             }
-        } catch {
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar extent';
+            console.error('[useTerrenosExtent]', msg);
+            setError(msg);
             setExtent(null);
         } finally {
             setLoading(false);
@@ -230,19 +268,24 @@ export function useTerrenosExtent() {
 
     useEffect(() => { refetch(); }, [refetch]);
 
-    return { extent, loading, refetch };
+    return { extent, loading, error, refetch };
 }
 
 export function useGeoLayers() {
     const [data, setData] = useState<GeoLayer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const refetch = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const rows = await fetchGeoLayers();
             setData(Array.isArray(rows) ? (rows as unknown as GeoLayer[]) : []);
-        } catch {
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao carregar camadas';
+            console.error('[useGeoLayers]', msg);
+            setError(msg);
             setData([]);
         } finally {
             setLoading(false);
@@ -250,23 +293,30 @@ export function useGeoLayers() {
     }, []);
 
     useEffect(() => { refetch(); }, [refetch]);
-    return { data, loading, refetch };
+    return { data, loading, error, refetch };
 }
 
 export function useItinerario(roteiroId: string | null) {
     const [data, setData] = useState<ItinerarioStop[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!roteiroId) { setData([]); return; }
         setLoading(true);
+        setError(null);
         fetchItinerario(roteiroId)
             .then(rows => setData(Array.isArray(rows) ? (rows as unknown as ItinerarioStop[]) : []))
-            .catch(() => setData([]))
+            .catch(err => {
+                const msg = err instanceof Error ? err.message : 'Erro ao carregar itinerário';
+                console.error('[useItinerario]', msg);
+                setError(msg);
+                setData([]);
+            })
             .finally(() => setLoading(false));
     }, [roteiroId]);
 
-    return { data, loading };
+    return { data, loading, error };
 }
 
 // ─── ADR-039: Camadas de execução ─────────────────────────────────────────────
@@ -308,49 +358,70 @@ export interface ChecklistGeo {
 export function useExecucaoGeo(execucaoId: string | null) {
     const [data, setData] = useState<ExecucaoClienteGeo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!execucaoId) { setData([]); return; }
         setLoading(true);
+        setError(null);
         fetchExecucaoGeo(execucaoId)
             .then(rows => setData(Array.isArray(rows) ? (rows as unknown as ExecucaoClienteGeo[]) : []))
-            .catch(() => setData([]))
+            .catch(err => {
+                const msg = err instanceof Error ? err.message : 'Erro ao carregar execução';
+                console.error('[useExecucaoGeo]', msg);
+                setError(msg);
+                setData([]);
+            })
             .finally(() => setLoading(false));
     }, [execucaoId]);
 
-    return { data, loading };
+    return { data, loading, error };
 }
 
 export function useIntercorrenciasGeo(execucaoId: string | null) {
     const [data, setData] = useState<IntercorrenciaGeo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!execucaoId) { setData([]); return; }
         setLoading(true);
+        setError(null);
         fetchIntercorrenciasGeo(execucaoId)
             .then(rows => setData(Array.isArray(rows) ? (rows as unknown as IntercorrenciaGeo[]) : []))
-            .catch(() => setData([]))
+            .catch(err => {
+                const msg = err instanceof Error ? err.message : 'Erro ao carregar intercorrências';
+                console.error('[useIntercorrenciasGeo]', msg);
+                setError(msg);
+                setData([]);
+            })
             .finally(() => setLoading(false));
     }, [execucaoId]);
 
-    return { data, loading };
+    return { data, loading, error };
 }
 
 export function useChecklistGeo(execucaoId: string | null) {
     const [data, setData] = useState<ChecklistGeo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!execucaoId) { setData([]); return; }
         setLoading(true);
+        setError(null);
         fetchChecklistGeo(execucaoId)
             .then(rows => setData(Array.isArray(rows) ? (rows as unknown as ChecklistGeo[]) : []))
-            .catch(() => setData([]))
+            .catch(err => {
+                const msg = err instanceof Error ? err.message : 'Erro ao carregar checklist';
+                console.error('[useChecklistGeo]', msg);
+                setError(msg);
+                setData([]);
+            })
             .finally(() => setLoading(false));
     }, [execucaoId]);
 
-    return { data, loading };
+    return { data, loading, error };
 }
 
 // ─── Mutações terrenos ─────────────────────────────────────────────────────────
@@ -402,7 +473,7 @@ export async function saveTerrenosBatch(
                     criado_por: t.criado_por,
                     criado_em: now,
                     atualizado_em: now,
-                    bbox,
+                    bbox: bbox ?? undefined,
                 });
                 if (bbox) {
                     await upsertTerrenosRtree({ bbox, terreno_id: t.id });

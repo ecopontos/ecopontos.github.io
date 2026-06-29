@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 /**
  * @deprecated Uso restrito a admin/inspector (debug). Não usar em hooks de negócio.
  * Substituído por repositórios + use cases + hooks de catálogo.

@@ -1,17 +1,24 @@
 use axum::body::Body;
 use axum::extract::{Multipart, Path, State};
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
 use std::sync::Arc;
 use tokio::fs;
 
+use super::auth;
 use super::state::LanServerState;
 
 pub async fn download_file(
     State(state): State<Arc<LanServerState>>,
+    headers: HeaderMap,
     Path(anexo_id): Path<String>,
 ) -> impl IntoResponse {
+    let _auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
     let db_path = state.db_path.read().await.clone();
     let app_data = state.app_data_dir.read().await.clone();
 
@@ -65,8 +72,14 @@ pub async fn download_file(
 
 pub async fn upload_file(
     State(state): State<Arc<LanServerState>>,
+    headers: HeaderMap,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
+    let _auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
     let app_data = state.app_data_dir.read().await.clone();
     let db_path = state.db_path.read().await.clone();
 
@@ -89,9 +102,8 @@ pub async fn upload_file(
                     filename = fname.to_string();
                 }
             }
-            match field.bytes().await {
-                Ok(b) => file_bytes = Some(b.to_vec()),
-                Err(_) => {}
+            if let Ok(b) = field.bytes().await {
+                file_bytes = Some(b.to_vec());
             }
         } else {
             let val: String = field.text().await.unwrap_or_default();

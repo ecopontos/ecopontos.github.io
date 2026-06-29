@@ -1,14 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { CreateModuleUseCase } from '../../../application/module/CreateModuleUseCase';
 import { PublishModuleUseCase } from '../../../application/module/PublishModuleUseCase';
+import { UpdateModuleConfigUseCase } from '../../../application/module/UpdateModuleConfigUseCase';
 import { ListModulesUseCase } from '../../../application/module/ListModulesUseCase';
 import { GetModuleRuntimeUseCase } from '../../../application/module/GetModuleRuntimeUseCase';
 import { InMemoryModuleRepository } from '../InMemoryModuleRepository';
 
+let uuidCounter = 0;
+vi.mock('ecoforms-core', () => ({
+    uuidv7: () => `mock-module-${++uuidCounter}`,
+}));
+
 describe('Module Use Cases', () => {
     const createRepo = () => new InMemoryModuleRepository();
 
-    it('CreateModuleUseCase should create a module', async () => {
+    it('CreateModuleUseCase should create a module with uuidv7 and config_version=1', async () => {
         const repo = createRepo();
         const uc = new CreateModuleUseCase(repo);
         const id = await uc.execute({
@@ -16,15 +22,17 @@ describe('Module Use Cases', () => {
             name: 'Fiscalização Ambiental',
             entity_type: 'fiscalizacao',
         });
-        expect(id).toBeDefined();
+
+        expect(id).toBe('mock-module-1');
 
         const mod = await repo.findById(id);
         expect(mod).not.toBeNull();
         expect(mod!.slug).toBe('fiscalizacao');
         expect(mod!.status).toBe('draft');
+        expect(mod!.config_version).toBe(1);
     });
 
-    it('PublishModuleUseCase should publish a module', async () => {
+    it('PublishModuleUseCase should publish a module without changing config_version', async () => {
         const repo = createRepo();
         const create = new CreateModuleUseCase(repo);
         const id = await create.execute({ slug: 'test', name: 'Test', entity_type: 'test' });
@@ -35,6 +43,25 @@ describe('Module Use Cases', () => {
         const mod = await repo.findById(id);
         expect(mod!.status).toBe('published');
         expect(mod!.version).toBe(2);
+        expect(mod!.config_version).toBe(1);
+    });
+
+    it('UpdateModuleConfigUseCase increments config_version for config and metadata edits', async () => {
+        const repo = createRepo();
+        const create = new CreateModuleUseCase(repo);
+        const id = await create.execute({ slug: 'upd', name: 'Update', entity_type: 'upd' });
+
+        const update = new UpdateModuleConfigUseCase(repo);
+        await update.execute({
+            id,
+            name: 'Update Renamed',
+            config: { forms: [{ form_id: 'form-1', required: true, default: false, order: 1 }] },
+        });
+
+        const mod = await repo.findById(id);
+        expect(mod!.name).toBe('Update Renamed');
+        expect(mod!.config.forms?.[0].form_id).toBe('form-1');
+        expect(mod!.config_version).toBe(2);
     });
 
     it('ListModulesUseCase should filter by status', async () => {

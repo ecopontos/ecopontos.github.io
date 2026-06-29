@@ -130,17 +130,18 @@ async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Pro
 export function registerAllHandlers(inbound: InboundService, db: SqlitePort): void {
     inbound.on('ecoforms.registro.criado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
+        // Colunas `setor`/`criado_por` não existem em registro_dados
+        // (schema: id, tipo, chave, conteudo, versao, criado_em, atualizado_em).
+        // Inseri-las fazia todo evento de criação de registro falhar no sync.
         await db.execute(
             `INSERT OR REPLACE INTO registro_dados
-             (id, tipo, chave, conteudo, setor, criado_por, criado_em, atualizado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, tipo, chave, conteudo, criado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 env.aggregate.id,
                 d.tipo ?? d.form_id ?? '',
                 d.chave ?? env.aggregate.id,
                 typeof d.conteudo === 'string' ? d.conteudo : JSON.stringify(d),
-                d.setor ?? null,
-                d.criado_por ?? env.source.device_id,
                 d.criado_em ?? env.time,
                 env.time,
             ],
@@ -193,6 +194,45 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
+    inbound.on('task.arquivada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        // tarefas usa apenas a flag `arquivado INTEGER` — não existe coluna
+        // `arquivado_em` (essa coluna é de projetos/pacotes). Referenciá-la
+        // fazia o evento task.arquivada falhar no sync.
+        await db.execute(
+            `UPDATE tarefas SET arquivado = 1, atualizado_em = ? WHERE id = ?`,
+            [env.time, tarefaId],
+        );
+    });
+
+    inbound.on('task.desarquivada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tarefas SET arquivado = 0, atualizado_em = ? WHERE id = ?`,
+            [env.time, tarefaId],
+        );
+    });
+
+    inbound.on('task.excluida', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        await db.execute(`DELETE FROM tarefas WHERE id = ?`, [tarefaId]);
+    });
+
+    inbound.on('task.comentario_adicionado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId;
+        if (!tarefaId) return;
+        // id do comentário = id do envelope → INSERT OR IGNORE torna o replay idempotente.
+        await db.execute(
+            `INSERT OR IGNORE INTO tarefas_comentarios (id, tarefa_id, usuario_id, comentario, criado_em)
+             VALUES (?, ?, ?, ?, ?)`,
+            [env.id, tarefaId, d.usuario_id ?? d.usuarioId ?? '', d.comentario ?? '', env.time],
+        );
+    });
+
     inbound.on('demanda.aceita', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
@@ -200,6 +240,68 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
              SET status = 'aceita', aceito_por = ?, aceito_em = ?, atualizado_em = ?
              WHERE id = ? AND status = 'aberta'`,
             [d.aceito_por ?? d.aceitoPor ?? null, env.time, env.time, env.aggregate.id],
+        );
+    });
+
+    inbound.on('demanda.encerrada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `UPDATE demandas
+             SET status = 'encerrada', encerrado_por = ?, encerrado_em = ?, atualizado_em = ?
+             WHERE id = ?`,
+            [d.encerrado_por ?? d.encerradoPor ?? null, env.time, env.time, env.aggregate.id],
+        );
+    });
+
+    inbound.on('demanda.encaminhada', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        // As colunas setor_destino/encaminhado_por/encaminhado_em não existem
+        // em demandas. "Encaminhar" = mover a demanda para o setor de destino
+        // (ADR-024: setor_id controla a visibilidade horizontal por setor), que
+        // é o efeito persistido. Antes o UPDATE falhava por colunas inexistentes.
+        await db.execute(
+            `UPDATE demandas
+             SET setor_id = COALESCE(?, setor_id), atualizado_em = ?
+             WHERE id = ?`,
+            [d.setor_destino ?? d.setorDestino ?? null,
+             env.time, env.aggregate.id],
+        );
+    });
+
+    // ── Agendamentos ───────────────────────────────────────────────────────────
+    inbound.on('agendamento.criado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'pendente', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.confirmado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.cancelado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'cancelado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
+        );
+    });
+
+    inbound.on('agendamento.realizado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const agId = d.agendamentoId ?? env.aggregate.id;
+        await db.execute(
+            `UPDATE tbl_agendamentos SET status = 'realizado', atualizado_em = ? WHERE id = ?`,
+            [env.time, agId],
         );
     });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidTransition, isTerminalStatus, type TaskStatus } from '../TaskStatus';
+import { getValidTransitions, isValidTransition, isTerminalStatus, type TaskStatus } from '../TaskStatus';
 
 describe('TaskStatus', () => {
     const allStatuses: TaskStatus[] = ['a_fazer', 'em_progresso', 'concluido', 'cancelado'];
@@ -41,6 +41,16 @@ describe('TaskStatus', () => {
                     expect(isValidTransition(terminal, target)).toBe(false);
                 }
             }
+        });
+    });
+
+    describe('transições disponíveis', () => {
+        it('lista apenas destinos válidos para uma tarefa a fazer', () => {
+            expect(getValidTransitions('a_fazer')).toEqual(['em_progresso', 'cancelado']);
+        });
+
+        it('não lista destinos para status terminal', () => {
+            expect(getValidTransitions('concluido')).toEqual([]);
         });
     });
 

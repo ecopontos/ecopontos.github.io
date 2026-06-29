@@ -1,24 +1,11 @@
 "use client";
-
+/* eslint-disable react-hooks/refs */
 import { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { StyleSpecification } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import type { ClienteGeo, ItinerarioStop, TerrenoGeo } from "@/src/interface/hooks/queries/useMapData";
-
-const OSM_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "&copy; OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "osm-tiles", type: "raster", source: "osm" }],
-};
+import type { ClienteGeo, ItinerarioStop, TerrenoGeo } from "@/src/interface/hooks/catalog/logistica";
+import { createBaseMap } from "@/lib/map-base";
 
 interface Props {
   clientesGeo: ClienteGeo[];
@@ -89,7 +76,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         filter: ["==", ["get", "in_route"], 1],
         paint: {
           "circle-radius": 12,
-          "circle-color": "#ef4444",
+          "circle-color": "#f97316",
           "circle-opacity": 0.18,
         },
       });
@@ -105,7 +92,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           ],
           "circle-color": [
             "case",
-            ["==", ["get", "in_route"], 1], "#ef4444",
+            ["==", ["get", "in_route"], 1], "#f97316",
             ["match", ["get", "tipo"], "PF", "#22c55e", "PJ", "#3b82f6", "#6b7280"],
           ],
           "circle-stroke-width": [
@@ -128,14 +115,31 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         const p = f.properties as Record<string, string | number>;
         const coords = f.geometry.coordinates as [number, number];
         const inRoute = p.in_route === 1;
-        const badge = inRoute
-          ? `<span style="background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600">NO ROTEIRO</span>`
-          : "";
+
+        const container = document.createElement('div');
+        container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+        const strong = document.createElement('strong');
+        strong.style.fontSize = '14px';
+        strong.textContent = String(p.nome ?? '');
+        container.appendChild(strong);
+
+        if (inRoute) {
+          const badge = document.createElement('span');
+          badge.style.cssText = 'background:#f97316;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px';
+          badge.textContent = 'NO ROTEIRO';
+          container.appendChild(badge);
+        }
+
+        container.appendChild(document.createElement('br'));
+        const meta = document.createElement('span');
+        meta.style.cssText = 'color:#888;font-size:11px';
+        meta.textContent = `${p.tipo}${p.endereco ? ` · ${p.endereco}` : ''}`;
+        container.appendChild(meta);
+
         const popup = new maplibregl.Popup({ maxWidth: "240px" })
           .setLngLat(coords)
-          .setHTML(
-            `<div style="font-family:sans-serif;font-size:13px;line-height:1.5"><strong style="font-size:14px">${p.nome}</strong> ${badge}<br/><span style="color:#888;font-size:11px">${p.tipo}${p.endereco ? ` · ${p.endereco}` : ""}</span></div>`,
-          )
+          .setDOMContent(container)
           .addTo(map);
         popupsRef.current.push(popup);
         if (onClienteClick) onClienteClick(p.id as string);
@@ -175,7 +179,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           type: "line",
           source: "route",
           paint: {
-            "line-color": "#ef4444",
+            "line-color": "#f97316",
             "line-width": 3,
             "line-opacity": 0.6,
           },
@@ -233,7 +237,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           "text-offset": [0, 1],
           "text-allow-overlap": true,
         },
-        paint: { "text-color": "#fff", "text-halo-width": 2, "text-halo-color": "#ef4444" },
+        paint: { "text-color": "#fff", "text-halo-width": 2, "text-halo-color": "#f97316" },
       });
       map.addLayer({
         id: "stops-ordem-text",
@@ -247,7 +251,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           "text-offset": [0, 1],
           "text-allow-overlap": true,
         },
-        paint: { "text-color": "#ef4444" },
+        paint: { "text-color": "#f97316" },
       });
     }
 
@@ -283,13 +287,13 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
         id: "terrenos-route-fill",
         type: "fill",
         source: "terrenos-route",
-        paint: { "fill-color": "#ef4444", "fill-opacity": 0.12 },
+        paint: { "fill-color": "#f97316", "fill-opacity": 0.12 },
       }, "clients-in-route-glow");
       map.addLayer({
         id: "terrenos-route-outline",
         type: "line",
         source: "terrenos-route",
-        paint: { "line-color": "#ef4444", "line-width": 1.5, "line-opacity": 0.6 },
+        paint: { "line-color": "#f97316", "line-width": 1.5, "line-opacity": 0.6 },
       }, "clients-in-route-glow");
     }
 
@@ -310,15 +314,7 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: OSM_STYLE,
-      attributionControl: false,
-      zoom: 12,
-      center: [-48.5, -27.6],
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+    const map = createBaseMap(containerRef.current);
 
     map.on("load", () => {
       mapRef.current = map;

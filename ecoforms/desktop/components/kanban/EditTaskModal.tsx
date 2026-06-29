@@ -1,5 +1,5 @@
 ﻿'use client';
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
 import { useTauriInvoke } from '@/src/interface/hooks/catalog/tauri';
 import { fetchUsuariosAtivos, fetchFormsAtivos } from '@/src/interface/hooks/queries/lookups';
@@ -33,9 +33,10 @@ import { StakeholdersSelect } from './StakeholdersSelect';
 import { PatchHistoryPanel } from './PatchHistoryPanel';
 import { Interessado } from '@/types';
 import { ActionBar } from '@/components/ActionBar';
-import { useWorkflowActions } from '@/src/interface/hooks/useWorkflowActions';
+import { useWorkflowActions } from '@/src/interface/hooks/catalog/kanban';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContainer } from '@/src/interface/hooks/catalog/utils';
+import { getContainerAsync } from '@/src/interface/hooks/catalog/utils';
 import { useSyncOutbox } from '@/src/interface/hooks/catalog/sync';
 import type { TaskPatchFile } from './PatchHistoryPanel';
 
@@ -44,21 +45,6 @@ type TaskModalUpdatePayload = Partial<UnifiedTaskView> & {
     interessados?: Interessado[];
 };
 
-interface QueryResult {
-    columns: string[];
-    rows: unknown[][];
-}
-
-
-function mapQueryRows<T extends object>(result: QueryResult): T[] {
-    return result.rows.map((row) => {
-        const entry: Record<string, unknown> = {};
-        result.columns.forEach((col, index) => {
-            entry[col] = row[index];
-        });
-        return entry as unknown as T;
-    });
-}
 
 interface EditTaskModalProps {
     task: UnifiedTaskView | null;
@@ -190,19 +176,10 @@ export function EditTaskModal({
             setAgendamentoData(null);
             return;
         }
-        invoke<QueryResult>('db_query', {
-            sql: `SELECT ag.cliente_nome, ag.cliente_email, ag.cliente_telefone,
-                         ag.bairro, ag.vagas_solicitadas, ag.status, ag.dados_formulario,
-                         sl.titulo as slot_titulo, sl.local, sl.data_inicio, sl.data_fim,
-                         st.nome as service_type_nome
-                  FROM tbl_agendamentos ag
-                  JOIN tbl_service_slots sl ON sl.id = ag.slot_id
-                  JOIN tbl_service_types st ON st.id = ag.service_type_id
-                  WHERE ag.id = ?`,
-            params: [task.origem_id],
-        }).then((result) => {
-            const rows = mapQueryRows<Record<string, unknown>>(result);
-            setAgendamentoData(rows[0] ?? null);
+        getContainerAsync().then((c) =>
+            c.agendamentoRepo.findByIdWithDetails(task.origem_id!)
+        ).then((details) => {
+            setAgendamentoData(details as Record<string, unknown> | null);
         }).catch(() => {});
     }, [open, task?.origem_id, task?.origem_tipo]);
 

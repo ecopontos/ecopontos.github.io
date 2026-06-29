@@ -50,12 +50,12 @@ export class DemandaTaskSynchronizer {
 
     async #encerrarDemandaAuto(demandaId: string, motivo: string): Promise<void> {
         const now = new Date().toISOString();
-        await this.demandas.transaction(async () => {
-            await this.demandas.updateStatus(demandaId, 'concluida', {
+        await this.demandas.transaction(async (txRepo) => {
+            await txRepo.updateStatus(demandaId, 'concluida', {
                 encerradoEm: now,
                 archiveStatus: 'completed',
             });
-            await this.demandas.saveEvento({
+            await txRepo.saveEvento({
                 id: uuidv7(),
                 demandaId,
                 type: 'demanda.encerrada',

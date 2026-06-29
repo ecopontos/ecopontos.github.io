@@ -26,7 +26,7 @@ Esses arquivos importam hooks **diretamente dos diretórios técnicos**, bypassa
 
 | # | Arquivo | Hooks importados (direto) | Tema correto no catálogo |
 |---|---------|---------------------------|--------------------------|
-| 1 | `app/analysis/page.tsx` | `useSqlite`, `useFormTemplate`, `useTauriDialog`, `useTauriFs` | `tauri`, `forms` |
+| 1 | `app/analysis/page.tsx` | `useSqlite`, `useFormTemplate`, `useTauriDialog` | `tauri`, `forms` |
 | 2 | `app/modulo/[slug]/ModuloPageClient.tsx` | `useActiveViews` | `modules-views` |
 | 3 | `app/page.tsx` | `useSync`, `useFormPermissions`, `useSqlite`, `getInboxAccessFilter` | `sync`, `auth`, `tauri` |
 | 4 | `app/view/page.client.tsx` | `useSubmissionData`, `useTauriInvoke` | `forms`, `tauri` |
@@ -91,7 +91,7 @@ Esses arquivos importam hooks **diretamente dos diretórios técnicos**, bypassa
 | 56 | `components/forms/FieldPropertiesPanel.tsx` | `useDataRegistryTypesNew` | `data-registry` |
 | 57 | `components/registry/DataRegistryEditor.tsx` | `useDataRegistryUseCases`, `useDataRegistryItemsNew`, `DataRegistryItemView` | `data-registry` |
 | 58 | `components/registry/DataRegistryPage.tsx` | `useDataRegistryUseCases`, `useDataRegistryItemsNew`, `DataRegistryItemView` | `data-registry` |
-| 59 | `components/registry/DataRegistryList.tsx` | `useDataRegistryItemsNew`, `useTauriDialog`, `useTauriFs`, `DataRegistryItemView` | `data-registry`, `tauri` |
+| 59 | `components/registry/DataRegistryList.tsx` | `useDataRegistryItemsNew`, `useTauriDialog`, `DataRegistryItemView` | `data-registry`, `tauri` |
 | 60 | `components/registry/DataRegistryImport.tsx` | `useDataRegistryBulkInsert` | `data-registry` |
 | 61 | `components/ClientLayout.tsx` | `useTauriInvoke`, `initializeContainer` | `tauri`, `utils` |
 | 62 | `components/DetailViewModal.tsx` | `useFormTemplate`, `useInboxMutations`, `useAllUsers` | `forms`, `auth` |
@@ -137,7 +137,7 @@ Lista consolidada de hooks que aparecem em bypasses, com o diretório técnico d
 | `useSqlite` | `queries/` | `tauri` | ✅ ativo |
 | `useFormTemplate` | `queries/` | `forms` | ✅ ativo |
 | `useTauriDialog` | `tauri/` | `tauri` | ✅ ativo |
-| `useTauriFs` | `tauri/` | `tauri` | ✅ ativo |
+| `useTauriFs` | `tauri/` | `tauri` | removido em 2026-06-29; filesystem direto via plugin-fs descontinuado |
 | `useActiveViews` | `queries/` | `modules-views` | ✅ ativo |
 | `useSync` | `queries/` | `sync` | ✅ ativo |
 | `useFormPermissions` | `utils/` | `auth` | ✅ ativo |

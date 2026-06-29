@@ -2,6 +2,7 @@ pub mod state;
 pub mod server;
 pub mod discovery;
 pub mod hub;
+pub mod auth;
 pub mod ws;
 pub mod routes;
 pub mod file_routes;

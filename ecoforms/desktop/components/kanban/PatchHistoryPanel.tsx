@@ -3,8 +3,8 @@
 import { ShieldCheck } from 'lucide-react';
 
 export interface TaskPatchFile {
-    created_at?: string;
-    last_modified?: string;
+    created_at?: string | null;
+    last_modified?: string | null;
 }
 
 interface PatchHistoryPanelProps {

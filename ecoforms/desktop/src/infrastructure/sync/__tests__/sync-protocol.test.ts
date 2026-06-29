@@ -1,14 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// CryptoLayer.deriveAndStoreKey persiste a chave raw via @tauri-apps/plugin-store
-// (Central Crypto / sessão Rust) — mock em memória, sem invoke real.
+// CryptoLayer deriva a chave em memória e limpa o legado raw-key best-effort.
+const storeState = {
+    get: vi.fn(async () => null),
+    set: vi.fn(async () => {}),
+    delete: vi.fn(async () => {}),
+    save: vi.fn(async () => {}),
+};
+
 vi.mock('@tauri-apps/plugin-store', () => ({
     Store: {
-        load: vi.fn(async () => ({
-            get: vi.fn(async () => null),
-            set: vi.fn(async () => {}),
-            save: vi.fn(async () => {}),
-        })),
+        load: vi.fn(async () => storeState),
     },
 }));
 
@@ -22,12 +24,18 @@ vi.mock('ecoforms-core', async (importOriginal) => {
     };
 });
 import { CryptoLayer } from '../CryptoLayer';
+import { ensureCryptoLayer, resetSyncAdapter } from '../lazy-sync';
 import { TransportService } from '../TransportService';
 import { InboundService } from '../InboundService';
 import { createEnvelope, buildChecksum } from '../EventEnvelope';
+import type { EcoFormsEventType, EventEnvelope } from '../EventEnvelope';
+import { ensureColumns } from '@/scripts/ensure-columns';
+import { migratePtBrIfNeeded } from '@/scripts/migrate-ptbr';
+import { ModuleSyncHandler } from '../module/ModuleSyncHandler';
+import { SqliteModuleRepository } from '../../persistence/sqlite/SqliteModuleRepository';
+import type { SqlitePort } from '../../../application/ports/SqlitePort';
 import { InMemorySqlitePort } from '../../../test/fakes/InMemorySqlitePort';
 import { FakeSyncEventIndex } from '../../../test/fakes/FakeSyncEventIndex';
-import type { EventEnvelope } from '../EventEnvelope';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -140,6 +148,13 @@ describe('TransportService', () => {
 // ─── Crypto: formato de wire ──────────────────────────────────────────────────
 
 describe('CryptoLayer — formato de wire', () => {
+    beforeEach(() => {
+        storeState.get.mockClear();
+        storeState.set.mockClear();
+        storeState.delete.mockClear();
+        storeState.save.mockClear();
+    });
+
     it('blob produzido tem nonce(12) || ciphertext — idêntico ao mobile', async () => {
         const crypto = await makeCrypto();
         const blob = await crypto.encrypt('hello world');
@@ -175,6 +190,23 @@ describe('CryptoLayer — formato de wire', () => {
         expect(decoded).toEqual(payload);
     });
 
+    it('deriveAndStoreKey não persiste a chave raw no store', async () => {
+        const crypto = new CryptoLayer();
+        await crypto.deriveAndStoreKey(TEST_PASSWORD, 'test-salt-001');
+
+        expect(storeState.set).not.toHaveBeenCalled();
+    });
+
+    it('cold start exige novo login para recarregar a chave', async () => {
+        const firstSession = await makeCrypto(TEST_PASSWORD);
+        const blob = await firstSession.encrypt('segredo');
+
+        const restarted = new CryptoLayer();
+        await restarted.loadKey();
+
+        await expect(restarted.decrypt(blob)).rejects.toThrow('Chave não carregada');
+    });
+
     it('chave errada falha no decrypt', async () => {
         const crypto1 = await makeCrypto('senha-correta');
         const crypto2 = await makeCrypto('senha-errada');
@@ -186,6 +218,15 @@ describe('CryptoLayer — formato de wire', () => {
 });
 
 // ─── InboundService ───────────────────────────────────────────────────────────
+
+describe('lazy sync crypto singleton', () => {
+    it('ensureCryptoLayer reusa a mesma instância entre login e sync', async () => {
+        resetSyncAdapter();
+        const a = await ensureCryptoLayer();
+        const b = await ensureCryptoLayer();
+        expect(a).toBe(b);
+    });
+});
 
 describe('InboundService', () => {
     it('pull() decripta e chama o handler correto', async () => {
@@ -423,8 +464,8 @@ describe('Correções de gaps', () => {
 
         const gaps = sqlite.getTable('log_gaps_sync');
         expect(gaps).toHaveLength(1);
-        expect(gaps[0].routing_id).toBe(remoteRoutingId);
-        expect(gaps[0].missing_seq).toBe(2);
+        expect(gaps[0].id_roteamento).toBe(remoteRoutingId);
+        expect(gaps[0].sequencia_faltante).toBe(2);
     });
 
     it('purgeOldSentEvents() remove eventos sent antigos', async () => {
@@ -443,11 +484,12 @@ describe('Correções de gaps', () => {
         const afterPurge = sqlite.getTable('fila_eventos_sync');
         expect(afterPurge).toHaveLength(0);
     });
+
 });
 
 // ─── Helpers locais ───────────────────────────────────────────────────────────
 
-function makeEnvelope(type: string, data: unknown, seq: number, routingId: string): EventEnvelope {
+function makeEnvelope(type: EcoFormsEventType, data: Record<string, unknown>, seq: number, routingId: string): EventEnvelope {
     const env = createEnvelope(
         { type, data },
         seq,
@@ -472,7 +514,7 @@ async function seedEvent(
         event_type: envelope.type,
         aggregate_type: envelope.aggregate.type,
         aggregate_id: envelope.aggregate.id,
-        device_id: envelope.source.device_id,
+        device_id: envelope.source.device_id ?? '',
         checksum: envelope.checksum,
         prev_event_id: envelope.prev_event_id,
         payload_enc,
@@ -487,3 +529,188 @@ async function getLocalSeq(sqlite: InMemorySqlitePort, routingId: string): Promi
     );
     return rows[0]?.sequencia ?? 0;
 }
+
+
+function normalizeModuleSchemaSql(sql: string): string {
+    return sql.replace(/\s+/g, ' ').trim();
+}
+
+describe('Module schema canonicalization', () => {
+    it('ensureColumns defines module tables with canonical constraints', async () => {
+        const executed: string[] = [];
+
+        await ensureColumns(
+            async () => [],
+            async (sql: string) => {
+                executed.push(normalizeModuleSchemaSql(sql));
+            },
+        );
+
+        const createRegistro = executed.find(sql => sql.includes('CREATE TABLE IF NOT EXISTS registro_modulos'));
+        const createPermissoes = executed.find(sql => sql.includes('CREATE TABLE IF NOT EXISTS permissoes_modulos'));
+
+        expect(createRegistro).toContain('tipo_entidade TEXT NOT NULL UNIQUE');
+        expect(createRegistro).toContain("prefix TEXT NOT NULL DEFAULT ''");
+        expect(executed).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_entity_type ON registro_modulos(tipo_entidade)');
+        expect(executed).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_prefix ON registro_modulos(prefix)');
+        expect(executed).toContain('CREATE INDEX IF NOT EXISTS idx_module_registry_status ON registro_modulos(status)');
+        expect(createPermissoes).toContain('CHECK (can_create = 0 OR can_view = 1)');
+        expect(executed).toContain('CREATE INDEX IF NOT EXISTS idx_module_permissions_module_id ON permissoes_modulos(module_id)');
+    });
+
+    it('migratePtBrIfNeeded keeps canonical module column names after table rename', async () => {
+        const executed: string[] = [];
+
+        await migratePtBrIfNeeded(
+            async (sql: string) => sql.includes("name='suite'") ? [{ name: 'suite' }] : [],
+            async (sql: string) => {
+                executed.push(normalizeModuleSchemaSql(sql));
+            },
+        );
+
+        expect(executed).toContain('ALTER TABLE module_permissions RENAME TO permissoes_modulos');
+        expect(executed).toContain('ALTER TABLE module_visual_views RENAME TO visuais_modulos');
+        expect(executed.some(sql => sql.includes('ALTER TABLE permissoes_modulos RENAME COLUMN profile TO perfil'))).toBe(false);
+        expect(executed.some(sql => sql.includes('ALTER TABLE permissoes_modulos RENAME COLUMN can_view TO pode_visualizar'))).toBe(false);
+        expect(executed.some(sql => sql.includes('ALTER TABLE visuais_modulos RENAME COLUMN visual_type TO tipo_visual'))).toBe(false);
+        expect(executed.some(sql => sql.includes('ALTER TABLE visuais_modulos RENAME COLUMN name TO nome'))).toBe(false);
+    });
+
+    it('ModuleSyncHandler writes visuais_modulos using canonical physical columns', async () => {
+        const executed: string[] = [];
+        const db = {
+            execute: async (sql: string) => {
+                executed.push(normalizeModuleSchemaSql(sql));
+            },
+        } as unknown as SqlitePort;
+
+        const handler = new ModuleSyncHandler(db);
+        const env: EventEnvelope = {
+            v: 2,
+            id: 'evt-1',
+            type: 'visuais_modulos.created',
+            source: {
+                device_id: 'dev-1',
+                routing_id: 'route-1',
+                routing_type: 'setor',
+                module: 'ecoforms-desktop',
+                app_version: '1.0.0',
+            },
+            aggregate: { type: 'visuais_modulos', id: 'vis-1' },
+            time: '2026-06-26T12:00:00.000Z',
+            schema_version: 1,
+            seq: 1,
+            prev_event_id: null,
+            correlation_id: null,
+            causation_id: null,
+            stream_id: null,
+            data: {
+                id: 'vis-1',
+                module_id: 'mod-1',
+                visual_type: 'table',
+                name: 'Visao',
+                config: '{}',
+                is_default: 1,
+                user_id: null,
+                sync_status: 'synced',
+            },
+            checksum: 'sha256:test',
+        };
+
+        await (handler as unknown as { onVisualCriado(env: EventEnvelope): Promise<void> }).onVisualCriado(env);
+
+        expect(executed).toHaveLength(1);
+        expect(executed[0]).toContain('INSERT OR REPLACE INTO visuais_modulos');
+        expect(executed[0]).toContain('id, module_id, visual_type, name, config, is_default, user_id, sync_status, criado_em, atualizado_em');
+        expect(executed[0].includes('tipo_visual')).toBe(false);
+        expect(executed[0].includes('configuracao')).toBe(false);
+        expect(executed[0].includes('padrao')).toBe(false);
+    });
+    it('ModuleSyncHandler writes module.publicado using canonical module columns', async () => {
+        const executed: string[] = [];
+        const db = {
+            execute: async (sql: string) => {
+                executed.push(normalizeModuleSchemaSql(sql));
+            },
+        } as unknown as SqlitePort;
+
+        const handler = new ModuleSyncHandler(db);
+        const env: EventEnvelope = {
+            v: 2,
+            id: 'evt-mod-1',
+            type: 'module.publicado',
+            source: {
+                device_id: 'dev-1',
+                routing_id: 'route-1',
+                routing_type: 'setor',
+                module: 'ecoforms-desktop',
+                app_version: '1.0.0',
+            },
+            aggregate: { type: 'registro_modulos', id: 'mod-1' },
+            time: '2026-06-26T12:00:00.000Z',
+            schema_version: 1,
+            seq: 1,
+            prev_event_id: null,
+            correlation_id: null,
+            causation_id: null,
+            stream_id: null,
+            data: {
+                id: 'mod-1',
+                slug: 'fiscalizacao',
+                name: 'Fiscalização',
+                entity_type: 'fiscalizacao',
+                status: 'published',
+                version: 3,
+                config_version: 7,
+                config: { forms: [] },
+                publicado_em: '2026-06-26T12:00:00.000Z',
+            },
+            checksum: 'sha256:test',
+        };
+
+        await (handler as unknown as { onPublicado(env: EventEnvelope): Promise<void> }).onPublicado(env);
+
+        expect(executed).toHaveLength(1);
+        expect(executed[0]).toContain('INSERT OR REPLACE INTO registro_modulos');
+        expect(executed[0]).toContain('config_version');
+        expect(executed[0]).toContain('versao');
+    });
+    it('SqliteModuleRepository save persists config_version in registro_modulos', async () => {
+        const executes: string[] = [];
+        let boundConfigVersion: unknown;
+        const db = {
+            query: async () => [],
+            execute: async (sql: string, params: unknown[] = []) => {
+                executes.push(normalizeModuleSchemaSql(sql));
+                boundConfigVersion = params[11];
+            },
+            all: async () => [],
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
+        } as unknown as SqlitePort;
+
+        const repo = new SqliteModuleRepository(db);
+        await repo.save({
+            id: 'mod-1',
+            slug: 'fiscalizacao',
+            name: 'Fiscalização',
+            description: null,
+            entity_type: 'fiscalizacao',
+            icon: null,
+            color: null,
+            prefix: '/fiscal',
+            ordem: 1,
+            status: 'draft',
+            version: 1,
+            config_version: 9,
+            config: {},
+            suite_config: null,
+            criado_em: '2026-01-01T00:00:00.000Z',
+            atualizado_em: '2026-01-01T00:00:00.000Z',
+            publicado_em: null,
+        } as never);
+
+        expect(executes).toHaveLength(1);
+        expect(executes[0]).toContain('config_version');
+        expect(boundConfigVersion).toBe(9);
+    });
+});

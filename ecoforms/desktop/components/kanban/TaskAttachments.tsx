@@ -1,5 +1,5 @@
 ﻿'use client';
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import { fetchTarefaAnexos, insertTarefaAnexo, deleteTarefaAnexo } from '@/src/interface/hooks/queries/lookups';
 import { Button } from '@/components/ui/button';

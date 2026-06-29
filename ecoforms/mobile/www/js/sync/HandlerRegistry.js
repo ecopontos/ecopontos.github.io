@@ -229,6 +229,21 @@ const handlers = {
     });
   },
 
+  // Espelha o desktop: tarefa excluida some da store local. (task.desarquivada
+  // e task.comentario_adicionado nao sao tratados aqui — o runtime de campo
+  // nao rastreia arquivamento nem comentarios.)
+  'task.excluida': async (env, db) => {
+    const d = env.data;
+    const tx = db.transaction('tarefas', 'readwrite');
+    const store = tx.objectStore('tarefas');
+    await new Promise((resolve, reject) => {
+      const tarefaId = d.tarefa_id || d.tarefaId || env.aggregate.id;
+      store.delete(tarefaId);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
   'org.config.atualizado': async (env, db) => {
     const d = env.data;
     const tx = db.transaction('data_registry', 'readwrite');

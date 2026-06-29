@@ -11,7 +11,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Database, Download, LayoutDashboard, Loader2, Recycle, RefreshCcw, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
-import { useExternalResiduos } from "@/src/interface/hooks/queries/useExternalResiduos";
+import { useExternalResiduos } from "@/src/interface/hooks/catalog/logistica";
+import { usePgLegacyConfig } from "@/src/interface/hooks/catalog/logistica";
+import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 type FilterMode = "all" | "ativo" | "inativo";
 
@@ -19,6 +21,7 @@ export default function TiposResiduoPage() {
     const [filterMode, setFilterMode] = useState<FilterMode>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const router = useRouter();
+    const { config, loading: configLoading, saving, error: configError, saveConfig } = usePgLegacyConfig();
     const { residuos, total, loading, syncing, error, syncResult, refetch, sync } = useExternalResiduos();
 
     const filtered = useMemo(() => {
@@ -72,6 +75,15 @@ export default function TiposResiduoPage() {
                         </Button>
                     </div>
                 </div>
+
+                <PgConfigCard config={config} loading={configLoading || Boolean(configError)} saving={saving} onSave={saveConfig} />
+
+                {configError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Erro ao carregar a configuração</AlertTitle>
+                        <AlertDescription>{configError}</AlertDescription>
+                    </Alert>
+                )}
 
                 {error && (
                     <Alert variant="destructive">

@@ -40,15 +40,15 @@ const MOCK_DATA_REGISTRY = [
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    (window as any).__TAURI_INTERNALS__ = {
-      invoke: async (cmd: string, args?: any) => {
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {
+      invoke: async (cmd: string, args?: Record<string, unknown>) => {
         if (cmd === 'db_connect') return;
         if (cmd === 'plugin:path|resolve_directory') return 'C:\\mock\\appData';
         if (cmd === 'plugin:path|join') return 'C:\\mock\\appData\\ecoforms.db';
         if (cmd === 'plugin:path|resolve') return 'C:\\mock\\appData\\ecoforms.db';
         if (cmd === 'plugin:sql|select') {
-          const sql = args?.sql || '';
-          const params = args?.argumentsValues || [];
+          const sql = (args?.sql as string) || '';
+          const params = (args?.argumentsValues ?? []) as unknown[];
 
           if (sql.includes('module_registry WHERE slug =')) {
             return [MOCK_MODULE];

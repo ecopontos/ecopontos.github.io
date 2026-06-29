@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
+import { toast } from 'sonner';
 import {
     saveGeoLayer,
     toggleGeoLayerVisivel,
@@ -11,7 +12,7 @@ import {
     type TerrenoGeo,
     type ClienteGeo,
     type ItinerarioStop,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { removeGeoLayerFromMap } from '../map-layers';
 
 interface UseLayerActionsParams {
@@ -41,6 +42,14 @@ export function useLayerActions({
     const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        // Limites para não travar a UI (parse/render síncrono) nem inchar o SQLite,
+        // que guarda o GeoJSON cru como uma linha em geo_layers.
+        const MAX_BYTES = 8 * 1024 * 1024;     // 8 MB
+        const MAX_FEATURES = 5000;
+        if (file.size > MAX_BYTES) {
+            toast.error(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Limite: 8 MB. Simplifique em mapshaper.org.`);
+            return;
+        }
         setUploading(true);
         try {
             const text = await file.text();
@@ -51,7 +60,11 @@ export function useLayerActions({
                     ? { type: 'FeatureCollection', features: [parsed] }
                     : parsed;
                 if (geojson.type !== 'FeatureCollection') throw new Error();
-            } catch { alert('Arquivo inválido. Use GeoJSON (.geojson ou .json).'); return; }
+            } catch { toast.error('Arquivo inválido. Use GeoJSON (.geojson ou .json).'); return; }
+            if (geojson.features.length > MAX_FEATURES) {
+                toast.error(`GeoJSON com ${geojson.features.length} feições excede o limite de ${MAX_FEATURES}. Simplifique antes de importar.`);
+                return;
+            }
             await saveGeoLayer({
                 id: `layer-${Date.now()}`,
                 nome: file.name.replace(/\.(geojson|json)$/i, ''),
@@ -81,8 +94,9 @@ export function useLayerActions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refetchLayers]);
 
+    // Confirmação é feita pelo AlertDialog no painel (window.confirm não é
+    // confiável no webview Tauri).
     const handleDeleteLayer = useCallback(async (layer: GeoLayer) => {
-        if (!confirm(`Remover camada "${layer.nome}"?`)) return;
         if (mapRef.current?.isStyleLoaded()) removeGeoLayerFromMap(mapRef.current, layer.id);
         await deleteGeoLayer(layer.id);
         await refetchLayers();
@@ -90,7 +104,6 @@ export function useLayerActions({
     }, [refetchLayers]);
 
     const handleDeleteTerreno = useCallback(async (t: TerrenoGeo) => {
-        if (!confirm(`Remover terreno "${t.nome}"?`)) return;
         await deleteTerrenoById(t.id);
         await refetchTerrenos();
     }, [refetchTerrenos]);

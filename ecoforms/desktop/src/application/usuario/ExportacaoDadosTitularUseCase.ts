@@ -1,9 +1,10 @@
+import { USUARIO_DADOS } from '../persistence/sqlite/queries/usuarios';
+import { TAREFAS_BY_USER } from '../persistence/sqlite/queries/tarefas';
+import { AGENDAMENTOS_BY_USER } from '../persistence/sqlite/queries/service';
+import { MANIFESTACOES_POR_USUARIO_EXPORT } from '../persistence/sqlite/queries/manifestacoes';
+import { LOG_ACOES_BY_USER } from '../persistence/sqlite/queries/log_acoes';
 import type { SqlitePort } from '../ports/SqlitePort';
-import { USUARIO_DADOS } from '../../infrastructure/persistence/sqlite/queries/usuarios';
-import { TAREFAS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
-import { AGENDAMENTOS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
-import { MANIFESTACOES_BY_CLIENTE } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
-import { LOG_ACOES_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
+
 
 export interface DadosTitular {
     exportadoEm: string;
@@ -24,26 +25,11 @@ export class ExportacaoDadosTitularUseCase {
         if (!userId?.trim()) throw new Error('userId é obrigatório.');
 
         const [usuarios, tarefas, agendamentos, manifestacoes, log_acoes] = await Promise.all([
-            this.sqlite.query<Record<string, unknown>>(
-                USUARIO_DADOS.sql,
-                [userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                TAREFAS_BY_USER.sql,
-                [userId, userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                AGENDAMENTOS_BY_USER.sql,
-                [userId, userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                MANIFESTACOES_BY_CLIENTE.sql,
-                [userId],
-            ),
-            this.sqlite.query<Record<string, unknown>>(
-                LOG_ACOES_BY_USER.sql,
-                [userId],
-            ),
+            this.sqlite.query<Record<string, unknown>>(USUARIO_DADOS.sql, [userId]),
+            this.sqlite.query<Record<string, unknown>>(TAREFAS_BY_USER.sql, [userId, userId]),
+            this.sqlite.query<Record<string, unknown>>(AGENDAMENTOS_BY_USER.sql, [userId, userId]),
+            this.sqlite.query<Record<string, unknown>>(MANIFESTACOES_POR_USUARIO_EXPORT.sql, [userId]),
+            this.sqlite.query<Record<string, unknown>>(LOG_ACOES_BY_USER.sql, [userId]),
         ]);
 
         return {

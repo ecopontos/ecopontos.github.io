@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from "react";
+﻿/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

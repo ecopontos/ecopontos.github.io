@@ -1,10 +1,11 @@
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
+use super::auth;
 use super::state::LanServerState;
 
 #[derive(Deserialize)]
@@ -41,10 +42,39 @@ pub struct IncomingEvent {
     pub dispositivo_origem: String,
 }
 
+
+
+const MAX_PUSH_EVENTS: usize = 500;
+
+fn validate_incoming_event(event: &IncomingEvent) -> Result<(), String> {
+    if event.id.trim().is_empty() {
+        return Err("Missing event id".into());
+    }
+    if event.tipo.trim().is_empty() {
+        return Err("Missing event type".into());
+    }
+    if event.dispositivo_origem.trim().is_empty() {
+        return Err("Missing dispositivo_origem".into());
+    }
+    if event.carga.is_null() {
+        return Err("Missing carga".into());
+    }
+    if !event.carga.is_object() && !event.carga.is_array() {
+        return Err("carga must be a JSON object or array".into());
+    }
+    Ok(())
+}
+
 pub async fn pull_events(
     State(state): State<Arc<LanServerState>>,
+    headers: HeaderMap,
     Query(params): Query<PullEventsQuery>,
 ) -> impl IntoResponse {
+    let _auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
     let since = params.since_seq.unwrap_or(0);
     let limit = params.limit.unwrap_or(100).min(500);
     let routing_id = params.routing_id.clone().unwrap_or_default();
@@ -96,12 +126,52 @@ pub async fn pull_events(
 
 pub async fn push_events(
     State(state): State<Arc<LanServerState>>,
+    headers: HeaderMap,
     Json(events): Json<Vec<IncomingEvent>>,
 ) -> impl IntoResponse {
+    let auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
+    if events.len() > MAX_PUSH_EVENTS {
+        auth::record_rejection(
+            &state,
+            &auth.device_id,
+            "lan.schema.batch_too_large",
+            "api/sync/events",
+            &format!("Too many events: {}", events.len()),
+        )
+        .await;
+        return (
+            StatusCode::PAYLOAD_TOO_LARGE,
+            Json(serde_json::json!({"error": "Too many events in a single batch"})),
+        )
+            .into_response();
+    }
+
+    for event in &events {
+        if let Err(reason) = validate_incoming_event(event) {
+            auth::record_rejection(
+                &state,
+                &auth.device_id,
+                "lan.schema.event_rejected",
+                "api/sync/events",
+                &reason,
+            )
+            .await;
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": reason})),
+            )
+                .into_response();
+        }
+    }
+
     let db_path = state.db_path.read().await.clone();
     let db_path = match db_path {
         Some(p) => p,
-        None => return (StatusCode::SERVICE_UNAVAILABLE, Json(PushResult { accepted: 0, rejected: 0, errors: vec!["DB not configured".into()] })),
+        None => return (StatusCode::SERVICE_UNAVAILABLE, Json(PushResult { accepted: 0, rejected: 0, errors: vec!["DB not configured".into()] })).into_response(),
     };
 
     let broadcast_tx = state.ws_broadcast.clone();
@@ -159,22 +229,34 @@ pub async fn push_events(
     }).await;
 
     match result {
-        Ok(Ok(r)) => (StatusCode::OK, Json(r)),
-        Ok(Err(e)) => (StatusCode::INTERNAL_SERVER_ERROR, Json(PushResult { accepted: 0, rejected: 0, errors: vec![e] })),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(PushResult { accepted: 0, rejected: 0, errors: vec![e.to_string()] })),
+        Ok(Ok(r)) => (StatusCode::OK, Json(r)).into_response(),
+        Ok(Err(e)) => (StatusCode::INTERNAL_SERVER_ERROR, Json(PushResult { accepted: 0, rejected: 0, errors: vec![e] })).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(PushResult { accepted: 0, rejected: 0, errors: vec![e.to_string()] })).into_response(),
     }
 }
 
 pub async fn server_status(
     State(state): State<Arc<LanServerState>>,
-) -> Json<serde_json::Value> {
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let _auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
     let info = state.get_info().await;
-    Json(serde_json::json!(info))
+    Json(serde_json::json!(info)).into_response()
 }
 
 pub async fn list_peers(
     State(state): State<Arc<LanServerState>>,
-) -> Json<serde_json::Value> {
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let _auth = match auth::authorize_http(&state, &headers).await {
+        Ok(auth) => auth,
+        Err(resp) => return resp.into_response(),
+    };
+
     let peers = state.peer_summaries().await;
-    Json(serde_json::json!(peers))
+    Json(serde_json::json!(peers)).into_response()
 }

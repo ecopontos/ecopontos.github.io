@@ -2,9 +2,10 @@ import type { Agendamento } from '../../../domain/service/Agendamento';
 import type { AgendamentoRepository } from '../../../domain/service/AgendamentoRepository';
 import type { ServiceSlotRepository } from '../../../domain/service/ServiceSlotRepository';
 import type { ServiceTypeRepository } from '../../../domain/service/ServiceTypeRepository';
-import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../../task/TaskProjectionService';
 import type { NotificacaoService } from './NotificacaoService';
+import { formatDateBR } from '../../../lib/date';
 
 export class AgendamentoEfeitosService {
     constructor(
@@ -22,7 +23,7 @@ export class AgendamentoEfeitosService {
             const serviceType = await this.typeRepo.findById(ag.serviceTypeId);
 
             if (slot && serviceType) {
-                const titulo = `[${serviceType.nome}] ${ag.clienteNome} · ${this.formatDate(slot.dataInicio)}`;
+                const titulo = `[${serviceType.nome}] ${ag.clienteNome} · ${formatDateBR(slot.dataInicio)}`;
 
                 const linhas: string[] = [];
                 if (ag.bairro) linhas.push(`Bairro: ${ag.bairro}`);
@@ -48,7 +49,7 @@ export class AgendamentoEfeitosService {
         }
 
         await this.notificador.enviarConfirmacao(ag);
-        await this.sync.write('service.agendamento.confirmado', {
+        await this.sync.write('agendamento.confirmado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
@@ -58,7 +59,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoCriar(ag: Agendamento, criadoPor: string): Promise<void> {
-        await this.sync.write('service.agendamento.criado', {
+        await this.sync.write('agendamento.criado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
@@ -68,7 +69,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoCancelar(ag: Agendamento): Promise<void> {
-        await this.sync.write('service.agendamento.cancelado', {
+        await this.sync.write('agendamento.cancelado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             vagasDevolvidas: ag.vagasSolicitadas,
@@ -76,7 +77,7 @@ export class AgendamentoEfeitosService {
     }
 
     async aoRealizar(ag: Agendamento, realizadoPor: string): Promise<void> {
-        await this.sync.write('service.agendamento.realizado', {
+        await this.sync.write('agendamento.realizado', {
             agendamentoId: ag.id,
             slotId: ag.slotId,
             serviceTypeId: ag.serviceTypeId,
@@ -85,8 +86,4 @@ export class AgendamentoEfeitosService {
         }, { aggregateId: ag.id, streamId: ag.slotId });
     }
 
-    private formatDate(iso: string): string {
-        const [y, m, d] = iso.slice(0, 10).split('-');
-        return `${d}/${m}/${y}`;
-    }
 }

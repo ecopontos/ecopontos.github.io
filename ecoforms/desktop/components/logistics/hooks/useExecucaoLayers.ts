@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+/* eslint-disable react-hooks/refs */
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
@@ -9,19 +10,11 @@ import {
     type ExecucaoClienteGeo,
     type IntercorrenciaGeo,
     type ChecklistGeo,
-} from '@/src/interface/hooks/queries/useMapData';
+} from '@/src/interface/hooks/catalog/logistica';
 import { useExecucoes } from '@/src/interface/hooks/catalog/logistica';
 
-/**
- * Camadas de execução de roteiro (ADR-039): coletas realizadas,
- * intercorrências e checklist/evidências, todas vinculadas a uma
- * `selectedExecucaoId`. A seleção é limpa quando `selectedRoteiroId` muda.
- *
- * Nota: diferente de `useGeoDataLayers`, estas camadas não são
- * re-registradas no `style.load` — comportamento existente preservado.
- */
-export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null) {
-    const [selectedExecucaoId, setSelectedExecucaoId] = useState<string | null>(null);
+export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, selectedRoteiroId: string | null, initialExecucaoId: string | null = null) {
+    const [selectedExecucaoId, setSelectedExecucaoId] = useState<string | null>(initialExecucaoId);
     const [execucaoLayerVisible, setExecucaoLayerVisible] = useState(true);
     const [intercorrenciasLayerVisible, setIntercorrenciasLayerVisible] = useState(true);
     const [checklistLayerVisible, setChecklistLayerVisible] = useState(true);
@@ -31,9 +24,29 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     const { data: intercorrenciasGeo } = useIntercorrenciasGeo(selectedExecucaoId);
     const { data: checklistGeo } = useChecklistGeo(selectedExecucaoId);
 
-    const execucaoVisRef      = useRef(execucaoLayerVisible);          execucaoVisRef.current = execucaoLayerVisible;
-    const intercorrVisRef     = useRef(intercorrenciasLayerVisible);   intercorrVisRef.current = intercorrenciasLayerVisible;
-    const checklistVisRef     = useRef(checklistLayerVisible);         checklistVisRef.current = checklistLayerVisible;
+    const execucaoGeoRef   = useRef(execucaoGeo);         execucaoGeoRef.current = execucaoGeo;
+    const intercorrGeoRef  = useRef(intercorrenciasGeo);   intercorrGeoRef.current = intercorrenciasGeo;
+    const checklistGeoRef  = useRef(checklistGeo);         checklistGeoRef.current = checklistGeo;
+    const execucaoVisRef   = useRef(execucaoLayerVisible);          execucaoVisRef.current = execucaoLayerVisible;
+    const intercorrVisRef  = useRef(intercorrenciasLayerVisible);   intercorrVisRef.current = intercorrenciasLayerVisible;
+    const checklistVisRef  = useRef(checklistLayerVisible);         checklistVisRef.current = checklistLayerVisible;
+
+    // Registra listeners de camada UMA vez por instância de mapa. `setStyle`
+    // (troca de satélite) recria as sources mas não remove os `map.on(...)`;
+    // sem este guard cada troca re-registrava os handlers e um clique abria
+    // N popups. Ver useGeoDataLayers para o mesmo padrão.
+    const boundRef = useRef<Set<string>>(new Set());
+    function bindOnce(
+        map: maplibregl.Map,
+        type: 'click' | 'mouseenter' | 'mouseleave',
+        layer: string,
+        fn: (e: maplibregl.MapLayerMouseEvent) => void,
+    ) {
+        const key = `${type}:${layer}`;
+        if (boundRef.current.has(key)) return;
+        boundRef.current.add(key);
+        map.on(type, layer, fn);
+    }
 
     function renderExecucaoLayer(map: maplibregl.Map, points: ExecucaoClienteGeo[]) {
         const vis = execucaoVisRef.current ? 'visible' : 'none';
@@ -61,22 +74,47 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'exec-points', (e) => {
+            bindOnce(map, 'click', 'exec-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
                 const status = p.coleta_realizada ? '✅ Coletado' : '❌ Não coletado';
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+                const strong = document.createElement('strong');
+                strong.textContent = String(p.nome ?? '');
+                container.appendChild(strong);
+
+                if (p.endereco) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.color = '#555';
+                    span.textContent = String(p.endereco);
+                    container.appendChild(span);
+                }
+
+                container.appendChild(document.createElement('br'));
+                const statusEl = document.createElement('span');
+                statusEl.textContent = status;
+                container.appendChild(statusEl);
+
+                if (p.horario) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.cssText = 'color:#888;font-size:11px';
+                    span.textContent = String(p.horario);
+                    container.appendChild(span);
+                }
+
                 new maplibregl.Popup({ maxWidth: '240px' })
                     .setLngLat(f.geometry.coordinates as [number, number])
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
-                        <strong>${p.nome}</strong><br/>
-                        ${p.endereco ? `<span style="color:#555">${p.endereco}</span><br/>` : ''}
-                        <span>${status}</span>
-                        ${p.horario ? `<br/><span style="color:#888;font-size:11px">${p.horario}</span>` : ''}
-                    </div>`).addTo(map);
+                    .setDOMContent(container)
+                    .addTo(map);
             });
-            map.on('mouseenter', 'exec-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'exec-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'exec-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'exec-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('exec-points')) map.setLayoutProperty('exec-points', 'visibility', vis);
     }
@@ -108,23 +146,48 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'interc-points', (e) => {
+            bindOnce(map, 'click', 'interc-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
                 const res = p.resolvido ? '✅ Resolvida' : '⚠️ Pendente';
                 const data = p.registrado_em ? new Date(p.registrado_em as string).toLocaleString('pt-BR') : '';
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+                const strong = document.createElement('strong');
+                strong.textContent = String(p.tipo_nome ?? '');
+                container.appendChild(strong);
+
+                if (p.descricao) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.color = '#555';
+                    span.textContent = String(p.descricao);
+                    container.appendChild(span);
+                }
+
+                container.appendChild(document.createElement('br'));
+                const resEl = document.createElement('span');
+                resEl.textContent = res;
+                container.appendChild(resEl);
+
+                if (data) {
+                    container.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.style.cssText = 'color:#888;font-size:11px';
+                    span.textContent = data;
+                    container.appendChild(span);
+                }
+
                 new maplibregl.Popup({ maxWidth: '260px' })
                     .setLngLat(f.geometry.coordinates as [number, number])
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
-                        <strong>${p.tipo_nome}</strong><br/>
-                        ${p.descricao ? `<span style="color:#555">${p.descricao}</span><br/>` : ''}
-                        <span>${res}</span>
-                        ${data ? `<br/><span style="color:#888;font-size:11px">${data}</span>` : ''}
-                    </div>`).addTo(map);
+                    .setDOMContent(container)
+                    .addTo(map);
             });
-            map.on('mouseenter', 'interc-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'interc-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'interc-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'interc-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('interc-points')) map.setLayoutProperty('interc-points', 'visibility', vis);
     }
@@ -154,28 +217,56 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
                 },
                 layout: { visibility: vis },
             });
-            map.on('click', 'checklist-points', (e) => {
+            bindOnce(map, 'click', 'checklist-points', (e) => {
                 const f = e.features?.[0];
                 if (!f || f.geometry.type !== 'Point') return;
                 const p = f.properties as Record<string, string | number | null>;
                 const status = p.concluido ? '✅ Concluído' : '⏳ Pendente';
-                const imgHtml = p.evidencia_url
-                    ? `<br/><img src="${p.evidencia_url}" style="max-width:180px;margin-top:4px;border-radius:4px" />`
-                    : '';
+
+                const container = document.createElement('div');
+                container.style.cssText = 'font-family:sans-serif;font-size:13px;line-height:1.5';
+
+                const strong = document.createElement('strong');
+                strong.textContent = String(p.item ?? '');
+                container.appendChild(strong);
+
+                container.appendChild(document.createElement('br'));
+                const statusEl = document.createElement('span');
+                statusEl.textContent = status;
+                container.appendChild(statusEl);
+
+                if (p.evidencia_url) {
+                    const img = document.createElement('img');
+                    img.style.cssText = 'max-width:180px;margin-top:4px;border-radius:4px';
+                    img.alt = 'Evidência';
+                    const url = String(p.evidencia_url);
+                    if (url.startsWith('/') || url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('http')) {
+                        img.src = url;
+                        container.appendChild(document.createElement('br'));
+                        container.appendChild(img);
+                    }
+                }
+
                 new maplibregl.Popup({ maxWidth: '220px' })
                     .setLngLat(f.geometry.coordinates as [number, number])
-                    .setHTML(`<div style="font-family:sans-serif;font-size:13px;line-height:1.5">
-                        <strong>${p.item}</strong><br/>
-                        <span>${status}</span>${imgHtml}
-                    </div>`).addTo(map);
+                    .setDOMContent(container)
+                    .addTo(map);
             });
-            map.on('mouseenter', 'checklist-points', () => { map.getCanvas().style.cursor = 'pointer'; });
-            map.on('mouseleave', 'checklist-points', () => { map.getCanvas().style.cursor = ''; });
+            bindOnce(map, 'mouseenter', 'checklist-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+            bindOnce(map, 'mouseleave', 'checklist-points', () => { map.getCanvas().style.cursor = ''; });
         }
         if (map.getLayer('checklist-points')) map.setLayoutProperty('checklist-points', 'visibility', vis);
     }
 
-    // Camadas de execução (ADR-039)
+    // Re-render estável para style.load — usa refs para dados atuais
+    const renderAllExecLayers = useCallback((map: maplibregl.Map) => {
+        if (execucaoGeoRef.current.length > 0) renderExecucaoLayer(map, execucaoGeoRef.current);
+        if (intercorrGeoRef.current.length > 0) renderIntercorrenciasLayer(map, intercorrGeoRef.current);
+        if (checklistGeoRef.current.length > 0) renderChecklistLayer(map, checklistGeoRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Camadas de execução
     useEffect(() => {
         if (!mapRef.current?.isStyleLoaded()) return;
         renderExecucaoLayer(mapRef.current, execucaoGeo);
@@ -194,7 +285,7 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [checklistGeo]);
 
-    // Toggles de visibilidade — camadas de execução
+    // Toggles de visibilidade
     useEffect(() => {
         const map = mapRef.current;
         if (!map?.isStyleLoaded()) return;
@@ -219,7 +310,7 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [checklistLayerVisible]);
 
-    // Fit bounds ao selecionar execução (prioridade sobre itinerário)
+    // Fit bounds ao selecionar execução
     useEffect(() => {
         if (!execucaoGeo.length || !mapRef.current?.isStyleLoaded()) return;
         const bounds = new maplibregl.LngLatBounds();
@@ -228,8 +319,11 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [execucaoGeo]);
 
-    // Limpar seleção de execução ao trocar roteiro
+    // Limpar seleção de execução ao trocar roteiro — mas não no mount, para
+    // preservar a seleção inicial vinda de deep-link (?exec=).
+    const roteiroMountRef = useRef(true);
     useEffect(() => {
+        if (roteiroMountRef.current) { roteiroMountRef.current = false; return; }
         setSelectedExecucaoId(null);
     }, [selectedRoteiroId]);
 
@@ -239,5 +333,6 @@ export function useExecucaoLayers(mapRef: RefObject<maplibregl.Map | null>, sele
         execucaoLayerVisible, setExecucaoLayerVisible,
         intercorrenciasLayerVisible, setIntercorrenciasLayerVisible,
         checklistLayerVisible, setChecklistLayerVisible,
+        renderAllExecLayers,
     };
 }

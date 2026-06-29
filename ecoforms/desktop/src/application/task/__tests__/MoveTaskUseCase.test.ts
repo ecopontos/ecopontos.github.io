@@ -3,7 +3,7 @@ import { MoveTaskUseCase } from '../MoveTaskUseCase';
 import { InMemoryTaskRepository } from '../../../test/fakes/InMemoryTaskRepository';
 import { Task } from '../../../domain/task/Task';
 import type { DemandaTaskSynchronizer } from '../../demanda/services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../../ports/SyncOutboxPort';
 
 function makeFakeSyncOutbox() {
     const writes: Array<{ type: string; data: Record<string, unknown> }> = [];

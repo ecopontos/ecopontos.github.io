@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useMemo } from "react";
 import { Search, Send, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +13,8 @@ import {
   STATUS_LABEL, statusVariant, urgencyScore, rowBorder, UrgencyDot, PrazoBadge,
   type QuickFilter,
 } from "../_lib/helpers";
+
+const PAGE_SIZE = 50;
 
 interface QuickTab {
   key: QuickFilter;
@@ -46,6 +50,12 @@ export function WorkQueueTable({
   loading, fila, podeEncaminhar,
   onOpenModal, onAbrirEncaminhar, onOpenDetail,
 }: WorkQueueTableProps) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [fila.length, quickFilter, statusFilter, setorFilter, search]);
+
+  const visible = useMemo(() => fila.slice(0, visibleCount), [fila, visibleCount]);
+
   return (
     <div className="space-y-3">
       {/* Quick filter tabs */}
@@ -112,7 +122,7 @@ export function WorkQueueTable({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fila.map(m => {
+                  {visible.map(m => {
                     const score = urgencyScore(m);
                     return (
                       <TableRow
@@ -157,13 +167,20 @@ export function WorkQueueTable({
                   })}
                 </TableBody>
               </Table>
+              {visibleCount < fila.length && (
+                <div className="p-3 text-center border-t">
+                  <Button size="sm" variant="outline" onClick={() => setVisibleCount(c => c + PAGE_SIZE)}>
+                    Carregar mais ({visibleCount} de {fila.length})
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground px-1">
-        <span>{fila.length} manifestação(ões)</span>
+        <span>{visibleCount < fila.length ? `${visibleCount} de ${fila.length}` : `${fila.length}`} manifestação(ões)</span>
         <span>·</span>
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-500" />vencida</span>
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-orange-400" />urgente</span>

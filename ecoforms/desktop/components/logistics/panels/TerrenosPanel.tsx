@@ -3,8 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Eye, EyeOff, RefreshCw, Trash2, Filter } from 'lucide-react';
 import { TIPO_CORES } from '@/lib/map-styles';
-import type { TerrenoGeo } from '@/src/interface/hooks/queries/useMapData';
+import type { TerrenoGeo } from '@/src/interface/hooks/catalog/logistica';
 import TerrenoImport from '../TerrenoImport';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TerrenosPanelProps {
     terrenos: TerrenoGeo[];
@@ -23,6 +27,7 @@ export function TerrenosPanel({
     loadingTerrenos, refetchTerrenos, onDeleteTerreno,
 }: TerrenosPanelProps) {
     const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+    const [deleteTarget, setDeleteTarget] = useState<TerrenoGeo | null>(null);
 
     const terrenosFiltrados = useMemo(() => {
         if (filtroTipo === 'todos') return terrenos;
@@ -81,7 +86,7 @@ export function TerrenosPanel({
                             <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: TIPO_CORES[t.tipo] ?? TIPO_CORES.outro }} />
                             <span className="truncate">{t.nome}</span>
                         </div>
-                        <Button size="icon" variant="ghost" className="h-5 w-5 flex-shrink-0 text-destructive hover:text-destructive" onClick={() => onDeleteTerreno(t)}>
+                        <Button size="icon" variant="ghost" className="h-5 w-5 flex-shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(t)}>
                             <Trash2 className="h-3 w-3" />
                         </Button>
                     </div>
@@ -93,6 +98,25 @@ export function TerrenosPanel({
                     </p>
                 )}
             </div>
+
+            <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remover terreno</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Remover o terreno &quot;{deleteTarget?.nome}&quot;? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => { if (deleteTarget) onDeleteTerreno(deleteTarget); setDeleteTarget(null); }}
+                        >
+                            Remover
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </section>
     );
 }

@@ -19,9 +19,11 @@ import { ArrowDownToLine, Database, RefreshCcw, Weight } from "lucide-react";
 import {
     useLegacySyncActions,
     useLegacySyncData,
+    usePgLegacyConfig,
     DEFAULT_FILTERS,
     type LegacySyncFilters,
-} from "@/src/interface/hooks/queries/useLegacySyncData";
+} from "@/src/interface/hooks/catalog/logistica";
+import { PgConfigCard } from "@/components/admin/PgConfigCard";
 
 const SELECT_ALL_VALUE = "__all__";
 
@@ -62,11 +64,13 @@ function isoDateDaysAgo(days: number): string {
     return d.toISOString().slice(0, 10);
 }
 
+
 export default function LegacySyncPage() {
     const [filters, setFilters] = useState<LegacySyncFilters>(DEFAULT_FILTERS);
     const [pesagemDataInicio, setPesagemDataInicio] = useState(() => isoDateDaysAgo(7));
     const [pesagemDataFim, setPesagemDataFim] = useState(() => isoDateDaysAgo(0));
 
+    const { config, loading: configLoading, saving, error: configError, saveConfig } = usePgLegacyConfig();
     const { roteiros, pesagens, filterOptions, loading, refetch } = useLegacySyncData(filters);
     const {
         syncingRoteiros,
@@ -108,6 +112,15 @@ export default function LegacySyncPage() {
                         Atualizar dados
                     </Button>
                 </div>
+
+                <PgConfigCard config={config} loading={configLoading || Boolean(configError)} saving={saving} onSave={saveConfig} />
+
+                {configError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Erro ao carregar a configuração</AlertTitle>
+                        <AlertDescription>{configError}</AlertDescription>
+                    </Alert>
+                )}
 
                 {(syncError || roteiroResult || pesagemResult) && (
                     <div className="space-y-2">

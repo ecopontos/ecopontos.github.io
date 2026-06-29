@@ -5,7 +5,7 @@ import type { SqlitePort } from '../ports/SqlitePort';
 import type { CreateTaskInput, TaskDto } from './dto/TaskDto';
 import { toTaskDto } from './mappers';
 import { resolveSetorId } from '../shared/resolveSetorId';
-import { getEffectiveSectors } from '../../infrastructure/persistence/SectorQueryUtils';
+import { getEffectiveSectors } from '../shared/SectorQueryUtils';
 import { uuidv7 } from 'ecoforms-core';
 
 export class CreateTaskUseCase {

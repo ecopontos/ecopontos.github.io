@@ -118,4 +118,8 @@ export class SqliteServiceSlotRepository implements ServiceSlotRepository {
         );
     }
 
+
+    async transaction<T>(fn: (tx: ServiceSlotRepository) => Promise<T>): Promise<T> {
+        return this.db.transaction(async (tx) => fn(new SqliteServiceSlotRepository(tx)));
+    }
 }

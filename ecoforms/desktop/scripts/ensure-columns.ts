@@ -20,22 +20,27 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
             id            TEXT PRIMARY KEY,
             slug          TEXT NOT NULL UNIQUE,
             nome          TEXT NOT NULL,
-            descricao   TEXT,
-            tipo_entidade   TEXT NOT NULL,
+            descricao     TEXT,
+            tipo_entidade TEXT NOT NULL UNIQUE,
             icon          TEXT,
             color         TEXT,
             prefix        TEXT NOT NULL DEFAULT '',
             ordem         INTEGER NOT NULL DEFAULT 0,
             status        TEXT NOT NULL DEFAULT 'draft'
                               CHECK(status IN ('draft','published','archived')),
-            versao       INTEGER NOT NULL DEFAULT 1,
-            configuracao        TEXT NOT NULL DEFAULT '{}',
+            versao        INTEGER NOT NULL DEFAULT 1,
+            config_version INTEGER NOT NULL DEFAULT 1,
+            configuracao  TEXT NOT NULL DEFAULT '{}',
             config_suite  TEXT,
             criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
             publicado_em  TEXT
         )
     `);
+    await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_prefix ON registro_modulos(prefix)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_module_registry_status ON registro_modulos(status)`);
+    await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_module_registry_entity_type ON registro_modulos(tipo_entidade)`);
+    await execute(`ALTER TABLE registro_modulos ADD COLUMN config_version INTEGER NOT NULL DEFAULT 1`).catch(() => {});
 
     await execute(`
         CREATE TABLE IF NOT EXISTS permissoes_modulos (
@@ -46,9 +51,11 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
             can_edit    INTEGER NOT NULL DEFAULT 0,
             can_approve INTEGER NOT NULL DEFAULT 0,
             can_delete  INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (module_id, profile)
+            PRIMARY KEY (module_id, profile),
+            CHECK (can_create = 0 OR can_view = 1)
         )
     `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_module_permissions_module_id ON permissoes_modulos(module_id)`);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS visuais_modulos (
@@ -91,15 +98,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    await execute(`
-        INSERT OR IGNORE INTO perfis (id, nome, descricao) VALUES
-            ('admin',        'admin',        'Administrador — acesso total'),
-            ('gerente',      'gerente',      'Gerente — acesso a coordenadores e abaixo'),
-            ('coordenador',  'coordenador',  'Coordenador — acesso a encarregados e abaixo'),
-            ('encarregado',  'encarregado',  'Encarregado — acesso a operadores'),
-            ('operador',     'operador',     'Operador — apenas próprios dados'),
-            ('campo',        'campo',        'Campo — mesmo nível que operador')
-    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS hierarquia_perfis (
@@ -109,15 +107,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    await execute(`
-        INSERT OR IGNORE INTO hierarquia_perfis (perfil, nivel, descricao) VALUES
-            ('admin',       0, 'Administrador'),
-            ('gerente',     1, 'Gerente'),
-            ('coordenador', 2, 'Coordenador'),
-            ('encarregado', 3, 'Encarregado'),
-            ('operador',    4, 'Operador'),
-            ('campo',       4, 'Campo')
-    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS permissoes (
@@ -330,17 +319,17 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             "SELECT COUNT(*) as cnt FROM pragma_table_info('cliente_pj_vinculo') WHERE name='id'"
         );
         if ((migrated[0]?.cnt ?? 0) > 0) {
-            const pending = await query<{ id: string; pj_id: string }>(
-                `SELECT c.id, c.pj_id FROM clientes c WHERE c.pj_id IS NOT NULL AND c.pj_id != '' AND c.tipo = 'PF' AND NOT EXISTS (SELECT 1 FROM cliente_pj_vinculo v WHERE v.pf_id = c.id AND v.pj_id = c.pj_id)`
-            );
-            for (const row of pending) {
-                await execute(
-                    `INSERT OR IGNORE INTO cliente_pj_vinculo (id, pf_id, pj_id, funcao, principal, criado_em) VALUES (?, ?, ?, NULL, 1, datetime('now'))`,
-                    [`vinc-${row.id}-${row.pj_id}`, row.id, row.pj_id]
-                ).catch(() => {});
-            }
+            await execute(
+                `INSERT OR IGNORE INTO cliente_pj_vinculo (id, pf_id, pj_id, funcao, principal, criado_em)
+                 SELECT 'vinc-' || c.id || '-' || c.pj_id, c.id, c.pj_id, NULL, 1, datetime('now')
+                 FROM clientes c
+                 WHERE c.pj_id IS NOT NULL
+                   AND c.pj_id != ''
+                   AND c.tipo = 'PF'`
+            ).catch(() => {});
         }
     }
+
 
     // ================================================================
     // 4. MANIFESTACOES + FLUXO DE OUVIDORIA
@@ -592,11 +581,12 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    // 2.4 Templates de resposta — definição canônica está acima (seção 4, Fase 5)
-    // Colunas extras da 2a definição (criado_por, criado_em, atualizado_em) adicionadas via ADD COLUMN
-    await execute(`ALTER TABLE modelos_resposta ADD COLUMN criado_por TEXT`).catch(() => {});
-    await execute(`ALTER TABLE modelos_resposta ADD COLUMN criado_em TEXT`).catch(() => {});
-    await execute(`ALTER TABLE modelos_resposta ADD COLUMN atualizado_em TEXT`).catch(() => {});
+    // 2.4 Templates de resposta — `modelos_resposta` JÁ é definida acima
+    // (id, tipo_manifestacao_id, assunto_id, titulo, corpo, ativo + idx_modelos_tipo).
+    // Esta 2ª definição era SILENCIOSAMENTE IGNORADA pelo CREATE TABLE IF NOT EXISTS
+    // e usava colunas (tipo_id, criado_por, criado_em, atualizado_em) que nenhum
+    // código consome — além de um índice sobre uma coluna inexistente nela. Removida
+    // para eliminar a incoerência. Único consumidor: SqliteManifestacaoRepository.listModelosResposta.
 
     // 3.2 Notificações ao solicitante (rastreamento de canal)
     await execute(`
@@ -1237,6 +1227,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
+
     await execute(`
         CREATE TABLE IF NOT EXISTS tarefas (
             id                 TEXT PRIMARY KEY,
@@ -1648,6 +1639,16 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
         VALUES ('lan_sync_path', '', 'Caminho da pasta LAN para sincronização local (vazio = desativado)')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_host', '172.16.76.202', 'Host do PostgreSQL legado (sync roteiros/pesagens)')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_port', '5432', 'Porta do PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_db', 'geo_fpolis', 'Nome do banco PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_user', 'smma', 'Usuário do PostgreSQL legado')`).catch(() => {});
+    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+        VALUES ('pg_legacy_password', '', 'Senha do PostgreSQL legado')`).catch(() => {});
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tbl_email_config (
@@ -1823,20 +1824,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
     await execute(`CREATE INDEX IF NOT EXISTS idx_service_types_ativo ON tbl_service_types(ativo)`);
     await execute(`ALTER TABLE tbl_service_types ADD COLUMN setor_id TEXT REFERENCES setores(id)`).catch(() => {});
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
-
-    try {
-        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
-        if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tbl_service_types (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
-                ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
-                ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
-                ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
-            `);
-            console.log('[Seed] tbl_service_types OK');
-        }
-    } catch (e) { console.warn('[Seed] tbl_service_types:', e); }
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tbl_service_slots (
@@ -1865,7 +1852,25 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN tipo_prazo TEXT`).catch(() => {});
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN recorrencia TEXT`).catch(() => {});
 
+    // ADR-019: Desacoplamento Booking/Task
+    await execute(`ALTER TABLE tbl_service_types ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
+    // ADR-053: Flag requerMapa para exibição de roteiro geográfico
+    await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     await execute(`UPDATE tbl_service_types SET requer_mapa = 1 WHERE id IN ('volumosos', 'evento')`).catch(() => {});
+
+    // Seed: executa APÓS o ALTER que adiciona `requer_mapa` (referenciado no INSERT).
+    try {
+        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
+        if (c[0]?.n === 0) {
+            await execute(`INSERT INTO tbl_service_types (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
+                ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
+                ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
+                ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
+            `);
+            console.log('[Seed] tbl_service_types OK');
+        }
+    } catch (e) { console.warn('[Seed] tbl_service_types:', e); }
+
     await execute(`ALTER TABLE tbl_service_slots ADD COLUMN abertura_em TEXT`).catch(() => {});
     await execute(`ALTER TABLE tarefas ADD COLUMN agendamento_id TEXT`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_abertura ON tbl_service_slots(abertura_em)`).catch(() => {});
@@ -1964,7 +1969,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // Integra o domínio de agendamento ao sistema dinâmico de módulos
     // ================================================================
     await execute(`
-        INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
+        INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, config_version, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
         VALUES (
             'mod-agendamento',
             'agendamento',
@@ -1976,6 +1981,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             'AGD',
             20,
             'published',
+            1,
             1,
             '{}',
             NULL,

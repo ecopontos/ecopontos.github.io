@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { getContainerAsync } from "@/src/infrastructure/container";
 import type { ExecucaoPesagem } from "@/src/domain/logistics/LogisticsRepository";

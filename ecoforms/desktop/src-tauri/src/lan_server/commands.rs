@@ -1,17 +1,27 @@
 use std::sync::Arc;
 use tauri::State;
 
+use super::auth;
 use super::hub;
 use super::server;
 use super::state::{LanRole, LanServerInfo, LanServerState, PeerSummary};
+use crate::database::DbState;
+use crate::session::SessionState;
 
 #[tauri::command]
 pub async fn lan_server_start(
     state: State<'_, Arc<LanServerState>>,
-    db_state: State<'_, crate::database::DbState>,
+    db_state: State<'_, DbState>,
+    session: State<'_, SessionState>,
     port: Option<u16>,
     role: Option<String>,
 ) -> Result<LanServerInfo, String> {
+    {
+        let conn_guard = db_state.conn.lock().map_err(|e| format!("Lock poisoned: {e}"))?;
+        let conn = conn_guard.as_ref().ok_or("Database not connected")?;
+        session.validate_against_db(conn)
+            .map_err(|e| format!("Sessão inválida: {e}"))?;
+    }
     let db_path = db_state.db_path.lock().unwrap().clone()
         .ok_or("Database not connected")?;
     *state.db_path.write().await = Some(db_path.clone());
@@ -37,6 +47,21 @@ pub async fn lan_server_start(
 }
 
 #[tauri::command]
+pub async fn lan_server_auth_token(
+    state: State<'_, Arc<LanServerState>>,
+    db_state: State<'_, DbState>,
+    session: State<'_, SessionState>,
+) -> Result<String, String> {
+    {
+        let conn_guard = db_state.conn.lock().map_err(|e| format!("Lock poisoned: {e}"))?;
+        let conn = conn_guard.as_ref().ok_or("Database not connected")?;
+        session.validate_against_db(conn)
+            .map_err(|e| format!("Sessão inválida: {e}"))?;
+    }
+    auth::load_or_create_token(state.inner()).await
+}
+
+#[tauri::command]
 pub async fn lan_server_stop(
     state: State<'_, Arc<LanServerState>>,
 ) -> Result<(), String> {
@@ -53,9 +78,17 @@ pub async fn lan_server_status(
 #[tauri::command]
 pub async fn lan_server_set_role(
     state: State<'_, Arc<LanServerState>>,
+    db_state: State<'_, DbState>,
+    session: State<'_, SessionState>,
     role: String,
     hub_addr: Option<String>,
 ) -> Result<(), String> {
+    {
+        let conn_guard = db_state.conn.lock().map_err(|e| format!("Lock poisoned: {e}"))?;
+        let conn = conn_guard.as_ref().ok_or("Database not connected")?;
+        session.validate_against_db(conn)
+            .map_err(|e| format!("Sessão inválida: {e}"))?;
+    }
     let lan_role = match role.as_str() {
         "hub" => LanRole::Hub,
         "spoke" => LanRole::Spoke,

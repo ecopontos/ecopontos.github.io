@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
-import { countUsuarios } from "@/src/interface/hooks/queries/lookups";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { FirstRunSetupModal } from "@/components/auth/FirstRunSetupModal";
 import { toast } from "sonner";
@@ -30,10 +29,8 @@ export default function LoginPage() {
     useEffect(() => {
         const checkFirstRun = async () => {
             try {
-                // countUsuarios() internamente chama getContainerAsync(),
-                // garantindo que o banco está conectado e as tabelas existem.
-                const count = await countUsuarios();
-                if (count === 0) {
+                const hasUsers = await invoke<boolean>('db_has_users');
+                if (!hasUsers) {
                     setShowSetup(true);
                 }
             } catch (err) {
@@ -102,17 +99,6 @@ export default function LoginPage() {
                 }
 
                 const userObj = result.user;
-                if (userObj.ativo === 'true' || userObj.ativo === 1 || userObj.ativo === true) {
-                    userObj.ativo = true;
-                } else if (userObj.ativo === 'false' || userObj.ativo === 0 || userObj.ativo === false) {
-                    userObj.ativo = false;
-                } else {
-                    userObj.ativo = userObj.ativo == null ? true : userObj.ativo;
-                }
-
-                if (userObj.ativo === false) {
-                    throw new Error("Usuário inativo. Contate o administrador.");
-                }
 
                 if (!result.password_valid) {
                     throw new Error("Senha incorreta.");

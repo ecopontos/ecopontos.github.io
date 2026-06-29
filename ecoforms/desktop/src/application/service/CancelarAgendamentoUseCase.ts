@@ -16,14 +16,19 @@ export class CancelarAgendamentoUseCase {
             throw new Error(`Agendamento já está '${agendamento.status}'`);
         }
 
-        const slot = await this.slotRepo.findById(agendamento.slotId);
-        if (slot && !slot.isTerminal()) {
-            const novasVagas = Math.max(0, slot.vagasOcupadas - agendamento.vagasSolicitadas);
-            await this.slotRepo.updateVagasOcupadas(slot.id, novasVagas);
-        }
-
         agendamento.transitionTo('cancelado');
-        await this.agendamentoRepo.save(agendamento);
+
+        await this.agendamentoRepo.transaction(async (txAgendamentoRepo) => {
+            await this.slotRepo.transaction(async (txSlotRepo) => {
+                const slot = await txSlotRepo.findById(agendamento.slotId);
+                if (slot && !slot.isTerminal()) {
+                    const novasVagas = Math.max(0, slot.vagasOcupadas - agendamento.vagasSolicitadas);
+                    await txSlotRepo.updateVagasOcupadas(slot.id, novasVagas);
+                }
+                await txAgendamentoRepo.save(agendamento);
+            });
+        });
+
         await this.efeitos.aoCancelar(agendamento);
     }
 }

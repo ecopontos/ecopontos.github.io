@@ -61,11 +61,8 @@ pub fn start_browse(state: Arc<LanServerState>) -> Result<ServiceDaemon, String>
     let own_device_id = state.device_id.clone();
 
     tokio::spawn(async move {
-        loop {
-            match receiver.recv_async().await {
-                Ok(event) => handle_mdns_event(&state, &own_device_id, event).await,
-                Err(_) => break,
-            }
+        while let Ok(event) = receiver.recv_async().await {
+            handle_mdns_event(&state, &own_device_id, event).await;
         }
     });
 

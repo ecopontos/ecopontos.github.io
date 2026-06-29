@@ -1,7 +1,7 @@
 import { NotFoundError } from '../../domain/shared/errors';
 import type { TaskRepository } from '../../domain/task/TaskRepository';
 import type { DemandaTaskSynchronizer } from '../demanda/services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskDto } from './dto/TaskDto';
 import { toTaskDto } from './mappers';
 

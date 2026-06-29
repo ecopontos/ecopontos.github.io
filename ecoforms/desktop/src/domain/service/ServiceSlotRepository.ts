@@ -5,4 +5,5 @@ export interface ServiceSlotRepository {
     findAll(filtros?: { status?: string; serviceTypeId?: string; dataInicio?: string; dataFim?: string }): Promise<ServiceSlot[]>;
     save(slot: ServiceSlot): Promise<void>;
     updateVagasOcupadas(id: string, vagas: number): Promise<void>;
+    transaction<T>(fn: (tx: ServiceSlotRepository) => Promise<T>): Promise<T>;
 }

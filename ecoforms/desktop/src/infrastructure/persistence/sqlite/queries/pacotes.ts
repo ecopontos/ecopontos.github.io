@@ -124,6 +124,17 @@ export const PACOTES_RECENT_ATUAL: QueryDef = {
   returns: '{ id_pacote, tipo_modulo, carga_json, criado_em, status, id_proprietario }[]',
 };
 
+export const PACOTES_ECOPONTO_CAIXAS_ATUAIS: QueryDef = {
+  sql: `SELECT id_pacote AS id, criado_em, carga_json AS dados, id_proprietario AS user_id
+ FROM pacotes
+ WHERE tipo_modulo = 'ecopontoCaixasForm' AND atual = 1
+ ORDER BY criado_em DESC`,
+  description: 'Pacotes atuais do formulario de caixas de ecoponto',
+  params: [],
+  use: 'operacional',
+  returns: '{ id, criado_em, dados, user_id }[]',
+};
+
 export const PACOTE_BY_ID: QueryDef = {
   sql: `SELECT * FROM pacotes WHERE id_pacote = ? AND atual = 1 LIMIT 1`,
   description: 'Pacote atual por id_pacote (app/view)',
@@ -228,13 +239,17 @@ export const PACOTES_PENDING_SOLICITACOES_COUNT: QueryDef = {
 export const PACOTES_FOR_TAREFA: QueryDef = {
   sql: `
     SELECT
+        s.id_pacote,
         s.id_pacote       AS id,
+        s.id_proprietario,
         s.id_proprietario AS user_id,
         s.criado_em,
-        s.tipo_modulo AS tipo_form,
+        s.tipo_modulo,
+        s.tipo_modulo     AS tipo_form,
         s.status,
-        s.carga_json  AS dados,
-        u.nome        AS usuario_nome
+        s.carga_json,
+        s.carga_json      AS dados,
+        u.nome            AS usuario_nome
     FROM pacotes s
     LEFT JOIN usuarios u ON s.id_proprietario = u.id
     WHERE s.id_pacote = (SELECT suite_id FROM tarefas WHERE id = ? LIMIT 1)
@@ -242,7 +257,7 @@ export const PACOTES_FOR_TAREFA: QueryDef = {
     ORDER BY s.criado_em DESC
   `,
   description: 'Pacotes (entradas de suite) vinculados a uma tarefa via suite_id ou ref_id_pacote',
-  params: ['suite_id_a', 'suite_id_b'],
+  params: ['tarefa_id_a', 'tarefa_id_b'],
   use: 'operacional',
-  returns: '{ id, user_id, criado_em, tipo_form, status, dados, usuario_nome }[]',
+  returns: '{ id_pacote, id, id_proprietario, user_id, criado_em, tipo_modulo, tipo_form, status, carga_json, dados, usuario_nome }[]',
 };

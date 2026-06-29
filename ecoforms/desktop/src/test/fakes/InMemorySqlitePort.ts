@@ -19,7 +19,7 @@ export class InMemorySqlitePort implements SqlitePort {
         return this.tables.get(table)!;
     }
 
-    async query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
+    async query<T = unknown>(sql: string, params: unknown[] = [], _options?: { bootstrap?: boolean }): Promise<T[]> {
         const s = sql.trim().replace(/\s+/g, ' ');
 
         // SELECT COALESCE(MAX(sequencia), 0) + 1 AS seq FROM fila_eventos_sync
@@ -98,6 +98,23 @@ export class InMemorySqlitePort implements SqlitePort {
                 .sort((a, b) => ((a.seq as number) ?? 0) - ((b.seq as number) ?? 0))
                 .slice(0, limit);
             return rows as T[];
+        }
+
+        // SELECT * FROM log_gaps_sync [WHERE id_roteamento = ?] ... LIMIT ?
+        if (/FROM log_gaps_sync/i.test(s)) {
+            let rows = this.ensure('log_gaps_sync');
+            if (/WHERE id_roteamento\s*=\s*\?/i.test(s)) {
+                rows = rows.filter(r => r.id_roteamento === params[0]);
+            }
+            // tentativas lookup for _retryGap: returns { tentativas }
+            if (/SELECT tentativas/i.test(s) && /sequencia_faltante\s*=\s*\?/i.test(s)) {
+                const seqParam = params.find(p => typeof p === 'number');
+                const filtered = rows.filter(r => r.sequencia_faltante === seqParam);
+                return (filtered[0] ? [{ tentativas: filtered[0].tentativas ?? 0 }] : []) as T[];
+            }
+            const limitMatch = s.match(/LIMIT\s*(\?|\d+)/i);
+            const limit = limitMatch ? (typeof params[params.length - 1] === 'number' ? (params[params.length - 1] as number) : 100) : 100;
+            return rows.slice(0, limit) as T[];
         }
 
         // SELECT seq FROM manifesto_sync WHERE routing_id = ?
@@ -198,9 +215,38 @@ export class InMemorySqlitePort implements SqlitePort {
             const exists = rows.some(r => r.id === params[0]);
             if (!exists) {
                 rows.push({
-                    id: params[0], routing_id: params[1], missing_seq: params[2],
-                    status: params[3], detected_at: params[4],
+                    id: params[0],
+                    id_roteamento: params[1],
+                    sequencia_faltante: params[2],
+                    situacao: 'pending',
+                    tentativas: 0,
+                    resolvido_em: null,
+                    detectado_em: new Date().toISOString(),
                 });
+            }
+            return;
+        }
+
+        // UPDATE log_gaps_sync SET situacao = ... WHERE id_roteamento = ? AND sequencia_faltante = ?
+        if (/UPDATE log_gaps_sync/i.test(s)) {
+            const rows = this.ensure('log_gaps_sync');
+            // Extract situacao: either literal ('retrying') or parametrized (?)
+            const situacaoLiteralMatch = s.match(/situacao\s*=\s*'(\w+)'/i);
+            const isSituacaoParam = /situacao\s*=\s*\?/i.test(s);
+            const isRetrying = /situacao\s*=\s*'retrying'/i.test(s);
+            const isResolved = /resolvido_em\s*=\s*datetime/i.test(s);
+            // For parametrized situacao: params[0] is the status value
+            const paramStatus = isSituacaoParam ? String(params[0]) : undefined;
+            const newStatus = situacaoLiteralMatch ? situacaoLiteralMatch[1] : paramStatus;
+            // For parametrized: routingId and missingSeq shift by 1
+            const routingIdx = isSituacaoParam ? 1 : 0;
+            const seqIdx = isSituacaoParam ? 2 : 1;
+            for (const r of rows) {
+                if (r.id_roteamento === params[routingIdx] && r.sequencia_faltante === params[seqIdx]) {
+                    if (newStatus) r.situacao = newStatus;
+                    if (isRetrying) r.tentativas = ((r.tentativas as number | undefined) ?? 0) + 1;
+                    if (isResolved) r.resolvido_em = new Date().toISOString();
+                }
             }
             return;
         }
@@ -252,7 +298,7 @@ export class InMemorySqlitePort implements SqlitePort {
         }
     }
 
-    async transaction<T>(callback: () => Promise<T>): Promise<T> {
-        return callback();
+    async transaction<T>(callback: (tx: SqlitePort) => Promise<T>): Promise<T> {
+        return callback(this);
     }
 }

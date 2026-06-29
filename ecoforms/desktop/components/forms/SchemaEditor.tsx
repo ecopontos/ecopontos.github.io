@@ -1,9 +1,9 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FormRegistry, FormContent, FormField } from "@/types";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

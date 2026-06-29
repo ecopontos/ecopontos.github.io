@@ -32,7 +32,7 @@ export class SQLiteDBWrapper {
         return this.exec(sql, params);
     }
 
-    async query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
+    async query<T = unknown>(sql: string, params: unknown[] = [], _options?: { bootstrap?: boolean }): Promise<T[]> {
         return this.all<T>(sql, params);
     }
 
@@ -58,10 +58,10 @@ export class SQLiteDBWrapper {
         this.inTransaction = false;
     }
 
-    async transaction<T>(callback: () => Promise<T>): Promise<T> {
+    async transaction<T>(callback: (tx: SQLiteDBWrapper) => Promise<T>): Promise<T> {
         await this.beginTransaction();
         try {
-            const result = await callback();
+            const result = await callback(this);
             await this.commit();
             return result;
         } catch (error) {

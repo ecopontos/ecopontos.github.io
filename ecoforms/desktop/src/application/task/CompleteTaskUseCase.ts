@@ -1,8 +1,8 @@
 import { NotFoundError } from '../../domain/shared/errors';
 import type { TaskRepository } from '../../domain/task/TaskRepository';
-import { Task } from '../../domain/task/Task';
+import { Task, type TaskProps } from '../../domain/task/Task';
 import type { DemandaTaskSynchronizer } from '../demanda/services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskDto } from './dto/TaskDto';
 import { toTaskDto } from './mappers';
 import { calculateNextOccurrence } from 'ecoforms-core';
@@ -60,7 +60,7 @@ export class CompleteTaskUseCase {
     /**
      * Cria a próxima ocorrência de uma tarefa recorrente
      */
-    private async criarProximaOcorrencia(task: any): Promise<void> {
+    private async criarProximaOcorrencia(task: { payload?: { dateConfig?: TaskDateConfig } | null; recorrencia?: string | null; prazo?: string | null; toProps(): TaskProps & { payload?: Record<string, unknown> }; }): Promise<void> {
         try {
             // Extrair configuração de data
             const dateConfig: TaskDateConfig | undefined = task.payload?.dateConfig || (task.recorrencia ? {
@@ -69,7 +69,7 @@ export class CompleteTaskUseCase {
                 recorrencia: typeof task.recorrencia === 'string'
                     ? JSON.parse(task.recorrencia)
                     : task.recorrencia
-            } : undefined);
+            } as TaskDateConfig : undefined);
 
             if (!dateConfig?.recorrencia) return;
 
@@ -97,7 +97,7 @@ export class CompleteTaskUseCase {
                 tipoPrazo: 'recorrente',
                 recorrencia: nextRecorrencia,
                 payload: { ...props.payload, dateConfig: nextConfig },
-            });
+            } as TaskProps);
             await this.tasks.save(newTask);
         } catch (error) {
             // Log erro mas não falha a conclusão da tarefa atual

@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

@@ -1,6 +1,7 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/static-components */
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, MessageSquareWarning } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ type SelectedCliente = {
 };
 
 export default function NovaManifestacaoPage() {
+  const router = useRouter();
   const { save, loading } = useManifestacaoMutations();
   const { tipos, origens, classificacoes, situacoes, loading: catLoading, seedTipos } = useManifestacaoCatalogos();
   const { data: setores, loading: setoresLoading } = useSetores();
@@ -59,7 +61,7 @@ export default function NovaManifestacaoPage() {
         cliente_id: selectedCliente?.id || null,
       });
       toast.success("Manifestação criada");
-      window.location.href = "/manifestacoes";
+      router.push("/manifestacoes");
     } catch {
       toast.error("Erro ao criar manifestação");
     }

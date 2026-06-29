@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,41 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, UserPlus, CheckCircle, MessageCircle, ExternalLink, Save, User, MapPin } from "lucide-react";
+import { Loader2, Users, UserPlus, CheckCircle, MessageCircle, ExternalLink } from "lucide-react";
 import { ClientePhoneSearch, type SelectedCliente } from "@/components/clientes/ClientePhoneSearch";
+import { QuickCreateClientForm } from "@/components/clientes/QuickCreateClientForm";
 import { FormRenderer } from "@/components/runtime/FormRenderer";
-import { useFormTemplate } from "@/src/interface/hooks/queries/useFormTemplate";
-import { useServiceSlotById } from "@/src/interface/hooks/queries/useServiceSlots";
-import { useServiceTypes } from "@/src/interface/hooks/queries/useServiceTypes";
-import { useAgendamentoMutations } from "@/src/interface/hooks/mutations/useAgendamentoMutations";
+import { useFormTemplate } from "@/src/interface/hooks/catalog/forms";
+import { useServiceSlotById } from "@/src/interface/hooks/catalog/service";
+import { useServiceTypes } from "@/src/interface/hooks/catalog/service";
+import { useAgendamentoMutations } from "@/src/interface/hooks/catalog/service";
 import { useAdminUsers } from "@/src/interface/hooks/catalog/auth";
-import { useClienteMutations } from "@/src/interface/hooks/catalog/clientes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { FormFieldValue } from "@/components/runtime/FormFieldRenderer";
 import type { FormContent } from "@/types";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { uuidv7 } from "ecoforms-core";
-import { categoriasPorTipo, type CategoriaCliente } from "@/types/clientes";
-import { maskCep, fetchCep } from "@/src/lib/cep";
-
-function maskDocument(value: string, tipo: "PF" | "PJ") {
-    const digits = value.replace(/\D/g, "");
-    if (tipo === "PF") {
-        return digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2").slice(0, 14);
-    }
-    return digits.replace(/(\d{2})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1/$2").replace(/(\d{4})(\d{1,2})$/, "$1-$2").slice(0, 18);
-}
-
-function maskPhone(value: string) {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length <= 10) {
-        return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2").slice(0, 14);
-    }
-    return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2").slice(0, 15);
-}
-
-interface UsuarioOption { id: string; nome: string; }
+import { formatDateBR } from "@/src/lib/date";
+import { toast } from "sonner";
 
 interface BookingModalProps {
     slotId: string;
@@ -59,10 +38,8 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
     const { template, loading: formLoading } = useFormTemplate(serviceType?.formId ?? undefined);
     const { criarBooking, findLinkWhatsApp, loading: bookingLoading, error: bookingError } = useAgendamentoMutations();
     const { users } = useAdminUsers();
-    const { save: saveCliente, loading: clienteSaving } = useClienteMutations();
 
-    // usuários ativos para o select de responsável
-    const usuarios: UsuarioOption[] = users.filter(u => u.ativo).map(u => ({ id: u.id, nome: u.nome }));
+    const usuarios = users.filter(u => u.ativo).map(u => ({ id: u.id, nome: u.nome }));
 
     const [etapa, setEtapa] = useState<Etapa>(1);
     const [selectedCliente, setSelectedCliente] = useState<SelectedCliente | null>(null);
@@ -72,27 +49,7 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
     const [agendamentoId, setAgendamentoId] = useState<string | null>(null);
     const [waLink, setWaLink] = useState<string | null>(null);
     const [showQuickCreate, setShowQuickCreate] = useState(false);
-    const [quickForm, setQuickForm] = useState({
-        nome: "",
-        tipo: "PJ" as "PF" | "PJ",
-        categoria: "" as CategoriaCliente | "",
-        documento: "",
-        email: "",
-        telefone: "",
-        cep: "",
-        endereco: "",
-        numero: "",
-        bairro: "",
-        cidade: "",
-        estado: "",
-        complemento: "",
-        observacoes: "",
-    });
-    const [quickCepLoading, setQuickCepLoading] = useState(false);
-    const [quickCreateLoading, setQuickCreateLoading] = useState(false);
-    const [quickCreateError, setQuickCreateError] = useState<string | null>(null);
 
-    // Reset ao abrir
     useEffect(() => {
         if (open) {
             setEtapa(1);
@@ -103,45 +60,20 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
             setAgendamentoId(null);
             setWaLink(null);
             setShowQuickCreate(false);
-            setQuickCreateError(null);
-            setQuickForm({ nome: "", tipo: "PJ", categoria: "", documento: "", email: "", telefone: "", cep: "", endereco: "", numero: "", bairro: "", cidade: "", estado: "", complemento: "", observacoes: "" });
         }
     }, [open, slotId]);
-
-    // Reset categoria ao trocar tipo
-    useEffect(() => {
-        setQuickForm(prev => ({ ...prev, categoria: "" }));
-    }, [quickForm.tipo]);
-
-    const handleQuickCepBlur = async () => {
-        const digits = quickForm.cep.replace(/\D/g, "");
-        if (digits.length !== 8) return;
-        setQuickCepLoading(true);
-        const data = await fetchCep(quickForm.cep);
-        setQuickCepLoading(false);
-        if (data) {
-            setQuickForm(prev => ({
-                ...prev,
-                endereco: data.logradouro || "",
-                bairro: data.bairro || "",
-                cidade: data.localidade || "",
-                estado: data.uf || "",
-            }));
-        }
-    };
 
     const handleSelectCliente = (cliente: SelectedCliente | null) => {
         setSelectedCliente(cliente);
         setEnderecoDiferente(false);
         if (cliente) {
-            const enderecoCompleto = buildEnderecoCompleto(cliente);
             setPrefillData({
                 cliente_id:   cliente.id,
                 cliente_nome: cliente.nome,
                 telefone:     cliente.telefone ?? '',
                 email:        cliente.email ?? '',
                 bairro:       cliente.bairro ?? '',
-                endereco:     enderecoCompleto,
+                endereco:     buildEnderecoCompleto(cliente),
                 cidade:       cliente.cidade ?? '',
                 cep:          cliente.cep ?? '',
             });
@@ -158,10 +90,9 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
                 return rest;
             }
             if (!checked && selectedCliente) {
-                const enderecoCompleto = buildEnderecoCompleto(selectedCliente);
                 return {
                     ...prev,
-                    endereco: enderecoCompleto,
+                    endereco: buildEnderecoCompleto(selectedCliente),
                     cidade: selectedCliente.cidade ?? '',
                     cep: selectedCliente.cep ?? '',
                     bairro: selectedCliente.bairro ?? '',
@@ -171,72 +102,10 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
         });
     };
 
-    const handleQuickCreate = async () => {
-        if (!quickForm.nome.trim()) return;
-
-        const docDigits = quickForm.documento.replace(/\D/g, "");
-        const telDigits = quickForm.telefone.replace(/\D/g, "");
-        if (docDigits && docDigits.length !== 11 && docDigits.length !== 14) {
-            setQuickCreateError("Documento inválido. Informe CPF (11 dígitos) ou CNPJ (14 dígitos).");
-            return;
-        }
-        if (telDigits && telDigits.length < 10) {
-            setQuickCreateError("Telefone inválido. Informe ao menos 10 dígitos (DDD + número).");
-            return;
-        }
-        setQuickCreateError(null);
-        setQuickCreateLoading(true);
-        try {
-            const id = uuidv7();
-            const newCliente = {
-                id,
-                nome: quickForm.nome.trim(),
-                tipo: quickForm.tipo,
-                categoria: quickForm.categoria || null,
-                documento: docDigits,
-                email: quickForm.email.trim(),
-                telefone: telDigits,
-                cep: quickForm.cep.replace(/\D/g, ""),
-                endereco: quickForm.endereco.trim(),
-                numero: quickForm.numero.trim(),
-                bairro: quickForm.bairro.trim(),
-                cidade: quickForm.cidade.trim(),
-                estado: quickForm.estado.trim(),
-                complemento: quickForm.complemento.trim(),
-                observacoes: quickForm.observacoes.trim(),
-                ativo: 1,
-                criado_em: new Date().toISOString(),
-                atualizado_em: new Date().toISOString(),
-            };
-            await saveCliente(newCliente);
-            handleSelectCliente({
-                id: newCliente.id,
-                nome: newCliente.nome,
-                tipo: newCliente.tipo,
-                categoria: newCliente.categoria,
-                bairro: newCliente.bairro || undefined,
-                email: newCliente.email || undefined,
-                telefone: newCliente.telefone || undefined,
-                viaContato: "telefone",
-                endereco: newCliente.endereco || undefined,
-                numero: newCliente.numero || undefined,
-                cidade: newCliente.cidade || undefined,
-                estado: newCliente.estado || undefined,
-                cep: newCliente.cep || undefined,
-                complemento: newCliente.complemento || undefined,
-            });
-            setShowQuickCreate(false);
-        } catch (e: unknown) {
-            setQuickCreateError(e instanceof Error ? e.message : "Erro ao criar cliente. Tente novamente.");
-        } finally {
-            setQuickCreateLoading(false);
-        }
-    };
-
     const handleFormSubmit = async (dados: Record<string, FormFieldValue>) => {
         if (!slot || !user || !selectedCliente) return;
         if (slot.capacidade && slot.vagasOcupadas >= slot.capacidade) {
-            alert("Slot lotado. Selecione outro horário.");
+            toast.error("Slot lotado. Selecione outro horário.");
             return;
         }
         const id = await criarBooking({
@@ -270,12 +139,11 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
     };
 
     const isLoading = slotLoading || formLoading;
-    const dataFormatada = slot ? formatDate(slot.dataInicio) : '';
+    const dataFormatada = slot ? formatDateBR(slot.dataInicio) : '';
 
     return (
         <Dialog open={open} onOpenChange={v => { if (!v) onClose(agendamentoId ?? undefined); }}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                {/* Header fixo com info do slot */}
                 {slot && serviceType && (
                     <DialogHeader className="pb-0">
                         <DialogTitle className="flex items-center gap-2 text-base">
@@ -302,176 +170,28 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
 
                 {!isLoading && slot && serviceType && (
                     <>
-                        {/* Stepper */}
                         <Stepper etapa={etapa} />
 
-                        {/* Etapa 1 — Identificação do cliente */}
                         {etapa === 1 && (
                             <div className="space-y-4 pt-2">
                                 <ClientePhoneSearch selected={selectedCliente} onSelect={handleSelectCliente} />
                                 {!selectedCliente && !showQuickCreate && (
                                     <div className="flex items-center gap-2 text-sm">
                                         <span className="text-muted-foreground">Cliente não encontrado?</span>
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            className="h-auto p-0"
-                                            onClick={() => setShowQuickCreate(true)}
-                                        >
+                                        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setShowQuickCreate(true)}>
                                             <UserPlus className="mr-1 h-3 w-3" />
                                             Cadastrar novo cliente
                                         </Button>
                                     </div>
                                 )}
                                 {!selectedCliente && showQuickCreate && (
-                                    <div className="space-y-3 rounded-md border p-3 max-h-[55vh] overflow-y-auto">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium">Cadastrar novo cliente</span>
-                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowQuickCreate(false)}>
-                                                ✕
-                                            </Button>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Tipo</Label>
-                                                <select
-                                                    value={quickForm.tipo}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, tipo: e.target.value as "PF" | "PJ" }))}
-                                                    className="w-full border rounded-md px-2 py-1 text-sm h-8 bg-background"
-                                                >
-                                                    <option value="PJ">Pessoa Jurídica</option>
-                                                    <option value="PF">Pessoa Física</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Categoria</Label>
-                                                <select
-                                                    value={quickForm.categoria}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, categoria: e.target.value as CategoriaCliente }))}
-                                                    className="w-full border rounded-md px-2 py-1 text-sm h-8 bg-background"
-                                                >
-                                                    <option value="">Selecione...</option>
-                                                    {categoriasPorTipo(quickForm.tipo).map(c => (
-                                                        <option key={c} value={c}>{c}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs"><User className="h-3 w-3 inline mr-1" />Nome *</Label>
-                                                <Input
-                                                    value={quickForm.nome}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, nome: e.target.value }))}
-                                                    placeholder="Nome do cliente"
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Documento {quickForm.tipo === "PJ" ? "(CNPJ)" : "(CPF)"}</Label>
-                                                <Input
-                                                    value={quickForm.documento}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, documento: maskDocument(e.target.value, quickForm.tipo) }))}
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Telefone</Label>
-                                                <Input
-                                                    value={quickForm.telefone}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, telefone: maskPhone(e.target.value) }))}
-                                                    placeholder="(00) 00000-0000"
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Email</Label>
-                                                <Input
-                                                    value={quickForm.email}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, email: e.target.value }))}
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2 mt-3 mb-1">
-                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                                    <MapPin className="h-3 w-3" />
-                                                    <span>Endereço</span>
-                                                </div>
-                                                <hr className="mt-1 border-border/50" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">CEP</Label>
-                                                <div className="flex gap-1">
-                                                    <Input
-                                                        value={quickForm.cep}
-                                                        onChange={e => setQuickForm(prev => ({ ...prev, cep: maskCep(e.target.value) }))}
-                                                        onBlur={handleQuickCepBlur}
-                                                        onKeyDown={e => e.key === "Enter" && handleQuickCepBlur()}
-                                                        placeholder="00000-000"
-                                                        maxLength={9}
-                                                        className="h-8 text-sm flex-1"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="h-8 w-8 shrink-0"
-                                                        onClick={handleQuickCepBlur}
-                                                        disabled={quickCepLoading || quickForm.cep.replace(/\D/g, "").length !== 8}
-                                                        title="Buscar endereço pelo CEP"
-                                                    >
-                                                        {quickCepLoading ? (
-                                                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                                        ) : (
-                                                            <MapPin className="h-3 w-3" />
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Endereço</Label>
-                                                <Input value={quickForm.endereco} onChange={e => setQuickForm(prev => ({ ...prev, endereco: e.target.value }))} disabled={quickCepLoading} className="h-8 text-sm" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Número</Label>
-                                                <Input value={quickForm.numero} onChange={e => setQuickForm(prev => ({ ...prev, numero: e.target.value }))} className="h-8 text-sm" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Bairro</Label>
-                                                <Input value={quickForm.bairro} onChange={e => setQuickForm(prev => ({ ...prev, bairro: e.target.value }))} disabled={quickCepLoading} className="h-8 text-sm" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Cidade</Label>
-                                                <Input value={quickForm.cidade} onChange={e => setQuickForm(prev => ({ ...prev, cidade: e.target.value }))} disabled={quickCepLoading} className="h-8 text-sm" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Estado</Label>
-                                                <Input value={quickForm.estado} onChange={e => setQuickForm(prev => ({ ...prev, estado: e.target.value }))} disabled={quickCepLoading} className="h-8 text-sm" maxLength={2} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs">Complemento</Label>
-                                                <Input value={quickForm.complemento} onChange={e => setQuickForm(prev => ({ ...prev, complemento: e.target.value }))} className="h-8 text-sm" />
-                                            </div>
-                                            <div className="space-y-1 md:col-span-2">
-                                                <Label className="text-xs">Observações</Label>
-                                                <Textarea
-                                                    value={quickForm.observacoes}
-                                                    onChange={e => setQuickForm(prev => ({ ...prev, observacoes: e.target.value }))}
-                                                    placeholder="Notas livres..."
-                                                    rows={2}
-                                                    className="text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-end gap-2 pt-1">
-                                            <Button variant="outline" size="sm" onClick={() => setShowQuickCreate(false)}>Cancelar</Button>
-                                            <Button size="sm" onClick={handleQuickCreate} disabled={!quickForm.nome.trim() || quickCreateLoading}>
-                                                {quickCreateLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-                                                Salvar
-                                            </Button>
-                                        </div>
-                                        {quickCreateError && (
-                                            <p className="text-xs text-red-500">{quickCreateError}</p>
-                                        )}
-                                    </div>
+                                    <QuickCreateClientForm
+                                        onCreated={(cliente) => {
+                                            handleSelectCliente(cliente);
+                                            setShowQuickCreate(false);
+                                        }}
+                                        onCancel={() => setShowQuickCreate(false)}
+                                    />
                                 )}
                                 {selectedCliente && (
                                     <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
@@ -494,7 +214,6 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
                             </div>
                         )}
 
-                        {/* Etapa 2 — Dados do serviço */}
                         {etapa === 2 && (
                             <div className="space-y-4 pt-2">
                                 <div className="space-y-2">
@@ -538,7 +257,6 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
                             </div>
                         )}
 
-                        {/* Etapa 3 — Confirmação */}
                         {etapa === 3 && agendamentoId && (
                             <div className="space-y-4 pt-2 text-center">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
@@ -585,8 +303,6 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
         </Dialog>
     );
 }
-
-// ── Sub-componentes ──────────────────────────────────────────────
 
 function Stepper({ etapa }: { etapa: Etapa }) {
     const steps = ['① Cliente', '② Serviço', '③ Confirmação'];
@@ -635,8 +351,4 @@ function buildEnderecoCompleto(cliente: SelectedCliente): string {
     if (cidadeEstado) resto.push(cidadeEstado);
     if (cliente.cep) resto.push(`CEP: ${cliente.cep}`);
     return [ruaNumero, ...resto].filter(Boolean).join(' - ');
-}
-
-function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }

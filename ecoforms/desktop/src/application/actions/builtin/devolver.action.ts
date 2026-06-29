@@ -1,8 +1,6 @@
+import { PACOTE_INACTIVATE_ATUAL, PACOTE_NEW_VERSION_FROM_LAST } from '../../persistence/sqlite/queries/pacotes';
 import { registerAction } from "../ActionRegistry";
-import {
-  PACOTE_INACTIVATE_ATUAL,
-  PACOTE_NEW_VERSION_FROM_LAST,
-} from "../../../infrastructure/persistence/sqlite/queries/pacotes";
+
 
 export function registerDevolverAction() {
   registerAction({

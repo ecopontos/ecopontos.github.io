@@ -1,5 +1,4 @@
 import { ForbiddenError } from '../../domain/shared/errors';
-import { USUARIO_SETOR_PRINCIPAL } from '../../infrastructure/persistence/sqlite/queries/usuarios';
 
 type DbLike = { query: <T>(sql: string, params?: unknown[]) => Promise<T[]> };
 
@@ -31,7 +30,7 @@ export async function resolveSetorId(
     }
 
     const rows = await db.query<{ setor_principal_id: string | null }>(
-        USUARIO_SETOR_PRINCIPAL.sql,
+        `SELECT setor_principal_id FROM usuarios WHERE id = ?`,
         [actorId],
     );
     return rows[0]?.setor_principal_id ?? null;

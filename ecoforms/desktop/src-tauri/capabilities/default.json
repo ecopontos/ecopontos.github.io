@@ -3,22 +3,10 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": [
-    "main",
-    "*"
+    "main"
   ],
   "permissions": [
     "core:default",
-    "dialog:default",
-    "fs:default",
-    "fs:allow-write-text-file",
-    "fs:allow-write-file",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        { "path": "$APPDATA/**" },
-        { "path": "$APPDATA" }
-      ]
-    },
-    "shell:allow-open"
+    "dialog:default"
   ]
 }

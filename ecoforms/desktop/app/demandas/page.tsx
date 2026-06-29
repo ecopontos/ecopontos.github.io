@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDemandas } from "@/src/interface/hooks/queries/useDemandas";
+import { useDemandas } from "@/src/interface/hooks/catalog/forms";
 import type { DemandaListItem } from "@/src/domain/demanda/DemandaRepository";
+import type { DemandaStatus } from "@/src/domain/demanda/Demanda";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export default function DemandasPage() {
             try {
                 const filters = statusFilter === "todas"
                     ? {}
-                    : { status: statusFilter as Parameters<typeof listDemandasWithDetails>[0]['status'] };
+                    : { status: statusFilter as DemandaStatus };
                 const rows = await listDemandasWithDetails(filters);
                 if (!cancelled) setDemandas(rows);
             } catch (e) {

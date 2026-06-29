@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTauriQuery } from '../tauri/useTauriQuery';

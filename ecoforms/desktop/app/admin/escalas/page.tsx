@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Loader2, Clock } from "lucide-react";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
-import { useEscalas, type Escala } from "@/src/interface/hooks/queries/useEscalas";
+import { useEscalas, type Escala } from "@/src/interface/hooks/catalog/admin";
 import { toast } from "sonner";
 
 type EscalaForm = Omit<Escala, 'id' | 'criado_em' | 'atualizado_em'>;
@@ -127,7 +127,7 @@ export default function EscalasPage() {
                             </div>
                         ) : escalas.length === 0 ? (
                             <p className="text-center py-8 text-muted-foreground text-sm">
-                                Nenhuma escala cadastrada. Clique em "Nova Escala" para começar.
+                                Nenhuma escala cadastrada. Clique em &quot;Nova Escala&quot; para começar.
                             </p>
                         ) : (
                             <div className="rounded-md border">
@@ -259,7 +259,7 @@ export default function EscalasPage() {
                 <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Remover escala "{deleteTarget?.nome}"?</AlertDialogTitle>
+                            <AlertDialogTitle>Remover escala &quot;{deleteTarget?.nome}&quot;?</AlertDialogTitle>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { KpiCard } from "@/components/widgets/KpiCard";

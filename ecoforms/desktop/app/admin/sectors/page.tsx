@@ -11,7 +11,7 @@ import { Plus, LayoutDashboard, Server, Edit, Trash2, Loader2 } from "lucide-rea
 import { useRouter } from "next/navigation"
 import { ProtectedPage } from "@/components/auth/PermissionGuards"
 import { useSyncStatus } from "@/contexts/SyncContext"
-import { useSetores, type Setor } from "@/src/interface/hooks/queries/useSetores"
+import { useSetores, type Setor } from "@/src/interface/hooks/catalog/auth"
 
 export default function SectorsPage() {
     const [dialogOpen, setDialogOpen] = useState(false)

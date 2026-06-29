@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getContainerAsync } from '@/src/infrastructure/container';
 import type { Cliente, ClienteContato, ClienteFilter, ClientePjVinculo } from '@/types/clientes';

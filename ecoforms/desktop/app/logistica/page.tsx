@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Box, Search, RefreshCw, MapPin, ListOrdered, Plus, ExternalLink, ClipboardCheck } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -22,21 +23,28 @@ import { NovaExecucaoDialog } from "@/components/logistics/NovaExecucaoDialog";
 import { toast } from "sonner";
 
 export default function LogisticaPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  // Aba controlada pela URL (deep-link ?tab=mapa&roteiro=...&exec=...) — G5.
+  const tab = searchParams.get("tab") ?? "roteiros";
+  const handleTabChange = (value: string) => {
+    router.replace(value === "roteiros" ? "/logistica" : `/logistica?tab=${value}`);
+  };
+
   const [searchRoteiros, setSearchRoteiros] = useState("");
   const [searchExecucoes, setSearchExecucoes] = useState("");
   const [itinerarioRoteiro, setItinerarioRoteiro] = useState<Roteiro | null>(null);
   const { data: roteiros, loading: loadingRoteiros } = useRoteiros({ searchTerm: searchRoteiros || undefined });
   const { data: execucoes, loading: loadingExecucoes, refetch: refetchExecucoes } = useExecucoes({ status: searchExecucoes || undefined });
   const { status: syncStatus, syncing, lastResult, error: syncError, sync, lastSyncAt } = useExternalRoteiroSync();
-  const { updateExecucaoStatus, loading: saving } = useLogisticsMutations();
+  const { transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
   const { users: usuarios } = useAllUsers();
 
   const [showNovaExecucao, setShowNovaExecucao] = useState(false);
 
   const handleTransicaoStatus = async (execucaoId: string, novoStatus: string) => {
     try {
-      const fimEm = (novoStatus === "concluida" || novoStatus === "cancelada") ? new Date().toISOString() : undefined;
-      await updateExecucaoStatus(execucaoId, novoStatus, fimEm);
+      await transicaoExecucaoStatus(execucaoId, novoStatus);
       toast.success(`Status alterado para "${novoStatus}"`);
       refetchExecucoes();
     } catch (e) {
@@ -54,7 +62,7 @@ export default function LogisticaPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="roteiros">
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="roteiros">Roteiros</TabsTrigger>
           <TabsTrigger value="execucoes">Execuções</TabsTrigger>
@@ -276,6 +284,12 @@ export default function LogisticaPage() {
                                   Coleta
                                 </Button>
                               </Link>
+                              <Link href={`/logistica?tab=mapa&roteiro=${e.roteiroId}&exec=${e.id}`}>
+                                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" title="Ver execução no mapa">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  Mapa
+                                </Button>
+                              </Link>
                               <Link href={`/logistica/roteiros/${e.roteiroId}`}>
                                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Ver roteiro">
                                   <ExternalLink className="h-3.5 w-3.5" />
@@ -301,11 +315,14 @@ export default function LogisticaPage() {
                 Mapa de Logística
               </CardTitle>
               <CardDescription>
-                Pontos de coleta, clientes e camadas geoprocessadas. Use "Importar GeoJSON" para adicionar terrenos e pontos GPS.
+                Pontos de coleta, clientes e camadas geoprocessadas. Use &quot;Importar GeoJSON&quot; para adicionar terrenos e pontos GPS.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <LogisticsMap />
+              <LogisticsMap
+                initialRoteiroId={searchParams.get("roteiro")}
+                initialExecucaoId={searchParams.get("exec")}
+              />
             </CardContent>
           </Card>
         </TabsContent>

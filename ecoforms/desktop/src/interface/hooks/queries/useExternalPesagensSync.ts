@@ -13,13 +13,9 @@ interface SyncPesagensResult {
     detalhes_erros: string[];
 }
 
-const DEFAULT_CONFIG = {
-    pgHost: "172.16.76.202",
-    pgPort: 5432,
-    pgDb: "geo_fpolis",
-    pgUser: "smma",
-    pgPassword: "H6N3pNTVcr",
-};
+function isTauri() {
+    return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 export function useExternalPesagensSync() {
     const [syncing, setSyncing] = useState(false);
@@ -27,14 +23,11 @@ export function useExternalPesagensSync() {
     const [error, setError] = useState<string | null>(null);
 
     const sync = useCallback(async (dataInicio: string, dataFim: string) => {
+        if (!isTauri()) return null;
         setSyncing(true);
         setError(null);
         try {
-            const result = await invoke<SyncPesagensResult>("sync_pesagens_externas", {
-                ...DEFAULT_CONFIG,
-                dataInicio,
-                dataFim,
-            });
+            const result = await invoke<SyncPesagensResult>("sync_pesagens_externas", { dataInicio, dataFim });
             setLastResult(result);
             return result;
         } catch (e: unknown) {

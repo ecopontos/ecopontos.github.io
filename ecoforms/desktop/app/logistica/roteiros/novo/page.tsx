@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useLogisticsMutations } from "@/src/interface/hooks/mutations/useLogisticsMutations";
+import { useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
 import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { useAuth } from "@/contexts/AuthContext";

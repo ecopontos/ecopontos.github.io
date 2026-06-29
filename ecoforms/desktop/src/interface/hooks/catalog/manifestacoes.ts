@@ -18,6 +18,7 @@ export {
   useManifestacaoEnvios,            // ativo — registros de envio (e-mail/WhatsApp)
   useManifestacaoCobranças,         // ativo — cobranças vinculadas
 } from '../queries/useManifestacoes';
+export { useNotificacoesSolicitante } from '../queries/useNotificacoesSolicitante'; // ativo — notificações enviadas ao solicitante
 
 // --- Catálogos e classificação ---
 export { useManifestacaoCatalogos } from '../queries/useManifestacaoCatalogos'; // ativo

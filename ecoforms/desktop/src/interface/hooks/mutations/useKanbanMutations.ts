@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useCallback, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { stableStringify, uuidv7, calculateNextOccurrence } from 'ecoforms-core';
 import { KanbanTask, UnifiedTaskView, TaskDateConfig, Interessado } from '@/types';
@@ -10,13 +11,13 @@ import { getContainer } from '@/src/infrastructure/container';
 import { toast } from 'sonner';
 import type { TaskStatus } from '@/src/domain/task/TaskStatus';
 import { assertValidTransition } from '@/src/domain/task/TaskStatus';
+import { requiresRuntimeForm, resolveKanbanMutationBehavior, type KanbanMutationBehavior } from './taskRuntimeValidation';
 
 const safeJsonParse = (val: string | null | undefined, fallback: unknown) => {
     if (!val) return fallback;
     try { return JSON.parse(val); } catch { return fallback; }
 };
 
-const ACTIVE_RUNTIME_STATUSES = new Set<KanbanTask['status']>(['a_fazer', 'em_progresso']);
 
 type TaskMutationInput = Omit<Partial<KanbanTask>, 'atribuido_para' | 'form_registry_id' | 'projeto_id'> & {
     atribuido_para?: string | null;
@@ -32,13 +33,18 @@ export function useKanbanMutations(
     currentProjectId: string | null,
     refetchTasks: () => void,
     refetchSolicitacoes: () => void,
-    refetchProjects?: () => void
+    refetchProjects?: () => void,
+    options?: Partial<KanbanMutationBehavior>,
 ) {
     const { user, permissions } = useAuth();
     const { syncNow } = useSyncStatus();
     const queryClient = useQueryClient();
     const taskUseCases = useTaskUseCases();
     const kanban = getContainer().kanbanRepository;
+    const behavior = useMemo(
+        () => resolveKanbanMutationBehavior(options),
+        [options?.autoSync, options?.runtimeValidation],
+    );
 
     const taskSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const syncCancelledRef = useRef(false);
@@ -48,6 +54,7 @@ export function useKanbanMutations(
     }, [queryClient]);
 
     const scheduleTaskSync = useCallback((delayMs: number = 1500) => {
+        if (!behavior.autoSync) return;
         if (taskSyncTimeoutRef.current) clearTimeout(taskSyncTimeoutRef.current);
         taskSyncTimeoutRef.current = setTimeout(() => {
             const attemptSync = async (retries = 3) => {
@@ -62,15 +69,14 @@ export function useKanbanMutations(
             };
             attemptSync();
         }, delayMs);
-    }, [syncNow]);
+    }, [syncNow, behavior.autoSync]);
 
     const validateRuntimeTask = useCallback(async (incoming: TaskMutationInput, current?: Partial<KanbanTask>) => {
         const merged = { ...current, ...incoming } as Partial<KanbanTask>;
         const isAssigned = Boolean(merged.atribuido_para);
-        const isActive = ACTIVE_RUNTIME_STATUSES.has(merged.status || 'a_fazer');
         const hasForm = Boolean(merged.form_registry_id);
 
-        if (isAssigned && isActive && !hasForm) {
+        if (requiresRuntimeForm(behavior, merged)) {
             throw new Error('Tarefas atribuídas para operador em andamento precisam de formulário vinculado para aparecer no runtime mobile.');
         }
 
@@ -87,7 +93,7 @@ export function useKanbanMutations(
                 throw new Error('O formulário vinculado está inativo e não pode ser usado em tarefas do runtime.');
             }
         }
-    }, [kanban]);
+    }, [behavior, kanban]);
 
     const buildSnapHash = useCallback((value: unknown): string => {
         const raw = stableStringify(value);
@@ -452,7 +458,7 @@ export function useKanbanMutations(
             if (archived) {
                 await taskUseCases.archive.execute(taskId);
             } else {
-                await kanban.unarchiveTask(taskId);
+                await taskUseCases.unarchive.execute(taskId);
             }
             await insertTaskEvent(taskId, 'arquivamento', archived ? 'Tarefa arquivada' : 'Tarefa restaurada', { arquivado: archived });
             scheduleTaskSync();

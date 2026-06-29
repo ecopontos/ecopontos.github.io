@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { useModuleRuntime } from '@/src/interface/hooks/queries/useModuleRuntime';
-import { useModuleVisuals } from '@/src/interface/hooks/queries/useModuleVisuals';
+import { useRouteParamOrQuery } from '@/src/interface/hooks/routing/useRouteParamOrQuery';
+import { useModuleRuntime } from '@/src/interface/hooks/catalog/modules-views';
+import { useModuleVisuals } from '@/src/interface/hooks/catalog/modules-views';
 import { useActiveViews } from '@/src/interface/hooks/catalog/modules-views';
-import { useSuiteUseCases } from '@/src/interface/hooks/domain/useSuiteUseCases';
+import { useSuiteUseCases } from '@/src/interface/hooks/catalog/forms';
 import type { ModuleRuntimeDto } from '@/src/domain/module/ModuleRegistry';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,7 @@ import type { FormContent } from '@/types';
 import { VisualRenderer, type VisualData } from '@/components/module-runtime/VisualRenderer';
 
 export default function ModuloPageClient() {
-  const params = useParams();
-  const slug = params?.slug as string;
+  const slug = useRouteParamOrQuery("slug") ?? "";
   const { user } = useAuth();
   const [activeForm, setActiveForm] = useState<ModuleRuntimeDto['forms'][0] | null>(null);
 
@@ -49,7 +48,7 @@ export default function ModuloPageClient() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <h1 className="text-2xl font-bold">Módulo não encontrado</h1>
-        <p className="text-muted-foreground">O módulo "{slug}" não existe ou não está publicado.</p>
+        <p className="text-muted-foreground">O módulo &quot;{slug}&quot; não existe ou não está publicado.</p>
       </div>
     );
   }

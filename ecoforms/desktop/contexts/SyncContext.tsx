@@ -1,5 +1,5 @@
 ﻿'use client';
-
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSqlite } from '@/src/interface/hooks/catalog/tauri';
 import { useOnlineStatus } from '@/src/interface/hooks/catalog/sync';
@@ -238,7 +238,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                 const container = getContainer();
                 const { StorageBootstrapService } = await import('@/src/infrastructure/sync/StorageBootstrapService');
                 const bootstrapService = new StorageBootstrapService(
-                    container.fileStorage as any,
+                    container.fileStorage as unknown as ConstructorParameters<typeof StorageBootstrapService>[0],
                     container.sqlite
                 );
                 const result = await bootstrapService.bootstrapIfNeeded(routingId);

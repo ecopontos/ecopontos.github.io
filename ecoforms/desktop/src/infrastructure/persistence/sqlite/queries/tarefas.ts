@@ -124,6 +124,28 @@ export const TAREFAS_BY_USER: QueryDef = {
   returns: '{ id, titulo, status, prioridade, prazo, criado_em, atualizado_em }[]',
 };
 
+export const TAREFAS_ATRIBUIDAS_NOTIFICACAO: QueryDef = {
+  sql: `SELECT
+    t.id, t.titulo, t.status, t.prioridade, t.prazo,
+    COALESCE(p.nome, 'Projeto Geral') AS projeto_nome,
+    COUNT(*) OVER() AS abertas_count,
+    SUM(CASE WHEN t.status = 'a_fazer' THEN 1 ELSE 0 END) OVER() AS a_fazer_count,
+    SUM(CASE WHEN t.status = 'em_progresso' THEN 1 ELSE 0 END) OVER() AS em_progresso_count,
+    SUM(CASE WHEN t.prazo IS NOT NULL AND date(t.prazo) < date('now') THEN 1 ELSE 0 END) OVER() AS atrasadas_count
+ FROM tarefas t
+ LEFT JOIN projetos p ON p.id = t.projeto_id
+ WHERE t.arquivado = 0 AND t.atribuido_para = ? AND t.status != 'concluido'
+ ORDER BY
+   CASE WHEN t.prazo IS NOT NULL AND date(t.prazo) < date('now') THEN 0
+        WHEN t.prazo IS NOT NULL AND date(t.prazo) <= date('now', '+2 days') THEN 1 ELSE 2 END,
+   CASE WHEN t.prazo IS NULL THEN 1 ELSE 0 END, date(t.prazo) ASC, t.atualizado_em DESC
+ LIMIT 6`,
+  description: 'Tarefas abertas atribuidas ao usuario para notificacao/resumo da pagina inicial',
+  params: ['atribuido_para'],
+  use: 'operacional',
+  returns: '{ id, titulo, status, prioridade, prazo, projeto_nome, abertas_count, a_fazer_count, em_progresso_count, atrasadas_count }[]',
+};
+
 export const TAREFAS_DELETE_BY_USER: QueryDef = {
   sql: `DELETE FROM tarefas WHERE criado_por = ? OR atribuido_para = ?`,
   description: 'Deleta tarefas criadas por ou atribuídas a um usuário (eliminacao titular)',

@@ -2,7 +2,7 @@ import { uuidv7 } from 'ecoforms-core';
 import type { DemandaRepository } from '../../domain/demanda/DemandaRepository';
 import type { ClockPort } from '../ports/ClockPort';
 import type { DemandaTaskSynchronizer } from './services/DemandaTaskSynchronizer';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 
 export interface CloseDemandaInput {
   demandaId: string;
@@ -40,14 +40,14 @@ export class CloseDemandaUseCase {
 
     const agora = this.clock.nowIso();
 
-    await this.repo.transaction(async () => {
-      await this.repo.updateStatus(input.demandaId, 'concluida', {
+    await this.repo.transaction(async (txRepo) => {
+      await txRepo.updateStatus(input.demandaId, 'concluida', {
         encerradoPor: input.encerradoPor,
         encerradoEm: agora,
         archiveStatus: 'completed',
       });
 
-      await this.repo.saveEvento({
+      await txRepo.saveEvento({
         id: uuidv7(),
         demandaId: input.demandaId,
         type: 'demanda.encerrada',

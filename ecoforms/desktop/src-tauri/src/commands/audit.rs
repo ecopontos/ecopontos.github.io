@@ -2,6 +2,7 @@ use rusqlite::Connection;
 use serde_json::json;
 
 /// Registra uma entrada de auditoria em log_auditoria e opcionalmente na fila_eventos_sync.
+#[allow(clippy::too_many_arguments)]
 pub fn log_audit(
     conn: &Connection,
     actor_id: &str,

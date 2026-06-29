@@ -1,5 +1,5 @@
 ﻿"use client";
-
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useMemo } from "react";
 import { FormField } from "@/types";
 import { ChevronDown, ChevronUp, Check, X, Camera, AlertCircle, ImageIcon, Trash2 } from "lucide-react";

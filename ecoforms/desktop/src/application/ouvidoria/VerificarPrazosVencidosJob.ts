@@ -1,12 +1,9 @@
+import { NOTIFICACAO_PRAZO_INSERT, PRAZO_MARCAR_COBRANCA_ENVIADA, PRAZOS_VENCIDOS_NAO_COBRADOS } from '../persistence/sqlite/queries/manifestacoes';
+import { USUARIOS_SETOR_NOTIFICACAO } from '../persistence/sqlite/queries/usuarios';
 import { uuidv7 } from 'ecoforms-core';
 import type { SqlitePort } from '../ports/SqlitePort';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
-import {
-  PRAZOS_VENCIDOS_PENDENTES,
-  USUARIOS_POR_MANIFESTACAO_SETOR,
-  NOTIFICACAO_INSERT,
-  PRAZO_MARCAR_COBRANCA_ENVIADA,
-} from '../../infrastructure/persistence/sqlite/queries/ouvidoria';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
+
 
 interface PrazoVencidoRow {
     id: string;
@@ -21,26 +18,20 @@ interface UsuarioNotificavel {
 
 export async function verificarPrazosVencidos(db: SqlitePort, sync?: SyncOutbox): Promise<void> {
     const TERMINAIS = ['encerrada', 'cancelada', 'encaminhado_sema'];
-
-    const sqlPrazos = PRAZOS_VENCIDOS_PENDENTES.sql.replace(
-        '{{TERMINAIS_CLAUSE}}',
-        TERMINAIS.map(() => '?').join(','),
-    );
-
-    const vencidos = await db.query<PrazoVencidoRow>(sqlPrazos, TERMINAIS);
+    const vencidos = await db.query<PrazoVencidoRow>(PRAZOS_VENCIDOS_NAO_COBRADOS.sql, TERMINAIS);
 
     for (const p of vencidos) {
         const now = new Date().toISOString();
         const mensagem = `Cobrança: prazo de "${p.tipo_prazo}" vencido em ${new Date(p.data_limite).toLocaleDateString('pt-BR')} — Manifestação ${p.manifestacao_id}`;
 
         const usuarios = await db.query<UsuarioNotificavel>(
-            USUARIOS_POR_MANIFESTACAO_SETOR.sql,
+            USUARIOS_SETOR_NOTIFICACAO.sql,
             [p.manifestacao_id],
         );
 
         for (const u of usuarios) {
             await db.execute(
-                NOTIFICACAO_INSERT.sql,
+                NOTIFICACAO_PRAZO_INSERT.sql,
                 [uuidv7(), u.id, p.manifestacao_id, mensagem, now, p.id],
             );
         }

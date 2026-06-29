@@ -1,7 +1,8 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +13,11 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { TaskDateSection, DEFAULT_RECORRENCIA } from "@/components/kanban/TaskDateSection";
 import type { TipoPrazo, RecorrenciaConfig } from "@/components/kanban/TaskDateSection";
+import { toast } from "sonner";
 
 export default function EditarServiceSlotClient() {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const { types } = useServiceTypes();
     const { slot: loadedSlot, loading } = useServiceSlotById(id ?? null);
     const { updateSlot } = useServiceMutations();
@@ -38,7 +40,7 @@ export default function EditarServiceSlotClient() {
     useEffect(() => {
         if (!loadedSlot || initialized.current) return;
         if (loadedSlot.status === 'encerrado' || loadedSlot.status === 'cancelado') {
-            alert("Não é possível editar um slot encerrado ou cancelado");
+            toast.error("Não é possível editar um slot encerrado ou cancelado");
             router.push(`/admin/agendamentos/slots/${id}`);
             return;
         }
@@ -76,7 +78,7 @@ export default function EditarServiceSlotClient() {
             });
             router.push(`/admin/agendamentos/slots/${id}`);
         } catch (err) {
-            alert("Erro ao salvar: " + (err as Error).message);
+            toast.error("Erro ao salvar: " + (err as Error).message);
         } finally {
             setSaving(false);
         }

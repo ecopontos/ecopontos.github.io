@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Trash2, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
 import Link from "next/link";
 import type { EliminacaoTitularResult } from "@/src/application/usuario/EliminacaoTitularUseCase";
 
 export default function EliminarTitularClient() {
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const router = useRouter();
     const { user } = useAuth();
 
@@ -23,7 +24,7 @@ export default function EliminarTitularClient() {
     const [fatalError, setFatalError] = useState<string | null>(null);
 
     const handleEliminar = async () => {
-        if (!user) return;
+        if (!user || !id) return;
         setLoading(true);
         setFatalError(null);
         try {

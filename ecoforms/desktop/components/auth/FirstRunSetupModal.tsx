@@ -14,8 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, FolderCheck, Search, UserPlus } from "lucide-react";
 import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
 import { useAuth } from "@/contexts/AuthContext";
-import { uuidv7 } from "ecoforms-core";
-import { fetchUsuarioAuth, saveSistemaConfig } from "@/src/interface/hooks/queries/lookups";
+import type { User } from "@/types";
 
 interface FirstRunSetupModalProps {
     open: boolean;
@@ -66,17 +65,18 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
 
     const saveLanPath = useCallback(async (path: string) => {
         try {
-            await saveSistemaConfig('lan_sync_path', path.trim());
+            await invoke('bootstrap_set_lan_sync_path', { path: path.trim() });
         } catch (e: unknown) {
             if (String(e).includes("no such table")) {
                 console.warn("[FirstRun] Table missing, retrying after ensureColumnsIfNeeded...");
                 await new Promise(r => setTimeout(r, 500));
-                await saveSistemaConfig('lan_sync_path', path.trim());
+                await invoke('bootstrap_set_lan_sync_path', { path: path.trim() });
             } else {
                 console.error("[FirstRun] Failed to save lan_sync_path:", e);
+                throw e;
             }
         }
-    }, []);
+    }, [invoke]);
 
     const tryLoadUsers = useCallback(async (path: string): Promise<boolean> => {
         try {
@@ -86,33 +86,12 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
 
             const seed = await lan.readExpectedUsersSeed();
             if (seed && Array.isArray(seed.users) && seed.users.length > 0) {
-                const mapped: UserSummary[] = seed.users.map((u) => ({
-                    id: u.id ?? uuidv7(),
-                    nome: u.nome,
-                    username: u.username,
-                    perfil: u.perfil,
-                    setor: u.setor,
-                }));
-                setUsers(mapped);
+                const imported = await invoke<UserSummary[]>('bootstrap_import_seed_users', {
+                    users: seed.users,
+                });
+                setUsers(imported);
                 setUserSource("seed");
-
-                for (const u of seed.users) {
-                    const id = u.id ?? uuidv7();
-                    try {
-                        await (c as any).sqliteUserRepository.createUserFromSeed({
-                            id,
-                            nome: u.nome,
-                            username: u.username,
-                            password: u.password,
-                            perfil: u.perfil,
-                            setor: u.setor,
-                            ativo: u.ativo !== false,
-                        });
-                    } catch (e) {
-                        console.warn("[FirstRun] Failed to create user from seed:", u.username, e);
-                    }
-                }
-                return true;
+                return imported.length > 0;
             }
 
             const lanUsers = await lan.listUsersFromLan();
@@ -223,37 +202,37 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
         setError(null);
         setLoading(true);
         try {
-            // Buscar dados completos do usuário selecionado (campos de auth)
-            const userRow = await fetchUsuarioAuth(selectedUserId);
-            if (!userRow || !userRow.hash_senha) {
+            const selectedUser = users.find((candidate) => candidate.id === selectedUserId);
+            if (!selectedUser) {
+                setError("Usuário selecionado não encontrado.");
+                setLoading(false);
+                return;
+            }
+
+            interface LoginResult {
+                found: boolean;
+                password_valid: boolean;
+                user: Record<string, unknown> | null;
+            }
+
+            const result = await invoke<LoginResult>("db_login", {
+                username: selectedUser.username,
+                password: loginPassword.trim(),
+            });
+
+            if (!result.found || !result.user) {
                 setError("Usuário não encontrado ou sem senha configurada.");
                 setLoading(false);
                 return;
             }
 
-            // Verificar senha localmente via bcrypt (Opção A)
-            const { invoke } = await import("@tauri-apps/api/core");
-            const isValid = await invoke<boolean>("verify_password", {
-                password: loginPassword.trim(),
-                hash: userRow.hash_senha,
-            });
-
-            if (!isValid) {
+            if (!result.password_valid) {
                 setError("Senha incorreta.");
                 setLoading(false);
                 return;
             }
 
-            // Montar objeto User e autenticar via AuthContext
-            const user = {
-                id: userRow.id,
-                nome: userRow.nome,
-                username: userRow.nome_usuario,
-                perfil: userRow.perfil,
-                ativo: userRow.ativo === 1 || userRow.ativo === true,
-                org_id: userRow.id_organizacao,
-            };
-            login(user as any, loginPassword.trim());
+            login(result.user as unknown as User, loginPassword.trim());
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
             setError(msg);

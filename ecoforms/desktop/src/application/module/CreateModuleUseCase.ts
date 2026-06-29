@@ -34,6 +34,7 @@ export class CreateModuleUseCase {
       ordem: input.ordem ?? 999,
       status: 'draft',
       version: 1,
+      config_version: 1,
       config: input.config || {},
       suite_config: null,
       criado_em: new Date().toISOString(),

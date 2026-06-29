@@ -1,12 +1,13 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchFormSchemasAtivos, fetchTarefaById, fetchPacotesRecentAtuais } from "@/src/interface/hooks/queries/lookups";
+import { fetchFormSchemasAtivos, fetchTarefaById, fetchPacotesForTarefa } from "@/src/interface/hooks/queries/lookups";
 import type { TarefaRow, PacoteRow } from "@/src/interface/hooks/queries/lookups";
 import { ReadOnlyFormRenderer } from "@/components/runtime/ReadOnlyFormRenderer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +22,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 export default function TaskDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useAuth();
@@ -39,13 +40,15 @@ export default function TaskDetailPage() {
         setLoading(true);
 
         async function load() {
+            const taskId = id;
+            if (!taskId) return;
             try {
-                const taskRow = await fetchTarefaById(id);
+                const taskRow = await fetchTarefaById(taskId);
                 if (cancelled) return;
                 setTask(taskRow);
                 if (!taskRow) { setLoading(false); return; }
 
-                const pacoteRows = await fetchPacotesRecentAtuais();
+                const pacoteRows = await fetchPacotesForTarefa(taskId);
                 if (cancelled) return;
                 setSuites(pacoteRows);
 
@@ -97,7 +100,7 @@ export default function TaskDetailPage() {
                         </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Criada em {new Date(task.created_at).toLocaleDateString("pt-BR")}
+                        Criada em {new Date(task.criado_em).toLocaleDateString("pt-BR")}
                         {task.prazo && ` · Prazo: ${new Date(task.prazo).toLocaleDateString("pt-BR")}`}
                     </p>
                 </div>

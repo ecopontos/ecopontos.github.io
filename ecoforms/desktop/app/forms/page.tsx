@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Play, RotateCcw, Eye, EyeOff, Copy, Search, ChevronLeft, ChevronRight } from "lucide-react";

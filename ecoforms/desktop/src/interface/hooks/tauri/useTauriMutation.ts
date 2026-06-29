@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
+import { useSqlite } from '../queries/useSqlite';
 
 function isTauri() { return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window; }
 
@@ -18,13 +19,14 @@ export function useTauriMutation(
   options?: Omit<UseMutationOptions<number, Error, ExecuteParams>, 'mutationFn'>
 ) {
   const queryClient = useQueryClient();
+  const sqlite = useSqlite();
 
   return useMutation<number, Error, ExecuteParams>({
     mutationFn: async ({ sql, params = [] }) => {
       if (!isTauri()) return 0;
       try {
-        const affected = await invoke<number>('db_execute', { sql, params });
-        return affected;
+        await sqlite.execute(sql, params);
+        return 1;
       } catch (error) {
         throw new Error(`Execute failed: ${error}`);
       }
@@ -56,12 +58,21 @@ export function useTauriBatch(
   options?: Omit<UseMutationOptions<void, Error, string[]>, 'mutationFn'>
 ) {
   const queryClient = useQueryClient();
+  const sqlite = useSqlite();
 
   return useMutation<void, Error, string[]>({
     mutationFn: async (sqls) => {
       if (!isTauri()) return;
       try {
-        await invoke<void>('db_execute_batch', { sqls });
+        if (sqlite.transactionBatch) {
+          await sqlite.transactionBatch(sqls.map((sql) => ({ sql })));
+          return;
+        }
+        await sqlite.transaction(async (tx) => {
+          for (const sql of sqls) {
+            await tx.execute(sql);
+          }
+        });
       } catch (error) {
         throw new Error(`Batch execute failed: ${error}`);
       }

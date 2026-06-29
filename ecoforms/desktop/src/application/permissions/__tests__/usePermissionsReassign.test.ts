@@ -1,5 +1,5 @@
 ﻿import { describe, it, expect } from 'vitest';
-import { usePermissions } from '@/src/interface/hooks/catalog/auth';
+import { usePermissions } from '@/src/interface/hooks/utils/usePermissions';
 
 describe('usePermissions - tasks.reassign', () => {
     it('should allow encarregado to have tasks.reassign permission', () => {

@@ -330,9 +330,9 @@ describe('SyncPersonalViewUseCase', () => {
 
 describe('GetModuleVisuaisUseCase', () => {
     function createMockSqlite(modules: Record<string, unknown>[]): SqlitePort {
-        return {
+        const db: SqlitePort = {
             query: async (_sql: string, _params?: unknown[]) => {
-                if (_sql.includes('module_registry')) return modules as any;
+                if (_sql.includes('registro_modulos')) return modules as any;
                 if (_sql.includes('data_registry')) return [
                     { id: 'r1', tipo: 'inspecao', conteudo: '{"status":"ativo"}' },
                     { id: 'r2', tipo: 'inspecao', conteudo: '{"status":"inativo"}' },
@@ -346,8 +346,9 @@ describe('GetModuleVisuaisUseCase', () => {
                 ] as any;
             },
             execute: async () => {},
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db),
         };
+        return db;
     }
 
     it('deve retornar null se módulo não existe', async () => {
@@ -364,9 +365,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin', 'gerente'] } },
@@ -396,9 +397,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Admin Table', position: { w: 12 }, permissions: { can_view: ['admin'] } },
@@ -418,9 +419,9 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb = createMockSqlite([{
             id: 'mod-1',
             slug: 'inspecoes',
-            name: 'Inspeções',
-            entity_type: 'inspecao',
-            config: JSON.stringify({
+            nome: 'Inspeções',
+            tipo_entidade: 'inspecao',
+            configuracao: JSON.stringify({
                 entity_type: 'inspecao',
                 visuais: [
                     { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin'] } },
@@ -448,11 +449,11 @@ describe('GetModuleVisuaisUseCase', () => {
         const mockDb: SqlitePort = {
             query: async (_sql: string) => {
                 capturedQuery = _sql;
-                if (_sql.includes('view_registry')) return [{ widgets: JSON.stringify([{ source: 'module_visual', visual_type: 'table' }]) }] as any;
-                if (_sql.includes('module_registry')) return [{
-                    id: 'mod-1', slug: 'inspecoes', name: 'Inspeções', entity_type: 'inspecao',
+                if (_sql.includes('registro_visualizacoes')) return [{ widgets: JSON.stringify([{ source: 'module_visual', visual_type: 'table' }]) }] as any;
+                if (_sql.includes('registro_modulos')) return [{
+                    id: 'mod-1', slug: 'inspecoes', nome: 'Inspeções', tipo_entidade: 'inspecao',
                     status: 'published',
-                    config: JSON.stringify({
+                    configuracao: JSON.stringify({
                         entity_type: 'inspecao',
                         visuais: [
                             { type: 'table', title: 'Tabela', position: { w: 12 }, permissions: { can_view: ['admin'] } },
@@ -464,14 +465,14 @@ describe('GetModuleVisuaisUseCase', () => {
             },
             all: async () => [] as any,
             execute: async () => {},
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(mockDb),
         };
 
         const repo = new InMemoryModuleVisualViewRepository();
         const cache = new VisualQueryCache();
         const sut = new GetModuleVisuaisUseCase(mockDb, repo, cache);
         const result = await sut.execute('inspecoes', 'user-1', 'admin', undefined, 'dash-1');
-        expect(capturedQuery).toContain('view_registry');
+        expect(capturedQuery).toContain('registro_visualizacoes');
         expect(result!.visuais.length).toBe(1);
     });
 });

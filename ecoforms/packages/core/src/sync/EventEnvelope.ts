@@ -23,8 +23,8 @@ export type EcoFormsEventType =
   | 'suite.reencaminhada'
   | 'crm.cliente.criado'
   | 'crm.cliente.atualizado'
-  | 'crm.roteiro.criado'
-  | 'crm.roteiro.atualizado'
+  | 'roteiro.criado'
+  | 'roteiro.atualizado'
   | 'crm.coleta.registrada'
   | 'client.criado'
   | 'client.atualizado'
@@ -44,6 +44,10 @@ export type EcoFormsEventType =
   | 'task.movida'
   | 'task.concluida'
   | 'task.atualizada'
+  | 'task.arquivada'
+  | 'task.desarquivada'
+  | 'task.excluida'
+  | 'task.comentario_adicionado'
   | 'module.publicado'
   | 'module.arquivado'
   | 'agendamento.criado'
@@ -52,7 +56,11 @@ export type EcoFormsEventType =
   | 'agendamento.realizado'
   | 'agendamento.despachado'
   | 'agendamento.slot_publicado'
-  | 'agendamento.slot_cancelado';
+  | 'agendamento.slot_cancelado'
+  | 'execucao.criada'
+  | 'execucao.status_atualizado'
+  | 'intercorrencia.registrada'
+  | 'intercorrencia.resolvida';
 
 export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'demanda.criada',
@@ -70,8 +78,8 @@ export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'suite.reencaminhada',
   'crm.cliente.criado',
   'crm.cliente.atualizado',
-  'crm.roteiro.criado',
-  'crm.roteiro.atualizado',
+  'roteiro.criado',
+  'roteiro.atualizado',
   'crm.coleta.registrada',
   'client.criado',
   'client.atualizado',
@@ -91,6 +99,10 @@ export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'task.movida',
   'task.concluida',
   'task.atualizada',
+  'task.arquivada',
+  'task.desarquivada',
+  'task.excluida',
+  'task.comentario_adicionado',
   'module.publicado',
   'module.arquivado',
   'agendamento.criado',
@@ -100,6 +112,10 @@ export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'agendamento.despachado',
   'agendamento.slot_publicado',
   'agendamento.slot_cancelado',
+  'execucao.criada',
+  'execucao.status_atualizado',
+  'intercorrencia.registrada',
+  'intercorrencia.resolvida',
 ];
 
 export interface EventEnvelope {

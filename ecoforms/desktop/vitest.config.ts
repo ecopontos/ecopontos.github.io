@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: [],
+    pool: 'threads',
+    maxWorkers: 1,
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
@@ -29,8 +32,6 @@ export default defineConfig({
       '@/src': path.resolve(__dirname, './src'),
       '@/types': path.resolve(__dirname, './types'),
       '@/app': path.resolve(__dirname, './app'),
-      'react': path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
       'ecoforms-core': path.resolve(__dirname, '../packages/core/src'),
       'ecoforms-core/sync': path.resolve(__dirname, '../packages/core/src/sync'),
       'ecoforms-core/permissions': path.resolve(__dirname, '../packages/core/src/permissions'),

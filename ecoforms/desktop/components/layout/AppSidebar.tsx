@@ -8,8 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ShowForManager, HideForRole } from "@/components/auth/PermissionGuards";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { DatabaseStatus } from "@/components/database/DatabaseSelector";
-import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
-import { PACOTES_PENDING_SOLICITACOES_COUNT } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
+import { usePendingSolicitacoesCount } from "@/src/interface/hooks/catalog/forms";
 
 
 import { useModules } from "@/src/interface/hooks/catalog/modules-views";
@@ -158,12 +157,9 @@ export default function AppSidebar() {
 
   const isManager = permissions.isAdmin() || permissions.isManager();
 
-  const { data: pendingCountData } = useTauriQuery<{ total: number }>(
-    PACOTES_PENDING_SOLICITACOES_COUNT.sql,
-    isManager && !permissions.isAdmin()
-      ? [user?.setores?.[0] || null, user?.setores?.[0] || null]
-      : [null, null],
-    { enabled: !!user && isManager, refetchInterval: 30000 }
+  const { data: pendingCountData } = usePendingSolicitacoesCount(
+    isManager && !permissions.isAdmin() ? (user?.setores?.[0] || null) : null,
+    { enabled: !!user && isManager, refetchInterval: 30000 },
   );
 
   const pendingCount = pendingCountData?.[0]?.total || 0;

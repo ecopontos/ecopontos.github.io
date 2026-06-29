@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,14 +16,28 @@ import { ItinerarioPanel } from './panels/ItinerarioPanel';
 import { TerrenosPanel } from './panels/TerrenosPanel';
 import { CamadasGenericasPanel } from './panels/CamadasGenericasPanel';
 
-export default function LogisticsMap() {
+interface LogisticsMapProps {
+    /** Pré-seleção via deep-link (?roteiro=). */
+    initialRoteiroId?: string | null;
+    /** Pré-seleção via deep-link (?exec=). */
+    initialExecucaoId?: string | null;
+}
+
+export default function LogisticsMap({ initialRoteiroId = null, initialExecucaoId = null }: LogisticsMapProps = {}) {
     const { user } = useAuth();
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
 
-    const geoData = useGeoDataLayers(mapRef);
-    const execLayers = useExecucaoLayers(mapRef, geoData.selectedRoteiroId);
-    const { isSatellite, setIsSatellite } = useMapInstance(mapContainer, mapRef, geoData.renderDataLayers);
+    const geoData = useGeoDataLayers(mapRef, initialRoteiroId);
+    const execLayers = useExecucaoLayers(mapRef, geoData.selectedRoteiroId, initialExecucaoId);
+
+    const onStyleLoad = useCallback((map: maplibregl.Map) => {
+        geoData.renderDataLayers(map);
+        execLayers.renderAllExecLayers(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const { isSatellite, setIsSatellite } = useMapInstance(mapContainer, mapRef, onStyleLoad);
 
     const layerActions = useLayerActions({
         mapRef,
@@ -36,7 +50,6 @@ export default function LogisticsMap() {
         itinerarioVisRef: geoData.itinerarioVisRef,
     });
 
-    // Tipos de terreno presentes nos dados (para legenda dinâmica)
     const tiposPresentes = [...new Set(geoData.terrenos.map(t => t.tipo))];
 
     return (

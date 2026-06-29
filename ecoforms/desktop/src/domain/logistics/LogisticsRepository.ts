@@ -163,6 +163,7 @@ export interface LogisticsRepository {
     addClienteToRoteiro(rc: RoteiroCliente): Promise<void>;
     removeClienteFromRoteiro(roteiroId: string, clienteId: string): Promise<void>;
     updateClienteOrdem(roteiroId: string, clienteId: string, ordem: number): Promise<void>;
+    updateClienteOrdemBatch(roteiroId: string, items: { clienteId: string; ordem: number }[]): Promise<void>;
 
     // Execucao Coleta
     findAllExecucoes(filter?: ExecucaoFilter): Promise<ExecucaoColeta[]>;

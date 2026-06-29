@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useContainerAsync } from '@/src/interface/hooks/utils/useContainer';
-import type { ManifestacaoInput, Tramitacao, Resposta, Despacho, Anexo, Prazo, Notificacao, HistoricoAlteracao, EnvioResposta } from '@/src/domain/ouvidoria/ManifestacaoRepository';
+import type { ManifestacaoInput, Tramitacao, Resposta, Despacho, Anexo, Prazo, Notificacao, HistoricoAlteracao, EnvioResposta, CanalEnvio, StatusEnvio } from '@/src/domain/ouvidoria/ManifestacaoRepository';
+import type { EnviarRespostaDTO } from '@/src/application/ouvidoria/EnviarRespostaUseCase';
 
 export function useManifestacaoMutations() {
     const [loading, setLoading] = useState(false);
@@ -151,6 +152,30 @@ export function useManifestacaoMutations() {
         });
     }, [getContainer]);
 
+    const enviarResposta = useCallback(async (input: {
+        respostaId: string;
+        manifestacaoId: string;
+        canal: CanalEnvio;
+        destinatario?: string | null;
+        statusEnvio: StatusEnvio;
+        erro?: string | null;
+        marcarRespondida?: boolean;
+    }) => {
+        return withLoading(async () => {
+            const c = await getContainer();
+            const dto: EnviarRespostaDTO = {
+                respostaId: input.respostaId,
+                manifestacaoId: input.manifestacaoId,
+                canal: input.canal,
+                destinatario: input.destinatario,
+                statusEnvio: input.statusEnvio,
+                erro: input.erro,
+                marcarRespondida: input.marcarRespondida,
+            };
+            return c.enviarResposta.execute(dto);
+        });
+    }, [getContainer]);
+
     const criarDemandaDeManifestacao = useCallback(async (input: {
         manifestacaoId: string;
         solicitanteId: string;
@@ -183,6 +208,7 @@ export function useManifestacaoMutations() {
         formatarResposta,
         verificarCompetencia,
         registrarEnvio,
+        enviarResposta,
         criarDemandaDeManifestacao,
         loading, error,
     };

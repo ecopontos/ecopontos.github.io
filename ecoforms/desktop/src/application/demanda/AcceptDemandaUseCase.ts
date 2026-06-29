@@ -1,6 +1,6 @@
 import type { DemandaRepository } from '../../domain/demanda/DemandaRepository';
 import type { ClockPort } from '../ports/ClockPort';
-import type { SyncOutbox } from '../../infrastructure/sync/SyncOutbox';
+import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../task/TaskProjectionService';
 import { uuidv7 } from 'ecoforms-core';
 
@@ -46,8 +46,8 @@ export class AcceptDemandaUseCase {
 
     const agora = this.clock.nowIso();
 
-    await this.repo.transaction(async () => {
-      await this.repo.updateStatus(input.demandaId, 'aceita', {
+    await this.repo.transaction(async (txRepo) => {
+      await txRepo.updateStatus(input.demandaId, 'aceita', {
         aceitoPor: input.aceitoPor,
         aceitoEm: agora,
       });
@@ -64,9 +64,11 @@ export class AcceptDemandaUseCase {
           origemTipo:    'demanda',
           origemId:      input.demandaId,
           formularios:   t.formularios,
+        }, {
+          formularioSaver: (tf) => txRepo.saveTarefaFormulario(tf),
         });
 
-        await this.repo.saveEvento({
+        await txRepo.saveEvento({
           id: uuidv7(),
           demandaId: input.demandaId,
           type: 'task.criada',
@@ -79,7 +81,7 @@ export class AcceptDemandaUseCase {
         });
       }
 
-      await this.repo.saveEvento({
+      await txRepo.saveEvento({
         id: uuidv7(),
         demandaId: input.demandaId,
         type: 'demanda.aceita',

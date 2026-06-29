@@ -26,6 +26,7 @@ export {
   type SolicitacaoPackage,                                               // type — pacote de solicitação
 } from '../queries/useSolicitacoesList';
 export { useSolicitacaoEditor } from '../queries/useSolicitacaoEditor'; // ativo — edição e re-submissão de pacotes
+export { usePendingSolicitacoesCount } from '../queries/usePendingSolicitacoesCount'; // ativo — contador de solicitações pendentes
 export { useInboxMutations } from '../mutations/useInboxMutations';     // ativo — atualiza status no inbox
 
 // --- Demandas ---

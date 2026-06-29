@@ -1,9 +1,7 @@
+import { PACOTE_BY_ID_ATUAL, PACOTE_SOLICITAR_INSERT } from '../../persistence/sqlite/queries/pacotes';
 import { registerAction } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';
-import {
-  PACOTE_BY_ID_ATUAL,
-  PACOTE_SOLICITAR_INSERT,
-} from "../../../infrastructure/persistence/sqlite/queries/pacotes";
+
 
 export function registerSolicitarAction() {
   registerAction({

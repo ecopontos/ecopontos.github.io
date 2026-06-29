@@ -137,12 +137,10 @@ export class TransportService {
             });
 
             if (pushResult.success) {
-                await this.db.transaction(async () => {
-                    await this.db.execute(
-                        `UPDATE fila_eventos_sync SET situacao = 'sent', enviado_em = datetime('now') WHERE id = ?`,
-                        [row.id],
-                    );
-                });
+                await this.db.execute(
+                    "UPDATE fila_eventos_sync SET situacao = 'sent', enviado_em = datetime('now') WHERE id = ?",
+                    [row.id],
+                );
 
                 result.sent++;
             } else {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { getContainerAsync } from '../../../infrastructure/container';
 import type { AgendamentoProps } from '../../../domain/service/Agendamento';

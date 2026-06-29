@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, Eye, Rocket, Pencil, Archive } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { toast } from 'sonner';
 
 export default function AdminModulesPage() {
     const { modules, loading, refetch, createModule, publishModule, archiveModule } = useModules();
+    const router = useRouter();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [newModule, setNewModule] = useState({ slug: '', name: '', entity_type: '', description: '' });
 
@@ -109,7 +111,7 @@ export default function AdminModulesPage() {
                                             <Pencil className="mr-2 h-4 w-4" /> Editar
                                         </Button>
                                     </Link>
-                                    <Button size="sm" variant="outline" onClick={() => window.open(`/modulo/${mod.slug}`, '_blank')}>
+                                    <Button size="sm" variant="outline" onClick={() => router.push(`/modulo/${mod.slug}`)}>
                                         <Eye className="mr-2 h-4 w-4" /> Visualizar
                                     </Button>
                                     {mod.status !== 'published' && (
@@ -129,7 +131,7 @@ export default function AdminModulesPage() {
                 ))}
                 {modules.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
-                        Nenhum módulo criado. Clique em "Novo Módulo" para começar.
+                        Nenhum módulo criado. Clique em &quot;Novo Módulo&quot; para começar.
                     </div>
                 )}
             </div>

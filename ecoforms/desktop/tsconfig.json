@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2020",
     "lib": [
       "dom",
       "dom.iterable",
@@ -37,21 +37,6 @@
       ],
       "@/interface/*": [
         "./src/interface/*"
-      ],
-      "ecoforms-core/sync": [
-        "../packages/core/dist/sync/index.js"
-      ],
-      "ecoforms-core/permissions": [
-        "../packages/core/dist/permissions/index.js"
-      ],
-      "ecoforms-core/ports": [
-        "../packages/core/dist/ports/SqlitePort.js"
-      ],
-      "ecoforms-core/repositories": [
-        "../packages/core/dist/repositories/index.js"
-      ],
-      "ecoforms-core": [
-        "../packages/core/dist/index.js"
       ]
     }
   },
@@ -72,4 +57,3 @@
     "src/application/ports/_deprecated"
   ]
 }
-// Modified

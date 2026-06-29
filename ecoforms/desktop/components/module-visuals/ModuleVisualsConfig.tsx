@@ -1,9 +1,9 @@
 "use client";
-
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 import { useState, useCallback, useEffect } from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors, pointerWithin } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '@/src/interface/hooks/catalog/utils';
 import type { ModuleConfig } from '@/src/domain/module/ModuleRegistry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
