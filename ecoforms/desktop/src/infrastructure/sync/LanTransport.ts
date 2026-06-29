@@ -23,6 +23,27 @@ interface LanEvent {
 
 export type LanEventHandler = (envelope: Record<string, unknown>) => Promise<void>;
 
+interface HttpResponse {
+    status: number;
+    body: string;
+}
+
+async function lanHttpRequest(
+    url: string,
+    method: string,
+    headers: Record<string, string>,
+    body?: string,
+): Promise<HttpResponse> {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<HttpResponse>('lan_http_request', { url, method, headers, body: body ?? null });
+}
+
+async function lanHttpGetBytes(url: string, headers: Record<string, string>): Promise<Uint8Array> {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const bytes = await invoke<number[]>('lan_http_get_bytes', { url, headers });
+    return new Uint8Array(bytes);
+}
+
 export class LanTransport {
     private pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     private handlers = new Map<string, LanEventHandler>();
@@ -32,6 +53,7 @@ export class LanTransport {
         private hubUrl: string,
         private deviceId: string,
         private db: SqlitePort,
+        private authToken?: string,
     ) {}
 
     registerHandler(eventType: string, handler: LanEventHandler): void {
@@ -50,6 +72,17 @@ export class LanTransport {
             this.pushDebounceTimer = null;
             this.pushPending().catch(() => {});
         }, 500);
+    }
+
+    private buildHeaders(extra: Record<string, string> = {}): Record<string, string> {
+        const headers: Record<string, string> = {
+            'X-Device-Id': this.deviceId,
+            ...extra,
+        };
+        if (this.authToken) {
+            headers['X-LAN-Token'] = this.authToken;
+        }
+        return headers;
     }
 
     async pushPending(): Promise<LanPushResult> {
@@ -82,21 +115,18 @@ export class LanTransport {
                 dispositivo_origem: this.deviceId,
             }));
 
-            const response = await fetch(`${this.hubUrl}/api/sync/events`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Device-Id': this.deviceId,
-                },
-                body: JSON.stringify(events),
-            });
+            const resp = await lanHttpRequest(
+                `${this.hubUrl}/api/sync/events`,
+                'POST',
+                this.buildHeaders({ 'Content-Type': 'application/json' }),
+                JSON.stringify(events),
+            );
 
-            if (!response.ok) {
-                const errText = await response.text();
-                return { sent: 0, failed: rows.length, errors: [errText] };
+            if (resp.status < 200 || resp.status >= 300) {
+                return { sent: 0, failed: rows.length, errors: [resp.body] };
             }
 
-            const result = (await response.json()) as { accepted: number; rejected: number; errors: string[] };
+            const result = JSON.parse(resp.body) as { accepted: number; rejected: number; errors: string[] };
 
             const sentIds = rows.map((r) => r.id);
             for (const id of sentIds) {
@@ -126,16 +156,15 @@ export class LanTransport {
                 );
                 const sinceSeq = cursorRows[0]?.sequencia ?? 0;
 
-                const response = await fetch(
+                const resp = await lanHttpRequest(
                     `${this.hubUrl}/api/sync/events?since_seq=${sinceSeq}&routing_id=${routingId}&limit=100`,
-                    {
-                        headers: { 'X-Device-Id': this.deviceId },
-                    },
+                    'GET',
+                    this.buildHeaders(),
                 );
 
-                if (!response.ok) continue;
+                if (resp.status < 200 || resp.status >= 300) continue;
 
-                const events = (await response.json()) as LanEvent[];
+                const events = JSON.parse(resp.body) as LanEvent[];
 
                 for (const event of events) {
                     const applied = await this.db.query<{ envelope_id: string }>(
@@ -186,28 +215,10 @@ export class LanTransport {
         return { processed: totalProcessed, errors };
     }
 
-    async uploadFile(anexoId: string, filePath: string): Promise<void> {
-        const { invoke } = await import('@tauri-apps/api/core');
-        const base64Content = await invoke<string>('lan_read_file', { path: filePath });
-        const binary = Uint8Array.from(atob(base64Content), (c) => c.charCodeAt(0));
-
-        const formData = new FormData();
-        formData.append('id', anexoId);
-        formData.append('file', new Blob([binary]));
-
-        await fetch(`${this.hubUrl}/api/files`, {
-            method: 'POST',
-            headers: { 'X-Device-Id': this.deviceId },
-            body: formData,
-        });
-    }
-
     async downloadFile(anexoId: string): Promise<Uint8Array> {
-        const response = await fetch(`${this.hubUrl}/api/files/${anexoId}`, {
-            headers: { 'X-Device-Id': this.deviceId },
-        });
-        if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-        const buffer = await response.arrayBuffer();
-        return new Uint8Array(buffer);
+        return lanHttpGetBytes(
+            `${this.hubUrl}/api/files/${anexoId}`,
+            this.buildHeaders(),
+        );
     }
 }

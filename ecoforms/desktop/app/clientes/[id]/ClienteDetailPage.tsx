@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { ArrowLeft, Plus, Trash2, Save, User, Phone, Mail, MapPin, Building, Link2, Unlink, NotebookText, Ban, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +39,7 @@ function maskDocument(value: string, tipo: "PF" | "PJ") {
 }
 
 export default function ClienteDetailPage() {
-  const params = useParams();
-  const id = typeof params.id === "string" ? params.id : null;
+  const id = useRouteParamOrQuery("id");
   const { cliente, loading } = useClienteById(id);
   const { data: contatos, loading: loadingContatos, refetch: refetchContatos } = usePfContactsByPj(id);
   const { data: pfDisponiveis, loading: loadingDisponiveis, refetch: refetchDisponiveis } = usePfUnassigned();

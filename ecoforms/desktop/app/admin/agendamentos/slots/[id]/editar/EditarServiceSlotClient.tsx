@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 
 export default function EditarServiceSlotClient() {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const { types } = useServiceTypes();
     const { slot: loadedSlot, loading } = useServiceSlotById(id ?? null);
     const { updateSlot } = useServiceMutations();

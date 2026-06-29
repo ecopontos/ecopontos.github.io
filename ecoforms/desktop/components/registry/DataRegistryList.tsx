@@ -10,7 +10,7 @@ import { Edit2, Trash2, Plus, Search, RefreshCw, Filter, Upload, Download, Colum
 import { flattenRegistryItems } from "@/src/lib/registry-schema";
 import ExcelJS from "exceljs";
 import { useTauriDialog } from "@/src/interface/hooks/catalog/tauri";
-import { useTauriFs } from "@/src/interface/hooks/catalog/tauri";
+import { invoke } from "@/src/interface/hooks/catalog/tauri";
 import { toast } from "sonner";
 import type { DataRegistryItemView } from "@/src/interface/hooks/catalog/data-registry";
 import {
@@ -43,7 +43,6 @@ export function DataRegistryList({ type, onEdit, onDelete, onCreate, onImport }:
     const { items: rawItems, loading, refetch } = useDataRegistryItems(type);
     const dr = useDataRegistryUseCases();
     const { save } = useTauriDialog();
-    const { writeFile } = useTauriFs();
 
     const items = useMemo(() => {
         return [...rawItems].sort((a, b) => {
@@ -247,7 +246,7 @@ export function DataRegistryList({ type, onEdit, onDelete, onCreate, onImport }:
             });
             if (!filePath) return;
             const buffer = await wb.xlsx.writeBuffer();
-            await writeFile(filePath, new Uint8Array(buffer as ArrayBuffer));
+            await invoke('write_export_file', { path: filePath, bytes: Array.from(new Uint8Array(buffer as ArrayBuffer)), extension: 'xlsx' });
             toast.success("Arquivo exportado com sucesso.");
         } catch (err: unknown) {
             toast.error("Erro ao exportar: " + getErrorMessage(err, "erro desconhecido"));

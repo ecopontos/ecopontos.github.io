@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import type { ModuleRegistry } from "@/src/domain/module/ModuleRegistry";
 
 export default function EditModuleClient() {
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function EditModuleClient() {
     }, [id]);
 
     const handleSave = async () => {
+        if (!id) { toast.error("Módulo não encontrado"); return; }
         if (!form.name.trim()) { toast.error("Nome é obrigatório"); return; }
         setSaving(true);
         try {

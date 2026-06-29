@@ -3,7 +3,7 @@ import type { ModuleVisualViewRepository } from '../../domain/visual/ModuleVisua
 import type { ModuleVisualView } from '../../domain/visual/ModuleVisualView';
 import { resolveBind, type ViewContext } from './resolveBind';
 import { VisualQueryCache } from './VisualQueryCache';
-import { DASHBOARD_WIDGETS, MODULO_POR_SLUG } from '../../infrastructure/persistence/sqlite/queries/modules';
+import { DASHBOARD_WIDGETS, MODULO_POR_SLUG } from '../persistence/sqlite/queries/modules';
 
 export interface JoinDescriptor {
     table: string;

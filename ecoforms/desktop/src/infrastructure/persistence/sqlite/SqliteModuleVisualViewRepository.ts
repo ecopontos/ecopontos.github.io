@@ -130,17 +130,19 @@ export class SqliteModuleVisualViewRepository implements ModuleVisualViewReposit
     }
 
     async setDefault(viewId: string, moduleId: string, visualType: string): Promise<void> {
-        await this.db.transaction(async () => {
-            await this.db.execute(
-                `UPDATE visuais_modulos SET is_default = 0, atualizado_em = datetime('now')
-                 WHERE module_id = ? AND visual_type = ?`,
-                [moduleId, visualType],
-            );
-            await this.db.execute(
-                `UPDATE visuais_modulos SET is_default = 1, atualizado_em = datetime('now')
-                 WHERE id = ?`,
-                [viewId],
-            );
-        });
+        const statements = [
+            { sql: "UPDATE visuais_modulos SET is_default = 0, atualizado_em = datetime('now') WHERE module_id = ? AND visual_type = ?", params: [moduleId, visualType] },
+            { sql: "UPDATE visuais_modulos SET is_default = 1, atualizado_em = datetime('now') WHERE id = ?", params: [viewId] },
+        ];
+
+        if (this.db.transactionBatch) {
+            await this.db.transactionBatch(statements);
+        } else {
+            await this.db.transaction(async (tx) => {
+                for (const statement of statements) {
+                    await tx.execute(statement.sql, statement.params);
+                }
+            });
+        }
     }
 }

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useRouteParamOrQuery } from '@/src/interface/hooks/routing/useRouteParamOrQuery';
 import { useModuleRuntime } from '@/src/interface/hooks/catalog/modules-views';
 import { useModuleVisuals } from '@/src/interface/hooks/catalog/modules-views';
 import { useActiveViews } from '@/src/interface/hooks/catalog/modules-views';
@@ -19,8 +19,7 @@ import type { FormContent } from '@/types';
 import { VisualRenderer, type VisualData } from '@/components/module-runtime/VisualRenderer';
 
 export default function ModuloPageClient() {
-  const params = useParams();
-  const slug = params?.slug as string;
+  const slug = useRouteParamOrQuery("slug") ?? "";
   const { user } = useAuth();
   const [activeForm, setActiveForm] = useState<ModuleRuntimeDto['forms'][0] | null>(null);
 

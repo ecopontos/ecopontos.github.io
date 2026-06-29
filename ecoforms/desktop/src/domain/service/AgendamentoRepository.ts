@@ -49,4 +49,5 @@ export interface AgendamentoRepository {
     existeParaClienteESlot(clienteId: string, slotId: string): Promise<boolean>;
     save(agendamento: Agendamento): Promise<void>;
     confirmIfPendente(id: string, atualizadoEm: string): Promise<boolean>;
+    transaction<T>(fn: (tx: AgendamentoRepository) => Promise<T>): Promise<T>;
 }

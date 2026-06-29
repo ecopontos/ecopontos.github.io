@@ -70,7 +70,7 @@ export default function LegacySyncPage() {
     const [pesagemDataInicio, setPesagemDataInicio] = useState(() => isoDateDaysAgo(7));
     const [pesagemDataFim, setPesagemDataFim] = useState(() => isoDateDaysAgo(0));
 
-    const { config, saving, saveConfig } = usePgLegacyConfig();
+    const { config, loading: configLoading, saving, error: configError, saveConfig } = usePgLegacyConfig();
     const { roteiros, pesagens, filterOptions, loading, refetch } = useLegacySyncData(filters);
     const {
         syncingRoteiros,
@@ -80,7 +80,7 @@ export default function LegacySyncPage() {
         error: syncError,
         syncRoteiros,
         syncPesagens,
-    } = useLegacySyncActions(config);
+    } = useLegacySyncActions();
 
     const updateFilter = useCallback((key: keyof LegacySyncFilters, value: string) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -113,7 +113,14 @@ export default function LegacySyncPage() {
                     </Button>
                 </div>
 
-                <PgConfigCard config={config} saving={saving} onSave={saveConfig} />
+                <PgConfigCard config={config} loading={configLoading || Boolean(configError)} saving={saving} onSave={saveConfig} />
+
+                {configError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Erro ao carregar a configuração</AlertTitle>
+                        <AlertDescription>{configError}</AlertDescription>
+                    </Alert>
+                )}
 
                 {(syncError || roteiroResult || pesagemResult) && (
                     <div className="space-y-2">

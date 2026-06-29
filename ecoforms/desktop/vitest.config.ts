@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: [],
+    pool: 'threads',
+    maxWorkers: 1,
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

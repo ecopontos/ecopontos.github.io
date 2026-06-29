@@ -1,5 +1,5 @@
-import { TAREFA_SET_DEMANDA } from '../../../infrastructure/persistence/sqlite/queries/tarefas';
-import { LOG_ACAO_INSERT, LOG_ACAO_INSERT_ERRO } from '../../../infrastructure/persistence/sqlite/queries/log_acoes';
+import { TAREFA_SET_DEMANDA } from '../../persistence/sqlite/queries/tarefas';
+import { LOG_ACAO_INSERT, LOG_ACAO_INSERT_ERRO } from '../../persistence/sqlite/queries/log_acoes';
 import { registerAction } from "../ActionRegistry";
 import type { ActionContext, ActionResult } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';

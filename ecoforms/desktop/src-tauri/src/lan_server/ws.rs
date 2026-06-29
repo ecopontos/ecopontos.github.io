@@ -1,21 +1,40 @@
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
+use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::IntoResponse;
+use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
-use super::state::{LanServerState, PeerInfo, LanRole};
+use super::auth;
+use super::state::{LanRole, LanServerState, PeerInfo};
 
 pub async fn ws_handler(
+    headers: HeaderMap,
     ws: WebSocketUpgrade,
     State(state): State<Arc<LanServerState>>,
 ) -> impl IntoResponse {
+    if let Some(origin) = headers.get(header::ORIGIN) {
+        if !auth::is_allowed_origin(origin) {
+            auth::record_rejection(
+                &state,
+                "unknown",
+                "lan.ws.origin_rejected",
+                "lan_ws",
+                origin.to_str().unwrap_or("invalid origin"),
+            )
+            .await;
+            return (StatusCode::FORBIDDEN, "Origin not allowed").into_response();
+        }
+    }
+
     ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
 async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
     let mut rx = state.ws_broadcast.subscribe();
     let mut device_id: Option<String> = None;
+    let mut authenticated = false;
 
     loop {
         tokio::select! {
@@ -26,43 +45,66 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
                             let msg_type = parsed.get("type").and_then(|v| v.as_str()).unwrap_or("");
                             match msg_type {
                                 "auth" => {
-                                    let did = parsed.get("device_id")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("unknown")
-                                        .to_string();
-                                    let name = parsed.get("display_name")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or(&did)
-                                        .to_string();
-
-                                    device_id = Some(did.clone());
-
-                                    {
-                                        let mut peers = state.peers.write().await;
-                                        peers.insert(did.clone(), PeerInfo {
-                                            device_id: did.clone(),
-                                            display_name: name.clone(),
-                                            addr: None,
-                                            role: LanRole::Spoke,
-                                            last_seen: Some(std::time::Instant::now()),
-                                        });
+                                    if authenticated {
+                                        continue;
                                     }
+                                    match auth::authorize_ws(&state, &parsed).await {
+                                        Ok(peer_auth) => {
+                                            device_id = Some(peer_auth.device_id.clone());
+                                            authenticated = true;
 
-                                    let join_msg = serde_json::json!({
-                                        "type": "peer_joined",
-                                        "device_id": did,
-                                        "display_name": name,
-                                    });
-                                    let _ = state.ws_broadcast.send(join_msg.to_string());
+                                            {
+                                                let mut peers = state.peers.write().await;
+                                                peers.insert(peer_auth.device_id.clone(), PeerInfo {
+                                                    device_id: peer_auth.device_id.clone(),
+                                                    display_name: peer_auth.display_name.clone(),
+                                                    addr: None,
+                                                    role: LanRole::Spoke,
+                                                    last_seen: Some(std::time::Instant::now()),
+                                                });
+                                            }
 
-                                    let peers = state.peer_summaries().await;
-                                    let presence = serde_json::json!({
-                                        "type": "presence",
-                                        "peers": peers,
-                                    });
-                                    let _ = socket.send(Message::Text(presence.to_string())).await;
+                                            let ack = json!({
+                                                "type": "auth_ok",
+                                                "device_id": peer_auth.device_id,
+                                                "display_name": peer_auth.display_name,
+                                            });
+                                            let _ = socket.send(Message::Text(ack.to_string())).await;
+
+                                            let join_msg = json!({
+                                                "type": "peer_joined",
+                                                "device_id": device_id.clone().unwrap_or_default(),
+                                            });
+                                            let _ = state.ws_broadcast.send(join_msg.to_string());
+
+                                            let peers = state.peer_summaries().await;
+                                            let presence = json!({
+                                                "type": "presence",
+                                                "peers": peers,
+                                            });
+                                            let _ = socket.send(Message::Text(presence.to_string())).await;
+                                        }
+                                        Err(err) => {
+                                            let failed = json!({
+                                                "type": "auth_failed",
+                                                "reason": err,
+                                            });
+                                            let _ = socket.send(Message::Text(failed.to_string())).await;
+                                            let _ = socket.close().await;
+                                            break;
+                                        }
+                                    }
                                 }
                                 "ping" => {
+                                    if !authenticated {
+                                        let failed = json!({
+                                            "type": "auth_failed",
+                                            "reason": "Authentication required",
+                                        });
+                                        let _ = socket.send(Message::Text(failed.to_string())).await;
+                                        let _ = socket.close().await;
+                                        break;
+                                    }
                                     if let Some(ref did) = device_id {
                                         let mut peers = state.peers.write().await;
                                         if let Some(peer) = peers.get_mut(did) {
@@ -71,7 +113,17 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
                                     }
                                     let _ = socket.send(Message::Text(r#"{"type":"pong"}"#.into())).await;
                                 }
-                                _ => {}
+                                _ => {
+                                    if !authenticated {
+                                        let failed = json!({
+                                            "type": "auth_failed",
+                                            "reason": "Authentication required",
+                                        });
+                                        let _ = socket.send(Message::Text(failed.to_string())).await;
+                                        let _ = socket.close().await;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -82,8 +134,10 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
             broadcast_msg = rx.recv() => {
                 match broadcast_msg {
                     Ok(msg) => {
-                        if socket.send(Message::Text(msg)).await.is_err() {
-                            break;
+                        if authenticated {
+                            if socket.send(Message::Text(msg)).await.is_err() {
+                                break;
+                            }
                         }
                     }
                     Err(broadcast::error::RecvError::Lagged(_)) => continue,
@@ -95,7 +149,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<LanServerState>) {
 
     if let Some(did) = &device_id {
         state.peers.write().await.remove(did);
-        let leave_msg = serde_json::json!({
+        let leave_msg = json!({
             "type": "peer_left",
             "device_id": did,
         });

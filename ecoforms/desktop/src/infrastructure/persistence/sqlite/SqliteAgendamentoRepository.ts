@@ -144,14 +144,14 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async confirmIfPendente(id: string, atualizadoEm: string): Promise<boolean> {
         let claimed = false;
-        await this.db.transaction(async () => {
-            const rows = await this.db.query<{ status: string }>(
-                `SELECT status FROM tbl_agendamentos WHERE id = ? LIMIT 1`,
+        await this.db.transaction(async (tx) => {
+            const rows = await tx.query<{ status: string }>(
+                'SELECT status FROM tbl_agendamentos WHERE id = ? LIMIT 1',
                 [id],
             );
             if (rows[0]?.status === 'pendente') {
-                await this.db.execute(
-                    `UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
+                await tx.execute(
+                    "UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?",
                     [atualizadoEm, id],
                 );
                 claimed = true;
@@ -159,7 +159,6 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         });
         return claimed;
     }
-
     async save(agendamento: Agendamento): Promise<void> {
         const r = agendamento.toRow();
         await this.db.execute(
@@ -183,5 +182,9 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
                 r.criado_por, r.criado_em, r.atualizado_em,
             ],
         );
+    }
+
+    async transaction<T>(fn: (tx: AgendamentoRepository) => Promise<T>): Promise<T> {
+        return this.db.transaction(async (tx) => fn(new SqliteAgendamentoRepository(tx)));
     }
 }

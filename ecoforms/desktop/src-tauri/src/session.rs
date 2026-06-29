@@ -56,8 +56,7 @@ impl SessionState {
     }
 }
 
-#[tauri::command]
-pub fn set_session(
+pub(crate) fn set_session(
     user_id: String,
     perfil: String,
     db_state: State<'_, crate::database::DbState>,

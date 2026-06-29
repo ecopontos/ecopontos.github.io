@@ -97,14 +97,19 @@ export class SqliteUserWidgetInstanceRepository implements UserWidgetInstanceRep
     }
 
     async updatePositions(updates: Array<{ id: string; x: number; y: number; w: number; h: number; order: number }>): Promise<void> {
-        await this.db.transaction(async () => {
-            for (const u of updates) {
-                await this.db.execute(
-                    `UPDATE instancias_widgets_usuario SET position_x = ?, position_y = ?, position_w = ?,
-                     position_h = ?, position_order = ?, atualizado_em = datetime('now') WHERE id = ?`,
-                    [u.x, u.y, u.w, u.h, u.order, u.id],
-                );
-            }
-        });
+        const statements = updates.map((u) => ({
+            sql: "UPDATE instancias_widgets_usuario SET position_x = ?, position_y = ?, position_w = ?, position_h = ?, position_order = ?, atualizado_em = datetime('now') WHERE id = ?",
+            params: [u.x, u.y, u.w, u.h, u.order, u.id],
+        }));
+
+        if (this.db.transactionBatch) {
+            await this.db.transactionBatch(statements);
+        } else {
+            await this.db.transaction(async (tx) => {
+                for (const statement of statements) {
+                    await tx.execute(statement.sql, statement.params);
+                }
+            });
+        }
     }
 }

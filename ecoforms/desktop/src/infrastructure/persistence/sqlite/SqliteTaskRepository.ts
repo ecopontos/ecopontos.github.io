@@ -264,4 +264,7 @@ export class SqliteTaskRepository implements TaskRepository {
             createdAt: r.created_at,
         }));
     }
+    async transaction<T>(fn: (tx: TaskRepository) => Promise<T>): Promise<T> {
+        return this.db.transaction(async (tx) => fn(new SqliteTaskRepository(tx)));
+    }
 }

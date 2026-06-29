@@ -2,7 +2,7 @@ import type { ViewRegistryRepository } from '@/src/domain/view/ViewRegistryRepos
 import type { ViewRegistry } from '@/src/domain/view/ViewRegistry';
 import { ViewRegistry as ViewRegistryEntity } from '../../domain/view/ViewRegistry';
 import type { SqlitePort } from '@/src/application/ports/SqlitePort';
-import { MODULO_TIPO_ENTIDADE_PUBLICADO } from '../../infrastructure/persistence/sqlite/queries/modules';
+import { MODULO_TIPO_ENTIDADE_PUBLICADO } from '../persistence/sqlite/queries/modules';
 import { uuidv7 } from 'ecoforms-core';
 
 export interface ModuleDashboardWidget {

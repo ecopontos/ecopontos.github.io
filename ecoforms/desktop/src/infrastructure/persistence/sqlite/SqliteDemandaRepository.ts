@@ -10,8 +10,8 @@ import { DEMANDAS_LIST_WITH_DETAILS } from '../sqlite/queries/demandas';
 export class SqliteDemandaRepository implements DemandaRepository {
   constructor(private db: SqlitePort) {}
 
-  async transaction<T>(fn: () => Promise<T>): Promise<T> {
-    return this.db.transaction(fn);
+  async transaction<T>(fn: (tx: DemandaRepository) => Promise<T>): Promise<T> {
+    return this.db.transaction(async (tx) => fn(new SqliteDemandaRepository(tx)));
   }
 
   // --- Demanda ---

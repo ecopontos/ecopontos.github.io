@@ -5,7 +5,6 @@ import type { ServiceSlotRepository } from '../../domain/service/ServiceSlotRepo
 import type { ServiceTypeRepository } from '../../domain/service/ServiceTypeRepository';
 import { ServiceValidatorFactory } from '../../domain/service/validators/ServiceValidatorFactory';
 import type { AgendamentoEfeitosService } from './services/AgendamentoEfeitosService';
-import type { SqlitePort } from '../ports/SqlitePort';
 import { formatDateBR } from '../../lib/date';
 
 export interface CreateBookingInput {
@@ -28,7 +27,6 @@ export class CreateBookingUseCase {
         private readonly typeRepo: ServiceTypeRepository,
         private readonly agendamentoRepo: AgendamentoRepository,
         private readonly efeitos: AgendamentoEfeitosService,
-        private readonly sqlite: SqlitePort,
     ) {}
 
     async execute(input: CreateBookingInput): Promise<string> {
@@ -85,14 +83,13 @@ export class CreateBookingUseCase {
 
         slot.incrementarVagas(vagas);
 
-        // Atomicidade: persistir o agendamento e o desconto de vagas do slot na mesma transação.
-        // Se qualquer um falhar, ambos são revertidos (evita vagas descontadas sem agendamento e vice-versa).
-        await this.sqlite.transaction(async () => {
-            await this.agendamentoRepo.save(agendamento);
-            await this.slotRepo.save(slot);
+        await this.agendamentoRepo.transaction(async (txAgendamentoRepo) => {
+            await this.slotRepo.transaction(async (txSlotRepo) => {
+                await txAgendamentoRepo.save(agendamento);
+                await txSlotRepo.save(slot);
+            });
         });
 
-        // Efeitos compensáveis (task/sync via outbox) ficam fora da transação principal.
         await this.efeitos.aoCriar(agendamento, input.userId);
 
         return agendamentoId;

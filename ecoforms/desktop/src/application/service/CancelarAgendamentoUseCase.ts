@@ -1,14 +1,12 @@
 import type { AgendamentoRepository } from '../../domain/service/AgendamentoRepository';
 import type { ServiceSlotRepository } from '../../domain/service/ServiceSlotRepository';
 import type { AgendamentoEfeitosService } from './services/AgendamentoEfeitosService';
-import type { SqlitePort } from '../ports/SqlitePort';
 
 export class CancelarAgendamentoUseCase {
     constructor(
         private readonly agendamentoRepo: AgendamentoRepository,
         private readonly slotRepo: ServiceSlotRepository,
         private readonly efeitos: AgendamentoEfeitosService,
-        private readonly sqlite: SqlitePort,
     ) {}
 
     async execute(agendamentoId: string): Promise<void> {
@@ -20,13 +18,15 @@ export class CancelarAgendamentoUseCase {
 
         agendamento.transitionTo('cancelado');
 
-        await this.sqlite.transaction(async () => {
-            const slot = await this.slotRepo.findById(agendamento.slotId);
-            if (slot && !slot.isTerminal()) {
-                const novasVagas = Math.max(0, slot.vagasOcupadas - agendamento.vagasSolicitadas);
-                await this.slotRepo.updateVagasOcupadas(slot.id, novasVagas);
-            }
-            await this.agendamentoRepo.save(agendamento);
+        await this.agendamentoRepo.transaction(async (txAgendamentoRepo) => {
+            await this.slotRepo.transaction(async (txSlotRepo) => {
+                const slot = await txSlotRepo.findById(agendamento.slotId);
+                if (slot && !slot.isTerminal()) {
+                    const novasVagas = Math.max(0, slot.vagasOcupadas - agendamento.vagasSolicitadas);
+                    await txSlotRepo.updateVagasOcupadas(slot.id, novasVagas);
+                }
+                await txAgendamentoRepo.save(agendamento);
+            });
         });
 
         await this.efeitos.aoCancelar(agendamento);

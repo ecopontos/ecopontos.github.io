@@ -32,4 +32,5 @@ export interface TaskRepository {
     addComment(tarefaId: string, usuarioId: string, comentario: string): Promise<void>;
     findAssignedActiveForms(userId: string): Promise<string[]>;
     getTaskHistory(taskId: string): Promise<TaskHistoryEvent[]>;
+    transaction<T>(fn: (tx: TaskRepository) => Promise<T>): Promise<T>;
 }

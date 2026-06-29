@@ -7,7 +7,7 @@ import { usePermissions, UsePermissionsReturn } from "@/src/interface/hooks/cata
 import { useSqlite } from "@/src/interface/hooks/catalog/tauri";
 import { invoke } from "@tauri-apps/api/core";
 import { supabase } from "@/src/infrastructure/persistence/supabase/supabaseClient";
-import { getCryptoLayer } from "@/src/infrastructure/sync/lazy-sync";
+import { ensureCryptoLayer, getCryptoLayer } from "@/src/infrastructure/sync/lazy-sync";
 
 interface AuthContextType {
     user: User | null;
@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const cryptoLayer = getCryptoLayer();
             if (cryptoLayer) {
                 cryptoLayer.clearKey();
+                await cryptoLayer.clearLegacyKeyStore();
             }
         } catch (e) {
             console.warn("Failed to clear crypto key:", e);
@@ -100,68 +101,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const safeUser = safe as unknown as User;
         setUser(safeUser);
         lastActivityRef.current = Date.now();
-        localStorage.setItem("ecoforms_user", JSON.stringify(safeUser));
-        try {
-            await invoke("set_session", { userId: userData.id, perfil: userData.perfil });
-        } catch (e) {
-            console.warn("Failed to set Rust session:", e);
-        }
+        localStorage.removeItem("ecoforms_user");
 
-        // Derivar chave criptográfica PBKDF2 a partir da senha (não persistir)
+        // Derivar chave criptográfica PBKDF2 a partir da senha (não persistir).
+        // O sal é lido/criado por comando Rust dedicado para evitar mutação genérica em usuarios.
         if (password) {
             try {
-                const { CryptoLayer } = await import("@/src/infrastructure/sync/CryptoLayer");
-                const cryptoLayer = new CryptoLayer();
-                let userSalt: string;
-                try {
-                    const rows = await sqlite.query<{ sal_sync: string }>(
-                        'SELECT sal_sync FROM usuarios WHERE id = ? LIMIT 1',
-                        [userData.id]
-                    );
-                    userSalt = rows[0]?.sal_sync || '';
-                    if (!userSalt) {
-                        // Gerar sync_salt individual para este usuário
-                        userSalt = crypto.randomUUID();
-                        await sqlite.execute(
-                            'UPDATE usuarios SET sal_sync = ? WHERE id = ?',
-                            [userSalt, userData.id]
-                        );
-                    }
-                } catch {
-                    userSalt = crypto.randomUUID();
-                    await sqlite.execute(
-                        'UPDATE usuarios SET sal_sync = ? WHERE id = ?',
-                        [userSalt, userData.id]
-                    ).catch(() => {});
-                }
-                await cryptoLayer.deriveAndStoreKey(password, userSalt);
+                const cryptoLayer = await ensureCryptoLayer();
+                const userSalt = await invoke<string>('get_or_create_own_sync_salt');
+                const keyBytes = await cryptoLayer.deriveAndStoreKey(password, userSalt);
 
                 // Carregar chave no Rust CryptoState para operações server-side
                 try {
-                    const { invoke } = await import('@tauri-apps/api/core');
-                    const stored = await cryptoLayer['store']?.get('org_crypto_key') as number[] | null;
-                    if (stored) {
-                        await invoke('load_crypto_key', { keyBytes: Array.from(stored) });
-                    }
+                    await invoke('load_crypto_key', { keyBytes: Array.from(keyBytes) });
                 } catch {
                     // Non-fatal: crypto state not needed until SMTP or sync operations
                 }
             } catch (e) {
                 console.warn("[Auth] Falha ao derivar chave criptográfica:", e);
-            }
-        }
-
-        // Rehash automático: upgrade SHA-256 legacy → bcrypt
-        if (password && userData.password_hash && !userData.password_hash.startsWith('$2')) {
-            try {
-                const newHash = await invoke<string>('hash_password', { password });
-                await sqlite.execute(
-                    'UPDATE usuarios SET hash_senha = ? WHERE id = ?',
-                    [newHash, userData.id]
-                );
-                console.log('[Auth] Senha migrada de SHA-256 para bcrypt');
-            } catch (e) {
-                console.warn('[Auth] Falha ao migrar hash para bcrypt (non-fatal):', e);
             }
         }
 
@@ -180,52 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("ecoforms_user");
-        if (!storedUser) {
-            setLoading(false);
-            return;
-        }
-        let parsed: User | null = null;
-        try {
-            parsed = JSON.parse(storedUser);
-        } catch (e) {
-            console.error("Failed to parse stored user", e);
-            localStorage.removeItem("ecoforms_user");
-            setLoading(false);
-            return;
-        }
-        if (!parsed) {
-            setLoading(false);
-            return;
-        }
-        // Valida se o usuário ainda existe e está ativo no banco local
-        // AGUARDA container init antes de validar (garante que tabelas existam)
-        const validate = async () => {
-            try {
-                const { getContainerAsync } = await import('@/src/infrastructure/container');
-                await getContainerAsync();
-                const result = await sqlite.query<{ ativo: number | boolean }>(
-                    'SELECT ativo FROM usuarios WHERE id = ? LIMIT 1',
-                    [parsed!.id]
-                );
-                const row = result[0];
-                const ativo = row?.ativo ?? null;
-                if (ativo === 1 || ativo === true) {
-                    lastActivityRef.current = Date.now();
-                    setUser(parsed);
-                } else {
-                    console.warn('[Auth] User inactive or missing, clearing session');
-                    localStorage.removeItem("ecoforms_user");
-                }
-            } catch (err) {
-                // Tabela não existe ou DB não pronto — limpa sessão stale
-                console.warn('[Auth] User validation failed (table missing or DB not ready):', err);
-                localStorage.removeItem("ecoforms_user");
-            } finally {
-                setLoading(false);
-            }
-        };
-        validate();
+        localStorage.removeItem("ecoforms_user");
+        setLoading(false);
     }, []);
 
     // Re-validar sessão periodicamente (a cada 5 min)

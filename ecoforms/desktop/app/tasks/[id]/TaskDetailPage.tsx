@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 export default function TaskDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useAuth();
@@ -39,13 +40,15 @@ export default function TaskDetailPage() {
         setLoading(true);
 
         async function load() {
+            const taskId = id;
+            if (!taskId) return;
             try {
-                const taskRow = await fetchTarefaById(id);
+                const taskRow = await fetchTarefaById(taskId);
                 if (cancelled) return;
                 setTask(taskRow);
                 if (!taskRow) { setLoading(false); return; }
 
-                const pacoteRows = await fetchPacotesForTarefa(id);
+                const pacoteRows = await fetchPacotesForTarefa(taskId);
                 if (cancelled) return;
                 setSuites(pacoteRows);
 

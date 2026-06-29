@@ -9,8 +9,8 @@ export class InMemoryDemandaRepository implements DemandaRepository {
   private eventos: DemandaEvento[] = [];
   private formularios = new Map<string, TarefaFormulario[]>();
 
-  async transaction<T>(fn: () => Promise<T>): Promise<T> {
-    return fn();
+  async transaction<T>(fn: (tx: DemandaRepository) => Promise<T>): Promise<T> {
+    return fn(this);
   }
 
   async findById(id: string): Promise<Demanda | null> {

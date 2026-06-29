@@ -1,7 +1,8 @@
 ﻿"use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { Fragment, useState, useMemo, useRef, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw, MapPin, Wand2, Route, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,9 +34,8 @@ function htmlEscape(s: string | null | undefined): string {
 }
 
 export default function RoteiroDetailPage() {
-  const params = useParams();
   const searchParams = useSearchParams();
-  const id = typeof params.id === "string" ? params.id : null;
+  const id = useRouteParamOrQuery("id");
   // Deep-link vindo da página principal: /logistica/roteiros/[id]?exec=...&panel=coleta
   const deepLinkExecId = searchParams.get("exec");
   const deepLinkPanel = searchParams.get("panel");

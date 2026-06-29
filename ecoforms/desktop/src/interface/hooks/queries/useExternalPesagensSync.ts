@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { usePgLegacyConfig } from "./useLegacySyncData";
 
 interface SyncPesagensResult {
     inseridos: number;
@@ -14,21 +13,21 @@ interface SyncPesagensResult {
     detalhes_erros: string[];
 }
 
+function isTauri() {
+    return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
 export function useExternalPesagensSync() {
-    const { config } = usePgLegacyConfig();
     const [syncing, setSyncing] = useState(false);
     const [lastResult, setLastResult] = useState<SyncPesagensResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const sync = useCallback(async (dataInicio: string, dataFim: string) => {
+        if (!isTauri()) return null;
         setSyncing(true);
         setError(null);
         try {
-            const result = await invoke<SyncPesagensResult>("sync_pesagens_externas", {
-                ...config,
-                dataInicio,
-                dataFim,
-            });
+            const result = await invoke<SyncPesagensResult>("sync_pesagens_externas", { dataInicio, dataFim });
             setLastResult(result);
             return result;
         } catch (e: unknown) {
@@ -37,7 +36,7 @@ export function useExternalPesagensSync() {
         } finally {
             setSyncing(false);
         }
-    }, [config]);
+    }, []);
 
     return { syncing, lastResult, error, sync };
 }

@@ -40,14 +40,14 @@ export class CloseDemandaUseCase {
 
     const agora = this.clock.nowIso();
 
-    await this.repo.transaction(async () => {
-      await this.repo.updateStatus(input.demandaId, 'concluida', {
+    await this.repo.transaction(async (txRepo) => {
+      await txRepo.updateStatus(input.demandaId, 'concluida', {
         encerradoPor: input.encerradoPor,
         encerradoEm: agora,
         archiveStatus: 'completed',
       });
 
-      await this.repo.saveEvento({
+      await txRepo.saveEvento({
         id: uuidv7(),
         demandaId: input.demandaId,
         type: 'demanda.encerrada',

@@ -25,7 +25,7 @@ describe('SqliteViewRegistryRepository', () => {
             },
             execute: async (sql: string, _params: unknown[] = []) => { executes.push(sql); },
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteViewRegistryRepository(db);

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import { ArrowLeft, Send, Clock, Paperclip, History, MessageSquare, ShieldCheck, Bell, Mail } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,8 +27,7 @@ import { NotificacoesTab } from "./_components/NotificacoesTab";
 import { useManifestacaoDetailModals } from "./_hooks/useManifestacaoDetailModals";
 
 export default function ManifestacaoDetailPage() {
-  const params = useParams();
-  const id = typeof params.id === "string" ? params.id : null;
+  const id = useRouteParamOrQuery("id");
   const { user } = useAuth();
   const { manifestacao, loading, refetch: refetchManifestacao } = useManifestacaoById(id);
   const { data: tramitacoes, refetch: refetchTramitacoes } = useManifestacaoTramitacoes(id);

@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Building, BarChart2, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,7 @@ import { useRemocaoAnalytics } from "@/src/interface/hooks/catalog/logistica";
 import type { Ecoponto } from "@/src/domain/ecoponto/Ecoponto";
 
 export default function EcopontoDetailPage() {
-    const params = useParams();
-    const id = typeof params.id === "string" ? params.id : null;
+    const id = useRouteParamOrQuery("id");
 
     const [ecoponto, setEcoponto] = useState<Ecoponto | null>(null);
     const [loading, setLoading] = useState(true);

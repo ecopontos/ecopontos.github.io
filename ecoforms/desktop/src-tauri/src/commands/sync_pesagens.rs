@@ -5,8 +5,11 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use uuid::Uuid;
 
-use crate::database::DbState;
 use crate::commands::audit::log_audit;
+use crate::commands::crypto::CryptoState;
+use crate::commands::legacy_sync::{build_conn_string, load_pg_legacy_credentials};
+use crate::database::DbState;
+use crate::session::SessionState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SyncPesagensResult {
@@ -27,18 +30,25 @@ pub struct SyncPesagensResult {
 #[allow(clippy::too_many_arguments)]
 pub fn sync_pesagens_externas(
     state: State<'_, DbState>,
-    pg_host: String,
-    pg_port: u16,
-    pg_db: String,
-    pg_user: String,
-    pg_password: String,
+    session: State<'_, SessionState>,
+    crypto: State<'_, CryptoState>,
     data_inicio: String,
     data_fim: String,
 ) -> Result<SyncPesagensResult, String> {
-    let conn_string = format!(
-        "host={} port={} dbname={} user={} password={} connect_timeout=3",
-        pg_host, pg_port, pg_db, pg_user, pg_password
-    );
+    let actor_id = session.user_id.lock()
+        .map_err(|e| format!("Session lock poisoned: {e}"))?
+        .clone()
+        .ok_or("Sessão não iniciada — faça login antes de sincronizar")?;
+    let actor_perfil = session.perfil.lock()
+        .map_err(|e| format!("Session lock poisoned: {e}"))?
+        .clone()
+        .unwrap_or_else(|| "operacional".to_string());
+    let conn_guard = state.conn.lock().map_err(|e| format!("Database lock poisoned: {}", e))?;
+    let conn = conn_guard
+        .as_ref()
+        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
+    let pg_config = load_pg_legacy_credentials(conn, &session, &crypto, &state)?;
+    let conn_string = build_conn_string(&pg_config);
 
     let mut pg_client =
         Client::connect(&conn_string, NoTls).map_err(|e| format!("Erro ao conectar no PostgreSQL: {}", e))?;
@@ -79,20 +89,7 @@ pub fn sync_pesagens_externas(
 
     let total_externo = pg_rows.len();
 
-    let conn_guard = state.conn.lock().unwrap();
-    let sqlite_conn = conn_guard
-        .as_ref()
-        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
-
-    let ensure_perfil = "INSERT OR IGNORE INTO perfis (id, nome) VALUES ('admin', 'Administrador')";
-    sqlite_conn
-        .execute(ensure_perfil, [])
-        .map_err(|e| format!("Erro ao garantir perfil admin: {}", e))?;
-
-    let ensure_user = "INSERT OR IGNORE INTO usuarios (id, nome_usuario, hash_senha, nome, perfil, ativo, criado_em, atualizado_em) VALUES ('system', 'system', '-', 'Sistema (Sync Externo)', 'admin', 1, datetime('now'), datetime('now'))";
-    sqlite_conn
-        .execute(ensure_user, [])
-        .map_err(|e| format!("Erro ao garantir usuário system: {}", e))?;
+    let sqlite_conn = conn;
 
     let mut inseridos = 0usize;
     let mut atualizados = 0usize;
@@ -240,8 +237,8 @@ pub fn sync_pesagens_externas(
 
     let _ = log_audit(
         sqlite_conn,
-        "system",
-        "admin",
+        &actor_id,
+        &actor_perfil,
         "sync.pesagens.externas",
         Some("execucao_pesagens"),
         None,

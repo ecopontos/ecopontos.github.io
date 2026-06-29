@@ -98,19 +98,26 @@ export class SqliteUserRepository implements UserRepository {
     }
 
     async assignSectors(userId: string, setores: string[]): Promise<void> {
-        await this.db.transaction(async () => {
-            await this.db.execute(`DELETE FROM usuarios_setores WHERE usuario_id = ?`, [userId]);
-            for (const setorId of setores) {
-                await this.db.execute(
-                    `INSERT INTO usuarios_setores (usuario_id, setor_id) VALUES (?, ?)`,
-                    [userId, setorId],
-                );
-            }
-        });
+        const statements = [
+            { sql: 'DELETE FROM usuarios_setores WHERE usuario_id = ?', params: [userId] },
+            ...setores.map((setorId) => ({
+                sql: 'INSERT INTO usuarios_setores (usuario_id, setor_id) VALUES (?, ?)',
+                params: [userId, setorId],
+            })),
+        ];
+
+        if (this.db.transactionBatch) {
+            await this.db.transactionBatch(statements);
+        } else {
+            await this.db.transaction(async (tx) => {
+                for (const statement of statements) {
+                    await tx.execute(statement.sql, statement.params);
+                }
+            });
+        }
         invalidateSectorCache(userId);
         this.onUserChanged?.();
     }
-
     private async fetchSetores(userId: string): Promise<string[]> {
         const rows = await this.db.query<SectorRow>(
             `SELECT setor_id FROM usuarios_setores WHERE usuario_id = ?`,

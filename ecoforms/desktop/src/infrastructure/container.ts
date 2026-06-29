@@ -99,6 +99,7 @@ import type { SqlitePort } from '../application/ports/SqlitePort';
 import type { SyncPort } from '../application/ports/SyncPort';
 import { ConsoleLogger } from './adapters/ConsoleLogger';
 import { SystemClock } from './adapters/SystemClock';
+import { SupabaseAdminAdapter } from './adapters/SupabaseAdminAdapter';
 import { SqliteTaskRepository } from './persistence/sqlite/SqliteTaskRepository';
 import { SqliteSuiteRepository } from './persistence/sqlite/SqliteSuiteRepository';
 import { SqliteClienteRepository } from './persistence/sqlite/SqliteClienteRepository';
@@ -366,7 +367,7 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { migratePtBrIfNeeded } = await import('@/scripts/migrate-ptbr' as any);
             await migratePtBrIfNeeded(
-                (sql: string, params?: unknown[]) => sqlite.query(sql, params),
+                (sql: string, params?: unknown[]) => sqlite.query(sql, params, { bootstrap: true }),
                 (sql: string, params?: unknown[]) => sqlite.execute(sql, params, { bootstrap: true }),
             );
         } catch (e) {
@@ -378,9 +379,12 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { ensureColumns } = await import('@/scripts/ensure-columns.ts' as any);
             await ensureColumns(
-                (sql: string, params?: unknown[]) => sqlite.query(sql, params),
+                (sql: string, params?: unknown[]) => sqlite.query(sql, params, { bootstrap: true }),
                 (sql: string, params?: unknown[]) => sqlite.execute(sql, params, { bootstrap: true }),
             );
+
+            const { invoke } = await import('@tauri-apps/api/core');
+            await invoke('bootstrap_seed_rbac');
             columnsMigrated = true;
         } catch (e) {
             console.error('[Container] Column migration FAILED — will retry on next access:', e);
@@ -421,7 +425,7 @@ export type ContainerBootstrapOptions = Record<string, unknown>;
 // syncIndexFactory removed — not available in current codebase. Reservado
 // para opções futuras de bootstrap do container DI.
 
-function buildContainer(overrides: Partial<Container> = {}, bootstrap: ContainerBootstrapOptions = {}): Container {
+function buildContainer(overrides: Partial<Container> = {}, _bootstrap: ContainerBootstrapOptions = {}): Container {
     const sqlite = overrides.sqlite ?? new TauriSqliteAdapter();
     const clock = overrides.clock ?? new SystemClock();
     const logger = overrides.logger ?? new ConsoleLogger();
@@ -558,9 +562,9 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
     const agendamentoNotificacaoRepo = new SqliteAgendamentoNotificacaoRepository(sqlite);
     const notificacaoService = new NotificacaoService(agendamentoNotificacaoRepo, serviceSlotRepo, serviceTypeRepo);
     const agendamentoEfeitos = new AgendamentoEfeitosService(taskProjection, agendamentoRepo, serviceSlotRepo, serviceTypeRepo, notificacaoService, syncOutbox);
-    const createBookingUseCase = new CreateBookingUseCase(serviceSlotRepo, serviceTypeRepo, agendamentoRepo, agendamentoEfeitos, sqlite);
+    const createBookingUseCase = new CreateBookingUseCase(serviceSlotRepo, serviceTypeRepo, agendamentoRepo, agendamentoEfeitos);
     const confirmarAgendamentoUseCase = new ConfirmarAgendamentoUseCase(agendamentoRepo, agendamentoEfeitos);
-    const cancelarAgendamentoUseCase = new CancelarAgendamentoUseCase(agendamentoRepo, serviceSlotRepo, agendamentoEfeitos, sqlite);
+    const cancelarAgendamentoUseCase = new CancelarAgendamentoUseCase(agendamentoRepo, serviceSlotRepo, agendamentoEfeitos);
     const getAgendamentoUseCase = new GetAgendamentoUseCase(agendamentoRepo);
     const listAgendamentosUseCase = new ListAgendamentosUseCase(agendamentoRepo);
     const createServiceSlotUseCase = new CreateServiceSlotUseCase(serviceSlotRepo, serviceTypeRepo);
@@ -573,7 +577,8 @@ function buildContainer(overrides: Partial<Container> = {}, bootstrap: Container
     const updateServiceTypeUseCase = new UpdateServiceTypeUseCase(serviceTypeRepo, sqlite);
 
     // ADR-021: LGPD
-    const eliminacaoTitularUseCase = new EliminacaoTitularUseCase(sqlite, fileStorage);
+    const supabaseAdmin = new SupabaseAdminAdapter();
+    const eliminacaoTitularUseCase = new EliminacaoTitularUseCase(sqlite, fileStorage, supabaseAdmin);
     const exportacaoDadosTitularUseCase = new ExportacaoDadosTitularUseCase(sqlite);
 
     // Catálogos e configurações
