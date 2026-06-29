@@ -448,12 +448,13 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     // ── Logística ───────────────────────────────────────────────────────────────
     inbound.on('roteiro.criado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
+        // coluna real é `residuo` (descrição livre); `tipo_residuo` não existe no schema
         await db.execute(
             `INSERT OR IGNORE INTO roteiros
-             (id, nome, descricao, tipo_residuo, periodicidade, turno, base, distrito,
+             (id, nome, descricao, residuo, periodicidade, turno, base, distrito,
               situacao, criado_por, criado_em, atualizado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [env.aggregate.id, d.nome ?? '', d.descricao ?? null, d.tipo_residuo ?? null,
+            [env.aggregate.id, d.nome ?? '', d.descricao ?? null, d.residuo ?? null,
              d.periodicidade ?? null, d.turno ?? null, d.base ?? null, d.distrito ?? null,
              d.situacao ?? 'ativo', d.criado_por ?? null, d.criado_em ?? env.time, env.time],
         );
@@ -462,23 +463,24 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     inbound.on('roteiro.atualizado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
-            `UPDATE roteiros SET nome = ?, descricao = ?, tipo_residuo = ?, periodicidade = ?,
+            `UPDATE roteiros SET nome = ?, descricao = ?, residuo = ?, periodicidade = ?,
              turno = ?, base = ?, distrito = ?, situacao = ?, atualizado_em = ?
              WHERE id = ?`,
-            [d.nome, d.descricao ?? null, d.tipo_residuo ?? null, d.periodicidade ?? null,
+            [d.nome, d.descricao ?? null, d.residuo ?? null, d.periodicidade ?? null,
              d.turno ?? null, d.base ?? null, d.distrito ?? null, d.situacao, env.time, env.aggregate.id],
         );
     });
 
     inbound.on('execucao.criada', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
+        // coluna real é `veiculo_placa`; `veiculo` não existe em execucao_coleta
         await db.execute(
             `INSERT OR IGNORE INTO execucao_coleta
-             (id, roteiro_id, data_execucao, status, motorista_id, ajudante_id, veiculo,
+             (id, roteiro_id, data_execucao, status, motorista_id, ajudante_id, veiculo_placa,
               km_inicial, km_final, observacoes, inicio_em, fim_em, criado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [env.aggregate.id, d.roteiro_id, d.data_execucao, d.status ?? 'agendada',
-             d.motorista_id ?? null, d.ajudante_id ?? null, d.veiculo ?? null,
+             d.motorista_id ?? null, d.ajudante_id ?? null, d.veiculo_placa ?? d.veiculo ?? null,
              d.km_inicial ?? null, d.km_final ?? null, d.observacoes ?? null,
              d.inicio_em ?? null, d.fim_em ?? null, d.criado_em ?? env.time],
         );
@@ -514,6 +516,87 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
              WHERE id = ?`,
             [d.resolvido_em ?? env.time, d.resolvido_por ?? null, d.resolvido_como ?? null,
              env.time, env.aggregate.id],
+        );
+    });
+
+    inbound.on('execucao.excluida', async (env: EventEnvelope) => {
+        // filhos (clientes, checklist, histórico, pesagens, intercorrências) caem por ON DELETE CASCADE
+        await db.execute('DELETE FROM execucao_coleta WHERE id = ?', [env.aggregate.id]);
+    });
+
+    inbound.on('roteiro_cliente.vinculado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `INSERT INTO roteiro_clientes (id, roteiro_id, cliente_id, ordem, observacao, ativo, criado_em)
+             VALUES (?, ?, ?, ?, ?, 1, ?)
+             ON CONFLICT(roteiro_id, cliente_id) DO UPDATE SET
+                 ordem = excluded.ordem, observacao = excluded.observacao, ativo = 1`,
+            [d.id ?? env.aggregate.id, d.roteiro_id, d.cliente_id, d.ordem ?? 0,
+             d.observacao ?? null, d.criado_em ?? env.time],
+        );
+    });
+
+    inbound.on('roteiro_cliente.desvinculado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            'UPDATE roteiro_clientes SET ativo = 0 WHERE roteiro_id = ? AND cliente_id = ?',
+            [d.roteiro_id, d.cliente_id],
+        );
+    });
+
+    inbound.on('roteiro_cliente.reordenado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const ordens = Array.isArray(d.ordens) ? d.ordens as Array<Record<string, unknown>> : [];
+        for (const o of ordens) {
+            await db.execute(
+                'UPDATE roteiro_clientes SET ordem = ? WHERE roteiro_id = ? AND cliente_id = ?',
+                [o.ordem ?? 0, d.roteiro_id, o.cliente_id],
+            );
+        }
+    });
+
+    inbound.on('execucao_cliente.registrado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `INSERT INTO execucao_clientes
+             (id, execucao_id, cliente_id, coleta_realizada, quantidade, ocorrencia, observacao,
+              horario_visita, latitude, longitude, registrado_por, registrado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(execucao_id, cliente_id) DO UPDATE SET
+                 coleta_realizada = excluded.coleta_realizada,
+                 quantidade = excluded.quantidade,
+                 ocorrencia = excluded.ocorrencia,
+                 observacao = excluded.observacao,
+                 horario_visita = excluded.horario_visita,
+                 latitude = excluded.latitude,
+                 longitude = excluded.longitude,
+                 registrado_por = excluded.registrado_por,
+                 registrado_em = excluded.registrado_em`,
+            [d.id ?? env.aggregate.id, d.execucao_id, d.cliente_id, d.coleta_realizada ?? 0,
+             d.quantidade ?? null, d.ocorrencia ?? null, d.observacao ?? null, d.horario_visita ?? null,
+             d.latitude ?? null, d.longitude ?? null, d.registrado_por ?? null, d.registrado_em ?? env.time],
+        );
+    });
+
+    inbound.on('checklist.atualizado', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        await db.execute(
+            `INSERT INTO checklist_execucao
+             (id, execucao_id, item, concluido, observacao, evidencia_url, latitude, longitude,
+              concluido_em, concluido_por, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET
+                 concluido = excluded.concluido,
+                 observacao = excluded.observacao,
+                 evidencia_url = excluded.evidencia_url,
+                 latitude = excluded.latitude,
+                 longitude = excluded.longitude,
+                 concluido_em = excluded.concluido_em,
+                 concluido_por = excluded.concluido_por,
+                 atualizado_em = excluded.atualizado_em`,
+            [env.aggregate.id, d.execucao_id, d.item ?? '', d.concluido ?? 0, d.observacao ?? null,
+             d.evidencia_url ?? null, d.latitude ?? null, d.longitude ?? null,
+             d.concluido_em ?? null, d.concluido_por ?? null, env.time],
         );
     });
 

@@ -76,6 +76,9 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             "UPDATE roteiros SET situacao = 'inativo', atualizado_em = ? WHERE id = ?",
             [new Date().toISOString(), id]
         );
+        // Soft-delete: propaga como atualização (situacao=inativo) — reaproveita o handler roteiro.atualizado
+        const rows = await this.db.query<Record<string, unknown>>('SELECT * FROM roteiros WHERE id = ? LIMIT 1', [id]);
+        await this.sync?.write('roteiro.atualizado', rows[0] ?? { id, situacao: 'inativo' }, { aggregateId: id });
     }
 
     // --- Roteiro Clientes ---
@@ -106,6 +109,11 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
                  ordem = excluded.ordem, observacao = excluded.observacao, ativo = 1`,
             [rc.id, rc.roteiroId, rc.clienteId, rc.ordem, rc.observacao || null, 1, now]
         );
+        await this.sync?.write(
+            'roteiro_cliente.vinculado',
+            { id: rc.id, roteiro_id: rc.roteiroId, cliente_id: rc.clienteId, ordem: rc.ordem, observacao: rc.observacao || null, criado_em: now },
+            { aggregateId: rc.id, streamId: rc.roteiroId },
+        );
     }
 
     async removeClienteFromRoteiro(roteiroId: string, clienteId: string): Promise<void> {
@@ -113,12 +121,22 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             'UPDATE roteiro_clientes SET ativo = 0 WHERE roteiro_id = ? AND cliente_id = ?',
             [roteiroId, clienteId]
         );
+        await this.sync?.write(
+            'roteiro_cliente.desvinculado',
+            { roteiro_id: roteiroId, cliente_id: clienteId },
+            { aggregateId: roteiroId, streamId: roteiroId },
+        );
     }
 
     async updateClienteOrdem(roteiroId: string, clienteId: string, ordem: number): Promise<void> {
         await this.db.execute(
             'UPDATE roteiro_clientes SET ordem = ? WHERE roteiro_id = ? AND cliente_id = ?',
             [ordem, roteiroId, clienteId]
+        );
+        await this.sync?.write(
+            'roteiro_cliente.reordenado',
+            { roteiro_id: roteiroId, ordens: [{ cliente_id: clienteId, ordem }] },
+            { aggregateId: roteiroId, streamId: roteiroId },
         );
     }
 
@@ -129,6 +147,11 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
                 [item.ordem, roteiroId, item.clienteId]
             );
         }
+        await this.sync?.write(
+            'roteiro_cliente.reordenado',
+            { roteiro_id: roteiroId, ordens: items.map(i => ({ cliente_id: i.clienteId, ordem: i.ordem })) },
+            { aggregateId: roteiroId, streamId: roteiroId },
+        );
     }
 
     // --- Execucao Coleta ---
@@ -212,12 +235,13 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             await this.db.execute(
                 `UPDATE execucao_coleta SET
                     roteiro_id = ?, data_execucao = ?, status = ?, motorista_id = ?, ajudante_id = ?,
-                    veiculo_placa = ?, km_inicial = ?, km_final = ?, observacoes = ?, inicio_em = ?, fim_em = ?
+                    veiculo_placa = ?, km_inicial = ?, km_final = ?, observacoes = ?, inicio_em = ?, fim_em = ?,
+                    atualizado_em = ?
                 WHERE id = ?`,
                 [exec.roteiroId, exec.dataExecucao, exec.status, exec.motoristaId || null,
                  exec.ajudanteId || null, exec.veiculo || null, exec.kmInicial || null,
                  exec.kmFinal || null, exec.observacoes || null, exec.inicioEm || null,
-                 exec.fimEm || null, exec.id]
+                 exec.fimEm || null, now, exec.id]
             );
         } else {
             await this.db.execute(
@@ -245,8 +269,8 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
         }
 
         await this.db.execute(
-            'UPDATE execucao_coleta SET status = ?, fim_em = ? WHERE id = ?',
-            [status, fimEm || null, id]
+            'UPDATE execucao_coleta SET status = ?, fim_em = ?, atualizado_em = ? WHERE id = ?',
+            [status, fimEm || null, new Date().toISOString(), id]
         );
 
         await this.db.execute(
@@ -261,6 +285,7 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
 
     async deleteExecucao(id: string): Promise<void> {
         await this.db.execute('DELETE FROM execucao_coleta WHERE id = ?', [id]);
+        await this.sync?.write('execucao.excluida', { execucao_id: id }, { aggregateId: id });
     }
 
     // --- Histórico de execução ---
@@ -403,6 +428,7 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
                  item.concluidoEm || null, item.concluidoPor || null]
             );
         }
+        await this.emitChecklist(item.id, item.execucaoId);
     }
 
     async completeChecklistItem(
@@ -420,6 +446,23 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             WHERE id = ?`,
             [observacao || null, evidenciaUrl || null, latitude || null, longitude || null, now, concluidoPor, id]
         );
+        await this.emitChecklist(id);
+    }
+
+    /** Lê o item de checklist atual e emite checklist.atualizado (snapshot completo da linha). */
+    private async emitChecklist(id: string, execucaoId?: string): Promise<void> {
+        if (!this.sync) return;
+        const rows = await this.db.query<Record<string, unknown>>(
+            `SELECT id, execucao_id, item, concluido, observacao, evidencia_url,
+                    latitude, longitude, concluido_em, concluido_por
+             FROM checklist_execucao WHERE id = ? LIMIT 1`, [id]
+        );
+        const row = rows[0];
+        if (!row) return;
+        await this.sync.write('checklist.atualizado', row, {
+            aggregateId: id,
+            streamId: (row.execucao_id as string) ?? execucaoId,
+        });
     }
 
     // --- Execucao Clientes (retorno do checklist) ---
@@ -464,6 +507,17 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
             [item.id, item.execucaoId, item.clienteId, item.coletaRealizada,
              item.quantidade ?? null, item.ocorrencia || null, item.observacao || null, item.horarioVisita || null,
              item.latitude || null, item.longitude || null, item.registradoPor, now]
+        );
+        await this.sync?.write(
+            'execucao_cliente.registrado',
+            {
+                id: item.id, execucao_id: item.execucaoId, cliente_id: item.clienteId,
+                coleta_realizada: item.coletaRealizada, quantidade: item.quantidade ?? null,
+                ocorrencia: item.ocorrencia || null, observacao: item.observacao || null,
+                horario_visita: item.horarioVisita || null, latitude: item.latitude || null,
+                longitude: item.longitude || null, registrado_por: item.registradoPor, registrado_em: now,
+            },
+            { aggregateId: item.id, streamId: item.execucaoId },
         );
     }
 

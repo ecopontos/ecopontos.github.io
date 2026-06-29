@@ -43,7 +43,6 @@ export default function RoteiroDetailPage() {
   const { saveRoteiro, addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateClienteOrdemBatch, transicaoExecucaoStatus, loading: saving } = useLogisticsMutations();
   const { data: clientesRoteiro, refetch: refetchClientes } = useClientesByRoteiro(id);
   const { data: execucoes, refetch: refetchExecucoes } = useExecucoes(id ? { roteiroId: id } : undefined);
-  const { user } = useAuth();
   const { users: usuarios } = useAllUsers();
 
   // Aba Mapa (G1/G2/G3): itinerário geocodificado + camadas reutilizando ItinerarioMap.

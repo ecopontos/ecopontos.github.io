@@ -9,13 +9,13 @@ import type { QueryDef } from './_types';
 export const ROTEIROS_POR_STATUS: QueryDef = {
   sql: `
     SELECT
-        COALESCE(r.status, 'indefinido') AS status,
-        COUNT(*)                          AS total
+        COALESCE(r.situacao, 'indefinido') AS status,
+        COUNT(*)                           AS total
     FROM roteiros r
-    GROUP BY r.status
+    GROUP BY r.situacao
     ORDER BY total DESC
   `,
-  description: 'Distribuição de roteiros por status',
+  description: 'Distribuição de roteiros por situação (ativo/inativo/suspenso)',
   params: [],
   use: 'dashboard',
   returns: '{ status, total }[]',
@@ -24,14 +24,14 @@ export const ROTEIROS_POR_STATUS: QueryDef = {
 export const EXECUCOES_RESUMO: QueryDef = {
   sql: `
     SELECT
-        COUNT(*)                                                           AS total,
-        SUM(CASE WHEN e.status = 'concluida'    THEN 1 ELSE 0 END)        AS concluidas,
-        SUM(CASE WHEN e.status = 'em_andamento' THEN 1 ELSE 0 END)        AS em_andamento,
-        SUM(CASE WHEN e.status = 'pendente'     THEN 1 ELSE 0 END)        AS pendentes,
-        SUM(CASE WHEN e.status = 'cancelada'    THEN 1 ELSE 0 END)        AS canceladas
-    FROM execucoes e
+        COUNT(*)                                                                     AS total,
+        SUM(CASE WHEN e.status = 'concluida'                       THEN 1 ELSE 0 END) AS concluidas,
+        SUM(CASE WHEN e.status IN ('em_transito','em_execucao')    THEN 1 ELSE 0 END) AS em_andamento,
+        SUM(CASE WHEN e.status = 'agendada'                        THEN 1 ELSE 0 END) AS pendentes,
+        SUM(CASE WHEN e.status = 'cancelada'                       THEN 1 ELSE 0 END) AS canceladas
+    FROM execucao_coleta e
   `,
-  description: 'Resumo de execuções de roteiro por status',
+  description: 'Resumo de execuções de coleta por status (state machine: agendada→em_transito→em_execucao→concluida)',
   params: [],
   use: 'dashboard',
   returns: '{ total, concluidas, em_andamento, pendentes, canceladas }',
@@ -46,7 +46,7 @@ export const EXECUCOES_POR_ROTEIRO: QueryDef = {
         SUM(CASE WHEN e.status = 'concluida' THEN 1 ELSE 0 END)          AS concluidas,
         MAX(e.data_execucao)                                              AS ultima_execucao
     FROM roteiros r
-    LEFT JOIN execucoes e ON e.roteiro_id = r.id
+    LEFT JOIN execucao_coleta e ON e.roteiro_id = r.id
     GROUP BY r.id
     ORDER BY ultima_execucao DESC NULLS LAST
   `,
@@ -59,10 +59,11 @@ export const EXECUCOES_POR_ROTEIRO: QueryDef = {
 export const INTERCORRENCIAS_POR_TIPO: QueryDef = {
   sql: `
     SELECT
-        COALESCE(i.tipo, 'Não classificada') AS tipo,
+        COALESCE(ti.nome, 'Não classificada') AS tipo,
         COUNT(*)                              AS total
-    FROM intercorrencias i
-    GROUP BY i.tipo
+    FROM intercorrencias_coleta i
+    LEFT JOIN tipos_intercorrencia ti ON i.tipo_ocorrencia_id = ti.id
+    GROUP BY ti.nome
     ORDER BY total DESC
   `,
   description: 'Frequência de intercorrências de campo por tipo — indicador de problemas recorrentes',
@@ -147,7 +148,7 @@ export const EXECUCOES_TENDENCIA_MENSAL: QueryDef = {
         strftime('%Y-%m', e.data_execucao) AS mes,
         COUNT(*)                            AS total,
         SUM(CASE WHEN e.status = 'concluida' THEN 1 ELSE 0 END) AS concluidas
-    FROM execucoes e
+    FROM execucao_coleta e
     WHERE e.data_execucao >= date('now', ? || ' months')
     GROUP BY mes
     ORDER BY mes ASC

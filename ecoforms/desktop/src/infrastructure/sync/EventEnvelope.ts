@@ -51,8 +51,14 @@ export const EcoFormsEventTypes = [
     'agendamento.slot_cancelado',
     'execucao.criada',
     'execucao.status_atualizado',
+    'execucao.excluida',
     'intercorrencia.registrada',
     'intercorrencia.resolvida',
+    'roteiro_cliente.vinculado',
+    'roteiro_cliente.desvinculado',
+    'roteiro_cliente.reordenado',
+    'execucao_cliente.registrado',
+    'checklist.atualizado',
 ] as const;
 
 export type EcoFormsEventType = typeof EcoFormsEventTypes[number];
