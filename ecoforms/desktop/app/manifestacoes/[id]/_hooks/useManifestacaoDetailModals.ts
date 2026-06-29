@@ -247,8 +247,8 @@ export function useManifestacaoDetailModals({
       const phone = digits.startsWith('55') ? digits : `55${digits}`;
       const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(textoEnvio)}`;
       try {
-        const { open } = await import('@tauri-apps/plugin-shell');
-        await open(waUrl);
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('open_whatsapp_url', { phone: enviarDestinatario, text: textoEnvio });
       } catch {
         window.open(waUrl, '_blank');
       }

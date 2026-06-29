@@ -69,6 +69,7 @@ export {
   useLegacySyncActions,
   DEFAULT_FILTERS,
   type PgLegacyConfig,
+  type PgLegacyConfigInput,
   type LegacySyncFilters,
   type RoteiroRow,
   type PesagemRow,

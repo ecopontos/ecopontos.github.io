@@ -35,7 +35,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             query: async (sql: string) => { queries.push(sql); return []; },
             execute: async (sql: string) => { executes.push(sql); },
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);
@@ -63,7 +63,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
                 boundCriadoEm = params[14];
             },
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);
@@ -85,10 +85,10 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
                 if (inTx) executedInsideTx++;
             },
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => {
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => {
                 txCalls++;
                 inTx = true;
-                try { return await cb(); } finally { inTx = false; }
+                try { return await cb(db as unknown as SqlitePort); } finally { inTx = false; }
             },
         } as unknown as SqlitePort;
 
@@ -136,7 +136,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             },
             execute: async () => {},
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);
@@ -173,7 +173,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             },
             execute: async () => {},
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);
@@ -258,7 +258,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             },
             execute: async () => {},
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);
@@ -335,7 +335,7 @@ describe('SqliteModuleRepository — hardening de escrita', () => {
             },
             execute: async () => {},
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);

@@ -1,14 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// CryptoLayer.deriveAndStoreKey persiste a chave raw via @tauri-apps/plugin-store
-// (Central Crypto / sessão Rust) — mock em memória, sem invoke real.
+// CryptoLayer deriva a chave em memória e limpa o legado raw-key best-effort.
+const storeState = {
+    get: vi.fn(async () => null),
+    set: vi.fn(async () => {}),
+    delete: vi.fn(async () => {}),
+    save: vi.fn(async () => {}),
+};
+
 vi.mock('@tauri-apps/plugin-store', () => ({
     Store: {
-        load: vi.fn(async () => ({
-            get: vi.fn(async () => null),
-            set: vi.fn(async () => {}),
-            save: vi.fn(async () => {}),
-        })),
+        load: vi.fn(async () => storeState),
     },
 }));
 
@@ -22,6 +24,7 @@ vi.mock('ecoforms-core', async (importOriginal) => {
     };
 });
 import { CryptoLayer } from '../CryptoLayer';
+import { ensureCryptoLayer, resetSyncAdapter } from '../lazy-sync';
 import { TransportService } from '../TransportService';
 import { InboundService } from '../InboundService';
 import { createEnvelope, buildChecksum } from '../EventEnvelope';
@@ -145,6 +148,13 @@ describe('TransportService', () => {
 // ─── Crypto: formato de wire ──────────────────────────────────────────────────
 
 describe('CryptoLayer — formato de wire', () => {
+    beforeEach(() => {
+        storeState.get.mockClear();
+        storeState.set.mockClear();
+        storeState.delete.mockClear();
+        storeState.save.mockClear();
+    });
+
     it('blob produzido tem nonce(12) || ciphertext — idêntico ao mobile', async () => {
         const crypto = await makeCrypto();
         const blob = await crypto.encrypt('hello world');
@@ -180,6 +190,23 @@ describe('CryptoLayer — formato de wire', () => {
         expect(decoded).toEqual(payload);
     });
 
+    it('deriveAndStoreKey não persiste a chave raw no store', async () => {
+        const crypto = new CryptoLayer();
+        await crypto.deriveAndStoreKey(TEST_PASSWORD, 'test-salt-001');
+
+        expect(storeState.set).not.toHaveBeenCalled();
+    });
+
+    it('cold start exige novo login para recarregar a chave', async () => {
+        const firstSession = await makeCrypto(TEST_PASSWORD);
+        const blob = await firstSession.encrypt('segredo');
+
+        const restarted = new CryptoLayer();
+        await restarted.loadKey();
+
+        await expect(restarted.decrypt(blob)).rejects.toThrow('Chave não carregada');
+    });
+
     it('chave errada falha no decrypt', async () => {
         const crypto1 = await makeCrypto('senha-correta');
         const crypto2 = await makeCrypto('senha-errada');
@@ -191,6 +218,15 @@ describe('CryptoLayer — formato de wire', () => {
 });
 
 // ─── InboundService ───────────────────────────────────────────────────────────
+
+describe('lazy sync crypto singleton', () => {
+    it('ensureCryptoLayer reusa a mesma instância entre login e sync', async () => {
+        resetSyncAdapter();
+        const a = await ensureCryptoLayer();
+        const b = await ensureCryptoLayer();
+        expect(a).toBe(b);
+    });
+});
 
 describe('InboundService', () => {
     it('pull() decripta e chama o handler correto', async () => {
@@ -649,7 +685,7 @@ describe('Module schema canonicalization', () => {
                 boundConfigVersion = params[11];
             },
             all: async () => [],
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db as unknown as SqlitePort),
         } as unknown as SqlitePort;
 
         const repo = new SqliteModuleRepository(db);

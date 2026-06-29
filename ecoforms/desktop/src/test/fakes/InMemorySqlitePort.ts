@@ -19,7 +19,7 @@ export class InMemorySqlitePort implements SqlitePort {
         return this.tables.get(table)!;
     }
 
-    async query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
+    async query<T = unknown>(sql: string, params: unknown[] = [], _options?: { bootstrap?: boolean }): Promise<T[]> {
         const s = sql.trim().replace(/\s+/g, ' ');
 
         // SELECT COALESCE(MAX(sequencia), 0) + 1 AS seq FROM fila_eventos_sync
@@ -298,7 +298,7 @@ export class InMemorySqlitePort implements SqlitePort {
         }
     }
 
-    async transaction<T>(callback: () => Promise<T>): Promise<T> {
-        return callback();
+    async transaction<T>(callback: (tx: SqlitePort) => Promise<T>): Promise<T> {
+        return callback(this);
     }
 }

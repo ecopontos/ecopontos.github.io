@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
 import {
     ArrowLeft, ExternalLink, Pencil, Archive, Users, Calendar,
     CheckCircle2, Circle, Clock, AlertCircle, Flag, Activity
@@ -380,7 +381,7 @@ function ProjectDetailContent({ projectId }: { projectId: string }) {
 }
 
 export default function ProjectDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const id = useRouteParamOrQuery("id");
     return (
         <ErrorBoundary moduleName="Detalhes do Projeto">
             <ProjectDetailContent projectId={id ?? ''} />

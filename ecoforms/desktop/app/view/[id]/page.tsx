@@ -1,5 +1,10 @@
 import { Suspense } from 'react';
 import ViewSubmissionClient from '../page.client';
+export function generateStaticParams() {
+    return [{ id: '_' }];
+}
+
+export const dynamicParams = false;
 
 interface ViewSubmissionByIdPageProps {
     params: Promise<{ id: string }>;

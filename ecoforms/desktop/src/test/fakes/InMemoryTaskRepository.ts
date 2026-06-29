@@ -5,6 +5,10 @@ import type { TaskStatus } from '../../domain/task/TaskStatus';
 export class InMemoryTaskRepository implements TaskRepository {
     private store = new Map<string, Task>();
 
+    async transaction<T>(fn: (tx: TaskRepository) => Promise<T>): Promise<T> {
+        return fn(this);
+    }
+
     async findById(id: string): Promise<Task | null> {
         return this.store.get(id) ?? null;
     }

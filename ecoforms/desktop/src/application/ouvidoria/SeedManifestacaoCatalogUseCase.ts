@@ -1,5 +1,5 @@
 import type { SqlitePort } from '../ports/SqlitePort';
-import { TIPO_MANIFESTACAO_UPSERT } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
+import { TIPO_MANIFESTACAO_UPSERT } from '../persistence/sqlite/queries/manifestacoes';
 
 /**
  * ADR-041 Gap 5 — Seed dos tipos padrão de manifestação.

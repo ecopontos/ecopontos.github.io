@@ -1,13 +1,7 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { invoke } from '@tauri-apps/api/core';
+import { useSqlite } from '../queries/useSqlite';
 
 function isTauri() { return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window; }
-
-interface QueryResult {
-  columns: string[];
-  rows: unknown[][];
-  rows_affected: number;
-}
 
 type QueryParam = string | number | boolean | null | undefined;
 
@@ -22,17 +16,14 @@ export function useTauriQuery<T = Record<string, unknown>>(
   params: QueryParam[] = [],
   options?: Omit<UseQueryOptions<T[], Error>, 'queryKey' | 'queryFn'>
 ) {
+  const sqlite = useSqlite();
+
   return useQuery<T[], Error>({
     queryKey: ['tauri-query', sql, JSON.stringify(params)],
     queryFn: async () => {
       if (!isTauri()) return [] as T[];
       try {
-        const result = await invoke<QueryResult>('db_query', { sql, params });
-        return result.rows.map((row) => {
-          const obj: Record<string, unknown> = {};
-          result.columns.forEach((col, idx) => { obj[col] = row[idx]; });
-          return obj as T;
-        });
+        return await sqlite.query<T>(sql, params);
       } catch (error) {
         throw new Error(`Query failed: ${error}`);
       }

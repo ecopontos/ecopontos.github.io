@@ -23,11 +23,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FormContent, FormField } from "@/types";
 import { useTauriDialog } from "@/src/interface/hooks/catalog/tauri";
-import { useTauriFs } from "@/src/interface/hooks/catalog/tauri";
+import { invoke } from "@/src/interface/hooks/catalog/tauri";
 
 export default function DynamicAnalysisPage() {
     const dialog = useTauriDialog();
-    const fs = useTauriFs();
     const [selectedFormType, setSelectedFormType] = useState<string>("");
     const [selectedStatus, setSelectedStatus] = useState<string>("all");
     const [searchText, setSearchText] = useState("");
@@ -465,7 +464,7 @@ export default function DynamicAnalysisPage() {
                 try {
                     const data = typeof rec.dados === 'string' && rec.dados ? JSON.parse(rec.dados) : (rec.dados || {});
                     const formData = data.form_data || data.campos || data;
-                    
+
                     const fieldValues = columns.map((col: FormField) => {
                         let val = getRawValue(formData, col);
                         // Heuristic metadata fallback
@@ -491,7 +490,7 @@ export default function DynamicAnalysisPage() {
             });
 
             const csvContent = "\ufeff" + [headers.map(h => `"${h}"`).join(","), ...rows].join("\n");
-            
+
             // Sanitize filename
             const safeFormType = selectedFormType.replace(/[^a-z0-9]/gi, '_');
             const dateStr = new Date().toISOString().slice(0, 10);
@@ -506,7 +505,7 @@ export default function DynamicAnalysisPage() {
 
             if (!filePath) return; // User cancelled
 
-            await fs.writeTextFile(filePath, csvContent);
+            await invoke('write_export_file', { path: filePath, bytes: Array.from(new TextEncoder().encode(csvContent)), extension: 'csv' });
             alert(`Arquivo exportado com sucesso!\n${filePath}`);
         } catch (globalErr) {
             console.error("Global export error:", globalErr);

@@ -44,14 +44,13 @@ export async function getSyncAdapter(
 
     const syncStorage = fileStorage;
 
-    const { CryptoLayer } = await import('./CryptoLayer');
     const { OrgConfigService } = await import('./OrgConfigService');
     const { StorageBootstrapService } = await import('./StorageBootstrapService');
     const { TransportService: TS } = await import('./TransportService');
     const { InboundService: IS } = await import('./InboundService');
     const { registerAllHandlers } = await import('./HandlerRegistry');
 
-    _cryptoLayer = new CryptoLayer();
+    _cryptoLayer = await ensureCryptoLayer();
 
     // ADR-056 §8: sync_event_index via RPCs Supabase (substitui Manifest + .enc Storage)
     const supabase = getSupabaseClient();
@@ -77,6 +76,13 @@ export async function getSyncAdapter(
     _adapter = new EventSyncAdapter(sqlite, _transport, _inbound, _orgConfigService);
 
     return _adapter;
+}
+
+export async function ensureCryptoLayer(): Promise<CryptoLayer> {
+    if (_cryptoLayer) return _cryptoLayer;
+    const { CryptoLayer } = await import('./CryptoLayer');
+    _cryptoLayer = new CryptoLayer();
+    return _cryptoLayer;
 }
 
 export function getCryptoLayer(): CryptoLayer | null {

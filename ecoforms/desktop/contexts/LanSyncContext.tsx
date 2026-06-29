@@ -68,67 +68,37 @@ export function LanSyncProvider({ children }: { children: React.ReactNode }) {
         }
     }, [invoke]);
 
-    const startServer = useCallback(async (role?: 'hub' | 'spoke', port?: number) => {
-        setState((prev) => ({ ...prev, connectionStatus: 'connecting' }));
-        try {
-            const info = await invoke<{ running: boolean; role: string; port: number; hub_addr: string | null }>(
-                'lan_server_start',
-                { port: port ?? state.port, role: role ?? undefined },
-            );
-
-            setState((prev) => ({
-                ...prev,
-                serverRunning: true,
-                role: info.role as 'hub' | 'spoke' | 'disabled',
-                port: info.port,
-                hubAddress: info.hub_addr,
-                connectionStatus: 'connected',
-            }));
-
-            if (info.role === 'spoke' && info.hub_addr) {
-                connectWs(`ws://${info.hub_addr}/ws`);
-            }
-        } catch (e) {
-            setState((prev) => ({ ...prev, connectionStatus: 'disconnected' }));
-            throw e;
-        }
-    }, [invoke, state.port]);
-
-    const stopServer = useCallback(async () => {
-        wsClientRef.current?.disconnect();
-        wsClientRef.current = null;
-        await invoke('lan_server_stop');
-        setState((prev) => ({
-            ...prev,
-            serverRunning: false,
-            connectionStatus: 'disconnected',
-            peers: [],
-        }));
-    }, [invoke]);
-
-    const setRole = useCallback(async (role: 'hub' | 'spoke' | 'disabled', hubAddr?: string) => {
-        await invoke('lan_server_set_role', { role, hubAddr: hubAddr ?? null });
-        setState((prev) => ({ ...prev, role }));
-    }, [invoke]);
-
     const discoverPeers = useCallback(async (): Promise<PeerInfo[]> => {
         const peers = await invoke<PeerInfo[]>('lan_server_discover_peers');
         setState((prev) => ({ ...prev, peers }));
         return peers;
     }, [invoke]);
 
-    const connectWs = useCallback((url: string) => {
+    const connectWs = useCallback((url: string, authToken?: string) => {
         wsClientRef.current?.disconnect();
+        wsClientRef.current = null;
 
         const deviceId = `device-${Math.random().toString(36).slice(2, 10)}`;
-        const client = new LanWebSocketClient(url, deviceId, 'EcoForms Desktop');
+        const client = new LanWebSocketClient(url, deviceId, 'EcoForms Desktop', authToken);
         wsClientRef.current = client;
+
+        const clearClientRef = () => {
+            if (wsClientRef.current === client) {
+                wsClientRef.current = null;
+            }
+        };
 
         client.on('connected', () => {
             setState((prev) => ({ ...prev, connectionStatus: 'connected' }));
         });
 
+        client.on('auth_failed', () => {
+            clearClientRef();
+            setState((prev) => ({ ...prev, connectionStatus: 'disconnected' }));
+        });
+
         client.on('disconnected', () => {
+            clearClientRef();
             setState((prev) => ({ ...prev, connectionStatus: 'disconnected' }));
         });
 
@@ -147,6 +117,55 @@ export function LanSyncProvider({ children }: { children: React.ReactNode }) {
 
         client.connect();
     }, [discoverPeers]);
+
+    const startServer = useCallback(async (role?: 'hub' | 'spoke', port?: number) => {
+        wsClientRef.current?.disconnect();
+        wsClientRef.current = null;
+        setState((prev) => ({ ...prev, connectionStatus: 'connecting' }));
+
+        try {
+            const info = await invoke<{ running: boolean; role: string; port: number; hub_addr: string | null }>(
+                'lan_server_start',
+                { port: port ?? state.port, role: role ?? undefined },
+            );
+            const serverRole = info.role as 'hub' | 'spoke' | 'disabled';
+            const needsHubAuth = serverRole === 'spoke' && Boolean(info.hub_addr);
+            const authToken = needsHubAuth ? await invoke<string>('lan_server_auth_token') : undefined;
+
+            setState((prev) => ({
+                ...prev,
+                serverRunning: true,
+                role: serverRole,
+                port: info.port,
+                hubAddress: info.hub_addr,
+                connectionStatus: needsHubAuth ? 'connecting' : serverRole === 'hub' ? 'connected' : 'disconnected',
+            }));
+
+            if (needsHubAuth && info.hub_addr) {
+                connectWs(`ws://${info.hub_addr}/ws`, authToken);
+            }
+        } catch (e) {
+            setState((prev) => ({ ...prev, connectionStatus: 'disconnected' }));
+            throw e;
+        }
+    }, [connectWs, invoke, state.port]);
+
+    const stopServer = useCallback(async () => {
+        wsClientRef.current?.disconnect();
+        wsClientRef.current = null;
+        await invoke('lan_server_stop');
+        setState((prev) => ({
+            ...prev,
+            serverRunning: false,
+            connectionStatus: 'disconnected',
+            peers: [],
+        }));
+    }, [invoke]);
+
+    const setRole = useCallback(async (role: 'hub' | 'spoke' | 'disabled', hubAddr?: string) => {
+        await invoke('lan_server_set_role', { role, hubAddr: hubAddr ?? null });
+        setState((prev) => ({ ...prev, role }));
+    }, [invoke]);
 
     useEffect(() => {
         refreshStatus();

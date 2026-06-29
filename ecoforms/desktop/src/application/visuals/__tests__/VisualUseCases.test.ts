@@ -330,7 +330,7 @@ describe('SyncPersonalViewUseCase', () => {
 
 describe('GetModuleVisuaisUseCase', () => {
     function createMockSqlite(modules: Record<string, unknown>[]): SqlitePort {
-        return {
+        const db: SqlitePort = {
             query: async (_sql: string, _params?: unknown[]) => {
                 if (_sql.includes('registro_modulos')) return modules as any;
                 if (_sql.includes('data_registry')) return [
@@ -346,8 +346,9 @@ describe('GetModuleVisuaisUseCase', () => {
                 ] as any;
             },
             execute: async () => {},
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(db),
         };
+        return db;
     }
 
     it('deve retornar null se módulo não existe', async () => {
@@ -464,7 +465,7 @@ describe('GetModuleVisuaisUseCase', () => {
             },
             all: async () => [] as any,
             execute: async () => {},
-            transaction: async <T>(cb: () => Promise<T>) => cb(),
+            transaction: async <T>(cb: (tx: SqlitePort) => Promise<T>) => cb(mockDb),
         };
 
         const repo = new InMemoryModuleVisualViewRepository();

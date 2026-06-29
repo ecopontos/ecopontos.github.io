@@ -157,9 +157,9 @@ Dois runtimes compartilham este codebase:
 **Container integration**: `LazySyncAdapter` (implements `SyncPort`) is registered in the DI `container.ts`. It delegates to `EventSyncAdapter` once configured with runtime params (`deviceId`, `routingId`) by `SyncContext`. `NullSyncAdapter` remains as a safe fallback before configuration.
 
 **Key Derivation (PBKDF2)**:
-- **Desktop**: `CryptoLayer.ts` — `deriveAndStoreKey(password)` called in `AuthContext.tsx` after login; key is re-derived from password using PBKDF2 (100k iterations, SHA-256, salt `ecoforms-sync-salt-v1`); key is never persisted, cleared on logout.
-- **Mobile (Capacitor)**: `mobile/www/js/sync/CryptoLayer.js` — identical PBKDF2 implementation for cross-platform compatibility.
-- **Rust side**: `load_crypto_key` accepts 32-byte raw key; encryption/decryption via AES-256-GCM in Rust.
+- **Desktop**: `CryptoLayer.ts` — `deriveAndStoreKey(password, userSalt)` is called from `AuthContext.tsx` after login; the key is re-derived from the user's password using PBKDF2 (600k iterations, SHA-256, per-user salt from `usuarios.sal_sync`), kept only in memory, and any legacy `org_crypto_key` entry in `.ecoforms-keys.dat` is purged on load/logout.
+- **Mobile (Capacitor)**: `mobile/www/js/sync/CryptoLayer.js` mirrors the same PBKDF2 parameters (600k iterations, SHA-256, per-user salt) for cross-platform compatibility.
+- **Rust side**: `load_crypto_key` accepts the 32-byte raw key after successful login, requires a valid Rust session, and keeps the AES-256-GCM material only in backend memory.
 
 **Legacy (archived)**: `StorageSync.ts` and related artifacts (`sync-types.ts`, `strip-to-raw.ts`, `indexeddb.ts`, `OfflineQueue.ts`, `StorageSyncPort.ts`) moved to `sync/_deprecated/` and `ports/_deprecated/`. They are excluded from compilation and no longer part of the runtime.
 
@@ -248,7 +248,7 @@ Use cases **emit** events instead of calling sync logic inline; handlers react a
 - `KanbanRepository` (`SqliteKanbanRepository`) encapsulates all kanban SQL — hooks must not embed raw SQL
 - Domínios `client/` e `crm/` foram removidos — suas entidades foram consolidadas em `cliente/` (domínio PT-BR); rotas `app/clients/` e `app/crm/` não existem mais
 - Ouvidoria UI (`app/ouvidoria/`) foi removida e substituída pelo módulo de Manifestações (`app/manifestacoes/`)
-- Crypto Tauri command `load_crypto_key` é chamado **internamente pelo Rust** (camada AES-256-GCM do sync) — NÃO é invocado via `invoke` do JS e não deve aparecer em audits de grep no frontend. (`encrypt_payload`/`decrypt_payload` e todo o subsistema `CentralCrypto` foram removidos na simplificação criptográfica de 2026-06-13)
+- Crypto Tauri command `load_crypto_key` é invocado pelo frontend apenas no login bem-sucedido, para entregar ao backend a chave PBKDF2 recém-derivada; o comando valida a sessão Rust antes de aceitar a chave e a mantém apenas em memória. (`encrypt_payload`/`decrypt_payload` e todo o subsistema `CentralCrypto` foram removidos na simplificação criptográfica de 2026-06-13)
 - `docs/BACKEND_NAO_EXPOSTO.md` — gap tracker: lista os 2 gaps reais não conectados (Views CRUD mutations, Dashboard widget UI) e documenta commands intencionalmente registrados mas ainda sem UI (`get_session`, `network_write_parquet`, `supabase_admin_status`)
 
 

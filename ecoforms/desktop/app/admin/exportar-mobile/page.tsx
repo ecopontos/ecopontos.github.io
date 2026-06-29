@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Smartphone,
     Download,
@@ -22,6 +22,8 @@ import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
 import { useSqlite } from "@/src/interface/hooks/catalog/tauri";
 import { toast } from "sonner";
 
+type ExportDestination = "appdata" | "lan";
+
 interface ExportMeta {
     gerado_em: string;
     schema_version: number;
@@ -29,32 +31,74 @@ interface ExportMeta {
     tamanho_bytes: number;
 }
 
+const TABLES = [
+    "usuarios",
+    "tarefas",
+    "clientes",
+    "tbl_demandas",
+    "tbl_agendamentos",
+    "tbl_manifestacoes",
+    "tbl_setores",
+    "tbl_roteiros",
+    "ecopontos",
+    "data_registry",
+    "module_registry",
+];
+
+function base64ToBytes(b64: string): Uint8Array {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function fileNameFromPath(filePath: string): string {
+    return filePath.split(/[/\\]/).pop() ?? "ecoforms_mobile.db";
+}
+
 export default function ExportarMobilePage() {
     const safeInvoke = useTauriInvoke();
     const sqlite = useSqlite();
     const [exporting, setExporting] = useState(false);
     const [exportMeta, setExportMeta] = useState<ExportMeta | null>(null);
-    const [lanPath, setLanPath] = useState("");
+    const [lanSyncPath, setLanSyncPath] = useState("");
+    const [exportDestination, setExportDestination] = useState<ExportDestination>("appdata");
     const [error, setError] = useState<string | null>(null);
-    const [exportFilePath, setExportFilePath] = useState<string | null>(null);
+    const [exportRelativePath, setExportRelativePath] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const rows = await sqlite.query<{ valor: string }>(
+                    `SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1`,
+                );
+                if (!cancelled) {
+                    setLanSyncPath(rows[0]?.valor?.trim() ?? "");
+                }
+            } catch {
+                if (!cancelled) {
+                    setLanSyncPath("");
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [sqlite]);
 
     const countTables = useCallback(async () => {
         try {
-            const tables = [
-                "usuarios", "tarefas", "clientes", "tbl_demandas",
-                "tbl_agendamentos", "tbl_manifestacoes", "tbl_setores",
-                "tbl_roteiros", "ecopontos", "data_registry",
-                "module_registry"
-            ];
             const counts: Record<string, number> = {};
-            for (const t of tables) {
+            for (const table of TABLES) {
                 try {
-                    const r = await sqlite.query<{ cnt: number }>(
-                        `SELECT count(*) as cnt FROM ${t}`
-                    );
-                    counts[t] = r[0]?.cnt ?? 0;
+                    const rows = await sqlite.query<{ cnt: number }>(`SELECT count(*) as cnt FROM ${table}`);
+                    counts[table] = rows[0]?.cnt ?? 0;
                 } catch {
-                    counts[t] = 0;
+                    counts[table] = 0;
                 }
             }
             return counts;
@@ -64,33 +108,33 @@ export default function ExportarMobilePage() {
     }, [sqlite]);
 
     const handleExport = useCallback(async () => {
+        if (exportDestination === "lan" && !lanSyncPath.trim()) {
+            const msg = "Configure o caminho LAN antes de exportar para a rede.";
+            setError(msg);
+            toast.error("Falha na exportação", { description: msg });
+            return;
+        }
+
         setExporting(true);
         setError(null);
-        setExportFilePath(null);
+        setExportRelativePath(null);
         setExportMeta(null);
 
         try {
-            const dateStr = new Date().toISOString().slice(0, 10);
-            const exportPath = lanPath.trim()
-                ? `${lanPath.trim().replace(/\\+$/, "")}/ecoforms_mobile_${dateStr}.db`
-                : `ecoforms_mobile_${dateStr}.db`;
-
-            const resultPath = await safeInvoke<string>("db_export_for_mobile", {
-                exportPath,
+            const relativePath = await safeInvoke<string>("db_export_for_mobile", {
+                destination: exportDestination,
             });
 
             const tabelas = await countTables();
-
             setExportMeta({
                 gerado_em: new Date().toISOString(),
                 schema_version: 28,
                 tabelas,
                 tamanho_bytes: 0,
             });
-
-            setExportFilePath(resultPath);
+            setExportRelativePath(relativePath);
             toast.success("Banco exportado com sucesso", {
-                description: `Arquivo: ${resultPath}`,
+                description: `Arquivo: ${relativePath}`,
             });
         } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
@@ -99,34 +143,34 @@ export default function ExportarMobilePage() {
         } finally {
             setExporting(false);
         }
-    }, [safeInvoke, lanPath, countTables]);
+    }, [safeInvoke, exportDestination, lanSyncPath, countTables]);
 
     const handleDownload = useCallback(async () => {
-        if (!exportFilePath) return;
+        if (!exportRelativePath) return;
+
         try {
-            const b64 = await safeInvoke<string>("lan_read_file", {
-                path: exportFilePath,
-            });
-            const binary = atob(b64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-            const blob = new Blob([bytes], { type: "application/octet-stream" });
+            const bytes = base64ToBytes(await safeInvoke<string>("db_read_mobile_export", {
+                destination: exportDestination,
+                path: exportRelativePath,
+            }));
+
+            const payload = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+            const blob = new Blob([payload], { type: "application/octet-stream" });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = exportFilePath.split(/[/\\]/).pop() ?? "ecoforms_mobile.db";
-            a.click();
-            URL.revokeObjectURL(url);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileNameFromPath(exportRelativePath);
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             toast.success("Download iniciado");
         } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
             toast.error("Erro no download", { description: msg });
         }
-    }, [exportFilePath, safeInvoke]);
+    }, [exportRelativePath, exportDestination, safeInvoke]);
 
     const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    const hasLanPath = lanSyncPath.trim().length > 0;
 
     return (
         <div className="space-y-6">
@@ -143,7 +187,7 @@ export default function ExportarMobilePage() {
                         <div className="flex items-center gap-2 text-amber-800">
                             <Wifi className="h-5 w-5" />
                             <p className="text-sm font-medium">
-                                Recurso disponível apenas no Tauri Desktop. Execute com <code className="bg-amber-100 px-1 rounded">npm run start:tauri</code>.
+                                Recurso disponível apenas no Tauri Desktop. Execute com <code className="rounded bg-amber-100 px-1">npm run start:tauri</code>.
                             </p>
                         </div>
                     </CardContent>
@@ -164,22 +208,46 @@ export default function ExportarMobilePage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="lanPath">Caminho de destino (opcional)</Label>
-                            <Input
-                                id="lanPath"
-                                placeholder="Ex: C:\dados\mobile ou /mnt/lan"
-                                value={lanPath}
-                                onChange={(e) => setLanPath(e.target.value)}
-                                disabled={exporting}
-                            />
+                            <Label htmlFor="exportDestination">Destino da exportação</Label>
+                            <Select
+                                value={exportDestination}
+                                onValueChange={(value) => setExportDestination(value as ExportDestination)}
+                                disabled={exporting || !isTauri}
+                            >
+                                <SelectTrigger id="exportDestination">
+                                    <SelectValue placeholder="Selecione o destino" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="appdata">AppData local</SelectItem>
+                                    <SelectItem value="lan" disabled={!hasLanPath}>
+                                        Pasta LAN compartilhada
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                             <p className="text-xs text-muted-foreground">
-                                Se vazio, o arquivo é gerado no diretório de dados do app.
+                                {exportDestination === "appdata"
+                                    ? "O arquivo fica em `AppData/mobile_exports` e pode ser baixado localmente."
+                                    : hasLanPath
+                                        ? `O arquivo será gravado em ${lanSyncPath}`
+                                        : "Configure a pasta LAN nas configurações antes de usar este destino."}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2 rounded-md border p-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-sm font-medium">Pasta LAN configurada</span>
+                                <Badge variant={hasLanPath ? "secondary" : "outline"}>
+                                    {hasLanPath ? "Configurada" : "Não configurada"}
+                                </Badge>
+                            </div>
+                            <p className="break-all text-xs text-muted-foreground">
+                                {lanSyncPath || "Nenhum caminho LAN foi salvo nas configurações."}
                             </p>
                         </div>
 
                         <Button
                             onClick={handleExport}
-                            disabled={exporting}
+                            disabled={exporting || !isTauri}
                             className="w-full"
                         >
                             {exporting ? (
@@ -216,19 +284,25 @@ export default function ExportarMobilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {exportFilePath ? (
+                        {exportRelativePath ? (
                             <>
                                 <div className="flex items-center gap-2 text-sm text-green-700">
                                     <CheckCircle2 className="h-4 w-4" />
-                                    <span className="font-mono text-xs break-all">
-                                        {exportFilePath}
+                                    <span className="break-all font-mono text-xs">
+                                        {exportRelativePath}
                                     </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <HardDrive className="h-4 w-4" />
+                                    Destino atual: {exportDestination === "appdata" ? "AppData local" : "Pasta LAN"}
                                 </div>
 
                                 <Button
                                     onClick={handleDownload}
                                     variant="outline"
                                     className="w-full"
+                                    disabled={!isTauri}
                                 >
                                     <Download className="mr-2 h-4 w-4" />
                                     Baixar Arquivo .db
@@ -242,7 +316,7 @@ export default function ExportarMobilePage() {
                                         </div>
                                         <div className="flex flex-wrap gap-1">
                                             {Object.entries(exportMeta.tabelas)
-                                                .filter(([, cnt]) => cnt > 0)
+                                                .filter(([, count]) => count > 0)
                                                 .map(([tabela, count]) => (
                                                     <Badge key={tabela} variant="secondary" className="text-xs">
                                                         {tabela}: {count}
@@ -255,10 +329,10 @@ export default function ExportarMobilePage() {
                         ) : (
                             <div className="flex flex-col items-center gap-3 py-6 text-muted-foreground">
                                 <FolderOpen className="h-10 w-10" />
-                                <p className="text-sm text-center">
+                                <p className="text-center text-sm">
                                     Nenhum arquivo gerado ainda.
                                     <br />
-                                    Configure o caminho e clique em Gerar.
+                                    Selecione um destino e clique em Gerar.
                                 </p>
                             </div>
                         )}
@@ -278,8 +352,8 @@ export default function ExportarMobilePage() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid gap-4 md:grid-cols-3">
-                        <div className="space-y-2 p-3 border rounded-lg">
-                            <h4 className="font-medium text-sm flex items-center gap-1">
+                        <div className="space-y-2 rounded-lg border p-3">
+                            <h4 className="flex items-center gap-1 text-sm font-medium">
                                 <Download className="h-4 w-4" />
                                 Download direto
                             </h4>
@@ -289,8 +363,8 @@ export default function ExportarMobilePage() {
                                 &quot;Importar banco&quot;.
                             </p>
                         </div>
-                        <div className="space-y-2 p-3 border rounded-lg">
-                            <h4 className="font-medium text-sm flex items-center gap-1">
+                        <div className="space-y-2 rounded-lg border p-3">
+                            <h4 className="flex items-center gap-1 text-sm font-medium">
                                 <FolderOpen className="h-4 w-4" />
                                 Pasta LAN (ADR-027)
                             </h4>
@@ -299,8 +373,8 @@ export default function ExportarMobilePage() {
                                 O mobile lê o arquivo automaticamente na inicialização.
                             </p>
                         </div>
-                        <div className="space-y-2 p-3 border rounded-lg">
-                            <h4 className="font-medium text-sm flex items-center gap-1">
+                        <div className="space-y-2 rounded-lg border p-3">
+                            <h4 className="flex items-center gap-1 text-sm font-medium">
                                 <Wifi className="h-4 w-4" />
                                 Sync incremental pós-provisão
                             </h4>

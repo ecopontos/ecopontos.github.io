@@ -5,7 +5,7 @@ import { SqliteKanbanRepository } from '../SqliteKanbanRepository';
 class RecordingSqlite implements SqlitePort {
     readonly queries: Array<{ sql: string; params: unknown[] }> = [];
 
-    async query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
+    async query<T = unknown>(sql: string, params: unknown[] = [], _options?: { bootstrap?: boolean }): Promise<T[]> {
         this.queries.push({ sql, params });
         return [];
     }
@@ -16,8 +16,8 @@ class RecordingSqlite implements SqlitePort {
 
     async execute(): Promise<void> {}
 
-    async transaction<T>(callback: () => Promise<T>): Promise<T> {
-        return callback();
+    async transaction<T>(callback: (tx: SqlitePort) => Promise<T>): Promise<T> {
+        return callback(this);
     }
 }
 

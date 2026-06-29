@@ -3,8 +3,11 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use uuid::Uuid;
 
-use crate::database::DbState;
 use crate::commands::audit::log_audit;
+use crate::commands::crypto::CryptoState;
+use crate::commands::legacy_sync::{build_conn_string, load_pg_legacy_credentials};
+use crate::database::DbState;
+use crate::session::SessionState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SyncResult {
@@ -19,16 +22,23 @@ pub struct SyncResult {
 #[tauri::command]
 pub fn sync_roteiros_externos(
     state: State<'_, DbState>,
-    pg_host: String,
-    pg_port: u16,
-    pg_db: String,
-    pg_user: String,
-    pg_password: String,
+    session: State<'_, SessionState>,
+    crypto: State<'_, CryptoState>,
 ) -> Result<SyncResult, String> {
-    let conn_string = format!(
-        "host={} port={} dbname={} user={} password={} connect_timeout=3",
-        pg_host, pg_port, pg_db, pg_user, pg_password
-    );
+    let actor_id = session.user_id.lock()
+        .map_err(|e| format!("Session lock poisoned: {e}"))?
+        .clone()
+        .ok_or("Sessão não iniciada — faça login antes de sincronizar")?;
+    let actor_perfil = session.perfil.lock()
+        .map_err(|e| format!("Session lock poisoned: {e}"))?
+        .clone()
+        .unwrap_or_else(|| "operacional".to_string());
+    let conn_guard = state.conn.lock().map_err(|e| format!("Database lock poisoned: {}", e))?;
+    let conn = conn_guard
+        .as_ref()
+        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
+    let pg_config = load_pg_legacy_credentials(conn, &session, &crypto, &state)?;
+    let conn_string = build_conn_string(&pg_config);
 
     let mut pg_client =
         Client::connect(&conn_string, NoTls).map_err(|e| format!("Erro ao conectar no PostgreSQL: {}", e))?;
@@ -76,20 +86,7 @@ pub fn sync_roteiros_externos(
         period_map.insert(id, desc);
     }
 
-    let conn_guard = state.conn.lock().unwrap();
-    let sqlite_conn = conn_guard
-        .as_ref()
-        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
-
-    let ensure_perfil = "INSERT OR IGNORE INTO perfis (id, nome) VALUES ('admin', 'Administrador')";
-    sqlite_conn
-        .execute(ensure_perfil, [])
-        .map_err(|e| format!("Erro ao garantir perfil admin: {}", e))?;
-
-    let ensure_user = "INSERT OR IGNORE INTO usuarios (id, nome_usuario, hash_senha, nome, perfil, ativo, criado_em, atualizado_em) VALUES ('system', 'system', '-', 'Sistema (Sync Externo)', 'admin', 1, datetime('now'), datetime('now'))";
-    sqlite_conn
-        .execute(ensure_user, [])
-        .map_err(|e| format!("Erro ao garantir usuário system: {}", e))?;
+    let sqlite_conn = conn;
 
     let mut inseridos = 0usize;
     let mut atualizados = 0usize;
@@ -156,7 +153,7 @@ pub fn sync_roteiros_externos(
         } else {
             let new_id = Uuid::new_v4().to_string();
             sqlite_conn.execute(
-                "INSERT INTO roteiros (id, codigo, nome, descricao, periodicidade, turno, base, situacao, residuo, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'system', ?10, ?11)",
+                "INSERT INTO roteiros (id, codigo, nome, descricao, periodicidade, turno, base, situacao, residuo, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
                 rusqlite::params![
                     new_id,
                     codigo,
@@ -167,6 +164,7 @@ pub fn sync_roteiros_externos(
                     base_nome,
                     situacao,
                     residuo_nome,
+                    actor_id,
                     criado_em,
                     atualizado_em,
                 ],
@@ -190,7 +188,7 @@ pub fn sync_roteiros_externos(
         }
     }
 
-    let _ = log_audit(sqlite_conn, "system", "admin", "sync.roteiros.externos", Some("roteiros"), None, None, None, Some(&format!("inseridos={} atualizados={} erros={}", inseridos, atualizados, erros)));
+    let _ = log_audit(sqlite_conn, &actor_id, &actor_perfil, "sync.roteiros.externos", Some("roteiros"), None, None, None, Some(&format!("inseridos={} atualizados={} erros={}", inseridos, atualizados, erros)));
 
     Ok(SyncResult {
         inseridos,
@@ -208,16 +206,15 @@ pub fn sync_roteiros_externos(
 #[tauri::command]
 pub fn sync_roteiros_status(
     state: State<'_, DbState>,
-    pg_host: String,
-    pg_port: u16,
-    pg_db: String,
-    pg_user: String,
-    pg_password: String,
+    session: State<'_, SessionState>,
+    crypto: State<'_, CryptoState>,
 ) -> Result<serde_json::Value, String> {
-    let conn_string = format!(
-        "host={} port={} dbname={} user={} password={} connect_timeout=3",
-        pg_host, pg_port, pg_db, pg_user, pg_password
-    );
+    let conn_guard = state.conn.lock().map_err(|e| format!("Database lock poisoned: {}", e))?;
+    let conn = conn_guard
+        .as_ref()
+        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
+    let pg_config = load_pg_legacy_credentials(conn, &session, &crypto, &state)?;
+    let conn_string = build_conn_string(&pg_config);
 
     let mut pg_client =
         Client::connect(&conn_string, NoTls).map_err(|e| format!("Erro ao conectar no PostgreSQL: {}", e))?;
@@ -227,10 +224,7 @@ pub fn sync_roteiros_status(
         .map_err(|e| format!("Erro ao consultar cad_roteiro: {}", e))?
         .get(0);
 
-    let conn_guard = state.conn.lock().unwrap();
-    let sqlite_conn = conn_guard
-        .as_ref()
-        .ok_or_else(|| "Banco SQLite não conectado".to_string())?;
+    let sqlite_conn = conn;
 
     let local_count: i64 = sqlite_conn
         .query_row("SELECT COUNT(*) FROM roteiros WHERE codigo IS NOT NULL", [], |r| r.get(0))

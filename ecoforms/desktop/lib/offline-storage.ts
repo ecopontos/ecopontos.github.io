@@ -1,15 +1,6 @@
 
-/**
- * Serviço de Armazenamento Local (System Files)
- * Gerencia o salvamento e recuperação de arquivos no AppData do usuário
- */
-
-import { BaseDirectory, writeFile, readFile, mkdir, exists, copyFile } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { appDataDir, join } from '@tauri-apps/api/path';
-
-// Network path for photo backup (UNC format)
-const NETWORK_PHOTO_PATH = '\\\\192.168.12.1\\dados\\SMMADS\\Dep. Técnico\\Tecnicos_e_Administrativos\\TECNICOS_e_ADMINISTRATIVO\\Administrativo\\Bases de Dados\\fotos';
 
 export class OfflineStorageService {
     private static instance: OfflineStorageService;
@@ -24,52 +15,20 @@ export class OfflineStorageService {
     }
 
     /**
-     * Salva um arquivo no sistema de arquivos local (AppData)
-     * E tenta copiar para o caminho de rede configurado
+     * Salva um arquivo no AppData via comando Rust.
      * @param file Arquivo a ser salvo
-     * @param subPath Caminho relativo para organizar (ex: '{formId}/{recordId}')
-     * @returns Caminho relativo do arquivo (ex: 'storage/form_123/record_abc/123456.jpg')
+     * @param subPath Caminho relativo para organizar (ex: '{userId}')
+     * @returns Caminho relativo do arquivo (ex: 'storage/{userId}/123456.jpg')
      */
     async saveFile(file: File, subPath: string = 'uploads'): Promise<string> {
-        // Estrutura base: ecoforms_data/storage
-        const baseFolder = 'storage';
-        const targetFolder = `${baseFolder}/${subPath}`;
-
-        // Gerar nome único seguro
-        const timestamp = Date.now();
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const fileName = `${timestamp}_${safeName}`;
-        const filePath = `${targetFolder}/${fileName}`;
-
-        // Converter File para Uint8Array
+        const { invoke } = await import('@tauri-apps/api/core');
         const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        // 1. Salvar localmente (obrigatório)
-        try {
-            const dirExists = await exists(targetFolder, { baseDir: BaseDirectory.AppData });
-            if (!dirExists) {
-                await mkdir(targetFolder, { baseDir: BaseDirectory.AppData, recursive: true });
-            }
-            await writeFile(filePath, uint8Array, { baseDir: BaseDirectory.AppData });
-            console.log(`✅ Arquivo salvo localmente: ${filePath}`);
-        } catch (error) {
-            console.error('❌ Erro ao salvar arquivo localmente:', error);
-            throw error; // Local save is required
-        }
-
-        // 2. Copiar para rede (opcional, não bloqueia em caso de erro)
-        try {
-            const networkFilePath = `${NETWORK_PHOTO_PATH}\\${fileName}`;
-            // writeFile with absolute path (no baseDir) for network share
-            await writeFile(networkFilePath, uint8Array);
-            console.log(`✅ Arquivo copiado para rede: ${networkFilePath}`);
-        } catch (networkError) {
-            console.warn(`⚠️ Não foi possível copiar para a rede (${NETWORK_PHOTO_PATH}):`, networkError);
-            // Não lança erro - salvamento local já foi bem sucedido
-        }
-
-        return filePath;
+        const data = Array.from(new Uint8Array(arrayBuffer));
+        return invoke<string>('offline_storage_save_file', {
+            subPath,
+            fileName: file.name,
+            data,
+        });
     }
 
     /**
@@ -80,45 +39,37 @@ export class OfflineStorageService {
         try {
             if (!relativePath) return '';
 
-            // Se já for uma URL completa (http/https/asset/blob), retorna ela mesma
             if (relativePath.startsWith('http') || relativePath.startsWith('asset') || relativePath.startsWith('blob')) {
                 return relativePath;
             }
 
-            // Remover prefixo opfs:// se existir (legado)
             const cleanPath = relativePath.replace('opfs://', '');
 
             const appData = await appDataDir();
             const fullPath = await join(appData, cleanPath);
             return convertFileSrc(fullPath);
         } catch (error) {
-            console.error(`❌ Erro ao gerar URL do arquivo (${relativePath}):`, error);
+            console.error(`Erro ao gerar URL do arquivo (${relativePath}):`, error);
             return '';
         }
     }
 
     /**
-     * Recupera o objeto File original lendo do disco
+     * Recupera o objeto File original lendo do disco via comando Rust.
      */
     async getFile(relativePath: string): Promise<File> {
-        try {
-            // Remover prefixo opfs:// se existir (legado)
-            const cleanPath = relativePath.replace('opfs://', '');
+        const { invoke } = await import('@tauri-apps/api/core');
+        const cleanPath = relativePath.replace('opfs://', '');
+        const fileName = cleanPath.split('/').pop() || 'unknown';
 
-            // Extrair nome do arquivo
-            const fileName = cleanPath.split('/').pop() || 'unknown';
+        const bytes = await invoke<number[]>('offline_storage_read_file', {
+            relativePath: cleanPath,
+        });
 
-            const contents = await readFile(cleanPath, { baseDir: BaseDirectory.AppData });
+        let type = 'application/octet-stream';
+        if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) type = 'image/jpeg';
+        if (fileName.endsWith('.png')) type = 'image/png';
 
-            // Tentar adivinhar tipo pelo nome (muito simples) ou default
-            let type = 'application/octet-stream';
-            if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) type = 'image/jpeg';
-            if (fileName.endsWith('.png')) type = 'image/png';
-
-            return new File([contents], fileName, { type });
-        } catch (error) {
-            console.error(`❌ Erro ao ler arquivo do disco (${relativePath}):`, error);
-            throw error;
-        }
+        return new File([new Uint8Array(bytes)], fileName, { type });
     }
 }

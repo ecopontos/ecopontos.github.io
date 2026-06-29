@@ -21,8 +21,8 @@ export default function TiposResiduoPage() {
     const [filterMode, setFilterMode] = useState<FilterMode>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const router = useRouter();
-    const { config, loading: configLoading, saving, saveConfig } = usePgLegacyConfig();
-    const { residuos, total, loading, syncing, error, syncResult, refetch, sync } = useExternalResiduos(config, !configLoading);
+    const { config, loading: configLoading, saving, error: configError, saveConfig } = usePgLegacyConfig();
+    const { residuos, total, loading, syncing, error, syncResult, refetch, sync } = useExternalResiduos();
 
     const filtered = useMemo(() => {
         let list = residuos;
@@ -76,7 +76,14 @@ export default function TiposResiduoPage() {
                     </div>
                 </div>
 
-                <PgConfigCard config={config} saving={saving} onSave={saveConfig} />
+                <PgConfigCard config={config} loading={configLoading || Boolean(configError)} saving={saving} onSave={saveConfig} />
+
+                {configError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Erro ao carregar a configuração</AlertTitle>
+                        <AlertDescription>{configError}</AlertDescription>
+                    </Alert>
+                )}
 
                 {error && (
                     <Alert variant="destructive">

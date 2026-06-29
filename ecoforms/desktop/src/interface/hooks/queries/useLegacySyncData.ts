@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useCallback, useEffect } from "react";
-import { fetchRoteirosFiltered, fetchPesagensFiltered, fetchLegacyFilterOptions, getSistemaConfig, saveSistemaConfig } from "@/src/interface/hooks/queries/lookups";
+import { fetchRoteirosFiltered, fetchPesagensFiltered, fetchLegacyFilterOptions } from "@/src/interface/hooks/queries/lookups";
 
 function isTauri() {
     return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -62,6 +62,14 @@ export interface PgLegacyConfig {
     pgPort: number;
     pgDb: string;
     pgUser: string;
+    hasPassword: boolean;
+}
+
+export interface PgLegacyConfigInput {
+    pgHost: string;
+    pgPort: number;
+    pgDb: string;
+    pgUser: string;
     pgPassword: string;
 }
 
@@ -70,52 +78,56 @@ const PG_DEFAULTS: PgLegacyConfig = {
     pgPort: 5432,
     pgDb: "geo_fpolis",
     pgUser: "smma",
-    pgPassword: "",
+    hasPassword: false,
 };
 
 export function usePgLegacyConfig() {
     const [config, setConfig] = useState<PgLegacyConfig>(PG_DEFAULTS);
     const [loading, setLoading] = useState(() => isTauri());
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isTauri()) return;
+        if (!isTauri()) {
+            return;
+        }
+
+        let active = true;
         (async () => {
-            const [host, port, db, user, password] = await Promise.all([
-                getSistemaConfig("pg_legacy_host"),
-                getSistemaConfig("pg_legacy_port"),
-                getSistemaConfig("pg_legacy_db"),
-                getSistemaConfig("pg_legacy_user"),
-                getSistemaConfig("pg_legacy_password"),
-            ]);
-            setConfig({
-                pgHost: host ?? PG_DEFAULTS.pgHost,
-                pgPort: port ? parseInt(port, 10) : PG_DEFAULTS.pgPort,
-                pgDb: db ?? PG_DEFAULTS.pgDb,
-                pgUser: user ?? PG_DEFAULTS.pgUser,
-                pgPassword: password ?? PG_DEFAULTS.pgPassword,
-            });
-            setLoading(false);
+            try {
+                const result = await invoke<PgLegacyConfig>("pg_legacy_config_get");
+                if (!active) return;
+                setConfig(result);
+                setError(null);
+            } catch (e: unknown) {
+                if (!active) return;
+                setError(e instanceof Error ? e.message : String(e));
+            } finally {
+                if (active) setLoading(false);
+            }
         })();
+
+        return () => {
+            active = false;
+        };
     }, []);
 
-    const saveConfig = useCallback(async (next: PgLegacyConfig) => {
+    const saveConfig = useCallback(async (next: PgLegacyConfigInput) => {
         setSaving(true);
+        setError(null);
         try {
-            await Promise.all([
-                saveSistemaConfig("pg_legacy_host", next.pgHost),
-                saveSistemaConfig("pg_legacy_port", String(next.pgPort)),
-                saveSistemaConfig("pg_legacy_db", next.pgDb),
-                saveSistemaConfig("pg_legacy_user", next.pgUser),
-                saveSistemaConfig("pg_legacy_password", next.pgPassword),
-            ]);
-            setConfig(next);
+            const result = await invoke<PgLegacyConfig>("pg_legacy_config_save", { config: next });
+            setConfig(result);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e);
+            setError(message);
+            throw new Error(message);
         } finally {
             setSaving(false);
         }
     }, []);
 
-    return { config, loading, saving, saveConfig };
+    return { config, loading, saving, error, saveConfig };
 }
 
 export function useLegacySyncData(filters: LegacySyncFilters, limit = 10) {
@@ -168,7 +180,7 @@ export function useLegacySyncData(filters: LegacySyncFilters, limit = 10) {
     };
 }
 
-export function useLegacySyncActions(config: PgLegacyConfig) {
+export function useLegacySyncActions() {
     const [syncingRoteiros, setSyncingRoteiros] = useState(false);
     const [syncingPesagens, setSyncingPesagens] = useState(false);
     const [roteiroResult, setRoteiroResult] = useState<string | null>(null);
@@ -176,24 +188,25 @@ export function useLegacySyncActions(config: PgLegacyConfig) {
     const [error, setError] = useState<string | null>(null);
 
     const syncRoteiros = useCallback(async () => {
+        if (!isTauri()) return null;
         setSyncingRoteiros(true);
         setError(null);
         try {
             const result = await invoke<{ inseridos: number; atualizados: number; erros: number; total_externo: number; mensagem: string }>(
                 "sync_roteiros_externos",
-                {
-                    ...config,
-                },
             );
             setRoteiroResult(result.mensagem);
+            return result;
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : String(e));
+            return null;
         } finally {
             setSyncingRoteiros(false);
         }
-    }, [config]);
+    }, []);
 
     const syncPesagens = useCallback(async (dataInicio: string, dataFim: string) => {
+        if (!isTauri()) return null;
         setSyncingPesagens(true);
         setError(null);
         try {
@@ -205,18 +218,20 @@ export function useLegacySyncActions(config: PgLegacyConfig) {
                 total_externo: number;
                 mensagem: string;
                 detalhes_erros: string[];
-            }>("sync_pesagens_externas", { ...config, dataInicio, dataFim });
+            }>("sync_pesagens_externas", { dataInicio, dataFim });
             setPesagemResult(
                 result.detalhes_erros.length > 0
                     ? `${result.mensagem}\n${result.detalhes_erros.join("\n")}`
                     : result.mensagem,
             );
+            return result;
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : String(e));
+            return null;
         } finally {
             setSyncingPesagens(false);
         }
-    }, [config]);
+    }, []);
 
     return { syncingRoteiros, syncingPesagens, roteiroResult, pesagemResult, error, syncRoteiros, syncPesagens };
 }

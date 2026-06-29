@@ -186,19 +186,24 @@ export class SqliteModuleRepository implements ModuleRepository {
   }
 
   async setPermissions(moduleId: string, permissions: ModulePermissionConfig[]): Promise<void> {
-    // Transação — DELETE + INSERTs atômicos: falha no meio não zera as permissões.
-    await this.db.transaction(async () => {
-      await this.db.execute(`DELETE FROM permissoes_modulos WHERE module_id = ?`, [moduleId]);
-      for (const p of permissions) {
-        await this.db.execute(
-          `INSERT INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [moduleId, p.profile, p.can_view ? 1 : 0, p.can_create ? 1 : 0, p.can_edit ? 1 : 0, p.can_approve ? 1 : 0, p.can_delete ? 1 : 0],
-        );
-      }
-    });
-  }
+    const statements = [
+      { sql: 'DELETE FROM permissoes_modulos WHERE module_id = ?', params: [moduleId] },
+      ...permissions.map((p) => ({
+        sql: 'INSERT INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        params: [moduleId, p.profile, p.can_view ? 1 : 0, p.can_create ? 1 : 0, p.can_edit ? 1 : 0, p.can_approve ? 1 : 0, p.can_delete ? 1 : 0],
+      })),
+    ];
 
+    if (this.db.transactionBatch) {
+      await this.db.transactionBatch(statements);
+    } else {
+      await this.db.transaction(async (tx) => {
+        for (const statement of statements) {
+          await tx.execute(statement.sql, statement.params);
+        }
+      });
+    }
+  }
   async loadRuntimeDto(slug: string, userProfile: string): Promise<ModuleRuntimeDto | null> {
     const mod = await this.findBySlug(slug);
     if (!mod) return null;

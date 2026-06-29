@@ -2,8 +2,7 @@ import { useState, useCallback } from 'react';
 import { uuidv7 } from 'ecoforms-core';
 import { getContainerAsync } from '@/src/infrastructure/container';
 import { open } from '@tauri-apps/plugin-dialog';
-import { readFile, writeFile, mkdir } from '@tauri-apps/plugin-fs';
-import { appDataDir, join } from '@tauri-apps/api/path';
+import { invoke } from '@/src/interface/hooks/catalog/tauri';
 import type { Anexo } from '@/src/domain/ouvidoria/ManifestacaoRepository';
 
 export function useAnexoUpload() {
@@ -16,23 +15,18 @@ export function useAnexoUpload() {
       if (!selected || Array.isArray(selected)) return null;
 
       const fileName = selected.split(/[\\/]/).pop() || 'arquivo';
-      const bytes = await readFile(selected);
-
-      const appDir = await appDataDir();
-      const anexosDir = await join(appDir, 'anexos');
-      try { await mkdir(anexosDir); } catch { /* já existe */ }
-
       const destName = `${uuidv7()}-${fileName}`;
-      const destPath = await join(anexosDir, destName);
-      await writeFile(destPath, new Uint8Array(bytes));
+      const copied = await invoke<{ fileName: string; storagePath: string; mimeType?: string }>('copy_attachment_to_appdata', {
+        sourcePath: selected,
+        destName,
+      });
 
-      const ext = fileName.split('.').pop();
       const anexo: Anexo = {
         id: uuidv7(),
         manifestacaoId,
-        nomeArquivo: fileName,
-        storagePath: destPath,
-        mimeType: ext ? `application/${ext}` : undefined,
+        nomeArquivo: copied.fileName,
+        storagePath: copied.storagePath,
+        mimeType: copied.mimeType,
         criadoEm: new Date().toISOString(),
       };
 

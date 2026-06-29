@@ -61,7 +61,7 @@ export class LanFileStorage {
         if (!root) return null;
         try {
             const { invoke } = await import('@tauri-apps/api/core');
-            const b64 = await invoke<string>('lan_read_file', { path: `${root}/${relPath}` });
+            const b64 = await invoke<string>('lan_read_file', { path: relPath });
             return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
         } catch {
             return null;
@@ -74,7 +74,7 @@ export class LanFileStorage {
         if (!root) return;
         const b64 = btoa(String.fromCharCode(...data));
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('lan_write_file', { path: `${root}/${relPath}`, content: b64 });
+        await invoke('lan_write_file', { path: relPath, content: b64 });
     }
 
     /** Lista arquivos em um diretório relativo. Retorna [] se LAN não configurada. */
@@ -83,7 +83,7 @@ export class LanFileStorage {
         if (!root) return [];
         try {
             const { invoke } = await import('@tauri-apps/api/core');
-            return await invoke<string[]>('lan_list_dir', { path: `${root}/${relPath}` });
+            return await invoke<string[]>('lan_list_dir', { path: relPath });
         } catch {
             return [];
         }
@@ -145,7 +145,7 @@ export class LanFileStorage {
         if (!root) return { ok: false, message: 'Caminho LAN não configurado.' };
         try {
             const { invoke } = await import('@tauri-apps/api/core');
-            await invoke<string[]>('lan_list_dir', { path: root });
+            await invoke<string[]>('lan_list_dir', { path: '' });
             return { ok: true, message: `Pasta acessível: ${root}` };
         } catch (e) {
             return { ok: false, message: `Erro ao acessar pasta: ${String(e)}` };

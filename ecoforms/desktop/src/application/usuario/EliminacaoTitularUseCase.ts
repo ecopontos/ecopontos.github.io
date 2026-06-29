@@ -1,11 +1,12 @@
-import { MAPEAMENTO_USUARIO_DELETE, USUARIO_DELETE, USUARIO_MAPEAMENTO_SUPABASE } from '../../infrastructure/persistence/sqlite/queries/usuarios';
-import { TAREFAS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
-import { AGENDAMENTOS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
-import { MANIFESTACOES_DELETE_BY_CLIENTE } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
-import { LOG_ACOES_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
-import { LOG_AUDITORIA_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_auditoria';
+import { MAPEAMENTO_USUARIO_DELETE, USUARIO_DELETE, USUARIO_MAPEAMENTO_SUPABASE } from '../persistence/sqlite/queries/usuarios';
+import { TAREFAS_DELETE_BY_USER } from '../persistence/sqlite/queries/tarefas';
+import { AGENDAMENTOS_DELETE_BY_USER } from '../persistence/sqlite/queries/service';
+import { MANIFESTACOES_DELETE_BY_CLIENTE } from '../persistence/sqlite/queries/manifestacoes';
+import { LOG_ACOES_DELETE_BY_USER } from '../persistence/sqlite/queries/log_acoes';
+import { LOG_AUDITORIA_DELETE_BY_USER } from '../persistence/sqlite/queries/log_auditoria';
 import type { SqlitePort } from '../ports/SqlitePort';
 import type { FileStoragePort } from '../ports/FileStoragePort';
+import type { SupabaseAdminPort } from '../ports/SupabaseAdminPort';
 
 
 export interface EliminacaoTitularResult {
@@ -21,6 +22,7 @@ export class EliminacaoTitularUseCase {
     constructor(
         private readonly sqlite: SqlitePort,
         private readonly fileStorage: FileStoragePort,
+        private readonly supabaseAdmin: SupabaseAdminPort,
     ) {}
 
     async execute(userId: string, requestorRole: string): Promise<EliminacaoTitularResult> {
@@ -71,33 +73,22 @@ export class EliminacaoTitularUseCase {
             erros.push(`storage: ${String(e)}`);
         }
 
-        // 4 — Supabase profiles (public.profiles) — dynamic import to avoid static boundary violation
+        // 4 — Supabase profiles (public.profiles)
         let supabasePerfilRemovido = false;
         if (supabaseId) {
             try {
-                const { supabase } = await import('../../infrastructure/persistence/supabase/supabaseClient');
-                const { error } = await supabase.from('profiles').delete().eq('id', supabaseId);
-                if (error) throw error;
+                await this.supabaseAdmin.deleteProfile(supabaseId);
                 supabasePerfilRemovido = true;
             } catch (e) {
                 erros.push(`profiles: ${String(e)}`);
             }
         }
 
-        // 5 — Supabase Auth (via Tauri invoke — requer service role key)
+        // 5 — Supabase Auth (via adapter infra)
         let supabaseAuthRemovido = false;
         if (supabaseId) {
             try {
-                const { invoke } = await import('@tauri-apps/api/core');
-                const resp = await invoke<{ success: boolean; message: string }>('supabase_admin_query', {
-                    request: {
-                        table: 'usuarios',
-                        operation: 'delete_user',
-                        user_id: userId,
-                        payload: { supabase_id: supabaseId },
-                    },
-                });
-                if (!resp.success) throw new Error(resp.message);
+                await this.supabaseAdmin.deleteAuthUser(supabaseId);
                 supabaseAuthRemovido = true;
             } catch (e) {
                 erros.push(`supabase_auth: ${String(e)}`);

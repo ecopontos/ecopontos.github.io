@@ -4,7 +4,6 @@ const PBKDF2_HASH = 'SHA-256';
 
 export class CryptoLayer {
     private cryptoKey: CryptoKey | null = null;
-    private store: import('@tauri-apps/plugin-store').Store | null = null;
     private _Store: typeof import('@tauri-apps/plugin-store').Store | null = null;
 
     private get keyLoaded(): boolean {
@@ -18,6 +17,25 @@ export class CryptoLayer {
         return this._Store;
     }
 
+    private async purgeLegacyStore(): Promise<void> {
+        try {
+            const Store = await this.getStore();
+            const store = await Store.load('.ecoforms-keys.dat');
+            const legacyStore = store as unknown as {
+                get(key: string): Promise<unknown>;
+                delete(key: string): Promise<void>;
+                save(): Promise<void>;
+            };
+            const legacyValue = await legacyStore.get(STORE_KEY);
+            if (legacyValue !== null && legacyValue !== undefined) {
+                await legacyStore.delete(STORE_KEY);
+                await legacyStore.save();
+            }
+        } catch {
+            // Best-effort cleanup for old raw-key files.
+        }
+    }
+
     private async importRawKey(keyBytes: Uint8Array): Promise<CryptoKey> {
         const buf = new ArrayBuffer(keyBytes.byteLength);
         new Uint8Array(buf).set(keyBytes);
@@ -26,25 +44,10 @@ export class CryptoLayer {
 
     async loadKey(): Promise<void> {
         if (this.keyLoaded) return;
-        const Store = await this.getStore();
-        const store = await Store.load('.ecoforms-keys.dat');
-        this.store = store;
-        const stored = await store.get(STORE_KEY) as number[] | null | undefined;
-        if (!stored) return;
-        this.cryptoKey = await this.importRawKey(new Uint8Array(stored));
+        await this.purgeLegacyStore();
     }
 
-    async generateAndStoreKey(): Promise<void> {
-        const keyBytes = crypto.getRandomValues(new Uint8Array(32));
-        const Store = await this.getStore();
-        const store = await Store.load('.ecoforms-keys.dat');
-        this.store = store;
-        await store.set(STORE_KEY, Array.from(keyBytes));
-        await store.save();
-        this.cryptoKey = await this.importRawKey(keyBytes);
-    }
-
-    async deriveAndStoreKey(password: string, userSalt: string): Promise<void> {
+    async deriveAndStoreKey(password: string, userSalt: string): Promise<Uint8Array> {
         const saltBytes = new TextEncoder().encode(userSalt);
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
@@ -60,18 +63,16 @@ export class CryptoLayer {
         );
         const rawKey = new Uint8Array(keyBits);
         this.cryptoKey = await this.importRawKey(rawKey);
+        await this.purgeLegacyStore();
+        return rawKey;
+    }
 
-        // Persist raw key bytes for Rust crypto state and session reload
-        const Store = await this.getStore();
-        const store = await Store.load('.ecoforms-keys.dat');
-        this.store = store;
-        await store.set(STORE_KEY, Array.from(rawKey));
-        await store.save();
+    async clearLegacyKeyStore(): Promise<void> {
+        await this.purgeLegacyStore();
     }
 
     clearKey(): void {
         this.cryptoKey = null;
-        this.store = null;
     }
 
     async encrypt(data: string): Promise<Uint8Array> {

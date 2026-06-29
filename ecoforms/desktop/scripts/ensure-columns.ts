@@ -98,15 +98,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    await execute(`
-        INSERT OR IGNORE INTO perfis (id, nome, descricao) VALUES
-            ('admin',        'admin',        'Administrador — acesso total'),
-            ('gerente',      'gerente',      'Gerente — acesso a coordenadores e abaixo'),
-            ('coordenador',  'coordenador',  'Coordenador — acesso a encarregados e abaixo'),
-            ('encarregado',  'encarregado',  'Encarregado — acesso a operadores'),
-            ('operador',     'operador',     'Operador — apenas próprios dados'),
-            ('campo',        'campo',        'Campo — mesmo nível que operador')
-    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS hierarquia_perfis (
@@ -116,15 +107,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    await execute(`
-        INSERT OR IGNORE INTO hierarquia_perfis (perfil, nivel, descricao) VALUES
-            ('admin',       0, 'Administrador'),
-            ('gerente',     1, 'Gerente'),
-            ('coordenador', 2, 'Coordenador'),
-            ('encarregado', 3, 'Encarregado'),
-            ('operador',    4, 'Operador'),
-            ('campo',       4, 'Campo')
-    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS permissoes (
@@ -337,17 +319,17 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             "SELECT COUNT(*) as cnt FROM pragma_table_info('cliente_pj_vinculo') WHERE name='id'"
         );
         if ((migrated[0]?.cnt ?? 0) > 0) {
-            const pending = await query<{ id: string; pj_id: string }>(
-                `SELECT c.id, c.pj_id FROM clientes c WHERE c.pj_id IS NOT NULL AND c.pj_id != '' AND c.tipo = 'PF' AND NOT EXISTS (SELECT 1 FROM cliente_pj_vinculo v WHERE v.pf_id = c.id AND v.pj_id = c.pj_id)`
-            );
-            for (const row of pending) {
-                await execute(
-                    `INSERT OR IGNORE INTO cliente_pj_vinculo (id, pf_id, pj_id, funcao, principal, criado_em) VALUES (?, ?, ?, NULL, 1, datetime('now'))`,
-                    [`vinc-${row.id}-${row.pj_id}`, row.id, row.pj_id]
-                ).catch(() => {});
-            }
+            await execute(
+                `INSERT OR IGNORE INTO cliente_pj_vinculo (id, pf_id, pj_id, funcao, principal, criado_em)
+                 SELECT 'vinc-' || c.id || '-' || c.pj_id, c.id, c.pj_id, NULL, 1, datetime('now')
+                 FROM clientes c
+                 WHERE c.pj_id IS NOT NULL
+                   AND c.pj_id != ''
+                   AND c.tipo = 'PF'`
+            ).catch(() => {});
         }
     }
+
 
     // ================================================================
     // 4. MANIFESTACOES + FLUXO DE OUVIDORIA
