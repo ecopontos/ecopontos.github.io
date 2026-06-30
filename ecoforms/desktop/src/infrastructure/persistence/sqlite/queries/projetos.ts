@@ -34,7 +34,7 @@ FROM projetos p
 LEFT JOIN usuarios u     ON u.id     = p.criado_por
 LEFT JOIN usuarios resp ON resp.id  = p.responsavel_id
 LEFT JOIN tarefas t     ON t.projeto_id = p.id
-WHERE p.id = ? AND p.arquivado = 0
+WHERE p.id = ? AND p.arquivado_em IS NULL
 GROUP BY p.id
 LIMIT 1`,
   description:

@@ -136,9 +136,9 @@ export const PACOTES_ECOPONTO_CAIXAS_ATUAIS: QueryDef = {
 };
 
 export const PACOTE_BY_ID: QueryDef = {
-  sql: `SELECT * FROM pacotes WHERE id = ? LIMIT 1`,
-  description: 'Pacote completo por id (app/view). NOTA: usa coluna `id` (preserva comportamento original do app/view — investigar se é alias de id_pacote).',
-  params: ['id'],
+  sql: `SELECT * FROM pacotes WHERE id_pacote = ? AND atual = 1 LIMIT 1`,
+  description: 'Pacote atual por id_pacote (app/view)',
+  params: ['id_pacote'],
   use: 'operacional',
   returns: 'PacoteRow',
 };

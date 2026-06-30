@@ -364,6 +364,13 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             avaliacao_comentario TEXT,
             avaliacao_em     TEXT,
             manifestacao_origem_id TEXT REFERENCES manifestacoes(id),
+            competencia      TEXT CHECK(competencia IN ('compete','nao_compete','pendente')) DEFAULT 'pendente',
+            motivo_incompetencia TEXT,
+            orgao_destino    TEXT,
+            data_competencia TEXT,
+            subassunto_id    TEXT,
+            subunidade_id    TEXT,
+            programa_orcamentario_id TEXT,
             criado_em        TEXT NOT NULL DEFAULT (datetime('now')),
             atualizado_em    TEXT NOT NULL DEFAULT (datetime('now')),
             encerrado_em     TEXT
@@ -1046,10 +1053,9 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    // pacotes: id INTEGER mantido por compatibilidade de código (id_pacote é a identidade lógica UUIDv7)
     await execute(`
         CREATE TABLE IF NOT EXISTS pacotes (
-            id               INTEGER,
+            id               INTEGER PRIMARY KEY,
             criado_em        TEXT NOT NULL DEFAULT (datetime('now')),
             id_usuario          TEXT NOT NULL DEFAULT '0000000-000-000-000-00000000',
             dados            TEXT NOT NULL,
@@ -1221,14 +1227,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
-    await execute(`
-        CREATE TABLE IF NOT EXISTS tarefas_interessados (
-            tarefa_id  TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE,
-            usuario_id TEXT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-            permissao  TEXT NOT NULL DEFAULT 'leitura',
-            PRIMARY KEY (tarefa_id, usuario_id)
-        )
-    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tarefas (
@@ -1275,6 +1273,15 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`ALTER TABLE tarefas ADD COLUMN slot_id         TEXT`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_demanda ON tarefas(demanda_id)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_slot    ON tarefas(slot_id)`).catch(() => {});
+
+    await execute(`
+        CREATE TABLE IF NOT EXISTS tarefas_interessados (
+            tarefa_id  TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE,
+            usuario_id TEXT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+            permissao  TEXT NOT NULL DEFAULT 'leitura',
+            PRIMARY KEY (tarefa_id, usuario_id)
+        )
+    `);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tarefa_formularios (
@@ -1659,6 +1666,14 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
     await execute(`ALTER TABLE tbl_email_config ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
+
+    await execute(`
+        CREATE TABLE IF NOT EXISTS app_config (
+            key           TEXT PRIMARY KEY,
+            value         TEXT NOT NULL DEFAULT '',
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
 
     // ================================================================
     // 17. SEED — Catálogos iniciais (idempotente)

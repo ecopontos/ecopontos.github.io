@@ -180,7 +180,7 @@ export const TAREFAS_POR_PROJETO: QueryDef = {
     FROM projetos p
     LEFT JOIN tarefas t ON t.projeto_id = p.id
                        AND (t.arquivado != 1 OR t.arquivado IS NULL)
-    WHERE p.arquivado = 0 OR p.arquivado IS NULL
+    WHERE p.arquivado_em IS NULL
     GROUP BY p.id
     ORDER BY total DESC
   `,
