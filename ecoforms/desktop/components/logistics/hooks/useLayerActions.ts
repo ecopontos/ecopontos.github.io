@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { toast } from 'sonner';
+import { uuidv7 } from 'ecoforms-core';
 import {
     saveGeoLayer,
     toggleGeoLayerVisivel,
@@ -66,7 +67,7 @@ export function useLayerActions({
                 return;
             }
             await saveGeoLayer({
-                id: `layer-${Date.now()}`,
+                id: uuidv7(),
                 nome: file.name.replace(/\.(geojson|json)$/i, ''),
                 tipo: 'geojson', categoria: 'outro',
                 geojson: JSON.stringify(geojson),

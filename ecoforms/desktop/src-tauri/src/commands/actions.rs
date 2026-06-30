@@ -1,6 +1,7 @@
 use tauri::State;
 use crate::database::DbState;
 use crate::session::SessionState;
+use crate::uuid_v7::uuid_v7_string;
 use crate::commands::rbac::check_permission;
 use crate::commands::audit::log_audit;
 
@@ -75,7 +76,7 @@ pub fn ecoponto_agendar_remocao(
     let conn_guard = db.conn.lock().map_err(|e| format!("Lock poisoned: {}", e))?;
     let conn = conn_guard.as_ref().ok_or("Banco de dados não conectado")?;
 
-    let tarefa_id = format!("{:x}", rand::random::<u128>());
+    let tarefa_id = uuid_v7_string();
 
     conn.execute(
         "INSERT INTO tarefas (id, titulo, status, setor_id, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, 'a_fazer', ?3, ?4, datetime('now'), datetime('now'))",

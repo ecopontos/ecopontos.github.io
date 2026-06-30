@@ -1,0 +1,346 @@
+# Auditoria executavel de fronteiras e SQL lusofono
+
+**Gerado em:** 2026-06-30T11:30:53.305Z
+**Escopo:** Fase A do `PLANO_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md`
+
+## Resumo
+
+### Imports de infraestrutura na UI
+
+Total: **237**
+
+- `crud-local`: 230
+- `integracao-externa`: 7
+- `hub-lan`: 0
+- `legado/compatibilidade`: 0
+
+### Referencias a nomes de tabela fora da convencao lusofona
+
+Total: **67**
+
+- `crud-local`: 12
+- `integracao-externa`: 0
+- `hub-lan`: 0
+- `legado/compatibilidade`: 55
+
+## Imports de infraestrutura na UI
+
+- `crud-local` [src/interface/hooks/domain/useDataRegistryUseCases.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/domain/useSuiteUseCases.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/domain/useTaskUseCases.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/domain/useUserUseCases.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useAgendamentoMutations.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useAnexoUpload.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useAnexoUpload.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useClienteMutations.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useClienteMutations.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useExecucaoClientesMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useExecucaoClientesMutations.ts:4] -> `container`
+- `integracao-externa` [src/interface/hooks/mutations/useFirstRunSetup.ts:2] -> `persistence/supabase/supabaseClient`
+- `integracao-externa` [src/interface/hooks/mutations/useFirstRunSetup.ts:2] -> `persistence/supabase/supabaseClient`
+- `crud-local` [src/interface/hooks/mutations/useInboxMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useInboxMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useLogisticsMutations.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useLogisticsMutations.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveEmailConfig.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveEmailConfig.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveHierarquiaPerfil.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveHierarquiaPerfil.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveTipoPrazo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveTipoPrazo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveTipoResiduo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSaveTipoResiduo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSeedDemo.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useSeedDemo.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useServiceMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useServiceMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useServiceTypeMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useServiceTypeMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useWidgetMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/mutations/useWidgetMutations.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:11] -> `container`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:11] -> `container`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:19] -> `persistence/sqlite/queries/usuarios`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:19] -> `persistence/sqlite/queries/usuarios`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:27] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:27] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:31] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:31] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:32] -> `persistence/sqlite/queries/data-registry`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:32] -> `persistence/sqlite/queries/data-registry`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:33] -> `persistence/sqlite/queries/tarefas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:33] -> `persistence/sqlite/queries/tarefas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:38] -> `persistence/sqlite/queries/tarefas_anexos`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:38] -> `persistence/sqlite/queries/tarefas_anexos`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:42] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:42] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:43] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:43] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:51] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:51] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:52] -> `persistence/sqlite/queries/escalas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:52] -> `persistence/sqlite/queries/escalas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:53] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:53] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:54] -> `persistence/sqlite/queries/registro_dados`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:54] -> `persistence/sqlite/queries/registro_dados`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:55] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:55] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:70] -> `persistence/sqlite/queries/terrenos`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:70] -> `persistence/sqlite/queries/terrenos`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:76] -> `persistence/sqlite/queries/geo_layers`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:76] -> `persistence/sqlite/queries/geo_layers`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:81] -> `persistence/sqlite/queries/execucao_clientes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:81] -> `persistence/sqlite/queries/execucao_clientes`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:89] -> `persistence/sqlite/queries/logistica`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:89] -> `persistence/sqlite/queries/logistica`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:90] -> `persistence/sqlite/queries/inbox_view`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:90] -> `persistence/sqlite/queries/inbox_view`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:96] -> `persistence/sqlite/queries/escalas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:96] -> `persistence/sqlite/queries/escalas`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:97] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:97] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/useAgendamentoById.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAgendamentoMapData.ts:3] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/useAgendamentoMapData.ts:3] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/useAgendamentos.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAnalysisData.ts:4] -> `persistence/sqlite/queries/analysis`
+- `crud-local` [src/interface/hooks/queries/useAnalysisData.ts:4] -> `persistence/sqlite/queries/analysis`
+- `crud-local` [src/interface/hooks/queries/useAnalysisData.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAnalysisData.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAssignedActiveForms.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAssignedActiveForms.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAssignedTasks.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAssignedTasks.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useAssignedTasks.ts:5] -> `persistence/sqlite/queries/tarefas`
+- `crud-local` [src/interface/hooks/queries/useAssignedTasks.ts:5] -> `persistence/sqlite/queries/tarefas`
+- `crud-local` [src/interface/hooks/queries/useBookingTasks.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useBookingTasks.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useCaixasData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useCaixasData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useCaixasData.ts:5] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/useCaixasData.ts:5] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/useChecklist.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useChecklist.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClassificacaoAdmin.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClassificacaoAdmin.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClassificacaoAdmin.ts:8] -> `persistence/sqlite/queries/classificacao`
+- `crud-local` [src/interface/hooks/queries/useClassificacaoAdmin.ts:8] -> `persistence/sqlite/queries/classificacao`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:12] -> `persistence/sqlite/queries/cliente-perfil`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:12] -> `persistence/sqlite/queries/cliente-perfil`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:20] -> `persistence/sqlite/queries/cliente-perfil`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:20] -> `persistence/sqlite/queries/cliente-perfil`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:21] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/useClientePerfil.ts:21] -> `persistence/sqlite/queries/service`
+- `crud-local` [src/interface/hooks/queries/useClientes.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useClientes.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useDataRegistryAggregated.ts:5] -> `config/crm-datasources`
+- `crud-local` [src/interface/hooks/queries/useDataRegistryAggregated.ts:5] -> `config/crm-datasources`
+- `crud-local` [src/interface/hooks/queries/useDebugHealth.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useDebugHealth.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useDebugHealth.ts:4] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/useDebugHealth.ts:4] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/useEmailConfig.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useEmailConfig.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucaoClientes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucaoClientes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucaoPesagens.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucaoPesagens.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucoesClientes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useExecucoesClientes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormDependencies.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormDependencies.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormRegistryData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormRegistryData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormRegistryData.ts:13] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/useFormRegistryData.ts:13] -> `persistence/sqlite/queries/forms`
+- `crud-local` [src/interface/hooks/queries/useFormTemplate.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useFormTemplate.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useGalleryStorage.ts:2] -> `persistence/supabase/supabaseClient`
+- `crud-local` [src/interface/hooks/queries/useGalleryStorage.ts:2] -> `persistence/supabase/supabaseClient`
+- `crud-local` [src/interface/hooks/queries/useHierarquiaPerfis.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHierarquiaPerfis.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHistorico.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHistorico.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHistoryData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHistoryData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useHistoryData.ts:6] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/useHistoryData.ts:6] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/useInboxData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useInboxData.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useInboxData.ts:6] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/queries/useInboxData.ts:6] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/queries/useIntercorrencias.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useIntercorrencias.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useKanban.ts:10] -> `persistence/sqlite/queries/kanban`
+- `crud-local` [src/interface/hooks/queries/useKanban.ts:10] -> `persistence/sqlite/queries/kanban`
+- `crud-local` [src/interface/hooks/queries/useKanbanData.ts:4] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/queries/useKanbanData.ts:4] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/queries/useKanbanData.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useKanbanData.ts:5] -> `container`
+- `crud-local` [src/interface/hooks/queries/useLogistics.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useLogistics.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useManifestacaoCatalogos.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useManifestacaoCatalogos.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useManifestacaoCatalogos.ts:9] -> `persistence/sqlite/queries/manifestacoes`
+- `crud-local` [src/interface/hooks/queries/useManifestacaoCatalogos.ts:9] -> `persistence/sqlite/queries/manifestacoes`
+- `crud-local` [src/interface/hooks/queries/useManifestacoes.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useManifestacoes.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModuleRuntime.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModuleRuntime.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModules.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModules.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModuleVisuals.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useModuleVisuals.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useNotificacoesSolicitante.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useNotificacoesSolicitante.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/usePendingSolicitacoesCount.ts:3] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/usePendingSolicitacoesCount.ts:3] -> `persistence/sqlite/queries/pacotes`
+- `crud-local` [src/interface/hooks/queries/useProjectDetail.ts:10] -> `persistence/sqlite/queries/projetos`
+- `crud-local` [src/interface/hooks/queries/useProjectDetail.ts:10] -> `persistence/sqlite/queries/projetos`
+- `crud-local` [src/interface/hooks/queries/useProjects.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useProjects.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useServiceSlots.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useServiceSlots.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useServiceTypes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useServiceTypes.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSetores.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSetores.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSolicitacaoEditor.ts:12] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSolicitacaoEditor.ts:12] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSolicitacoesList.ts:21] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSolicitacoesList.ts:21] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSolicitacoesList.ts:25] -> `persistence/sqlite/queries/solicitacoes`
+- `crud-local` [src/interface/hooks/queries/useSolicitacoesList.ts:25] -> `persistence/sqlite/queries/solicitacoes`
+- `crud-local` [src/interface/hooks/queries/useSqlite.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useSQLiteSchema.ts:5] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/useSQLiteSchema.ts:5] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/queries/useSupabaseAdmin.ts:5] -> `sync/SupabaseUserSyncService`
+- `crud-local` [src/interface/hooks/queries/useSupabaseAdmin.ts:5] -> `sync/SupabaseUserSyncService`
+- `crud-local` [src/interface/hooks/queries/useSync.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskComments.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskComments.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskHistory.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskHistory.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskMetrics.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTaskMetrics.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTiposPrazo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTiposPrazo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTiposResiduo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useTiposResiduo.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useUsersByForm.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useUsersByForm.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/queries/useUsersByForm.ts:4] -> `persistence/sqlite/queries/usuarios`
+- `crud-local` [src/interface/hooks/queries/useUsersByForm.ts:4] -> `persistence/sqlite/queries/usuarios`
+- `crud-local` [src/interface/hooks/queries/useViews.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/queries/useViews.ts:4] -> `container`
+- `crud-local` [src/interface/hooks/useDashboardWidgets.ts:11] -> `container`
+- `crud-local` [src/interface/hooks/useDashboardWidgets.ts:11] -> `container`
+- `crud-local` [src/interface/hooks/utils/useAccessFilters.ts:1] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/utils/useAccessFilters.ts:1] -> `persistence/AccessFilterBuilder`
+- `crud-local` [src/interface/hooks/utils/useAccessFilters.ts:2] -> `persistence/SectorQueryUtils`
+- `crud-local` [src/interface/hooks/utils/useAccessFilters.ts:2] -> `persistence/SectorQueryUtils`
+- `crud-local` [src/interface/hooks/utils/useCEP.ts:3] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/utils/useCEP.ts:3] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/utils/useContainer.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/utils/useContainer.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/utils/useContainer.ts:3] -> `container`
+- `crud-local` [src/interface/hooks/utils/useContainer.ts:3] -> `container`
+- `integracao-externa` [src/interface/hooks/utils/useCrmDataSource.ts:4] -> `config/crm-datasources`
+- `integracao-externa` [src/interface/hooks/utils/useCrmDataSource.ts:4] -> `config/crm-datasources`
+- `crud-local` [src/interface/hooks/utils/useDeviceConfig.ts:41] -> `config/device-config`
+- `crud-local` [src/interface/hooks/utils/useDeviceConfig.ts:41] -> `config/device-config`
+- `crud-local` [src/interface/hooks/utils/useEventBus.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/utils/useEventBus.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/utils/useEventBus.ts:3] -> `sync/SyncOutbox`
+- `crud-local` [src/interface/hooks/utils/useEventBus.ts:3] -> `sync/SyncOutbox`
+- `crud-local` [src/interface/hooks/utils/useFileStorage.ts:2] -> `container`
+- `crud-local` [src/interface/hooks/utils/useNetworkParquet.ts:24] -> `persistence/sqlite/queries/system`
+- `crud-local` [src/interface/hooks/utils/useNetworkParquet.ts:24] -> `persistence/sqlite/queries/system`
+- `integracao-externa` [src/interface/hooks/utils/useSupabaseClient.ts:2] -> `persistence/supabase/supabaseClient`
+- `integracao-externa` [src/interface/hooks/utils/useTaskPatchStorage.ts:2] -> `persistence/supabase/supabaseClient`
+- `integracao-externa` [src/interface/hooks/utils/useTaskPatchStorage.ts:2] -> `persistence/supabase/supabaseClient`
+
+## Referencias a tabelas nao canonicas
+
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/queries/system.ts:30] -> `app_config`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/queries/system.ts:38] -> `app_config`
+- `legado/compatibilidade` [src/interface/hooks/utils/useNetworkParquet.ts:5] -> `app_config`
+- `legado/compatibilidade` [src/interface/hooks/utils/useNetworkParquet.ts:17] -> `app_config`
+- `crud-local` [scripts/ensure-columns.ts:2172] -> `geo_layers`
+- `crud-local` [scripts/ensure-columns.ts:2190] -> `geo_layers`
+- `crud-local` [scripts/ensure-columns.ts:2191] -> `geo_layers`
+- `crud-local` [scripts/migrate-ptbr.ts:108] -> `geo_layers`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:76] -> `geo_layers`
+- `crud-local` [src/interface/hooks/queries/useMapData.ts:495] -> `geo_layers`
+- `crud-local` [scripts/ensure-columns.ts:1134] -> `suite_fts`
+- `crud-local` [scripts/ensure-columns.ts:1140] -> `suite_fts`
+- `crud-local` [src/infrastructure/persistence/sqlite/queries/inbox.ts:19] -> `suite_fts`
+- `crud-local` [src/interface/hooks/queries/lookups.ts:799] -> `suite_fts`
+- `crud-local` [scripts/ensure-columns.ts:1575] -> `sync_salt_history`
+- `crud-local` [scripts/migrate-ptbr.ts:107] -> `sync_salt_history`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1808] -> `tbl_agendamento_notificacoes`
+- `legado/compatibilidade` [scripts/migrate-ptbr.ts:112] -> `tbl_agendamento_notificacoes`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1807] -> `tbl_agendamentos`
+- `legado/compatibilidade` [scripts/migrate-ptbr.ts:111] -> `tbl_agendamentos`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1639] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1646] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1648] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1650] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1652] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1654] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1656] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/lan_storage.rs:130] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:117] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:138] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:150] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:370] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:451] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:530] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:563] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:592] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:608] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:628] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/legacy_sync.rs:637] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/setup.rs:106] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/commands/setup.rs:497] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_paths.rs:7] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_paths.rs:151] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_paths.rs:156] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_server/auth.rs:82] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_server/auth.rs:394] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_server/auth.rs:397] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_server/hub.rs:29] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src-tauri/src/lan_server/hub.rs:60] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/queries/system.ts:20] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/queries/system.ts:62] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [src/infrastructure/storage/LanFileStorage.ts:49] -> `tbl_configuracoes_sistema`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1660] -> `tbl_email_config`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1674] -> `tbl_email_config`
+- `legado/compatibilidade` [src-tauri/src/commands/email.rs:68] -> `tbl_email_config`
+- `legado/compatibilidade` [src-tauri/src/commands/email.rs:114] -> `tbl_email_config`
+- `legado/compatibilidade` [src-tauri/src/commands/email.rs:245] -> `tbl_email_config`
+- `legado/compatibilidade` [src-tauri/src/commands/email.rs:257] -> `tbl_email_config`
+- `legado/compatibilidade` [src-tauri/src/commands/email.rs:268] -> `tbl_email_config`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/SqliteEmailConfigRepository.ts:28] -> `tbl_email_config`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/SqliteEmailConfigRepository.ts:36] -> `tbl_email_config`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/SqliteEmailConfigRepository.ts:40] -> `tbl_email_config`
+- `legado/compatibilidade` [src/infrastructure/persistence/sqlite/SqliteEmailConfigRepository.ts:46] -> `tbl_email_config`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1806] -> `tbl_service_slots`
+- `legado/compatibilidade` [scripts/migrate-ptbr.ts:110] -> `tbl_service_slots`
+- `legado/compatibilidade` [scripts/ensure-columns.ts:1805] -> `tbl_service_types`
+- `legado/compatibilidade` [scripts/migrate-ptbr.ts:109] -> `tbl_service_types`
+
+## Excecoes temporarias aceitas
+
+- `src/interface/hooks/utils/useContainer.ts` — ponte temporaria de composicao para DI enquanto hooks de dominio substituem getContainer direto. Prazo: **2026-07-31**.
+- `src/interface/hooks/utils/useSupabaseClient.ts` — escape hatch legado; deve sumir conforme fluxos de storage/admin migrem para hooks especificos. Prazo: **2026-07-15**.
+
+## Leitura operacional
+
+- `crud-local`: chamadas que ainda atravessam container/query packs do backend local embutido.
+- `integracao-externa`: fluxos dependentes de Supabase ou outra integracao HTTP/SDK.
+- `hub-lan`: adaptadores de LAN/PocketBase e distribuicao entre maquinas.
+- `legado/compatibilidade`: nomes e acessos mantidos por compatibilidade ou transicao de schema.

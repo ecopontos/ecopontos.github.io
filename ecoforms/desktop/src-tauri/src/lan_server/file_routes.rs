@@ -8,6 +8,7 @@ use tokio::fs;
 
 use super::auth;
 use super::state::LanServerState;
+use crate::uuid_v7::uuid_v7_string;
 
 pub async fn download_file(
     State(state): State<Arc<LanServerState>>,
@@ -123,7 +124,7 @@ pub async fn upload_file(
     };
 
     if anexo_id.is_empty() {
-        anexo_id = uuid::Uuid::new_v4().to_string();
+        anexo_id = uuid_v7_string();
     }
 
     let timestamp = chrono::Utc::now().timestamp_millis();

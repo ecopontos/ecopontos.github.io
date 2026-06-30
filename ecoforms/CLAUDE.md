@@ -131,6 +131,7 @@ Dois runtimes compartilham este codebase:
 - **Tauri/desktop**: SQLite via `invoke('db_query')` / `invoke('db_execute')` Rust commands
 - **Schema migrations**: `scripts/ensure-columns.ts` — única fonte de verdade do schema. Contém `CREATE TABLE IF NOT EXISTS` + `ADD COLUMN` + seed de dados. Chamado automaticamente no boot pelo `container.ts` (`ensureColumnsIfNeeded`) e manualmente via `npx ts-node scripts/ensure-columns.ts`
 - **`src-tauri/src/database.rs`**: camada de execução Rust pura — abre conexão, executa queries, não contém DDL
+- A interface SQL generica aceita bootstrap sem sessao apenas para metadata/DDL e seeds idempotentes nao sensiveis; criacao de usuarios, LAN path inicial e RBAC inicial passam por comandos Rust dedicados.
 - **`docs/db/schema_consolidado_corrigido.sql`**: referência documental do schema completo — deve permanecer sincronizado com `ensure-columns.ts`
 - **Supabase PostgreSQL**: apenas `public.profiles` (espelho de `auth.users` para sync de usuários na Fase 5). Tráfego de dados operacionais continua via Storage.
 - **`supabase_user_map`**: tabela SQLite que mapeia `local_id` ↔ `supabase_id` para sync de usuários (Fase 5)
@@ -194,6 +195,8 @@ Modules:
 - `ecoforms-core/permissions` — `PermissionActionRegistry`, `globalPermissionRegistry`, `UniversalAction`, `UserRole`, `ActionContext` (ADR-009)
 - `ecoforms-core/sync` — `EventEnvelope` (v2 format), `ConflictResolver` (LWW+hash), `CycleCircuitBreaker` + JSON schemas for event validation (task, suite, demanda, user, client, module)
 - `ecoforms-core/utils` — `stableStringify`, `uuidv7`
+
+IDs persistidos novos devem usar UUID v7. No desktop TypeScript use `uuidv7()` de `ecoforms-core`; no Rust use `uuid_v7::uuid_v7_string()`. UUID v4 remanescente deve ficar restrito a tokens/sessoes/paths temporarios ou ser documentado como excecao.
 
 **`PermissionActionAdapter.ts`** bridges legacy `usePermissions` hooks into `globalPermissionRegistry` via `initializePermissionRegistry()`, called at app boot.
 

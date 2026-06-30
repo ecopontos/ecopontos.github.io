@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tokio::fs;
 
 use super::state::LanServerState;
+use crate::uuid_v7::uuid_v7_string;
 
 const AUTH_TOKEN_FILE: &str = ".ecoforms-lan-token";
 const DEVICE_ID_HEADER: &str = "x-device-id";
@@ -51,7 +52,7 @@ pub async fn record_rejection(
 
     let _ = tokio::task::spawn_blocking(move || {
         let conn = LanServerState::open_db_connection(&db_path)?;
-        let audit_id = uuid::Uuid::new_v4().simple().to_string();
+        let audit_id = uuid_v7_string();
         let now = chrono::Utc::now().to_rfc3339();
         let metadata = serde_json::json!({
             "reason": reason,

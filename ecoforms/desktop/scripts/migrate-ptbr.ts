@@ -104,6 +104,13 @@ const MIGRATION_STEPS: [string, string][] = [
     ['log_dispositivos_sync.acked',            'ALTER TABLE log_dispositivos_sync RENAME COLUMN acked TO confirmado'],
     ['log_dispositivos_sync.pushed_at',        'ALTER TABLE log_dispositivos_sync RENAME COLUMN pushed_at TO enviado_em'],
 
+    ['sync_salt_history → historico_sal_sync', 'ALTER TABLE sync_salt_history RENAME TO historico_sal_sync'],
+    ['geo_layers → camadas_geo',               'ALTER TABLE geo_layers RENAME TO camadas_geo'],
+    ['tbl_service_types → tipos_servico',      'ALTER TABLE tbl_service_types RENAME TO tipos_servico'],
+    ['tbl_service_slots → janelas_agendamento','ALTER TABLE tbl_service_slots RENAME TO janelas_agendamento'],
+    ['tbl_agendamentos → agendamentos',        'ALTER TABLE tbl_agendamentos RENAME TO agendamentos'],
+    ['tbl_agendamento_notificacoes → notificacoes_agendamento', 'ALTER TABLE tbl_agendamento_notificacoes RENAME TO notificacoes_agendamento'],
+
     ['suite → pacotes',                        'ALTER TABLE suite RENAME TO pacotes'],
     ['pacotes.user_id',                        'ALTER TABLE pacotes RENAME COLUMN user_id TO id_usuario'],
     ['pacotes.sync_status',                    'ALTER TABLE pacotes RENAME COLUMN sync_status TO status_sinc'],

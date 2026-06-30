@@ -6,8 +6,8 @@ import { KanbanTask, UnifiedTaskView, TaskDateConfig, Interessado } from '@/type
 import { useAuth } from '@/contexts/AuthContext';
 import { useSyncStatus } from '@/contexts/SyncContext';
 import { useTaskUseCases } from '../domain/useTaskUseCases';
-import { supabase } from '@/src/infrastructure/persistence/supabase/supabaseClient';
-import { getContainer } from '@/src/infrastructure/container';
+import { useContainer } from '../utils/useContainer';
+import { useTaskPatchStorage } from '../utils/useTaskPatchStorage';
 import { toast } from 'sonner';
 import type { TaskStatus } from '@/src/domain/task/TaskStatus';
 import { assertValidTransition } from '@/src/domain/task/TaskStatus';
@@ -40,7 +40,9 @@ export function useKanbanMutations(
     const { syncNow } = useSyncStatus();
     const queryClient = useQueryClient();
     const taskUseCases = useTaskUseCases();
-    const kanban = getContainer().kanbanRepository;
+    const container = useContainer();
+    const kanban = container.kanbanRepository;
+    const taskPatchStorage = useTaskPatchStorage();
     const behavior = useMemo(
         () => resolveKanbanMutationBehavior(options),
         [options?.autoSync, options?.runtimeValidation],
@@ -338,25 +340,15 @@ export function useKanbanMutations(
             const userId = currentTask?.atribuido_para;
             let patchFields: { titulo?: string; descricao?: string; prioridade?: string; payload?: string | null } | undefined;
 
-            if (userId && supabase) {
+            if (userId) {
                 try {
-                    const { data: patchFiles } = await supabase.storage
-                        .from('sync-bucket')
-                        .list(`users/${userId}/inbox/${taskId}/patches/`);
+                    const patchPayloads = await taskPatchStorage.loadTaskPatchPayloads(userId, taskId);
 
-                    if (patchFiles && patchFiles.length > 0) {
-                        const sorted = [...patchFiles].sort((a, b) => a.name.localeCompare(b.name));
+                    if (patchPayloads.length > 0) {
                         const consolidatedPatch: Record<string, unknown> = {};
 
-                        for (const file of sorted) {
-                            const { data: blob } = await supabase.storage
-                                .from('sync-bucket')
-                                .download(`users/${userId}/inbox/${taskId}/patches/${file.name}`);
-                            if (blob) {
-                                const text = await blob.text();
-                                const patch = JSON.parse(text) as Record<string, unknown>;
-                                Object.assign(consolidatedPatch, patch);
-                            }
+                        for (const patch of patchPayloads) {
+                            Object.assign(consolidatedPatch, patch);
                         }
 
                         delete consolidatedPatch._patched_at;
@@ -371,8 +363,8 @@ export function useKanbanMutations(
                                 : undefined,
                         };
 
-                        await insertTaskEvent(taskId, 'patch_consolidado', `${sorted.length} patch(es) consolidados antes do unfreeze`, { count: sorted.length });
-                        toast.info(`${sorted.length} correção(ões) consolidada(s) antes de liberar a tarefa.`);
+                        await insertTaskEvent(taskId, 'patch_consolidado', `${patchPayloads.length} patch(es) consolidados antes do unfreeze`, { count: patchPayloads.length });
+                        toast.info(`${patchPayloads.length} correção(ões) consolidada(s) antes de liberar a tarefa.`);
                     }
                 } catch (patchError) {
                     console.warn('⚠️ Falha ao consolidar patches antes do unfreeze:', patchError);
@@ -395,12 +387,9 @@ export function useKanbanMutations(
         if (updates.form_registry_id !== undefined && updates.form_registry_id !== currentTask.form_registry_id) throw new Error("Não é possível alterar o formulário via patch.");
         const userId = currentTask.atribuido_para;
         if (!userId) throw new Error("Tarefa não atribuída a um operador para receber patch.");
-        const timestamp = Date.now();
-        const patchPath = `users/${userId}/inbox/${taskId}/patches/${timestamp}.json`;
         const patchData = { ...updates, _patched_at: new Date().toISOString(), _patched_by: user?.id };
         try {
-            const { error: uploadError } = await supabase.storage.from('sync-bucket').upload(patchPath, JSON.stringify(patchData), { contentType: 'application/json', upsert: true });
-            if (uploadError) throw uploadError;
+            const patchPath = await taskPatchStorage.uploadTaskPatch(userId, taskId, patchData);
             type PatchUpdatesExtras = Partial<KanbanTask> & { payload?: unknown };
             const patchUpdates = updates as PatchUpdatesExtras;
             await kanban.patchTask(taskId, {
@@ -423,11 +412,7 @@ export function useKanbanMutations(
         const currentTask = tasks.find(t => t.id === taskId);
         const userId = currentTask?.atribuido_para;
         if (!userId) return [];
-        try {
-            const { data, error } = await supabase.storage.from('sync-bucket').list(`users/${userId}/inbox/${taskId}/patches/`);
-            if (error) throw error;
-            return data || [];
-        } catch { return []; }
+        try { return await taskPatchStorage.listTaskPatches(userId, taskId); } catch { return []; }
     };
 
     const deleteTask = async (taskId: string) => {

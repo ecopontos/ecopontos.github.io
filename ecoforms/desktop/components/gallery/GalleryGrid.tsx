@@ -2,193 +2,26 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
-import { useSupabaseClient } from "@/src/interface/hooks/catalog/utils";
+import { useGalleryStorage } from "@/src/interface/hooks/catalog/utils";
+import type { GalleryItem } from "@/src/interface/hooks/queries/useGalleryStorage";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ImageDialog } from "./ImageDialog";
 import { Loader2, Folder, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface StorageFile {
-    name: string;
-    id: string | null;
-    updated_at: string | null;
-    created_at: string | null;
-    last_accessed_at: string | null;
-    metadata: Record<string, unknown> | null;
-}
-
-interface GalleryItem {
-    name: string;
-    url: string;
-    isFolder: boolean;
-    path: string;
-    metadata?: { size?: number; created_at?: string | number | Date; [key: string]: unknown };
-    previewUrl?: string | null;
-    previewName?: string | null;
-    recordDate?: string | Date | null;
-    formTitle?: string | null;
-}
-
 export function GalleryGrid() {
     const [path, setPath] = useState<string>("");
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
-    const supabase = useSupabaseClient();
+    const galleryStorage = useGalleryStorage();
 
     const fetchItems = async (currentPath: string) => {
         setLoading(true);
         try {
-            const allProcessedItems: GalleryItem[] = [];
-
-            // Helper to process items from a specific bucket and path
-            const processBucketItems = async (bucket: string, internalPath: string, displayPathPrefix: string = "") => {
-                const { data, error } = await supabase.storage
-                    .from(bucket)
-                    .list(internalPath, {
-                        limit: 100,
-                        offset: 0,
-                        sortBy: { column: "created_at", order: "desc" },
-                    });
-
-                if (error) {
-                    console.warn(`Erro ao listar ${bucket}/${internalPath}:`, error);
-                    return [];
-                }
-
-                return await Promise.all(
-                    (data || []).map(async (item: StorageFile) => {
-                        const actuallyFolder = item.id === null;
-                        const fullInternalPath = internalPath ? `${internalPath}/${item.name}` : item.name;
-                        
-                        // O displayPath é o que o usuário vê (ex: os IDs de usuário na raiz)
-                        // Para o sync-bucket/users/, o item.name já é o ID do usuário.
-                        
-                        const { data: publicData } = supabase.storage
-                            .from(bucket)
-                            .getPublicUrl(fullInternalPath);
-
-                        let previewUrl: string | null = null;
-                        let previewName: string | null = null;
-
-                        if (actuallyFolder) {
-                            try {
-                                // Tentar pegar um preview do folder
-                                // No sync-bucket, se for um folder de usuário, as imagens estão em /images/
-                                const previewListPath = (bucket === 'sync-bucket' && !internalPath.includes('/images')) 
-                                    ? `${fullInternalPath}/images` 
-                                    : fullInternalPath;
-
-                                const { data: folderContent, error: folderError } = await supabase.storage
-                                    .from(bucket)
-                                    .list(previewListPath, {
-                                        limit: 5,
-                                        offset: 0,
-                                        sortBy: { column: "created_at", order: "desc" },
-                                    });
-
-                                if (!folderError && folderContent?.length) {
-                                    const fileEntries = folderContent.filter((entry) => entry.id !== null);
-                                    if (fileEntries.length) {
-                                        const firstFile = fileEntries[0];
-                                        const { data: previewPublic } = supabase.storage
-                                            .from(bucket)
-                                            .getPublicUrl(`${previewListPath}/${firstFile.name}`);
-                                        previewUrl = previewPublic.publicUrl;
-                                        previewName = firstFile.name;
-                                    }
-                                }
-                            } catch (previewError) {
-                                // console.warn("Preview indisponível", fullInternalPath);
-                            }
-                        }
-
-                        return {
-                            name: item.name,
-                            url: publicData.publicUrl,
-                            isFolder: actuallyFolder,
-                            path: fullInternalPath, // Caminho interno no bucket
-                            bucket: bucket,         // Guardar bucket para delete/actions
-                            metadata: item.metadata,
-                            previewUrl,
-                            previewName,
-                        } as GalleryItem & { bucket: string };
-                    })
-                );
-            };
-
-            if (!currentPath) {
-                // RAIZ: Listar IDs de usuários de ambos os buckets
-                // 1. Legado: form-images/*
-                const legacyUsers = await processBucketItems('form-images', '');
-                // 2. Novo: sync-bucket/users/*
-                const newUsers = await processBucketItems('sync-bucket', 'users');
-
-                // Mesclar pastas de usuários únicos
-                const userMap = new Map<string, GalleryItem>();
-                
-                [...legacyUsers, ...newUsers].forEach(item => {
-                    if (!item.isFolder) return;
-                    if (!userMap.has(item.name)) {
-                        userMap.set(item.name, item);
-                    } else if (item.previewUrl) {
-                        // Se já existe mas o novo tem preview, atualizar
-                        userMap.get(item.name)!.previewUrl = item.previewUrl;
-                    }
-                });
-                
-                allProcessedItems.push(...Array.from(userMap.values()));
-            } else {
-                // DENTRO DE UMA PASTA DE USUÁRIO (currentPath é o UserId)
-                // 1. Legado: form-images/{UserId}/*
-                const legacyFiles = await processBucketItems('form-images', currentPath);
-                // 2. Novo: sync-bucket/users/{UserId}/images/*
-                const newFiles = await processBucketItems('sync-bucket', `users/${currentPath}/images`);
-
-                allProcessedItems.push(...legacyFiles, ...newFiles);
-            }
-
-            // Fetch metadata for folders if we are at root
-            let enrichedItems = allProcessedItems;
-            const folderNames = allProcessedItems.filter((item) => item.isFolder).map((item) => item.name);
-
-            if (folderNames.length > 0 && !currentPath) {
-                const uniqueFolderNames = Array.from(new Set(folderNames));
-                try {
-                    const { data: metaRows, error: metaError } = await supabase
-                        .from("suite")
-                        .select(`owner_id, created_at, payload_json`)
-                        .in("owner_id", uniqueFolderNames);
-
-                    if (!metaError && metaRows) {
-                        const metaMap = new Map();
-                        metaRows.forEach((row: { owner_id: string; payload_json: string | Record<string, unknown>; created_at?: string }) => {
-                            if (!metaMap.has(row.owner_id)) {
-                                const dados = (typeof row.payload_json === 'string' ? JSON.parse(row.payload_json) : row.payload_json) as { contexto?: { form_titulo?: string; data_registro?: string } };
-                                metaMap.set(row.owner_id, {
-                                    formTitle: dados?.contexto?.form_titulo || null,
-                                    recordDate: dados?.contexto?.data_registro || row.created_at,
-                                });
-                            }
-                        });
-
-                        enrichedItems = allProcessedItems.map(item => {
-                            if (!item.isFolder) return item;
-                            const meta = metaMap.get(item.name);
-                            return {
-                                ...item,
-                                formTitle: meta?.formTitle || null,
-                                recordDate: meta?.recordDate || null
-                            };
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Falha ao enriquecer pastas:", e);
-                }
-            }
-
-            setItems(enrichedItems);
+            const nextItems = await galleryStorage.listItems(currentPath);
+            setItems(nextItems);
         } catch (err) {
             console.error("Error fetching gallery:", err);
         } finally {
@@ -213,9 +46,8 @@ export function GalleryGrid() {
     const handleDeleteImage = async (item: GalleryItem) => {
         if (!confirm(`Tem certeza que deseja excluir a imagem "${item.name}"?`)) return;
         try {
-            const { error } = await supabase.storage.from("form-images").remove([item.path]);
-            if (error) throw error;
-            setItems(prev => prev.filter(i => i.path !== item.path));
+            await galleryStorage.deleteImage(item);
+            setItems(prev => prev.filter(i => i.path !== item.path || i.bucket !== item.bucket));
             setSelectedImage(null);
         } catch (err) {
             console.error("Erro ao excluir:", err);

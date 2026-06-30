@@ -173,6 +173,33 @@ pub async fn supabase_admin_query(
     let api_key = state.api_key()?;
 
     match request.operation.as_str() {
+        "read_profiles" => {
+            if request.table != "perfis" {
+                return Err("Read profiles operation only allowed on perfis".to_string());
+            }
+
+            log::info!("[ADMIN] Fetching profiles from Supabase public.profiles (requested by {})", request.user_id);
+
+            let url = format!(
+                "{}/rest/v1/profiles?select=id,nome,email,perfil,ativo,org_id",
+                base_url
+            );
+            match api_get(&url, &api_key) {
+                Ok(data) => Ok(AdminOperationResponse {
+                    success: true,
+                    message: "Profiles fetched from Supabase public.profiles".to_string(),
+                    data: Some(data),
+                }),
+                Err(e) => {
+                    log::error!("[ADMIN] Failed to fetch profiles: {}", e);
+                    Ok(AdminOperationResponse {
+                        success: false,
+                        message: e,
+                        data: None,
+                    })
+                }
+            }
+        }
         "read_users" => {
             log::info!("[ADMIN] Fetching users from Supabase Auth (requested by {})", request.user_id);
 

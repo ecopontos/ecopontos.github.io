@@ -446,10 +446,11 @@
   - O fluxo de cadastro/rotacao continua usando `pg_legacy_config_save` para entregar a credencial uma unica vez ao backend.
   - Correcao aplicada 2026-06-29: senha PostgreSQL passou a ser salva em `pg_legacy_password_encrypted_v2`, criptografada com chave local do backend (`.ecoforms-pg-legacy.key`) em vez da chave derivada do usuario logado; blobs antigos sao migrados best-effort quando a chave do usuario ainda esta carregada.
 
-- [ ] **Bootstrap residual ainda existe apenas para DDL tecnico e alguns seeds nao sensiveis.**
+- [x] **Bootstrap residual ainda existe apenas para DDL tecnico e alguns seeds nao sensiveis.**
   - Evidencia: o bypass amplo foi removido; seeds RBAC (`perfis`, `hierarquia_perfis`, `permissoes`) sairam do SQL generico e agora passam por `bootstrap_seed_rbac` em Rust.
   - Correcao aplicada 2026-06-28: `db_query` em bootstrap ficou restrito a metadata/schema; first-run usa comandos dedicados (`bootstrap_set_lan_sync_path`, `bootstrap_import_seed_users`); leituras de dados e mutacoes arbitrarias sem sessao foram bloqueadas.
-  - Pendencia: avaliar se os seeds nao sensiveis remanescentes e o proprio flag `bootstrap` da interface generica de SQL ainda podem ser substituidos integralmente por comandos Rust dedicados.
+  - Decisao 2026-06-30: manter o bootstrap generico restrito para DDL/metadata e seeds idempotentes nao sensiveis enquanto `ensure-columns.ts` for a fonte de verdade do schema. Fluxos sensiveis seguem em comandos Rust dedicados (`bootstrap_seed_rbac`, `bootstrap_set_lan_sync_path`, `bootstrap_import_seed_users`).
+  - Correcao 2026-06-30: IDs persistidos gerados no bootstrap Rust (`bootstrap_import_seed_users`, `create_first_admin` e seed admin dev-only) passaram de `rand::<u128>()` para UUID v7 via `uuid_v7::uuid_v7_string()`.
 
 ### Pontos positivos preservados
 
@@ -470,6 +471,29 @@
 - [x] Import CSV de clientes passa por comando Rust `read_csv_text_file`, removendo `readTextFile` direto do componente (2026-06-29).
 - [x] Download de export mobile passa por comando Rust `db_read_mobile_export`, removendo `readFile`/`lan_read_file` direto da tela e confinando a leitura ao arquivo exportado (2026-06-29).
 
+
+### Correcoes adicionais aplicadas em 2026-06-30
+
+- [x] Helper Rust `uuid_v7::uuid_v7_string()` criado e testado.
+- [x] IDs persistidos que ainda usavam `rand::<u128>()`, `Date.now()`/`Math.random()` ou UUID v4 foram migrados para UUID v7 nos fluxos de anexos de tarefas, camadas geo, fallback de importacao de terrenos, bootstrap de usuarios/admin, auditoria, acao de remocao de ecoponto, sync externo de roteiros/residuos/pesagens, upload de anexos LAN e escrow de salt.
+- [x] Auditorias de codigo morto, nomenclatura SQL e UUID v7 documentadas em `desktop/AUDITORIA_CODIGO_MORTO.md`, `desktop/AUDITORIA_NOMENCLATURA_TABELAS.md` e `desktop/AUDITORIA_UUID_V7.md`.
+- [x] ADR-062 documenta PocketBase como hub local iniciado pelo Windows, mantendo SQLite offline-first.
+- [x] ADR-063 documenta a fronteira entre backend local embutido e backends externos.
+- [x] Plano operacional `desktop/docs/PLANO_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md` criado para consolidar nomenclatura SQL lusofona, reduzir adapters chamados pela UI, classificar integracoes externas legadas e transformar auditorias em fases.
+- [x] Fase A ganhou automacao via `npm run audit:architecture`, com relatorio em `desktop/docs/AUDITORIA_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md` e linha de base inicial de 237 imports de infraestrutura na UI/interface e 193 referencias SQL fora da convencao.
+- [x] Fase C teve os primeiros fluxos sensiveis encapsulados: `useSupabaseAdmin` agora busca `profiles` via backend Rust, `FirstRunSetupModal` migrou para `useFirstRunSetup`, `GalleryGrid` migrou para `useGalleryStorage` e `useKanbanMutations` migrou patches para `useTaskPatchStorage`.
+- [x] Fase B teve o primeiro lote de rename aplicado: `sync_salt_history -> historico_sal_sync` e `geo_layers -> camadas_geo`, com compatibilidade idempotente no bootstrap/migrate-ptbr e queda da auditoria SQL de 193 para 173 ocorrencias.
+- [x] Fase B teve o segundo lote aplicado no modulo de agendamentos: `tbl_service_types -> tipos_servico`, `tbl_service_slots -> janelas_agendamento`, `tbl_agendamentos -> agendamentos` e `tbl_agendamento_notificacoes -> notificacoes_agendamento`, com compatibilidade idempotente no bootstrap/migrate-ptbr e queda da auditoria SQL de 173 para 67 ocorrencias.
+
+## Plano de reorganizacao arquitetural pos-ADR-063
+
+> Este bloco acompanha `desktop/docs/PLANO_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md`. Ele nao substitui o plano detalhado; serve como checklist executivo dentro da revisao geral.
+
+- [x] **Fase A — Inventario executavel.** Medir imports diretos de `src/infrastructure/**` na UI/interface e tabelas nao lusofonas em bootstrap, queries, Rust e migrations.
+- [~] **Fase B — Schema SQL lusofono.** Renomear por modulo, com compatibilidade idempotente, priorizando Service Booking, configuracoes, sync security, geo e suite auxiliar.
+- [~] **Fase C — UI sem adapter direto.** Encapsular Supabase Admin/Storage, first-run, query packs e container generico atras de hooks/use cases/ports.
+- [ ] **Fase D — Integracoes externas classificadas.** Registrar PostgreSQL legado, Supabase, PocketBase, APIs publicas e LAN server por finalidade, autoridade, credencial, fallback e disponibilidade exigida.
+- [ ] **Fase E — Auditorias viram epicos.** Converter codigo morto, dependencias sem uso, nomenclatura SQL, UUID v7 e validacao real em lotes pequenos com gate objetivo.
 
 ## Gate final de validacao
 
@@ -503,4 +527,4 @@ npm run build:tauri
 - [x] Validacao hardening 2026-06-29: `cargo check` passou, `npx tsc --noEmit` passou, ESLint focado dos arquivos alterados passou sem erros, e grep confirmou ausencia de `shell:allow-open`, `@tauri-apps/plugin-shell`, `writeTextFile`, `fs:allow-write-text-file`, `@tauri-apps/plugin-fs` em `package.json`/`package-lock.json` e `tauri_plugin_fs::init()` no bootstrap Rust. Export CSV/XLSX validado por typecheck/lint/Rust via `write_export_file`; hook de anexos validado por typecheck/lint e Rust via `copy_attachment_to_appdata`; import CSV validado por typecheck/lint e Rust via `read_csv_text_file`; download de export mobile validado por typecheck/lint e Rust via `db_read_mobile_export`.
 - [ ] `npm run build:tauri` produz instalador/binario funcional. Binario release validado em Linux; instalador NSIS pendente em Windows/CI apropriado.
 - [ ] Login, logout, cold start, export mobile, sync externo, LAN hub/spoke e rotas dinamicas foram testados manualmente.
-- [ ] Documentacao (`README.md`, `CLAUDE.md`, ADRs relevantes) reflete o comportamento real.
+- [x] Documentacao (`README.md`, `CLAUDE.md`, ADRs relevantes) reflete o comportamento real para as correcoes aplicadas nesta rodada. Atualizado em 2026-06-30 com static export, bootstrap restrito, UUID v7 e PocketBase hub opcional.

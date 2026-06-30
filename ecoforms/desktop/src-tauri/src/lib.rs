@@ -4,6 +4,7 @@ mod supabase_admin;
 mod session;
 mod sql_guard;
 mod lan_paths;
+mod uuid_v7;
 pub mod commands;
 pub mod lan_server;
 

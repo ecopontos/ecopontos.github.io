@@ -45,6 +45,13 @@ cargo test --lib     # testes da crate de biblioteca (app_lib)
 npm run lint         # ESLint
 ```
 
+## Convenções runtime
+
+- Build de produção usa Next static export: `npm run build` deve gerar `out/`, consumido pelo Tauri via `frontendDist: "../out"`.
+- IDs persistidos novos devem usar UUID v7. No TypeScript use `uuidv7()` de `ecoforms-core`; no Rust use `uuid_v7::uuid_v7_string()`. IDs semânticos de catálogo/importação devem ser exceção explícita.
+- O bootstrap sem sessão fica restrito a DDL/metadata/seeds idempotentes não sensíveis. Criação de usuários, LAN path inicial e RBAC inicial usam comandos Rust dedicados.
+- PocketBase, quando habilitado, é hub LAN opcional; SQLite local permanece a fonte operacional offline.
+
 ## Banco de dados (SQLite local)
 
 O schema é definido em `scripts/ensure-columns.ts` — única fonte de verdade (`CREATE TABLE IF

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/src/infrastructure/persistence/supabase/supabaseClient';
+import { useContainer } from '../utils/useContainer';
 import type { ProfileSyncResult } from '@/src/infrastructure/sync/SupabaseUserSyncService';
 export type { ProfileSyncResult };
 
@@ -13,6 +13,7 @@ interface AdminResponse {
 
 export function useSupabaseAdmin() {
     const { user } = useAuth();
+    const container = useContainer();
     const [syncing, setSyncing] = useState(false);
 
     const callAdmin = useCallback(async (
@@ -29,25 +30,15 @@ export function useSupabaseAdmin() {
     const syncFromSupabase = useCallback(async (): Promise<ProfileSyncResult> => {
         setSyncing(true);
         try {
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select('id, nome, email, perfil, ativo, org_id');
-
-            if (error) throw new Error(error.message);
-            if (!profiles?.length) return { synced: 0, created: 0, updated: 0, skipped: 0, errors: [] };
-
-            const { getContainer } = await import('@/src/infrastructure/container');
-            const { SqliteUserRepository } = await import('@/src/infrastructure/persistence/sqlite/SqliteUserRepository');
-            const { SupabaseUserSyncService } = await import('@/src/infrastructure/sync/SupabaseUserSyncService');
-
-            const container = getContainer();
-            const userRepo = new SqliteUserRepository(container.sqlite);
-            const syncService = new SupabaseUserSyncService(userRepo, container.sqlite);
-            return await syncService.syncFromSupabase(profiles);
+            const response = await callAdmin('read_profiles', {}, 'perfis');
+            if (!response.success) throw new Error(response.message);
+            const profiles = (Array.isArray(response.data) ? response.data : []) as Parameters<typeof container.userProfileSync.syncFromSupabase>[0];
+            if (!profiles.length) return { synced: 0, created: 0, updated: 0, skipped: 0, errors: [] };
+            return await container.userProfileSync.syncFromSupabase(profiles);
         } finally {
             setSyncing(false);
         }
-    }, []);
+    }, [callAdmin, container]);
 
     const readUsers = useCallback(
         () => callAdmin('read_users', {}),

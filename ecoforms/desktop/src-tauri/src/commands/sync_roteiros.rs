@@ -1,13 +1,12 @@
 use postgres::{Client, NoTls};
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use uuid::Uuid;
-
 use crate::commands::audit::log_audit;
 use crate::commands::crypto::CryptoState;
 use crate::commands::legacy_sync::{build_conn_string, load_pg_legacy_credentials};
 use crate::database::DbState;
 use crate::session::SessionState;
+use crate::uuid_v7::uuid_v7_string;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SyncResult {
@@ -151,7 +150,7 @@ pub fn sync_roteiros_externos(
                 ],
             )
         } else {
-            let new_id = Uuid::new_v4().to_string();
+            let new_id = uuid_v7_string();
             sqlite_conn.execute(
                 "INSERT INTO roteiros (id, codigo, nome, descricao, periodicidade, turno, base, situacao, residuo, criado_por, criado_em, atualizado_em) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
                 rusqlite::params![

@@ -75,9 +75,9 @@ const DOMAIN_CONFIGS: Record<string, DomainUpsertConfig> = {
         }),
     },
     agendamentos: {
-        table: 'tbl_agendamentos',
+        table: 'agendamentos',
         upsertSql: (s) => ({
-            sql: `INSERT INTO tbl_agendamentos (id, slot_id, service_type_id, cliente_id, cliente_nome,
+            sql: `INSERT INTO agendamentos (id, slot_id, service_type_id, cliente_id, cliente_nome,
                     vagas_solicitadas, bairro, dados_formulario, status, task_id,
                     cliente_email, cliente_telefone, responsavel_id, setor_id,
                     criado_por, criado_em, atualizado_em)

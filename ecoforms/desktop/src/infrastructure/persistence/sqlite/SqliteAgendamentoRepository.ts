@@ -51,7 +51,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async findById(id: string): Promise<Agendamento | null> {
         const rows = await this.db.query<AgendamentoRow>(
-            `SELECT * FROM tbl_agendamentos WHERE id = ? LIMIT 1`,
+            `SELECT * FROM agendamentos WHERE id = ? LIMIT 1`,
             [id],
         );
         return rows[0] ? rowToEntity(rows[0]) : null;
@@ -66,9 +66,9 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
                     sl.titulo AS slotTitulo, sl.local,
                     sl.data_inicio AS dataInicio, sl.data_fim AS dataFim,
                     st.nome AS serviceTypeNome
-             FROM tbl_agendamentos ag
-             JOIN tbl_service_slots sl ON sl.id = ag.slot_id
-             JOIN tbl_service_types st ON st.id = ag.service_type_id
+             FROM agendamentos ag
+             JOIN janelas_agendamento sl ON sl.id = ag.slot_id
+             JOIN tipos_servico st ON st.id = ag.service_type_id
              WHERE ag.id = ? LIMIT 1`,
             [id],
         );
@@ -77,7 +77,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async findBySlotId(slotId: string): Promise<Agendamento[]> {
         const rows = await this.db.query<AgendamentoRow>(
-            `SELECT * FROM tbl_agendamentos WHERE slot_id = ? ORDER BY criado_em ASC`,
+            `SELECT * FROM agendamentos WHERE slot_id = ? ORDER BY criado_em ASC`,
             [slotId],
         );
         return rows.map(rowToEntity);
@@ -85,7 +85,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async findByClienteId(clienteId: string): Promise<Agendamento[]> {
         const rows = await this.db.query<AgendamentoRow>(
-            `SELECT * FROM tbl_agendamentos WHERE cliente_id = ? ORDER BY criado_em DESC`,
+            `SELECT * FROM agendamentos WHERE cliente_id = ? ORDER BY criado_em DESC`,
             [clienteId],
         );
         return rows.map(rowToEntity);
@@ -102,7 +102,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         if (filtros?.setorId)       { conditions.push('setor_id = ?');        params.push(filtros.setorId); }
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        let sql = `SELECT * FROM tbl_agendamentos ${where} ORDER BY criado_em DESC`;
+        let sql = `SELECT * FROM agendamentos ${where} ORDER BY criado_em DESC`;
         if (filtros?.limit != null) {
             sql += ` LIMIT ?`;
             params.push(filtros.limit);
@@ -122,7 +122,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
                     c.endereco, c.numero, c.cidade,
                     COALESCE(t.centroid_lat, c.latitude)  AS latitude,
                     COALESCE(t.centroid_lng, c.longitude) AS longitude
-             FROM tbl_agendamentos a
+             FROM agendamentos a
              JOIN clientes c ON c.id = a.cliente_id
              LEFT JOIN terrenos t ON t.id = c.terreno_id
              WHERE a.slot_id = ?
@@ -135,7 +135,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
 
     async existeParaClienteESlot(clienteId: string, slotId: string): Promise<boolean> {
         const rows = await this.db.query<{ n: number }>(
-            `SELECT COUNT(*) AS n FROM tbl_agendamentos
+            `SELECT COUNT(*) AS n FROM agendamentos
              WHERE cliente_id = ? AND slot_id = ? AND status != 'cancelado'`,
             [clienteId, slotId],
         );
@@ -146,12 +146,12 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
         let claimed = false;
         await this.db.transaction(async (tx) => {
             const rows = await tx.query<{ status: string }>(
-                'SELECT status FROM tbl_agendamentos WHERE id = ? LIMIT 1',
+                'SELECT status FROM agendamentos WHERE id = ? LIMIT 1',
                 [id],
             );
             if (rows[0]?.status === 'pendente') {
                 await tx.execute(
-                    "UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?",
+                    "UPDATE agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?",
                     [atualizadoEm, id],
                 );
                 claimed = true;
@@ -162,7 +162,7 @@ export class SqliteAgendamentoRepository implements AgendamentoRepository {
     async save(agendamento: Agendamento): Promise<void> {
         const r = agendamento.toRow();
         await this.db.execute(
-            `INSERT INTO tbl_agendamentos (
+            `INSERT INTO agendamentos (
                 id, slot_id, service_type_id, cliente_id, cliente_nome,
                 vagas_solicitadas, bairro, dados_formulario, status, task_id,
                 cliente_email, cliente_telefone, responsavel_id, setor_id,

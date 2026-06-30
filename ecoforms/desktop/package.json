@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "start:tauri": "cargo tauri dev",
-    "audit:db": "node scripts/audit-db-consistency.js"
+    "audit:db": "node scripts/audit-db-consistency.js",
+    "audit:architecture": "node scripts/audit-architecture-boundaries.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

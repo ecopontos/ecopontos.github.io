@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { Button } from '@/components/ui/button';
 import { Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { uuidv7 } from 'ecoforms-core';
 import { computeCentroid, computeAreaM2, saveTerrenosBatch } from '@/src/interface/hooks/catalog/logistica';
 import { useAuth } from '@/contexts/AuthContext';
 import { EPSG_31981, EPSG_31982, looksProjected, reprojectGeometry } from '@/lib/geo/reproject';
@@ -250,7 +251,7 @@ function prepareTerrenosFromGeojson(
 
             const id = codigo
                 ? `terreno-${codigo.replace(/\W/g, '-')}`
-                : `terreno-${Date.now()}-${idx}`;
+                : uuidv7();
 
             return {
                 id,

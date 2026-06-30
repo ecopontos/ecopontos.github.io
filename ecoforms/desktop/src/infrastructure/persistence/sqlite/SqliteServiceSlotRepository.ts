@@ -54,7 +54,7 @@ export class SqliteServiceSlotRepository implements ServiceSlotRepository {
 
     async findById(id: string): Promise<ServiceSlot | null> {
         const rows = await this.db.query<ServiceSlotRow>(
-            `SELECT * FROM tbl_service_slots WHERE id = ? LIMIT 1`,
+            `SELECT * FROM janelas_agendamento WHERE id = ? LIMIT 1`,
             [id],
         );
         return rows[0] ? rowToEntity(rows[0]) : null;
@@ -70,7 +70,7 @@ export class SqliteServiceSlotRepository implements ServiceSlotRepository {
         if (filtros?.dataFim) { conditions.push('data_fim <= ?'); params.push(filtros.dataFim); }
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        const sql = `SELECT * FROM tbl_service_slots ${where} ORDER BY data_inicio, titulo`;
+        const sql = `SELECT * FROM janelas_agendamento ${where} ORDER BY data_inicio, titulo`;
         const rows = await this.db.query<ServiceSlotRow>(sql, params);
         return rows.map(rowToEntity);
     }
@@ -78,7 +78,7 @@ export class SqliteServiceSlotRepository implements ServiceSlotRepository {
     async save(slot: ServiceSlot): Promise<void> {
         const json = slot.toSyncJSON();
         await this.db.execute(
-            `INSERT INTO tbl_service_slots (
+            `INSERT INTO janelas_agendamento (
                 id, service_type_id, titulo, descricao, data_inicio, data_fim,
                 horario_inicio, horario_fim, tipo_prazo, recorrencia, capacidade,
                 bairros, local, vagas_ocupadas, status, abertura_em,
@@ -113,7 +113,7 @@ export class SqliteServiceSlotRepository implements ServiceSlotRepository {
 
     async updateVagasOcupadas(id: string, vagas: number): Promise<void> {
         await this.db.execute(
-            `UPDATE tbl_service_slots SET vagas_ocupadas = ?, atualizado_em = ? WHERE id = ?`,
+            `UPDATE janelas_agendamento SET vagas_ocupadas = ?, atualizado_em = ? WHERE id = ?`,
             [vagas, new Date().toISOString(), id],
         );
     }

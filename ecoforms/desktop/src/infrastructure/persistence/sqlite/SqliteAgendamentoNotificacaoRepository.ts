@@ -26,7 +26,7 @@ export class SqliteAgendamentoNotificacaoRepository implements AgendamentoNotifi
         detalhe?: string,
     ): Promise<void> {
         await this.db.execute(
-            `INSERT INTO tbl_agendamento_notificacoes (id, agendamento_id, canal, status, detalhe, criado_em)
+            `INSERT INTO notificacoes_agendamento (id, agendamento_id, canal, status, detalhe, criado_em)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [uuidv7(), agendamentoId, canal, status, detalhe ?? null, new Date().toISOString()],
         );
@@ -34,7 +34,7 @@ export class SqliteAgendamentoNotificacaoRepository implements AgendamentoNotifi
 
     async findByAgendamentoId(agendamentoId: string): Promise<AgendamentoNotificacao[]> {
         const rows = await this.db.query<NotificacaoRow>(
-            `SELECT * FROM tbl_agendamento_notificacoes WHERE agendamento_id = ? ORDER BY criado_em ASC`,
+            `SELECT * FROM notificacoes_agendamento WHERE agendamento_id = ? ORDER BY criado_em ASC`,
             [agendamentoId],
         );
         return rows.map(r => ({
@@ -49,7 +49,7 @@ export class SqliteAgendamentoNotificacaoRepository implements AgendamentoNotifi
 
     async findLinkWhatsApp(agendamentoId: string): Promise<string | null> {
         const rows = await this.db.query<{ detalhe: string | null }>(
-            `SELECT detalhe FROM tbl_agendamento_notificacoes
+            `SELECT detalhe FROM notificacoes_agendamento
              WHERE agendamento_id = ? AND canal = 'whatsapp' AND status = 'pendente_envio'
              ORDER BY criado_em DESC LIMIT 1`,
             [agendamentoId],
