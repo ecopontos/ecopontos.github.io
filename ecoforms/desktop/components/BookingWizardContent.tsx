@@ -1,7 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -22,15 +20,15 @@ import type { FormContent } from "@/types";
 import { formatDateBR } from "@/src/lib/date";
 import { toast } from "sonner";
 
-interface BookingModalProps {
+interface BookingWizardContentProps {
     slotId: string;
-    open: boolean;
-    onClose: (agendamentoId?: string) => void;
+    onCancel: () => void;
+    onCompleted: (agendamentoId: string) => void;
 }
 
 type Etapa = 1 | 2 | 3;
 
-export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
+export function BookingWizardContent({ slotId, onCancel, onCompleted }: BookingWizardContentProps) {
     const { user } = useAuth();
     const { slot, loading: slotLoading } = useServiceSlotById(slotId || null);
     const { types } = useServiceTypes();
@@ -49,19 +47,6 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
     const [agendamentoId, setAgendamentoId] = useState<string | null>(null);
     const [waLink, setWaLink] = useState<string | null>(null);
     const [showQuickCreate, setShowQuickCreate] = useState(false);
-
-    useEffect(() => {
-        if (open) {
-            setEtapa(1);
-            setSelectedCliente(null);
-            setResponsavelId("");
-            setPrefillData({});
-            setEnderecoDiferente(false);
-            setAgendamentoId(null);
-            setWaLink(null);
-            setShowQuickCreate(false);
-        }
-    }, [open, slotId]);
 
     const handleSelectCliente = (cliente: SelectedCliente | null) => {
         setSelectedCliente(cliente);
@@ -142,165 +127,163 @@ export function BookingModal({ slotId, open, onClose }: BookingModalProps) {
     const dataFormatada = slot ? formatDateBR(slot.dataInicio) : '';
 
     return (
-        <Dialog open={open} onOpenChange={v => { if (!v) onClose(agendamentoId ?? undefined); }}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                {slot && serviceType && (
-                    <DialogHeader className="pb-0">
-                        <DialogTitle className="flex items-center gap-2 text-base">
-                            <span>{serviceType.icone ?? '📅'}</span>
-                            <span>{serviceType.nome}</span>
-                            <span className="text-muted-foreground font-normal">·</span>
-                            <span className="text-muted-foreground font-normal text-sm">{slot.titulo} · {dataFormatada}</span>
-                        </DialogTitle>
-                        {slot.capacidade && (
-                            <CapacidadeBadge ocupadas={slot.vagasOcupadas} total={slot.capacidade} />
-                        )}
-                    </DialogHeader>
-                )}
+        <div className="space-y-4 pt-2">
+            {slot && serviceType && (
+                <div>
+                    <p className="flex items-center gap-2 text-base font-semibold">
+                        <span>{serviceType.icone ?? '📅'}</span>
+                        <span>{serviceType.nome}</span>
+                        <span className="text-muted-foreground font-normal">·</span>
+                        <span className="text-muted-foreground font-normal text-sm">{slot.titulo} · {dataFormatada}</span>
+                    </p>
+                    {slot.capacidade && (
+                        <CapacidadeBadge ocupadas={slot.vagasOcupadas} total={slot.capacidade} />
+                    )}
+                </div>
+            )}
 
-                {isLoading && (
-                    <div className="flex justify-center py-12">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                )}
+            {isLoading && (
+                <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
-                {!isLoading && (!slot || !serviceType) && (
-                    <p className="text-center text-red-500 py-8">Slot ou tipo de serviço não encontrado.</p>
-                )}
+            {!isLoading && (!slot || !serviceType) && (
+                <p className="text-center text-red-500 py-8">Slot ou tipo de serviço não encontrado.</p>
+            )}
 
-                {!isLoading && slot && serviceType && (
-                    <>
-                        <Stepper etapa={etapa} />
+            {!isLoading && slot && serviceType && (
+                <>
+                    <Stepper etapa={etapa} />
 
-                        {etapa === 1 && (
-                            <div className="space-y-4 pt-2">
-                                <ClientePhoneSearch selected={selectedCliente} onSelect={handleSelectCliente} />
-                                {!selectedCliente && !showQuickCreate && (
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">Cliente não encontrado?</span>
-                                        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setShowQuickCreate(true)}>
-                                            <UserPlus className="mr-1 h-3 w-3" />
-                                            Cadastrar novo cliente
-                                        </Button>
-                                    </div>
-                                )}
-                                {!selectedCliente && showQuickCreate && (
-                                    <QuickCreateClientForm
-                                        onCreated={(cliente) => {
-                                            handleSelectCliente(cliente);
-                                            setShowQuickCreate(false);
-                                        }}
-                                        onCancel={() => setShowQuickCreate(false)}
-                                    />
-                                )}
-                                {selectedCliente && (
-                                    <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
-                                        <Checkbox
-                                            id="endereco-diferente"
-                                            checked={enderecoDiferente}
-                                            onCheckedChange={(v) => handleEnderecoDiferenteChange(v === true)}
-                                        />
-                                        <Label htmlFor="endereco-diferente" className="text-sm cursor-pointer">
-                                            Endereço de coleta diferente do cadastro
-                                        </Label>
-                                    </div>
-                                )}
-                                <div className="flex justify-end gap-2 pt-2">
-                                    <Button variant="outline" onClick={() => onClose()}>Cancelar</Button>
-                                    <Button onClick={() => setEtapa(2)} disabled={!selectedCliente}>
-                                        Próximo →
+                    {etapa === 1 && (
+                        <div className="space-y-4 pt-2">
+                            <ClientePhoneSearch selected={selectedCliente} onSelect={handleSelectCliente} />
+                            {!selectedCliente && !showQuickCreate && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-muted-foreground">Cliente não encontrado?</span>
+                                    <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setShowQuickCreate(true)}>
+                                        <UserPlus className="mr-1 h-3 w-3" />
+                                        Cadastrar novo cliente
                                     </Button>
                                 </div>
-                            </div>
-                        )}
-
-                        {etapa === 2 && (
-                            <div className="space-y-4 pt-2">
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        Responsável pela execução
-                                    </Label>
-                                    <Select value={responsavelId} onValueChange={setResponsavelId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecionar (opcional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {usuarios.map(u => (
-                                                <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {template && serviceType.formId ? (
-                                    <FormRenderer
-                                        content={template as FormContent}
-                                        formType={serviceType.formId}
-                                        prefillData={prefillData}
-                                        customSubmit={handleFormSubmit}
-                                        submitLabel={bookingLoading ? "Confirmando..." : "Confirmar agendamento →"}
+                            )}
+                            {!selectedCliente && showQuickCreate && (
+                                <QuickCreateClientForm
+                                    onCreated={(cliente) => {
+                                        handleSelectCliente(cliente);
+                                        setShowQuickCreate(false);
+                                    }}
+                                    onCancel={() => setShowQuickCreate(false)}
+                                />
+                            )}
+                            {selectedCliente && (
+                                <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
+                                    <Checkbox
+                                        id="endereco-diferente"
+                                        checked={enderecoDiferente}
+                                        onCheckedChange={(v) => handleEnderecoDiferenteChange(v === true)}
                                     />
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">
-                                        Este tipo de serviço não possui formulário configurado.
-                                    </p>
-                                )}
-
-                                {bookingError && (
-                                    <p className="text-sm text-red-500">{bookingError}</p>
-                                )}
-
-                                <Button variant="ghost" onClick={() => setEtapa(1)} disabled={bookingLoading}>
-                                    ← Voltar
+                                    <Label htmlFor="endereco-diferente" className="text-sm cursor-pointer">
+                                        Endereço de coleta diferente do cadastro
+                                    </Label>
+                                </div>
+                            )}
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+                                <Button onClick={() => setEtapa(2)} disabled={!selectedCliente}>
+                                    Próximo →
                                 </Button>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {etapa === 3 && agendamentoId && (
-                            <div className="space-y-4 pt-2 text-center">
-                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-                                <div>
-                                    <p className="font-semibold text-lg">Agendamento confirmado!</p>
-                                    <p className="text-sm text-muted-foreground font-mono mt-1">
-                                        Protocolo: {agendamentoId}
-                                    </p>
-                                </div>
-                                <div className="text-sm space-y-1 text-muted-foreground">
-                                    <p><strong>Cliente:</strong> {selectedCliente?.nome}</p>
-                                    <p><strong>Serviço:</strong> {serviceType.nome} · {slot.titulo}</p>
-                                    <p><strong>Data:</strong> {dataFormatada}</p>
-                                </div>
+                    {etapa === 2 && (
+                        <div className="space-y-4 pt-2">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    Responsável pela execução
+                                </Label>
+                                <Select value={responsavelId} onValueChange={setResponsavelId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecionar (opcional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {usuarios.map(u => (
+                                            <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                                <div className="flex justify-center gap-3 pt-2 flex-wrap">
-                                    {waLink && (
-                                        <a href={waLink} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="sm">
-                                                <MessageCircle className="mr-2 h-4 w-4 text-green-600" />
-                                                Enviar WhatsApp
-                                                <ExternalLink className="ml-1 h-3 w-3" />
-                                            </Button>
-                                        </a>
-                                    )}
-                                    <Button variant="outline" size="sm" onClick={reiniciar}>
-                                        Novo agendamento no mesmo slot
-                                    </Button>
-                                    <Button size="sm" onClick={() => onClose(agendamentoId)}>
-                                        Fechar
-                                    </Button>
-                                </div>
+                            {template && serviceType.formId ? (
+                                <FormRenderer
+                                    content={template as FormContent}
+                                    formType={serviceType.formId}
+                                    prefillData={prefillData}
+                                    customSubmit={handleFormSubmit}
+                                    submitLabel={bookingLoading ? "Confirmando..." : "Confirmar agendamento →"}
+                                />
+                            ) : (
+                                <p className="text-muted-foreground text-sm">
+                                    Este tipo de serviço não possui formulário configurado.
+                                </p>
+                            )}
+
+                            {bookingError && (
+                                <p className="text-sm text-red-500">{bookingError}</p>
+                            )}
+
+                            <Button variant="ghost" onClick={() => setEtapa(1)} disabled={bookingLoading}>
+                                ← Voltar
+                            </Button>
+                        </div>
+                    )}
+
+                    {etapa === 3 && agendamentoId && (
+                        <div className="space-y-4 pt-2 text-center">
+                            <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+                            <div>
+                                <p className="font-semibold text-lg">Agendamento confirmado!</p>
+                                <p className="text-sm text-muted-foreground font-mono mt-1">
+                                    Protocolo: {agendamentoId}
+                                </p>
                             </div>
-                        )}
-                        {etapa === 3 && !agendamentoId && (
-                            <div className="space-y-4 pt-2 text-center">
-                                <p className="text-red-500 py-4">Erro ao confirmar agendamento. Tente novamente.</p>
-                                <Button variant="outline" onClick={reiniciar}>Tentar novamente</Button>
+                            <div className="text-sm space-y-1 text-muted-foreground">
+                                <p><strong>Cliente:</strong> {selectedCliente?.nome}</p>
+                                <p><strong>Serviço:</strong> {serviceType.nome} · {slot.titulo}</p>
+                                <p><strong>Data:</strong> {dataFormatada}</p>
                             </div>
-                        )}
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
+
+                            <div className="flex justify-center gap-3 pt-2 flex-wrap">
+                                {waLink && (
+                                    <a href={waLink} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline" size="sm">
+                                            <MessageCircle className="mr-2 h-4 w-4 text-green-600" />
+                                            Enviar WhatsApp
+                                            <ExternalLink className="ml-1 h-3 w-3" />
+                                        </Button>
+                                    </a>
+                                )}
+                                <Button variant="outline" size="sm" onClick={reiniciar}>
+                                    Novo agendamento no mesmo slot
+                                </Button>
+                                <Button size="sm" onClick={() => onCompleted(agendamentoId)}>
+                                    Fechar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    {etapa === 3 && !agendamentoId && (
+                        <div className="space-y-4 pt-2 text-center">
+                            <p className="text-red-500 py-4">Erro ao confirmar agendamento. Tente novamente.</p>
+                            <Button variant="outline" onClick={reiniciar}>Tentar novamente</Button>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
     );
 }
 
