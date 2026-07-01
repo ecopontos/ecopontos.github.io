@@ -70,3 +70,6 @@ meu-supabase-mcp/.env
 
 # Junk
 nul
+
+# Git worktrees (isolated workspaces)
+.worktrees/
