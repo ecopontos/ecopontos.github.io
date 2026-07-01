@@ -15,7 +15,7 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.3", features = [] }
+tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 serde_json = "1.0"
@@ -24,7 +24,7 @@ log = "0.4"
 # devtools: em Tauri v2, devtools são automáticas em builds de debug.
 # O feature "devtools" só força devtools em RELEASE — omitido por segurança
 # (hardening pré-produção). O comando toggle_devtools já é gated por cfg(debug_assertions).
-tauri = { version = "2.9.5", features = [] }
+tauri = { version = "2.11.4", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
@@ -50,4 +50,4 @@ tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
 futures-util = "0.3"
 
 [dev-dependencies]
-tauri = { version = "2.9.5", features = ["test"] }
+tauri = { version = "2.11.4", features = ["test"] }

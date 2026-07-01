@@ -1,3 +1,10 @@
+## Status Update 2026-07-01
+
+- npm audit --json --workspaces=false zerado em ecoforms/desktop e ecoforms/mobile.
+- cargo update --manifest-path ecoforms/desktop/src-tauri/Cargo.toml aplicado com cargo check concluido em ecoforms/desktop/src-tauri.
+- Os alertas do GitHub Dependabot so vao fechar depois do push e da reindexacao dos lockfiles pelo GitHub.
+- Residuo tecnico atual: a cadeia Linux de gtk 0.18.x e webkit2gtk 2.0.x ainda puxa glib 0.18.5; se o alerta glib permanecer no GitHub apos o push, isso indica limitacao upstream do stack Tauri no Linux, nao omissao no manifest da aplicacao.
+
 # Security Dependency Fixes Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

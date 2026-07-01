@@ -52,7 +52,7 @@
     "exceljs": "^4.4.0",
     "lucide-react": "^0.562.0",
     "maplibre-gl": "^5.24.0",
-    "next": "^16.2.4",
+    "next": "^16.2.9",
     "proj4": "^2.20.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -75,7 +75,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.2.9",
     "knip": "^6.14.1",
     "sqlite3": "^6.0.1",
     "tailwindcss": "^4",
@@ -83,6 +83,8 @@
     "vitest": "^4.1.9"
   },
   "overrides": {
+    "@babel/core": "^7.29.6",
+    "js-yaml": "^4.2.0",
     "next": {
       "postcss": "^8.5.10"
     },
@@ -91,6 +93,8 @@
     },
     "socks": {
       "ip-address": "^10.2.0"
-    }
+    },
+    "tmp": "^0.2.6",
+    "ws": "^8.21.0"
   }
 }
