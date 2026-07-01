@@ -40,7 +40,7 @@ export const KANBAN_LOOKUP_USUARIOS: QueryDef = {
 };
 
 export const KANBAN_LOOKUP_FORMS: QueryDef = {
-  sql: `SELECT id_formulario AS value, titulo AS label FROM registro_formularios WHERE ativo = 1 ORDER BY titulo`,
+  sql: `SELECT form_id AS value, titulo AS label FROM registro_formularios WHERE ativo = 1 ORDER BY titulo`,
   description: 'Formulários ativos para selects de vínculo',
   params: [],
   use: 'operacional',
