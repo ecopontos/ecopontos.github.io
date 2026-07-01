@@ -1,10 +1,10 @@
 import { getContainerAsync } from '../../utils/useContainer';
-import { TAREFA_BY_ID } from '@/src/application/persistence/sqlite/queries/tarefas';
+import { TAREFA_BY_ID } from '@/src/infrastructure/persistence/sqlite/queries/tarefas';
 import {
   TAREFAS_ANEXOS_BY_TAREFA,
   TAREFA_ANEXO_INSERT,
   TAREFA_ANEXO_DELETE,
-} from '@/src/application/persistence/sqlite/queries/tarefas_anexos';
+} from '@/src/infrastructure/persistence/sqlite/queries/tarefas_anexos';
 
 export interface TarefaRow {
   id: string;

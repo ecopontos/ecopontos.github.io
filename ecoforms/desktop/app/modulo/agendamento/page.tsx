@@ -120,7 +120,7 @@ export default function ModuloAgendamentoPage() {
                                             </div>
                                             <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
                                                 <Button size="sm" variant="outline" asChild>
-                                                    <Link href={`/admin/agendamentos/slots/${slot.id}/editar`}>
+                                                    <Link href={`/admin/agendamentos/slots/editar?id=${slot.id}`}>
                                                         <Pencil className="h-3 w-3 mr-1" />Editar
                                                     </Link>
                                                 </Button>
@@ -165,7 +165,7 @@ export default function ModuloAgendamentoPage() {
                                             </div>
                                             <div className="flex gap-2 mt-3">
                                                 <Button size="sm" variant="outline" asChild>
-                                                    <Link href={`/admin/agendamentos/slots/${slot.id}/editar`}>
+                                                    <Link href={`/admin/agendamentos/slots/editar?id=${slot.id}`}>
                                                         <Pencil className="h-3 w-3 mr-1" />Editar
                                                     </Link>
                                                 </Button>
@@ -239,7 +239,7 @@ export default function ModuloAgendamentoPage() {
                                                 Status: {task.status} · Criado em: {task.criadoEm}
                                             </p>
                                         </div>
-                                        <Link href={`/tasks/${task.id}`}>
+                                        <Link href={`/tasks/detalhe?id=${task.id}`}>
                                             <Button size="sm" variant="outline">Ver Tarefa</Button>
                                         </Link>
                                     </div>

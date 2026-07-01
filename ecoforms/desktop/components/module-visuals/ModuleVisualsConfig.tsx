@@ -169,7 +169,7 @@ export function ModuleVisualsConfig({ moduleSlug }: ModuleVisualsConfigProps) {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <Link href={`/modulo/${moduleSlug}`}>
+              <Link href={`/modulo?slug=${moduleSlug}`}>
                 <Eye className="h-4 w-4 mr-2" /> Ver módulo
               </Link>
             </Button>

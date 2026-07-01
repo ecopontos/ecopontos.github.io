@@ -356,7 +356,7 @@ export default function AppSidebar() {
                 {publishedModules.map(mod => (
                   <ModuleNavItem
                     key={mod.slug}
-                    href={`/modulo/${mod.slug}`}
+                    href={`/modulo?slug=${mod.slug}`}
                     icon={mod.icon || undefined}
                     label={mod.name}
                     collapsed={collapsed}

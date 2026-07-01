@@ -5,7 +5,7 @@ import {
   CLASSIFICACAO_SUBASSUNTOS,
   CLASSIFICACAO_SUBUNIDADES,
   CLASSIFICACAO_PROGRAMAS_ORCAMENTARIOS,
-} from '@/src/application/persistence/sqlite/queries/classificacao';
+} from '@/src/infrastructure/persistence/sqlite/queries/classificacao';
 
 interface CatalogoItem { id: string; nome: string; }
 

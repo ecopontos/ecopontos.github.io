@@ -102,3 +102,55 @@ describe('LanPullService', () => {
         expect(summary.durationMs).toBeGreaterThanOrEqual(0);
     });
 });
+
+describe('LanPullService manifestacoes', () => {
+    it('usa colunas can?nicas do schema ao ingerir manifestacoes', async () => {
+        const manifestacoesIndex: LanIndex = {
+            last_entity_uuid: 'manifestacao-1',
+            entities: {
+                'manifestacao-1': { v: 1, hash: 'm1', last_event_id: '020-aaa' },
+            },
+        };
+        const manifestacao = {
+            id: 'manifestacao-1',
+            protocolo: 'OUV-2026-001',
+            tipo_id: 'reclamacao',
+            origem_id: 'web',
+            classificacao_id: 'alta',
+            situacao_id: 'nova',
+            assunto: 'Coleta n?o realizada',
+            descricao: 'A coleta n?o passou na rua.',
+            solicitante_nome: 'Jo?o',
+            status: 'aberta',
+            prioridade: 'normal',
+        };
+        const localLanSync = makeLanSync({ manifestacoes: manifestacoesIndex }, { 'manifestacao-1': manifestacao });
+        const localSqlite = makeSqlite();
+        const localService = new LanPullService(localLanSync, localSqlite.port);
+
+        const count = await localService.pullDomain('manifestacoes');
+
+        expect(count).toBe(1);
+        const upsert = localSqlite.executed.find((entry) => entry.sql.includes('INSERT INTO manifestacoes'));
+        expect(upsert).toBeDefined();
+        expect(upsert?.sql).toContain('origem_id');
+        expect(upsert?.sql).toContain('classificacao_id');
+        expect(upsert?.sql).toContain('situacao_id');
+        expect(upsert?.sql).toContain('assunto');
+        expect(upsert?.sql).toContain('solicitante_nome');
+        expect(upsert?.sql).not.toContain('nome_manifestante');
+        expect(upsert?.sql).not.toContain('canal_entrada');
+        expect(upsert?.params.slice(0, 10)).toEqual([
+            'manifestacao-1',
+            'OUV-2026-001',
+            'reclamacao',
+            'web',
+            'alta',
+            'nova',
+            'normal',
+            'aberta',
+            'Coleta n?o realizada',
+            'A coleta n?o passou na rua.',
+        ]);
+    });
+});

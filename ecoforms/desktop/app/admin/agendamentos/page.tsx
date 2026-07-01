@@ -53,7 +53,7 @@ export default function AdminAgendamentosPage() {
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                                    <Link href={`/admin/agendamentos/slots/${slot.id}`} className="hover:underline">
+                                    <Link href={`/admin/agendamentos/slots/detalhe?id=${slot.id}`} className="hover:underline">
                                         {slot.titulo}
                                     </Link>
                                 </CardTitle>
@@ -71,7 +71,7 @@ export default function AdminAgendamentosPage() {
                                     <div className="flex gap-2">
                                         {(slot.status === 'rascunho' || slot.status === 'publicado') && (
                                             <Button size="sm" variant="outline" asChild>
-                                                <Link href={`/admin/agendamentos/slots/${slot.id}/editar`}>Editar</Link>
+                                                <Link href={`/admin/agendamentos/slots/editar?id=${slot.id}`}>Editar</Link>
                                             </Button>
                                         )}
                                         {slot.status === 'rascunho' && (
@@ -85,7 +85,7 @@ export default function AdminAgendamentosPage() {
                                             </Button>
                                         )}
                                         <Button size="sm" variant="ghost" asChild>
-                                            <Link href={`/admin/agendamentos/slots/${slot.id}`}>Detalhes</Link>
+                                            <Link href={`/admin/agendamentos/slots/detalhe?id=${slot.id}`}>Detalhes</Link>
                                         </Button>
                                     </div>
                                 </div>

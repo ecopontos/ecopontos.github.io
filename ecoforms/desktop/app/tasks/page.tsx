@@ -23,7 +23,7 @@ export default function TasksPage() {
     };
 
     const handleTaskClick = (task: UnifiedTaskView) => {
-        router.push(`/tasks/${task.id}`);
+        router.push(`/tasks/detalhe?id=${task.id}`);
     };
 
     const handleStatusChange = async (taskId: string, newStatus: 'a_fazer' | 'em_progresso' | 'concluido') => {

@@ -1,6 +1,6 @@
 "use client";
 import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
-import { PACOTES_ECOPONTO_CAIXAS_ATUAIS } from "@/src/application/persistence/sqlite/queries/pacotes";
+import { PACOTES_ECOPONTO_CAIXAS_ATUAIS } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
 
 interface CaixasRow {
     id: string;

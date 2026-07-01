@@ -1,6 +1,6 @@
 "use client";
 import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
-import { TAREFAS_ATRIBUIDAS_NOTIFICACAO } from "@/src/application/persistence/sqlite/queries/tarefas";
+import { TAREFAS_ATRIBUIDAS_NOTIFICACAO } from "@/src/infrastructure/persistence/sqlite/queries/tarefas";
 
 export interface AssignedTaskNotification {
     id: string;

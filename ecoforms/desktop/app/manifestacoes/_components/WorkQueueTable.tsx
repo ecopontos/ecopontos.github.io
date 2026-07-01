@@ -132,7 +132,7 @@ export function WorkQueueTable({
                       >
                         <TableCell className="pl-4 pr-0"><UrgencyDot score={score} /></TableCell>
                         <TableCell className="font-mono text-xs font-semibold whitespace-nowrap" onClick={e => e.stopPropagation()}>
-                          <Link href={`/manifestacoes/${m.id}`} className="hover:underline">{m.protocolo}</Link>
+                          <Link href={`/manifestacoes/detalhe?id=${m.id}`} className="hover:underline">{m.protocolo}</Link>
                         </TableCell>
                         <TableCell className="max-w-[180px]">
                           <p className="truncate text-sm font-medium">{m.assunto}</p>

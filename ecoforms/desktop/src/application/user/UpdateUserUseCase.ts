@@ -27,6 +27,7 @@ export class UpdateUserUseCase {
             email: input.email,
             perfil: input.perfil,
             ativo: input.ativo,
+            passwordHash: input.passwordHash,
             setores: input.setores,
         });
         await this.repo.save(user);

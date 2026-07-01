@@ -101,19 +101,34 @@ const DOMAIN_CONFIGS: Record<string, DomainUpsertConfig> = {
     manifestacoes: {
         table: 'manifestacoes',
         upsertSql: (s) => ({
-            sql: `INSERT INTO manifestacoes (id, protocolo, tipo_id, prioridade, status,
-                    descricao, nome_manifestante, canal_entrada, setor_id, responsavel_id,
-                    criado_em, atualizado_em)
-                  VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
+            sql: `INSERT INTO manifestacoes (id, protocolo, tipo_id, origem_id, classificacao_id,
+                    situacao_id, prioridade, status, assunto, descricao, solicitante_nome,
+                    setor_id, responsavel_id, criado_em, atualizado_em)
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
                   ON CONFLICT(id) DO UPDATE SET
-                    status=excluded.status, prioridade=excluded.prioridade,
-                    responsavel_id=excluded.responsavel_id, setor_id=excluded.setor_id,
+                    protocolo=excluded.protocolo,
+                    tipo_id=excluded.tipo_id,
+                    origem_id=excluded.origem_id,
+                    classificacao_id=excluded.classificacao_id,
+                    situacao_id=excluded.situacao_id,
+                    prioridade=excluded.prioridade,
+                    status=excluded.status,
+                    assunto=excluded.assunto,
+                    descricao=excluded.descricao,
+                    solicitante_nome=excluded.solicitante_nome,
+                    responsavel_id=excluded.responsavel_id,
+                    setor_id=excluded.setor_id,
                     atualizado_em=datetime('now')`,
             params: [
                 s.id, s.protocolo ?? null, s.tipo_id ?? null,
+                s.origem_id ?? s.canal_entrada ?? 'web',
+                s.classificacao_id ?? 'media',
+                s.situacao_id ?? (s.status === 'encerrada' ? 'encerrada' : 'nova'),
                 s.prioridade ?? 'normal', s.status ?? 'aberta',
-                s.descricao ?? null, s.nome_manifestante ?? null,
-                s.canal_entrada ?? null, s.setor_id ?? null, s.responsavel_id ?? null,
+                s.assunto ?? s.protocolo ?? 'Manifesta??o',
+                s.descricao ?? null,
+                s.solicitante_nome ?? s.nome_manifestante ?? null,
+                s.setor_id ?? null, s.responsavel_id ?? null,
                 s.criado_em ?? null,
             ],
         }),

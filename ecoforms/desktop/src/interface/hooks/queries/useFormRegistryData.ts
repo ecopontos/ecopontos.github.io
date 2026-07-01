@@ -10,7 +10,7 @@ import {
     FORM_REGISTRY_SOFT_DELETE,
     FORM_REGISTRY_RESTORE,
     FORM_REGISTRY_GET,
-} from "@/src/application/persistence/sqlite/queries/forms";
+} from "@/src/infrastructure/persistence/sqlite/queries/forms";
 
 export function useFormRegistryData(showInactive: boolean) {
     const sqlite = useSqlite();

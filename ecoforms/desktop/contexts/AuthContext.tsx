@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User } from "@/types";
 import { useRouter, usePathname } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { usePermissions, UsePermissionsReturn } from "@/src/interface/hooks/catalog/auth";
 import { useSqlite } from "@/src/interface/hooks/catalog/tauri";
 import { invoke } from "@tauri-apps/api/core";
@@ -136,9 +137,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
+    // Restaura a sessão a partir do estado Rust (SessionState em memória) ao montar.
+    // O processo Tauri nativo não reinicia numa navegação/reload do webview (ex.: fallback
+    // de rota estática em output:'export' para segmentos dinâmicos), então o backend ainda
+    // conhece a sessão mesmo que o React remonte do zero — sem isso o usuário era sempre
+    // jogado para /login nesses reloads, mesmo autenticado.
     useEffect(() => {
+        let cancelled = false;
         localStorage.removeItem("ecoforms_user");
-        setLoading(false);
+
+        (async () => {
+            try {
+                const session = await invoke<{ user_id: string; perfil: string } | null>('get_session');
+                if (!session) return;
+
+                const rows = await sqlite.query<{
+                    id: string;
+                    nome_usuario: string;
+                    nome: string;
+                    perfil: string;
+                    ativo: number | boolean;
+                    criado_em: string | null;
+                    id_organizacao: string | null;
+                }>(
+                    'SELECT id, nome_usuario, nome, perfil, ativo, criado_em, id_organizacao FROM usuarios WHERE id = ? LIMIT 1',
+                    [session.user_id],
+                );
+                const row = rows[0];
+                if (cancelled || !row) return;
+                if (row.ativo !== 1 && row.ativo !== true) return;
+
+                setUser({
+                    id: row.id,
+                    username: row.nome_usuario,
+                    nome: row.nome,
+                    perfil: row.perfil as User['perfil'],
+                    ativo: true,
+                    created_at: row.criado_em ?? "",
+                    org_id: row.id_organizacao ?? undefined,
+                });
+                lastActivityRef.current = Date.now();
+            } catch (e) {
+                console.warn('[Auth] Session restore skipped:', e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
     }, []);
 
     // Re-validar sessão periodicamente (a cada 5 min)
@@ -215,6 +261,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
     }, [user, loading, pathname, router]);
+
+    // Evita montar páginas protegidas (e disparar suas queries) antes do
+    // redirect para /login concluir — do contrário hooks de dados filhos
+    // rodam seus efeitos antes deste effect de proteção de rotas, batendo
+    // no backend sem sessão Rust válida ("Sessão não iniciada").
+    const awaitingRedirect = !loading && !user && pathname !== "/login";
+    if (loading || awaitingRedirect) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <AuthContext.Provider value={{ user, login, logout, loading, permissions }}>

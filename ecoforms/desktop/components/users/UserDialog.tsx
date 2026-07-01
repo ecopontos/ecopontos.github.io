@@ -120,6 +120,12 @@ export function UserDialog({ open, onOpenChange, user, onSave }: UserDialogProps
                 return
             }
 
+            // Senha é obrigatória na criação — não há hash_senha anterior para reaproveitar
+            if (!user && !dataToSave.password) {
+                toast.error("Defina uma senha para o novo usuário")
+                return
+            }
+
             // Hash password if provided and store in password_hash field
             if (dataToSave.password) {
                 // Hash the password using bcrypt via Rust backend
@@ -193,7 +199,7 @@ export function UserDialog({ open, onOpenChange, user, onSave }: UserDialogProps
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Senha {user && "(deixe em branco para manter)"}</Label>
+                            <Label htmlFor="password">Senha {user ? "(deixe em branco para manter)" : "*"}</Label>
                             <Input
                                 id="password"
                                 type="password"

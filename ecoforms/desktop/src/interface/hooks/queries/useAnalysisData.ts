@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PACOTES_ANALISE } from "@/src/application/persistence/sqlite/queries/analysis";
+import { PACOTES_ANALISE } from "@/src/infrastructure/persistence/sqlite/queries/analysis";
 import { fetchPacoteFormTypes } from "@/src/interface/hooks/queries/lookups/pacotes";
 import { useSqlite } from "./useSqlite";
 

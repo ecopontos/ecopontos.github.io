@@ -1,5 +1,5 @@
 import { getContainerAsync } from '../../utils/useContainer';
-import { INBOX_NORMALIZADA_VIEW } from '@/src/application/persistence/sqlite/queries/inbox_view';
+import { INBOX_NORMALIZADA_VIEW } from '@/src/infrastructure/persistence/sqlite/queries/inbox_view';
 
 export async function fetchInboxNormalizada(args: {
   accessClause: string;

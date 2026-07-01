@@ -105,7 +105,7 @@ export default function ManifestacoesPage() {
     { key: 'novas',             label: 'Novas',             count: kpis.novasHoje },
   ];
 
-  const openDetail = (id: string) => router.push(`/manifestacoes/${id}`);
+  const openDetail = (id: string) => router.push(`/manifestacoes/detalhe?id=${id}`);
 
   const handleSelectKpiFilter = (filter: QuickFilter) => {
     setStatusFilter("");

@@ -1,5 +1,5 @@
-import { NOTIFICACAO_PRAZO_INSERT, PRAZO_MARCAR_COBRANCA_ENVIADA, PRAZOS_VENCIDOS_NAO_COBRADOS } from '../persistence/sqlite/queries/manifestacoes';
-import { USUARIOS_SETOR_NOTIFICACAO } from '../persistence/sqlite/queries/usuarios';
+import { NOTIFICACAO_PRAZO_INSERT, PRAZO_MARCAR_COBRANCA_ENVIADA, PRAZOS_VENCIDOS_NAO_COBRADOS } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
+import { USUARIOS_SETOR_NOTIFICACAO } from '../../infrastructure/persistence/sqlite/queries/usuarios';
 import { uuidv7 } from 'ecoforms-core';
 import type { SqlitePort } from '../ports/SqlitePort';
 import type { SyncOutbox } from '../ports/SyncOutboxPort';

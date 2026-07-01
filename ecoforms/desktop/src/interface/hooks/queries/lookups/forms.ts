@@ -9,10 +9,10 @@ import {
   FORM_REGISTRY_UPDATE,
   FORM_REGISTRY_INSERT,
   FORM_REGISTRY_CLONE_INSERT,
-} from '@/src/application/persistence/sqlite/queries/forms';
-import { DATA_REGISTRY_TIPOS_COUNT } from '@/src/application/persistence/sqlite/queries/data-registry';
-import { TAREFA_INSERT_FROM_SOLICITACAO } from '@/src/application/persistence/sqlite/queries/tarefas';
-import { PACOTE_INSERT_FROM_FORM } from '@/src/application/persistence/sqlite/queries/pacotes';
+} from '@/src/infrastructure/persistence/sqlite/queries/forms';
+import { DATA_REGISTRY_TIPOS_COUNT } from '@/src/infrastructure/persistence/sqlite/queries/data-registry';
+import { TAREFA_INSERT_FROM_SOLICITACAO } from '@/src/infrastructure/persistence/sqlite/queries/tarefas';
+import { PACOTE_INSERT_FROM_FORM } from '@/src/infrastructure/persistence/sqlite/queries/pacotes';
 import type { FormRegistry } from '@/types';
 
 export interface FormAtivo {

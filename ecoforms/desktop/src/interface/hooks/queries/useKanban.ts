@@ -7,7 +7,7 @@ import {
   KANBAN_LOOKUP_USUARIOS,
   KANBAN_LOOKUP_FORMS,
   KANBAN_LOOKUP_PROJETOS,
-} from '@/src/application/persistence/sqlite/queries/kanban';
+} from '@/src/infrastructure/persistence/sqlite/queries/kanban';
 
 export type { ViewMode } from './useKanbanViewState';
 

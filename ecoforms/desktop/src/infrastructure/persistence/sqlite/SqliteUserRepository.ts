@@ -81,9 +81,10 @@ export class SqliteUserRepository implements UserRepository {
         } else {
             await this.db.execute(
                 `UPDATE usuarios SET
-                    nome = ?, nome_usuario = ?, email = ?, perfil = ?, ativo = ?, atualizado_em = datetime('now')
+                    nome = ?, nome_usuario = ?, email = ?, perfil = ?, ativo = ?,
+                    hash_senha = COALESCE(?, hash_senha), atualizado_em = datetime('now')
                  WHERE id = ?`,
-                [p.nome, p.username, p.email ?? null, p.perfil, p.ativo ? 1 : 0, p.id],
+                [p.nome, p.username, p.email ?? null, p.perfil, p.ativo ? 1 : 0, p.passwordHash ?? null, p.id],
             );
         }
         // ADR-047 Gap 11 — toggle de ativo/perfil pode afetar visibilidade por setor

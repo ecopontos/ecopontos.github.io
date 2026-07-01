@@ -99,7 +99,7 @@ export function useSeedDemo() {
       if ((roteiros[0]?.count ?? 0) === 0) {
         const r1 = uuidv7();
         await c.sqlite.execute(
-          'INSERT INTO roteiros (id, nome, descricao, tipo_residuo, periodicidade, turno, base, situacao, criado_por, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO roteiros (id, nome, descricao, residuo, periodicidade, turno, base, situacao, criado_por, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [r1, 'Roteiro Centro-Oeste', 'Coleta residencial — região Centro-Oeste', 'Resíduos domésticos', 'semanal', 'manha', 'Base 1', 'ativo', 'user-1', now, now]
         );
         const cid = (await c.sqlite.query<{ id: string }>('SELECT id FROM clientes LIMIT 1', []))[0]?.id;

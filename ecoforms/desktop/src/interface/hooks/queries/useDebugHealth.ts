@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
 import { getContainerAsync } from '../utils/useContainer';
-import { SQLITE_DATABASE_LIST } from '@/src/application/persistence/sqlite/queries/system';
+import { SQLITE_DATABASE_LIST } from '@/src/infrastructure/persistence/sqlite/queries/system';
 
 interface TableHealth {
   name: string;

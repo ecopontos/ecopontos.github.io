@@ -70,7 +70,7 @@ export default function ServiceTypesAdminPage() {
                                 {type.bairrosObrigatorios && <Badge variant="outline">📍 Bairros</Badge>}
                                 {type.capacidadePadrao && <Badge variant="outline">Cap: {type.capacidadePadrao}</Badge>}
                             </div>
-                            <Link href={`/admin/service-types/${type.id}`}>
+                            <Link href={`/admin/service-types/detalhe?id=${type.id}`}>
                                 <Button size="sm" variant="outline" className="w-full">Editar</Button>
                             </Link>
                         </CardContent>

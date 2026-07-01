@@ -1,15 +1,15 @@
 import { getContainerAsync } from '../../utils/useContainer';
-import { ESCALAS_LIST } from '@/src/application/persistence/sqlite/queries/escalas';
+import { ESCALAS_LIST } from '@/src/infrastructure/persistence/sqlite/queries/escalas';
 import {
   ESCALAS_LIST_FULL,
   ESCALA_INSERT,
   ESCALA_UPDATE,
   ESCALA_DELETE,
-} from '@/src/application/persistence/sqlite/queries/escalas';
+} from '@/src/infrastructure/persistence/sqlite/queries/escalas';
 import {
   SISTEMA_CONFIG_GET,
   SISTEMA_CONFIG_SAVE,
-} from '@/src/application/persistence/sqlite/queries/system';
+} from '@/src/infrastructure/persistence/sqlite/queries/system';
 
 export async function fetchEscalas(): Promise<{ id: string; nome: string }[]> {
   const c = await getContainerAsync();

@@ -1,8 +1,8 @@
-import { USUARIO_DADOS } from '../persistence/sqlite/queries/usuarios';
-import { TAREFAS_BY_USER } from '../persistence/sqlite/queries/tarefas';
-import { AGENDAMENTOS_BY_USER } from '../persistence/sqlite/queries/service';
-import { MANIFESTACOES_POR_USUARIO_EXPORT } from '../persistence/sqlite/queries/manifestacoes';
-import { LOG_ACOES_BY_USER } from '../persistence/sqlite/queries/log_acoes';
+import { USUARIO_DADOS } from '../../infrastructure/persistence/sqlite/queries/usuarios';
+import { TAREFAS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
+import { AGENDAMENTOS_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
+import { MANIFESTACOES_POR_USUARIO_EXPORT } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
+import { LOG_ACOES_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
 import type { SqlitePort } from '../ports/SqlitePort';
 
 
