@@ -295,10 +295,13 @@ function SlotDetailSheet({ slot, type, open, onClose, onSlotChanged }: SlotDetai
             <SheetContent className={`w-full overflow-y-auto ${modo === "wizard" ? "sm:max-w-2xl" : "sm:max-w-md"}`}>
                 <SheetHeader>
                     {modo === "wizard" ? (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 w-fit" onClick={() => setModo("detalhes")}>
-                            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                            Voltar
-                        </Button>
+                        <div className="space-y-1">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 w-fit" onClick={() => setModo("detalhes")}>
+                                <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                                Voltar
+                            </Button>
+                            <SheetTitle className="text-sm font-medium">Registrar agendamento</SheetTitle>
+                        </div>
                     ) : (
                         <SheetTitle className="flex items-center gap-2">
                             <span>{type?.icone ?? "🔧"}</span>
