@@ -41,10 +41,10 @@ export class TaskProjectionService {
 
     async project(input: TaskProjectionInput, options?: TaskProjectionOptions): Promise<string> {
         const saveFormulario = options?.formularioSaver ?? this.formularioSaver;
+        const id    = uuidv7();
+        const agora = this.clock.nowIso();
 
-        return this.taskRepo.transaction(async (txTaskRepo) => {
-            const id    = uuidv7();
-            const agora = this.clock.nowIso();
+        await this.taskRepo.transaction(async (txTaskRepo) => {
             const ordem = await txTaskRepo.nextOrder(null, 'a_fazer');
 
             const task = Task.fromProps({
@@ -81,33 +81,38 @@ export class TaskProjectionService {
                     concluidoEm:    null,
                 });
             }
-
-            const payload: TaskCriadaPayload = {
-                id,
-                titulo:         input.titulo,
-                descricao:      input.descricao ?? null,
-                status:         'a_fazer',
-                prioridade:     input.prioridade ?? 'media',
-                setor_id:       input.setorId,
-                atribuido_para: input.atribuidoPara ?? null,
-                prazo:          input.prazo ?? null,
-                criado_por:     input.criadoPor,
-                criado_em:      agora,
-                origem_tipo:    input.origemTipo,
-                origem_id:      input.origemId,
-                formularios:    (input.formularios ?? []).map(f => ({
-                    formRegistryId: f.formRegistryId,
-                    ordem:          f.ordem,
-                    obrigatorio:    f.obrigatorio,
-                })),
-            };
-
-            await this.sync.write('task.criada', payload as unknown as Record<string, unknown>, {
-                aggregateId: id,
-                streamId:    input.origemId ?? id,
-            });
-
-            return id;
         });
+
+        // Publicado depois que a transacao acima commitou: nunca fazer I/O de sync de dentro de
+        // um callback de transaction() do SqlitePort — TauriSqliteAdapter.execute() nao reaproveita
+        // a transacao ja aberta (so transaction() faz isso), entao uma chamada aninhada trava o
+        // mutex estatico do adaptador esperando por ele mesmo. Publicar so apos o commit tambem
+        // evita anunciar um evento para dados que ainda poderiam nao ter sido persistidos.
+        const payload: TaskCriadaPayload = {
+            id,
+            titulo:         input.titulo,
+            descricao:      input.descricao ?? null,
+            status:         'a_fazer',
+            prioridade:     input.prioridade ?? 'media',
+            setor_id:       input.setorId,
+            atribuido_para: input.atribuidoPara ?? null,
+            prazo:          input.prazo ?? null,
+            criado_por:     input.criadoPor,
+            criado_em:      agora,
+            origem_tipo:    input.origemTipo,
+            origem_id:      input.origemId,
+            formularios:    (input.formularios ?? []).map(f => ({
+                formRegistryId: f.formRegistryId,
+                ordem:          f.ordem,
+                obrigatorio:    f.obrigatorio,
+            })),
+        };
+
+        await this.sync.write('task.criada', payload as unknown as Record<string, unknown>, {
+            aggregateId: id,
+            streamId:    input.origemId ?? id,
+        });
+
+        return id;
     }
 }
