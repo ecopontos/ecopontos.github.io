@@ -48,7 +48,7 @@ export const KANBAN_LOOKUP_FORMS: QueryDef = {
 };
 
 export const KANBAN_LOOKUP_PROJETOS: QueryDef = {
-  sql: `SELECT id AS value, nome AS label FROM projetos WHERE arquivado = 0 ORDER BY nome`,
+  sql: `SELECT id AS value, nome AS label FROM projetos WHERE arquivado_em IS NULL ORDER BY nome`,
   description: 'Projetos não-arquivados para selects de vínculo',
   params: [],
   use: 'operacional',
