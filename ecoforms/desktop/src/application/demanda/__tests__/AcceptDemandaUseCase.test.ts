@@ -118,4 +118,44 @@ describe('AcceptDemandaUseCase', () => {
 
     await expect(sut.execute(input)).rejects.toThrow('Apenas demandas com status \'aberta\' podem ser aceitas');
   });
+
+  it('publica os eventos de sync (task.criada e demanda.aceita) somente apos a transacao externa commitar', async () => {
+    // TaskProjectionService.project() abre sua propria transaction() internamente, mas quando
+    // chamado de dentro da transaction() externa deste use case, TauriSqliteAdapter reaproveita a
+    // transacao ja aberta (nao gera um novo BEGIN) — entao um sync.write feito por project() logo
+    // apos sua transaction() interna ainda executaria DENTRO da transaction() externa ainda aberta,
+    // travando o mutex estatico do adaptador (mesma causa raiz corrigida em TaskProjectionService).
+    // Este teste usa fakes in-memory (sem lock real) para travar o CONTRATO: nenhum sync.write pode
+    // disparar antes da transaction() externa deste use case ter retornado.
+    const demandaId = 'demanda-1';
+    await repo.save(makeDemanda({ id: demandaId, status: 'aberta' }));
+
+    const events: string[] = [];
+    const originalTransaction = repo.transaction.bind(repo);
+    vi.spyOn(repo, 'transaction').mockImplementation(async (fn) => {
+      events.push('outer-transaction:start');
+      const result = await originalTransaction(fn);
+      events.push('outer-transaction:commit');
+      return result;
+    });
+    vi.mocked(syncOutbox.write).mockImplementation(async (type) => {
+      events.push(`sync:write:${type}`);
+    });
+
+    await sut.execute({
+      demandaId,
+      aceitoPor: 'gerente-1',
+      tarefas: [
+        { titulo: 'Tarefa A', formularios: [] },
+        { titulo: 'Tarefa B', formularios: [] },
+      ],
+    });
+
+    const commitIndex = events.indexOf('outer-transaction:commit');
+    const firstSyncWriteIndex = events.findIndex(e => e.startsWith('sync:write:'));
+    expect(commitIndex).toBeGreaterThanOrEqual(0);
+    expect(firstSyncWriteIndex).toBeGreaterThan(commitIndex);
+    expect(events.filter(e => e === 'sync:write:task.criada')).toHaveLength(2);
+    expect(events.filter(e => e === 'sync:write:demanda.aceita')).toHaveLength(1);
+  });
 });

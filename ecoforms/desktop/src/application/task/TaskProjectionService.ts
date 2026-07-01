@@ -29,6 +29,17 @@ export interface TaskProjectionInput {
 
 export interface TaskProjectionOptions {
     formularioSaver?: (tf: TarefaFormulario) => Promise<void>;
+    /**
+     * Callback opcional para publicar o evento task.criada manualmente, no lugar do sync.write
+     * automatico feito por project(). Necessario quando project() e chamado de dentro do
+     * repo.transaction() de OUTRO caller (ex.: AcceptDemandaUseCase) — nesse caso a transaction()
+     * interna de project() e transparentemente absorvida pela transacao externa ja aberta
+     * (TauriSqliteAdapter reaproveita a mesma transacao em vez de abrir uma nova), entao o
+     * sync.write automatico de project() ainda executaria dentro da transacao externa e travaria
+     * o mutex estatico do adaptador. Quando fornecido, o chamador deve coletar os payloads aqui e
+     * publica-los so depois que a SUA propria transacao externa tiver commitado.
+     */
+    onProjected?: (payload: TaskCriadaPayload) => void | Promise<void>;
 }
 
 export class TaskProjectionService {
@@ -108,10 +119,14 @@ export class TaskProjectionService {
             })),
         };
 
-        await this.sync.write('task.criada', payload as unknown as Record<string, unknown>, {
-            aggregateId: id,
-            streamId:    input.origemId ?? id,
-        });
+        if (options?.onProjected) {
+            await options.onProjected(payload);
+        } else {
+            await this.sync.write('task.criada', payload as unknown as Record<string, unknown>, {
+                aggregateId: id,
+                streamId:    input.origemId ?? id,
+            });
+        }
 
         return id;
     }

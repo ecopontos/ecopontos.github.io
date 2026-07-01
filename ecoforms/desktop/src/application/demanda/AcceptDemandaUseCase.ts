@@ -2,6 +2,7 @@ import type { DemandaRepository } from '../../domain/demanda/DemandaRepository';
 import type { ClockPort } from '../ports/ClockPort';
 import type { SyncOutbox } from '../ports/SyncOutboxPort';
 import type { TaskProjectionService } from '../task/TaskProjectionService';
+import type { TaskCriadaPayload } from 'ecoforms-core/sync';
 import { uuidv7 } from 'ecoforms-core';
 
 export interface AcceptDemandaTarefaInput {
@@ -45,6 +46,10 @@ export class AcceptDemandaUseCase {
     }
 
     const agora = this.clock.nowIso();
+    // Coletados durante a transacao e publicados so depois dela commitar — ver o comentario em
+    // TaskProjectionOptions.onProjected para o porque (nested sync.write dentro de uma transacao
+    // ja aberta trava o mutex estatico do TauriSqliteAdapter).
+    const pendingTaskEvents: TaskCriadaPayload[] = [];
 
     await this.repo.transaction(async (txRepo) => {
       await txRepo.updateStatus(input.demandaId, 'aceita', {
@@ -66,6 +71,7 @@ export class AcceptDemandaUseCase {
           formularios:   t.formularios,
         }, {
           formularioSaver: (tf) => txRepo.saveTarefaFormulario(tf),
+          onProjected: (payload) => { pendingTaskEvents.push(payload); },
         });
 
         await txRepo.saveEvento({
@@ -93,6 +99,13 @@ export class AcceptDemandaUseCase {
         createdAt: agora,
       });
     });
+
+    for (const payload of pendingTaskEvents) {
+      await this.sync.write('task.criada', payload as unknown as Record<string, unknown>, {
+        aggregateId: payload.id,
+        streamId: input.demandaId,
+      });
+    }
 
     await this.sync.write('demanda.aceita', {
       aceito_por: input.aceitoPor,
