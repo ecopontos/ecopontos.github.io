@@ -14,8 +14,8 @@ export const MANIFESTACOES_RESUMO: QueryDef = {
         SUM(CASE WHEN m.status = 'em_analise'  THEN 1 ELSE 0 END)         AS em_analise,
         SUM(CASE WHEN m.status = 'respondida'  THEN 1 ELSE 0 END)         AS respondidas,
         SUM(CASE WHEN m.status = 'encerrada'   THEN 1 ELSE 0 END)         AS encerradas,
-        SUM(CASE WHEN m.prazo_resposta IS NOT NULL
-                  AND date(m.prazo_resposta) < date('now')
+        SUM(CASE WHEN m.prazo_limite IS NOT NULL
+                  AND date(m.prazo_limite) < date('now')
                   AND m.status NOT IN ('respondida','encerrada')
             THEN 1 ELSE 0 END)                                             AS prazo_vencido
     FROM manifestacoes m
@@ -49,8 +49,8 @@ export const MANIFESTACOES_POR_SETOR: QueryDef = {
         COALESCE(se.nome, 'Sem setor')          AS setor,
         COUNT(*)                                AS total,
         SUM(CASE WHEN m.status NOT IN ('respondida','encerrada') THEN 1 ELSE 0 END) AS abertas,
-        SUM(CASE WHEN m.prazo_resposta IS NOT NULL
-                  AND date(m.prazo_resposta) < date('now')
+        SUM(CASE WHEN m.prazo_limite IS NOT NULL
+                  AND date(m.prazo_limite) < date('now')
                   AND m.status NOT IN ('respondida','encerrada')
             THEN 1 ELSE 0 END)                  AS atrasadas
     FROM manifestacoes m
@@ -103,8 +103,8 @@ export const MANIFESTACOES_PRAZO_VENCIDO: QueryDef = {
   sql: `
     SELECT
         m.id, m.protocolo, m.assunto,
-        m.prazo_resposta,
-        CAST(julianday('now') - julianday(m.prazo_resposta) AS INTEGER) AS dias_atraso,
+        m.prazo_limite AS prazo_resposta,
+        CAST(julianday('now') - julianday(m.prazo_limite) AS INTEGER) AS dias_atraso,
         s.nome  AS situacao,
         u.nome  AS responsavel,
         se.nome AS setor
@@ -112,8 +112,8 @@ export const MANIFESTACOES_PRAZO_VENCIDO: QueryDef = {
     LEFT JOIN situacoes s  ON s.id  = m.situacao_id
     LEFT JOIN usuarios  u  ON u.id  = m.responsavel_id
     LEFT JOIN setores   se ON se.id = m.setor_id
-    WHERE m.prazo_resposta IS NOT NULL
-      AND date(m.prazo_resposta) < date('now')
+    WHERE m.prazo_limite IS NOT NULL
+      AND date(m.prazo_limite) < date('now')
       AND m.status NOT IN ('respondida', 'encerrada')
     ORDER BY dias_atraso DESC
   `,
@@ -214,12 +214,12 @@ export const MANIFESTACOES_TEMPO_MEDIO_RESPOSTA: QueryDef = {
     SELECT
         COALESCE(tm.nome, 'Não classificado')   AS tipo,
         ROUND(AVG(
-            julianday(m.data_resposta) - julianday(m.criado_em)
+            julianday(m.encerrado_em) - julianday(m.criado_em)
         ), 1)                                   AS dias_medio_resposta,
         COUNT(*)                                AS total_respondidas
     FROM manifestacoes m
     LEFT JOIN tipos_manifestacao tm ON tm.id = m.tipo_id
-    WHERE m.data_resposta IS NOT NULL
+    WHERE m.encerrado_em IS NOT NULL
     GROUP BY m.tipo_id
     ORDER BY dias_medio_resposta ASC
   `,

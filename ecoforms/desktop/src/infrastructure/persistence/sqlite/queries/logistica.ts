@@ -26,10 +26,10 @@ export const EXECUCOES_RESUMO: QueryDef = {
     SELECT
         COUNT(*)                                                           AS total,
         SUM(CASE WHEN e.status = 'concluida'    THEN 1 ELSE 0 END)        AS concluidas,
-        SUM(CASE WHEN e.status = 'em_andamento' THEN 1 ELSE 0 END)        AS em_andamento,
-        SUM(CASE WHEN e.status = 'pendente'     THEN 1 ELSE 0 END)        AS pendentes,
+        SUM(CASE WHEN e.status = 'em_execucao'  THEN 1 ELSE 0 END)        AS em_andamento,
+        SUM(CASE WHEN e.status = 'agendada'     THEN 1 ELSE 0 END)        AS pendentes,
         SUM(CASE WHEN e.status = 'cancelada'    THEN 1 ELSE 0 END)        AS canceladas
-    FROM execucoes e
+    FROM execucao_coleta e
   `,
   description: 'Resumo de execuções de roteiro por status',
   params: [],
@@ -46,7 +46,7 @@ export const EXECUCOES_POR_ROTEIRO: QueryDef = {
         SUM(CASE WHEN e.status = 'concluida' THEN 1 ELSE 0 END)          AS concluidas,
         MAX(e.data_execucao)                                              AS ultima_execucao
     FROM roteiros r
-    LEFT JOIN execucoes e ON e.roteiro_id = r.id
+    LEFT JOIN execucao_coleta e ON e.roteiro_id = r.id
     GROUP BY r.id
     ORDER BY ultima_execucao DESC NULLS LAST
   `,
@@ -59,10 +59,11 @@ export const EXECUCOES_POR_ROTEIRO: QueryDef = {
 export const INTERCORRENCIAS_POR_TIPO: QueryDef = {
   sql: `
     SELECT
-        COALESCE(i.tipo, 'Não classificada') AS tipo,
+        COALESCE(ti.nome, 'Não classificada') AS tipo,
         COUNT(*)                              AS total
-    FROM intercorrencias i
-    GROUP BY i.tipo
+    FROM intercorrencias_coleta ic
+    JOIN tipos_intercorrencia ti ON ti.id = ic.tipo_ocorrencia_id
+    GROUP BY ic.tipo_ocorrencia_id
     ORDER BY total DESC
   `,
   description: 'Frequência de intercorrências de campo por tipo — indicador de problemas recorrentes',
@@ -147,7 +148,7 @@ export const EXECUCOES_TENDENCIA_MENSAL: QueryDef = {
         strftime('%Y-%m', e.data_execucao) AS mes,
         COUNT(*)                            AS total,
         SUM(CASE WHEN e.status = 'concluida' THEN 1 ELSE 0 END) AS concluidas
-    FROM execucoes e
+    FROM execucao_coleta e
     WHERE e.data_execucao >= date('now', ? || ' months')
     GROUP BY mes
     ORDER BY mes ASC

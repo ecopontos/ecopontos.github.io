@@ -133,7 +133,7 @@ export const USUARIO_SETOR_PRINCIPAL: QueryDef = {
 };
 
 export const USUARIO_DADOS: QueryDef = {
-  sql: `SELECT id, nome, email, username, perfil, ativo, criado_em, atualizado_em FROM usuarios WHERE id = ?`,
+  sql: `SELECT id, nome, email, nome_usuario, perfil, ativo, criado_em, atualizado_em FROM usuarios WHERE id = ?`,
   description: 'Dados completos de um usuário por ID (exportação GDPR)',
   params: ['id'],
   use: 'operacional',
@@ -173,7 +173,7 @@ export const USUARIO_DELETE: QueryDef = {
 };
 
 export const USUARIOS_SETOR_NOTIFICACAO: QueryDef = {
-  sql: `SELECT u.id FROM usuarios u JOIN manifestacoes m ON u.setor_id = m.setor_id WHERE m.id = ? AND u.ativo = 1`,
+  sql: `SELECT u.id FROM usuarios u JOIN manifestacoes m ON u.setor_principal_id = m.setor_id WHERE m.id = ? AND u.ativo = 1`,
   description: 'Usuários do setor de uma manifestação para notificação',
   params: ['manifestacao_id'],
   use: 'operacional',

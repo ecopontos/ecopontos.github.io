@@ -35,14 +35,6 @@ export const AUDIT_LOG_EXPORT: QueryDef = {
   returns: '{ id, acao, entidade, id_entidade, criado_em }[]',
 };
 
-export const CEP_LOOKUP: QueryDef = {
-  sql: `SELECT * FROM cep WHERE CEP = ?`,
-  description: 'Busca de endereço por CEP',
-  params: ['CEP'],
-  use: 'operacional',
-  returns: '{ CEP, logradouro, bairro, complemento }',
-};
-
 export const SISTEMA_CONFIG_GET: QueryDef = {
   sql: `SELECT valor FROM configuracoes_sistema WHERE chave = ?`,
   description: 'Obtém o valor de uma configuração do sistema por chave',

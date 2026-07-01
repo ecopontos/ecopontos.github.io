@@ -2,7 +2,7 @@
  * Catálogo: Utilitários Gerais
  *
  * Hooks utilitários transversais: teclado, armazenamento de arquivos,
- * container DI, CEP, parquet e seed de demonstração.
+ * container DI, parquet e seed de demonstração.
  */
 
 export { useKeyboardShortcuts } from '../utils/useKeyboardShortcuts';   // ativo — atalhos globais de teclado
@@ -15,7 +15,6 @@ export {
   initializeContainer,                                                   // ativo — inicializa container (boot)
   getContainerAsync,                                                     // ativo — acesso async ao container para handlers
 } from '../utils/useContainer';
-export { useCEP } from '../utils/useCEP';                               // ativo — busca CEP no SQLite local
 export { useCrmDataSource } from '../utils/useCrmDataSource';       // ativo — data sources CRM para campos dinâmicos
 export { useManifestacaoWorkflow } from '../utils/useManifestacaoWorkflow'; // ativo — workflow de manifestações
 export { useNetworkParquet } from '../utils/useNetworkParquet';         // ativo — config de pasta de rede Parquet
