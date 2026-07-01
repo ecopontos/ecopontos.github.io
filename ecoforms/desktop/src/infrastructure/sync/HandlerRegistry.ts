@@ -1,5 +1,5 @@
-// ⚠️ ESPELHO de www/js/sync/HandlerRegistry.js
-// Alterações aqui devem ser refletidas lá.
+﻿// âš ï¸ ESPELHO de www/js/sync/HandlerRegistry.js
+// AlteraÃ§Ãµes aqui devem ser refletidas lÃ¡.
 import type { SqlitePort } from '../../application/ports/SqlitePort';
 import type { InboundService } from './InboundService';
 import type { EventEnvelope } from './EventEnvelope';
@@ -20,7 +20,7 @@ export function setCreateTaskRemocao(fn: typeof _createTaskRemocao): void {
 
 const CAIXAS_TYPES: Record<string, string> = {
     '1': 'Entulho', '2': 'Madeira', '3': 'Poda',
-    '4': 'Reciclável', '5': 'Rejeito', '6': 'Sucata', '7': 'Vidro',
+    '4': 'ReciclÃ¡vel', '5': 'Rejeito', '6': 'Sucata', '7': 'Vidro',
 };
 
 interface CaixasData {
@@ -66,7 +66,7 @@ async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Pro
     const tipTitle = (caixaId: string): string => {
         const tipo = CAIXAS_TYPES[caixaId] || `Caixa ${caixaId}`;
         const nivel = ocupacao[caixaId] || '0';
-        return `${tipo} ${nivel}% — ${ecopontoLabel}`;
+        return `${tipo} ${nivel}% â€” ${ecopontoLabel}`;
     };
 
     for (const caixaId of Object.keys(CAIXAS_TYPES)) {
@@ -87,7 +87,7 @@ async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Pro
             if (existing.length > 0) {
                 await db.execute(
                     `UPDATE tarefas SET descricao = ? WHERE id = ?`,
-                    [`${nivel}% — ${new Date().toISOString()}`, existing[0].id],
+                    [`${nivel}% â€” ${new Date().toISOString()}`, existing[0].id],
                 );
                 continue;
             }
@@ -130,9 +130,9 @@ async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Pro
 export function registerAllHandlers(inbound: InboundService, db: SqlitePort): void {
     inbound.on('ecoforms.registro.criado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
-        // Colunas `setor`/`criado_por` não existem em registro_dados
+        // Colunas `setor`/`criado_por` nÃ£o existem em registro_dados
         // (schema: id, tipo, chave, conteudo, versao, criado_em, atualizado_em).
-        // Inseri-las fazia todo evento de criação de registro falhar no sync.
+        // Inseri-las fazia todo evento de criaÃ§Ã£o de registro falhar no sync.
         await db.execute(
             `INSERT OR REPLACE INTO registro_dados
              (id, tipo, chave, conteudo, criado_em, atualizado_em)
@@ -197,8 +197,8 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     inbound.on('task.arquivada', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
-        // tarefas usa apenas a flag `arquivado INTEGER` — não existe coluna
-        // `arquivado_em` (essa coluna é de projetos/pacotes). Referenciá-la
+        // tarefas usa apenas a flag `arquivado INTEGER` â€” nÃ£o existe coluna
+        // `arquivado_em` (essa coluna Ã© de projetos/pacotes). ReferenciÃ¡-la
         // fazia o evento task.arquivada falhar no sync.
         await db.execute(
             `UPDATE tarefas SET arquivado = 1, atualizado_em = ? WHERE id = ?`,
@@ -225,7 +225,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         const tarefaId = d.tarefa_id ?? d.tarefaId;
         if (!tarefaId) return;
-        // id do comentário = id do envelope → INSERT OR IGNORE torna o replay idempotente.
+        // id do comentÃ¡rio = id do envelope â†’ INSERT OR IGNORE torna o replay idempotente.
         await db.execute(
             `INSERT OR IGNORE INTO tarefas_comentarios (id, tarefa_id, usuario_id, comentario, criado_em)
              VALUES (?, ?, ?, ?, ?)`,
@@ -255,10 +255,10 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
 
     inbound.on('demanda.encaminhada', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
-        // As colunas setor_destino/encaminhado_por/encaminhado_em não existem
+        // As colunas setor_destino/encaminhado_por/encaminhado_em nÃ£o existem
         // em demandas. "Encaminhar" = mover a demanda para o setor de destino
         // (ADR-024: setor_id controla a visibilidade horizontal por setor), que
-        // é o efeito persistido. Antes o UPDATE falhava por colunas inexistentes.
+        // Ã© o efeito persistido. Antes o UPDATE falhava por colunas inexistentes.
         await db.execute(
             `UPDATE demandas
              SET setor_id = COALESCE(?, setor_id), atualizado_em = ?
@@ -268,7 +268,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
-    // ── Agendamentos ───────────────────────────────────────────────────────────
+    // â”€â”€ Agendamentos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     inbound.on('agendamento.criado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         const agId = d.agendamentoId ?? env.aggregate.id;
@@ -345,14 +345,14 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     const moduleSyncHandler = new ModuleSyncHandler(db);
     moduleSyncHandler.register(inbound);
 
-    // ── User Widget: created/updated ────────────────────────────────────────────
+    // â”€â”€ User Widget: created/updated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     inbound.on('instancias_widgets_usuario.created', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         if (!d?.id) return;
         await db.execute(
             `INSERT OR REPLACE INTO instancias_widgets_usuario
-             (id, id_usuario, dashboard_id, tipo_widget, fonte_dados, config_exibicao,
-              posicao_x, posicao_y, largura, altura, ordem_posicao,
+             (id, id_usuario, dashboard_id, widget_type, data_source, display_config,
+              position_x, position_y, position_w, position_h, position_order,
               criado_em, atualizado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, datetime('now')), datetime('now'))`,
             [d.id, d.user_id, d.dashboard_id, d.widget_type, d.data_source, d.display_config,
@@ -364,8 +364,8 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         if (!d?.id) return;
         await db.execute(
-            `UPDATE instancias_widgets_usuario SET tipo_widget = ?, fonte_dados = ?, config_exibicao = ?,
-             posicao_x = ?, posicao_y = ?, largura = ?, altura = ?, ordem_posicao = ?,
+            `UPDATE instancias_widgets_usuario SET widget_type = ?, data_source = ?, display_config = ?,
+             position_x = ?, position_y = ?, position_w = ?, position_h = ?, position_order = ?,
              atualizado_em = datetime('now') WHERE id = ?`,
             [d.widget_type, d.data_source, d.display_config,
              d.position_x ?? 0, d.position_y ?? 0, d.position_w ?? 6, d.position_h ?? 1, d.position_order ?? 0, d.id],
@@ -379,7 +379,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         await db.execute(`DELETE FROM instancias_widgets_usuario WHERE id = ?`, [id]);
     });
 
-    // ── Ouvidoria ───────────────────────────────────────────────────────────────
+    // â”€â”€ Ouvidoria â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     inbound.on('manifestacao.criada', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         const id = d.id ?? env.aggregate.id;
@@ -445,15 +445,15 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
-    // ── Logística ───────────────────────────────────────────────────────────────
+    // â”€â”€ LogÃ­stica â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     inbound.on('roteiro.criado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
             `INSERT OR IGNORE INTO roteiros
-             (id, nome, descricao, tipo_residuo, periodicidade, turno, base, distrito,
+             (id, nome, descricao, residuo, periodicidade, turno, base, distrito,
               situacao, criado_por, criado_em, atualizado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [env.aggregate.id, d.nome ?? '', d.descricao ?? null, d.tipo_residuo ?? null,
+            [env.aggregate.id, d.nome ?? '', d.descricao ?? null, d.residuo ?? d.tipo_residuo ?? null,
              d.periodicidade ?? null, d.turno ?? null, d.base ?? null, d.distrito ?? null,
              d.situacao ?? 'ativo', d.criado_por ?? null, d.criado_em ?? env.time, env.time],
         );
@@ -462,10 +462,10 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     inbound.on('roteiro.atualizado', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
-            `UPDATE roteiros SET nome = ?, descricao = ?, tipo_residuo = ?, periodicidade = ?,
+            `UPDATE roteiros SET nome = ?, descricao = ?, residuo = ?, periodicidade = ?,
              turno = ?, base = ?, distrito = ?, situacao = ?, atualizado_em = ?
              WHERE id = ?`,
-            [d.nome, d.descricao ?? null, d.tipo_residuo ?? null, d.periodicidade ?? null,
+            [d.nome, d.descricao ?? null, d.residuo ?? d.tipo_residuo ?? null, d.periodicidade ?? null,
              d.turno ?? null, d.base ?? null, d.distrito ?? null, d.situacao, env.time, env.aggregate.id],
         );
     });
@@ -474,11 +474,11 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         await db.execute(
             `INSERT OR IGNORE INTO execucao_coleta
-             (id, roteiro_id, data_execucao, status, motorista_id, ajudante_id, veiculo,
+             (id, roteiro_id, data_execucao, status, motorista_id, ajudante_id, veiculo_placa,
               km_inicial, km_final, observacoes, inicio_em, fim_em, criado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [env.aggregate.id, d.roteiro_id, d.data_execucao, d.status ?? 'agendada',
-             d.motorista_id ?? null, d.ajudante_id ?? null, d.veiculo ?? null,
+             d.motorista_id ?? null, d.ajudante_id ?? null, d.veiculo_placa ?? d.veiculo ?? null,
              d.km_inicial ?? null, d.km_final ?? null, d.observacoes ?? null,
              d.inicio_em ?? null, d.fim_em ?? null, d.criado_em ?? env.time],
         );
@@ -517,7 +517,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
-    // ADR-037: auditoria de turno — mobile publica, desktop persiste
+    // ADR-037: auditoria de turno â€” mobile publica, desktop persiste
     inbound.on('acesso.turno.log', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
@@ -539,3 +539,4 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 }
+

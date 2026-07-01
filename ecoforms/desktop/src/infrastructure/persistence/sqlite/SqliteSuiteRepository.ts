@@ -1,7 +1,8 @@
-import { SuitePackage, type SuitePackageProps } from '../../../domain/suite/SuitePackage';
+﻿import { SuitePackage, type SuitePackageProps } from '../../../domain/suite/SuitePackage';
 import type { SuiteHistoryEntry, SuiteQuery, SuiteRepository } from '../../../domain/suite/SuiteRepository';
 import type { SuiteStatus } from '../../../domain/suite/SuiteStatus';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
+import { uuidv7 } from 'ecoforms-core';
 
 interface SuiteRow {
     id_pacote: string;
@@ -115,10 +116,10 @@ export class SqliteSuiteRepository implements SuiteRepository {
         const p = pkg.toProps();
         
         // Append-Only Pattern:
-        // 1. Marcar versões anteriores como não atuais
+        // 1. Marcar versÃµes anteriores como nÃ£o atuais
         await this.invalidateCurrent(p.packageId);
 
-        // 2. Inserir nova versão
+        // 2. Inserir nova versÃ£o
         await this.db.execute(
             `INSERT INTO pacotes (
                 id_pacote, num_versao, tipo_modulo, tipo_recurso, status,
@@ -138,21 +139,25 @@ export class SqliteSuiteRepository implements SuiteRepository {
     async appendHistory(entry: SuiteHistoryEntry): Promise<void> {
         await this.db.execute(
             `INSERT INTO historico_pacotes (
-                package_id, version_from, version_to, status_anterior, status_novo,
-                alterado_por, motivo, transfer_type
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                id, registro_id, status_anterior, status_novo, alterado_por,
+                motivo, metadados, id_pacote, versao_de, versao_para, tipo_transferencia
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
+                uuidv7(),
                 entry.packageId,
-                entry.versionFrom,
-                entry.versionTo,
                 entry.statusAnterior,
                 entry.statusNovo,
                 entry.alteradoPor,
                 entry.motivo ?? null,
+                null,
+                entry.packageId,
+                entry.versionFrom,
+                entry.versionTo,
                 entry.transferType ?? null,
             ],
         );
     }
+
 
     async validateNoCycle(packageId: string, refPackageId: string, maxDepth = 50): Promise<boolean> {
         if (!refPackageId) return true;
@@ -207,3 +212,6 @@ export class SqliteSuiteRepository implements SuiteRepository {
         }
     }
 }
+
+
+
