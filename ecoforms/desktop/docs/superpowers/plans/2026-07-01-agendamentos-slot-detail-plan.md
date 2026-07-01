@@ -380,6 +380,22 @@ git commit -m "feat(agendamentos): amplia BookingRow com telefone, email, bairro
   — substitui `BookingModal({ slotId, open, onClose })`. Task 5 (`app/agendamentos/page.tsx`) usa este
   componente embutido no `Sheet`, sem `open` e sem `Dialog` ao redor.
 
+**Nota — reset de estado sem `useEffect`:** o `BookingModal` original tinha um `useEffect(() => { if
+(open) { ...reset de 8 campos... } }, [open, slotId])` que zerava `etapa`, `selectedCliente`,
+`responsavelId`, `prefillData`, `enderecoDiferente`, `agendamentoId`, `waLink` e `showQuickCreate`
+toda vez que o Dialog reabria. Esse `useEffect` é removido neste refactor e **não** é substituído por
+outro — o reset passa a acontecer via mount/unmount: `BookingWizardContent` só existe na árvore
+enquanto `modo === 'wizard'` (Task 5), então cada vez que o Sheet volta para esse modo o componente é
+desmontado e remontado do zero, e os `useState(...)` iniciais já fazem o reset dos 8 campos
+automaticamente (mais robusto que o reset manual, que dependia de listar cada campo). O único caminho
+que **não** passa por unmount é `reiniciar()` (clique em "Novo agendamento no mesmo slot" na etapa 3,
+que volta para a etapa 1 sem desmontar o componente) — essa função já existia no `BookingModal`
+original e já não reseta `showQuickCreate`. Não é uma regressão: `reiniciar()` só é alcançável depois
+de já ter selecionado um cliente (a etapa 2 exige `selectedCliente`), e selecionar um cliente sempre
+zera `showQuickCreate` antes disso (via `onCreated`/`onCancel` do `QuickCreateClientForm`) — ou seja,
+`showQuickCreate` já está `false` em todo caminho que chega a `reiniciar()`, no código antigo e no
+novo. Não é necessário adicionar `setShowQuickCreate(false)` a `reiniciar()`.
+
 - [ ] **Step 1: Renomear o arquivo preservando histórico**
 
 ```bash
@@ -1114,6 +1130,13 @@ git commit -m "feat(agendamentos): adiciona AgendamentoRow com detalhes, whatsap
 - Produces: nenhuma interface nova para tasks seguintes — este é o ponto de integração final da UI.
   Task 6 testa este arquivo importando o default export `AgendamentosPage` de `@/app/agendamentos/page`.
 
+**Rename de prop:** `SlotDetailSheetProps.onBookingCreated: () => void` (original) vira
+`onSlotChanged: () => void` — o nome muda porque o callback agora dispara tanto após criar quanto após
+cancelar um agendamento (Task 1/2 do objetivo), não só após criar. `onClose: () => void` **não muda**
+— já tinha essa assinatura no componente original (o `agendamentoId` opcional que existia era do
+`onClose` interno do antigo `BookingModal`, já tratado na Nota da Task 3 acima, não deste `onClose` do
+Sheet).
+
 - [ ] **Step 1: Substituir todo o conteúdo do arquivo**
 
 Substituir `desktop/app/agendamentos/page.tsx` inteiro por (as seções `parseDate` até
@@ -1128,7 +1151,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, List, Plus, Loader2, UserCheck, Clock, RefreshCw } from "lucide-react";
+import { ArrowLeft, Calendar, List, Plus, Loader2, UserCheck, RefreshCw } from "lucide-react";
 import { useServiceSlots, useServiceTypes, useBookingTasks, useAgendamentoMutations } from "@/src/interface/hooks/catalog/service";
 import { BookingWizardContent } from "@/components/BookingWizardContent";
 import { AgendamentoRow } from "@/components/agendamentos/AgendamentoRow";
