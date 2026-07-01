@@ -8,7 +8,7 @@ export const KANBAN_TAREFAS: QueryDef = {
            p.nome            AS projeto_nome,
            p.cor             AS projeto_cor,
            s.nome            AS setor_nome,
-           (SELECT COUNT(*) FROM comentarios c WHERE c.tarefa_id = t.id) AS total_comentarios
+           (SELECT COUNT(*) FROM tarefas_comentarios c WHERE c.tarefa_id = t.id) AS total_comentarios
     FROM tarefas t
     LEFT JOIN usuarios     u_criador ON u_criador.id = t.criado_por
     LEFT JOIN usuarios     u_atrib   ON u_atrib.id   = t.atribuido_para
