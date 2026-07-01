@@ -7,6 +7,10 @@ const TRANSICOES: Record<StatusAgendamento, StatusAgendamento[]> = {
     cancelado:  [],
 };
 
+export function podeCancelarAgendamento(status: StatusAgendamento): boolean {
+    return TRANSICOES[status]?.includes('cancelado') ?? false;
+}
+
 export interface AgendamentoProps {
     id: string;
     slotId: string;

@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, List, Plus, Loader2, UserCheck, Clock } from "lucide-react";
-import { useServiceSlots, useServiceTypes, useBookingTasks } from "@/src/interface/hooks/catalog/service";
-import { BookingModal } from "@/components/BookingModal";
+import { ArrowLeft, Calendar, List, Plus, Loader2, UserCheck, RefreshCw } from "lucide-react";
+import { useServiceSlots, useServiceTypes, useBookingTasks, useAgendamentoMutations } from "@/src/interface/hooks/catalog/service";
+import { BookingWizardContent } from "@/components/BookingWizardContent";
+import { AgendamentoRow } from "@/components/agendamentos/AgendamentoRow";
 import type { ServiceSlot } from "@/src/domain/service/ServiceSlot";
 import type { ServiceType } from "@/src/domain/service/ServiceType";
+import { toast } from "sonner";
 
 type Visao = "lista" | "calendario";
 
@@ -247,25 +249,40 @@ function VistaCalendario({ slots, typeMap, onSlotClick }: VistaCalendarioProps) 
 
 // ── SlotDetailSheet ───────────────────────────────────────────────
 
+type SheetModo = "detalhes" | "wizard";
+
 interface SlotDetailSheetProps {
     slot: ServiceSlot | null;
     type: ServiceType | undefined;
     open: boolean;
     onClose: () => void;
-    onBookingCreated: () => void;
+    onSlotChanged: () => void;
 }
 
-function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDetailSheetProps) {
-    const { tasks, loading: tasksLoading, hasMore, loadMore, reload: reloadTasks } = useBookingTasks(slot?.id ?? null);
-    const [bookingOpen, setBookingOpen] = useState(false);
+function SlotDetailSheet({ slot, type, open, onClose, onSlotChanged }: SlotDetailSheetProps) {
+    const { tasks, loading: tasksLoading, error: tasksError, hasMore, loadMore, reload: reloadTasks } = useBookingTasks(slot?.id ?? null);
+    const { cancelarAgendamento, findLinkWhatsApp } = useAgendamentoMutations();
+    const [modo, setModo] = useState<SheetModo>("detalhes");
 
-    const handleBookingClose = useCallback((agendamentoId?: string) => {
-        setBookingOpen(false);
-        if (agendamentoId) {
-            reloadTasks();
-            onBookingCreated();
-        }
-    }, [reloadTasks, onBookingCreated]);
+    useEffect(() => {
+        if (open) setModo("detalhes");
+    }, [open, slot?.id]);
+
+    const handleCancelar = useCallback(async (agendamentoId: string) => {
+        await cancelarAgendamento(agendamentoId);
+        await reloadTasks();
+        onSlotChanged();
+    }, [cancelarAgendamento, reloadTasks, onSlotChanged]);
+
+    const handleReenviarWhatsapp = useCallback((agendamentoId: string) => {
+        return findLinkWhatsApp(agendamentoId);
+    }, [findLinkWhatsApp]);
+
+    const handleWizardCompleted = useCallback(() => {
+        setModo("detalhes");
+        reloadTasks();
+        onSlotChanged();
+    }, [reloadTasks, onSlotChanged]);
 
     if (!slot) return null;
 
@@ -274,16 +291,32 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
     const livres = slot.capacidade ? slot.capacidade - slot.vagasOcupadas : null;
 
     return (
-        <>
-            <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-                <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-                    <SheetHeader>
+        <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
+            <SheetContent className={`w-full overflow-y-auto ${modo === "wizard" ? "sm:max-w-2xl" : "sm:max-w-md"}`}>
+                <SheetHeader>
+                    {modo === "wizard" ? (
+                        <div className="space-y-1">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 -ml-2 w-fit" onClick={() => setModo("detalhes")}>
+                                <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                                Voltar
+                            </Button>
+                            <SheetTitle className="text-sm font-medium">Registrar agendamento</SheetTitle>
+                        </div>
+                    ) : (
                         <SheetTitle className="flex items-center gap-2">
                             <span>{type?.icone ?? "🔧"}</span>
                             <span>{type?.nome}</span>
                         </SheetTitle>
-                    </SheetHeader>
+                    )}
+                </SheetHeader>
 
+                {modo === "wizard" ? (
+                    <BookingWizardContent
+                        slotId={slot.id}
+                        onCancel={() => setModo("detalhes")}
+                        onCompleted={handleWizardCompleted}
+                    />
+                ) : (
                     <div className="mt-4 space-y-4">
                         {/* Slot info */}
                         <div className="space-y-2">
@@ -324,7 +357,7 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
                         <Button
                             className="w-full"
                             disabled={!!slot.capacidade && slot.vagasOcupadas >= slot.capacidade}
-                            onClick={() => setBookingOpen(true)}
+                            onClick={() => setModo("wizard")}
                         >
                             <Plus className="mr-2 h-4 w-4" />
                             Registrar agendamento
@@ -345,30 +378,29 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
                                 </div>
                             )}
 
-                            {!tasksLoading && tasks.length === 0 && (
+                            {tasksError && !tasksLoading && (
+                                <div className="text-center py-4 space-y-2">
+                                    <p className="text-sm text-red-500">Erro ao carregar agendamentos: {tasksError}</p>
+                                    <Button variant="outline" size="sm" onClick={() => reloadTasks()}>
+                                        <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                                        Tentar novamente
+                                    </Button>
+                                </div>
+                            )}
+
+                            {!tasksLoading && !tasksError && tasks.length === 0 && (
                                 <p className="text-sm text-muted-foreground text-center py-4">
                                     Nenhum agendamento registrado.
                                 </p>
                             )}
 
-                            {tasks.map(t => (
-                                <div key={t.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                                    <div>
-                                        <p className="font-medium leading-tight">{t.titulo}</p>
-                                        {t.atribuidoPara && (
-                                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                <UserCheck className="h-3 w-3" />
-                                                {t.atribuidoPara}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <Badge
-                                        variant={t.status === "confirmado" ? "default" : t.status === "cancelado" ? "secondary" : "outline"}
-                                        className="text-xs"
-                                    >
-                                        {t.status}
-                                    </Badge>
-                                </div>
+                            {!tasksLoading && !tasksError && tasks.map(row => (
+                                <AgendamentoRow
+                                    key={row.id}
+                                    row={row}
+                                    onCancelar={handleCancelar}
+                                    onReenviarWhatsapp={handleReenviarWhatsapp}
+                                />
                             ))}
                             {hasMore && (
                                 <Button variant="outline" size="sm" className="w-full" onClick={loadMore}>
@@ -377,17 +409,9 @@ function SlotDetailSheet({ slot, type, open, onClose, onBookingCreated }: SlotDe
                             )}
                         </div>
                     </div>
-                </SheetContent>
-            </Sheet>
-
-            {slot && (
-                <BookingModal
-                    slotId={slot.id}
-                    open={bookingOpen}
-                    onClose={handleBookingClose}
-                />
-            )}
-        </>
+                )}
+            </SheetContent>
+        </Sheet>
     );
 }
 
@@ -397,13 +421,17 @@ export default function AgendamentosPage() {
     const { slots, loading, reload } = useServiceSlots({ status: "publicado" });
     const { types } = useServiceTypes();
     const [visao, setVisao] = useState<Visao>("lista");
-    const [selectedSlot, setSelectedSlot] = useState<ServiceSlot | null>(null);
+    const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
 
     const typeMap = useMemo(() => new Map(types.map(t => [t.id, t])), [types]);
+    const selectedSlot = useMemo(
+        () => (selectedSlotId ? slots.find(s => s.id === selectedSlotId) ?? null : null),
+        [slots, selectedSlotId]
+    );
 
     const handleSlotClick = useCallback((slot: ServiceSlot) => {
-        setSelectedSlot(slot);
+        setSelectedSlotId(slot.id);
         setSheetOpen(true);
     }, []);
 
@@ -411,9 +439,16 @@ export default function AgendamentosPage() {
         setSheetOpen(false);
     }, []);
 
-    const handleBookingCreated = useCallback(() => {
+    const handleSlotChanged = useCallback(() => {
         reload();
     }, [reload]);
+
+    useEffect(() => {
+        if (sheetOpen && !loading && selectedSlotId && !selectedSlot) {
+            setSheetOpen(false);
+            toast.error("Este slot não está mais disponível.");
+        }
+    }, [sheetOpen, loading, selectedSlotId, selectedSlot]);
 
     return (
         <div className="space-y-4">
@@ -466,7 +501,7 @@ export default function AgendamentosPage() {
                 type={selectedSlot ? typeMap.get(selectedSlot.serviceTypeId) : undefined}
                 open={sheetOpen}
                 onClose={handleSheetClose}
-                onBookingCreated={handleBookingCreated}
+                onSlotChanged={handleSlotChanged}
             />
         </div>
     );
