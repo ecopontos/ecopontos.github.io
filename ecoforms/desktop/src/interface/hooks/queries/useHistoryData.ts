@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import type { TblSuiteRecord } from "@/types";
 import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
 import { useSqlite } from "./useSqlite";
-import { PACOTES_HISTORICO, PACOTE_RESTORE, PACOTE_CLOSE } from "@/src/application/persistence/sqlite/queries/pacotes";
+import { PACOTES_HISTORICO, PACOTE_RESTORE, PACOTE_CLOSE } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
 
 const safeJsonParse = (val: string | null | undefined, fallback: unknown) => {
     if (!val) return fallback;

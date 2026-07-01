@@ -7,7 +7,7 @@ import {
   PACOTE_UPDATE_STATUS,
   PACOTE_UPDATE_DADOS,
   PACOTES_TIPOS_FORM_DISTINTOS,
-} from '@/src/application/persistence/sqlite/queries/pacotes';
+} from '@/src/infrastructure/persistence/sqlite/queries/pacotes';
 
 export interface PacoteRow {
   id_pacote: string;

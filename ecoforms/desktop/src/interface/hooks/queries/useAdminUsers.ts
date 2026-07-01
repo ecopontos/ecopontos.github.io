@@ -51,6 +51,7 @@ function toUpdateUserInput(userId: string, userData: AdminUserFormData): UpdateU
         email: userData.email,
         perfil: userData.perfil,
         ativo: userData.ativo,
+        passwordHash: userData.password_hash,
         setores: userData.setores,
     };
 }

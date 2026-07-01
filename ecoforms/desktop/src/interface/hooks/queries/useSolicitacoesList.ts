@@ -22,7 +22,7 @@ import { getContainerAsync } from "../utils/useContainer"
 import {
   SOLICITACOES_POR_USUARIO,
   FORMS_AD_HOC_DISPONIVEIS,
-} from '@/src/application/persistence/sqlite/queries/solicitacoes';
+} from '@/src/infrastructure/persistence/sqlite/queries/solicitacoes';
 
 export interface SolicitacaoPackage {
     id_pacote: string

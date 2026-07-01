@@ -6,7 +6,7 @@ import {
   MANIFESTACOES_CATALOGOS_ORIGENS,
   MANIFESTACOES_CATALOGOS_CLASSIFICACOES,
   MANIFESTACOES_CATALOGOS_SITUACOES,
-} from '@/src/application/persistence/sqlite/queries/manifestacoes';
+} from '@/src/infrastructure/persistence/sqlite/queries/manifestacoes';
 
 interface CatalogoItem {
   id: string;

@@ -106,7 +106,7 @@ export default function AdminModulesPage() {
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">{mod.description || 'Sem descrição'}</p>
                                 <div className="flex gap-2">
-                                    <Link href={`/admin/modules/${mod.id}/edit`}>
+                                    <Link href={`/admin/modules/edit?id=${mod.id}`}>
                                         <Button size="sm" variant="outline">
                                             <Pencil className="mr-2 h-4 w-4" /> Editar
                                         </Button>

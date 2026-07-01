@@ -104,7 +104,7 @@ export class CapacitorSqliteAdapter {
         await this.open();
         await this.#sqlite.beginTransaction({ database: DB_NAME });
         try {
-            const result = await callback();
+            const result = await callback(this);
             await this.#sqlite.commitTransaction({ database: DB_NAME });
             return result;
         } catch (err) {

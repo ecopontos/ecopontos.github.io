@@ -7,7 +7,7 @@ import {
   PROJETO_DETAIL,
   PROJETO_TAREFAS,
   PROJETO_EVENTOS,
-} from '@/src/application/persistence/sqlite/queries/projetos';
+} from '@/src/infrastructure/persistence/sqlite/queries/projetos';
 
 import { ProjectWithMetrics } from './useProjects';
 

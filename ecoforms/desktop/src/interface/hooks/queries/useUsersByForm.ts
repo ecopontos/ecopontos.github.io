@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback } from "react";
 import { getContainerAsync } from "../utils/useContainer";
-import { USUARIOS_COM_ACESSO_FORM } from "@/src/application/persistence/sqlite/queries/usuarios";
+import { USUARIOS_COM_ACESSO_FORM } from "@/src/infrastructure/persistence/sqlite/queries/usuarios";
 
 interface UserAccessInfoRow {
     id: string;

@@ -103,7 +103,7 @@ export class SupabaseUserSyncService {
 
     private async findLocalBySupabaseId(supabaseId: string): Promise<User | null> {
         const rows = await this.sqlite.query<{ local_id: string }>(
-            `SELECT local_id FROM mapeamento_usuarios_supabase WHERE supabase_id = ? LIMIT 1`,
+            `SELECT local_id FROM mapeamento_usuarios_supabase WHERE id_supabase = ? LIMIT 1`,
             [supabaseId],
         );
         if (!rows[0]) return null;
@@ -112,16 +112,16 @@ export class SupabaseUserSyncService {
 
     private async linkSupabaseId(localId: string, supabaseId: string): Promise<void> {
         await this.sqlite.execute(
-            `INSERT OR IGNORE INTO mapeamento_usuarios_supabase (local_id, supabase_id) VALUES (?, ?)`,
+            `INSERT OR IGNORE INTO mapeamento_usuarios_supabase (local_id, id_supabase) VALUES (?, ?)`,
             [localId, supabaseId],
         );
     }
 
     private async getSupabaseId(localId: string): Promise<string | null> {
-        const rows = await this.sqlite.query<{ supabase_id: string }>(
-            `SELECT supabase_id FROM mapeamento_usuarios_supabase WHERE local_id = ? LIMIT 1`,
+        const rows = await this.sqlite.query<{ id_supabase: string }>(
+            `SELECT id_supabase FROM mapeamento_usuarios_supabase WHERE local_id = ? LIMIT 1`,
             [localId],
         );
-        return rows[0]?.supabase_id ?? null;
+        return rows[0]?.id_supabase ?? null;
     }
 }

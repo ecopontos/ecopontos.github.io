@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { toast } from "sonner"
 import { useSqlite } from "../queries/useSqlite"
-import { SISTEMA_CONFIG_GET, SISTEMA_CONFIG_SAVE } from '@/src/application/persistence/sqlite/queries/system'
+import { SISTEMA_CONFIG_GET, SISTEMA_CONFIG_SAVE } from '@/src/infrastructure/persistence/sqlite/queries/system'
 
 interface ProbeResult {
     accessible: boolean

@@ -143,7 +143,7 @@ export function ActionBar({ actions, context }: ActionBarProps) {
     }
     if (action.expandPanel) {
       if (action.expandPanel.queryParam && context.targetId) {
-        router.push(`/tasks/${context.targetId}?action=${action.expandPanel.panel}`);
+        router.push(`/tasks/detalhe?id=${context.targetId}&action=${action.expandPanel.panel}`);
         return;
       }
       setExpandAction(action);

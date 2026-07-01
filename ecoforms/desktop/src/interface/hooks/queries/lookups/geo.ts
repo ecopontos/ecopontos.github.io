@@ -1,5 +1,5 @@
 import { getContainerAsync } from '../../utils/useContainer';
-import { REGISTRO_DADOS_BY_TIPO_ECOPONTO } from '@/src/application/persistence/sqlite/queries/registro_dados';
+import { REGISTRO_DADOS_BY_TIPO_ECOPONTO } from '@/src/infrastructure/persistence/sqlite/queries/registro_dados';
 import {
   CLIENTES_GEO,
   CLIENTES_GEO_IN_VIEWPORT,
@@ -14,18 +14,18 @@ import {
   TERRENOS_CLEAR_TERRENO_ID_ROTEIRO_CLIENTES,
   TERRENO_SOFT_DELETE,
   ROTEIRO_CLIENTES_ITINERARIO,
-} from '@/src/application/persistence/sqlite/queries/terrenos';
+} from '@/src/infrastructure/persistence/sqlite/queries/terrenos';
 import {
   GEO_LAYERS_LIST,
   GEO_LAYER_UPSERT,
   GEO_LAYER_TOGGLE_VISIVEL,
   GEO_LAYER_DELETE,
-} from '@/src/application/persistence/sqlite/queries/camadas_geo';
+} from '@/src/infrastructure/persistence/sqlite/queries/camadas_geo';
 import {
   EXECUCAO_CLIENTES_GEO,
   INTERCORRENCIAS_GEO,
   CHECKLIST_GEO,
-} from '@/src/application/persistence/sqlite/queries/execucao_clientes';
+} from '@/src/infrastructure/persistence/sqlite/queries/execucao_clientes';
 
 export async function fetchRegistroDadosByTipoEcoponto(
   tipo: string,

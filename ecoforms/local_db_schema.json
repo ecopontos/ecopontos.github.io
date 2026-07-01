@@ -1,4 +1,9 @@
 {
+  "__meta": {
+    "aviso": "SNAPSHOT LEGADO pre-migracao PT-BR. NAO e a fonte de verdade.",
+    "fonte_canonica": "desktop/scripts/ensure-columns.ts",
+    "regenerar": "node scripts/dump-local-schema.js <caminho/para/ecoforms.db> > local_db_schema.json"
+  },
   "Atendimento": [
     {
       "table_name": "Atendimento",

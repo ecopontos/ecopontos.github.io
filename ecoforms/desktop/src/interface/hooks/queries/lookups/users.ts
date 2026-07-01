@@ -6,7 +6,7 @@ import {
   USUARIO_AUTH,
   SETOR_BY_ID,
   SETORES_ALL,
-} from '@/src/application/persistence/sqlite/queries/usuarios';
+} from '@/src/infrastructure/persistence/sqlite/queries/usuarios';
 
 export interface UsuarioAtivo {
   id: string;

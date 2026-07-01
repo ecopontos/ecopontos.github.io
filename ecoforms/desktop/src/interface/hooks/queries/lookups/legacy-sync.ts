@@ -6,7 +6,7 @@ import {
   EXECUCAO_PESAGENS_LIST_FILTERED,
   EXECUCAO_PESAGENS_DISTINCT_RESIDUOS,
   EXECUCAO_PESAGENS_DISTINCT_DESTINOS,
-} from '@/src/application/persistence/sqlite/queries/logistica';
+} from '@/src/infrastructure/persistence/sqlite/queries/logistica';
 
 export async function fetchRoteirosFiltered(filters: {
   situacao: string;

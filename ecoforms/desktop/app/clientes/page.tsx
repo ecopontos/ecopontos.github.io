@@ -88,7 +88,7 @@ export default function ClientesPage() {
                   {clientes.map((c: Cliente) => (
                     <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">
-                        <Link href={`/clientes/${c.id}`} className="block">{c.nome}</Link>
+                        <Link href={`/clientes/detalhe?id=${c.id}`} className="block">{c.nome}</Link>
                       </TableCell>
                       <TableCell>
                         <Badge variant={c.tipo === "PF" ? "secondary" : "default"}>{c.tipo}</Badge>

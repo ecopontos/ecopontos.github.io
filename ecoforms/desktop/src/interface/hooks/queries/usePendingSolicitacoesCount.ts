@@ -1,6 +1,6 @@
 import type { UseQueryOptions } from '@tanstack/react-query';
 import { useTauriQuery } from '@/src/interface/hooks/catalog/tauri';
-import { PACOTES_PENDING_SOLICITACOES_COUNT } from '@/src/application/persistence/sqlite/queries/pacotes';
+import { PACOTES_PENDING_SOLICITACOES_COUNT } from '@/src/infrastructure/persistence/sqlite/queries/pacotes';
 
 type Options = Omit<UseQueryOptions<{ total: number }[], Error>, 'queryKey' | 'queryFn'>;
 

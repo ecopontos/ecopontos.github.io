@@ -1663,7 +1663,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_prazo`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tipos_prazo (id, nome, dias_padrao, ativo) VALUES
+            await execute(`INSERT OR IGNORE INTO tipos_prazo (id, nome, dias_padrao, ativo) VALUES
                 ('resposta',    'Resposta ao Cidadão',         15, 1),
                 ('solucao',     'Solução do Problema',         30, 1),
                 ('prorrogacao', 'Prorrogação Administrativa',  15, 1)
@@ -1675,7 +1675,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_manifestacao`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tipos_manifestacao (id, nome, descricao, prazo_dias_corridos, prazo_urgente_dias) VALUES
+            await execute(`INSERT OR IGNORE INTO tipos_manifestacao (id, nome, descricao, prazo_dias_corridos, prazo_urgente_dias) VALUES
                 ('reclamacao', 'Reclamação',  'Insatisfação com serviço ou produto', 30, NULL),
                 ('sugestao',   'Sugestão',    'Proposta de melhoria',                30, NULL),
                 ('elogio',     'Elogio',      'Reconhecimento positivo',             30, NULL),
@@ -1696,7 +1696,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM situacoes`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO situacoes (id, nome, descricao) VALUES
+            await execute(`INSERT OR IGNORE INTO situacoes (id, nome, descricao) VALUES
                 ('aguardando_analise',  'Aguardando Análise',   'Manifestação recebida, aguardando triagem'),
                 ('em_atendimento',      'Em Atendimento',       'Em processo de investigação'),
                 ('aguardando_resposta', 'Aguardando Resposta',  'Aguardando confirmação do manifestante'),
@@ -1710,7 +1710,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM origens`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO origens (id, nome, descricao) VALUES
+            await execute(`INSERT OR IGNORE INTO origens (id, nome, descricao) VALUES
                 ('telefone',       'Telefone',          'Atendimento telefônico / call center'),
                 ('email',          'E-mail',            'Correspondência eletrônica'),
                 ('presencial',     'Presencial',        'Atendimento presencial em balcão'),
@@ -1725,7 +1725,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM classificacoes`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO classificacoes (id, nome, descricao) VALUES
+            await execute(`INSERT OR IGNORE INTO classificacoes (id, nome, descricao) VALUES
                 ('coleta_nao_realizada', 'Coleta Não Realizada',   'Coleta não efetuada no local'),
                 ('coleta_irregular',     'Coleta Irregular',       'Coleta em horário inadequado'),
                 ('lixo_acumulado',       'Lixo Acumulado',         'Acúmulo de lixo na via pública'),
@@ -1742,7 +1742,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_residuo`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tipos_residuo (id, codigo, nome, descricao, cor) VALUES
+            await execute(`INSERT OR IGNORE INTO tipos_residuo (id, codigo, nome, descricao, cor) VALUES
                 ('tr-rsu',   'RSU',   'Resíduo Sólido Urbano', 'Lixo doméstico comum',                '#6B7280'),
                 ('tr-rec',   'REC',   'Reciclável',            'Papel, plástico, metal e vidro',       '#10B981'),
                 ('tr-org',   'ORG',   'Orgânico',              'Resíduos de jardim e alimentos',       '#22C55E'),
@@ -1760,7 +1760,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_intercorrencia`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tipos_intercorrencia
+            await execute(`INSERT OR IGNORE INTO tipos_intercorrencia
                 (id, nome, descricao, cor, icone, ordem, exige_quantidade, exige_foto) VALUES
                 ('ti-problema',    'Problema Operacional', 'Problema operacional geral',        '#EF4444', 'alert-triangle',  1, 0, 1),
                 ('ti-rejeito',     'Rejeito',              'Material não coletável',             '#F97316', 'x-circle',        2, 1, 0),
@@ -1843,7 +1843,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_servico`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tipos_servico (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
+            await execute(`INSERT OR IGNORE INTO tipos_servico (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
                 ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
                 ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
                 ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
@@ -1949,101 +1949,103 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // MÓDULO: Agendamento (Service Booking Engine)
     // Integra o domínio de agendamento ao sistema dinâmico de módulos
     // ================================================================
-    await execute(`
-        INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, config_version, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
-        VALUES (
-            'mod-agendamento',
-            'agendamento',
-            'Agendamentos',
-            'Gestão de slots de agendamento e bookings de serviços. Cria janelas de tempo por tipo de serviço e converte reservas diretamente em tarefas do Kanban.',
-            'tarefa',
-            '📅',
-            '#3B82F6',
-            'AGD',
-            20,
-            'published',
-            1,
-            1,
-            '{}',
-            NULL,
-            datetime('now'),
-            datetime('now'),
-            datetime('now')
-        )
-    `);
+    try {
+        await execute(`
+            INSERT OR IGNORE INTO registro_modulos (id, slug, nome, descricao, tipo_entidade, icon, color, prefix, ordem, status, versao, config_version, configuracao, config_suite, criado_em, atualizado_em, publicado_em)
+            VALUES (
+                'mod-agendamento',
+                'agendamento',
+                'Agendamentos',
+                'Gestão de slots de agendamento e bookings de serviços. Cria janelas de tempo por tipo de serviço e converte reservas diretamente em tarefas do Kanban.',
+                'tarefa',
+                '📅',
+                '#3B82F6',
+                'AGD',
+                20,
+                'published',
+                1,
+                1,
+                '{}',
+                NULL,
+                datetime('now'),
+                datetime('now'),
+                datetime('now')
+            )
+        `);
 
-    // Permissões base do módulo de agendamento
-    await execute(`
-        INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-        VALUES ('mod-agendamento', 'admin', 1, 1, 1, 1, 1)
-    `);
-    await execute(`
-        INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-        VALUES ('mod-agendamento', 'gerente', 1, 1, 1, 1, 0)
-    `);
-    await execute(`
-        INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-        VALUES ('mod-agendamento', 'operador', 1, 1, 0, 0, 0)
-    `);
-    await execute(`
-        INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
-        VALUES ('mod-agendamento', 'campo', 1, 0, 0, 0, 0)
-    `);
+        // Permissões base do módulo de agendamento
+        await execute(`
+            INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
+            VALUES ('mod-agendamento', 'admin', 1, 1, 1, 1, 1)
+        `);
+        await execute(`
+            INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
+            VALUES ('mod-agendamento', 'gerente', 1, 1, 1, 1, 0)
+        `);
+        await execute(`
+            INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
+            VALUES ('mod-agendamento', 'operador', 1, 1, 0, 0, 0)
+        `);
+        await execute(`
+            INSERT OR IGNORE INTO permissoes_modulos (module_id, profile, can_view, can_create, can_edit, can_approve, can_delete)
+            VALUES ('mod-agendamento', 'campo', 1, 0, 0, 0, 0)
+        `);
 
-    // Visuais padrão do módulo de agendamento
-    await execute(`
-        INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-        VALUES (
-            'vis-agd-slots',
-            'mod-agendamento',
-            'table',
-            'Slots de Agendamento',
-            '{"source": "janelas_agendamento", "columns": ["titulo", "tipo_prazo", "data_inicio", "data_fim", "capacidade", "vagas_ocupadas", "status"], "filterable": true}',
-            1,
-            NULL,
-            NULL,
-            'synced',
-            0,
-            datetime('now'),
-            datetime('now')
-        )
-    `);
-    await execute(`
-        INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-        VALUES (
-            'vis-agd-bookings',
-            'mod-agendamento',
-            'table',
-            'Bookings',
-            '{"source": "tarefas", "filter": "origem = ''booking''", "columns": ["titulo", "status", "prazo", "atribuido_para", "criado_em"], "filterable": true}',
-            0,
-            NULL,
-            NULL,
-            'synced',
-            1,
-            datetime('now'),
-            datetime('now')
-        )
-    `);
-    await execute(`
-        INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-        VALUES (
-            'vis-agd-kanban',
-            'mod-agendamento',
-            'kanban',
-            'Kanban de Agendamentos',
-            '{"source": "tarefas", "filter": "origem = ''booking''", "groupBy": "status", "columns": ["titulo", "prazo", "atribuido_para"]}',
-            0,
-            NULL,
-            NULL,
-            'synced',
-            2,
-            datetime('now'),
-            datetime('now')
-        )
-    `);
+        // Visuais padrão do módulo de agendamento
+        await execute(`
+            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
+            VALUES (
+                'vis-agd-slots',
+                'mod-agendamento',
+                'table',
+                'Slots de Agendamento',
+                '{"source": "janelas_agendamento", "columns": ["titulo", "tipo_prazo", "data_inicio", "data_fim", "capacidade", "vagas_ocupadas", "status"], "filterable": true}',
+                1,
+                NULL,
+                NULL,
+                'synced',
+                0,
+                datetime('now'),
+                datetime('now')
+            )
+        `);
+        await execute(`
+            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
+            VALUES (
+                'vis-agd-bookings',
+                'mod-agendamento',
+                'table',
+                'Bookings',
+                '{"source": "tarefas", "filter": "origem = ''booking''", "columns": ["titulo", "status", "prazo", "atribuido_para", "criado_em"], "filterable": true}',
+                0,
+                NULL,
+                NULL,
+                'synced',
+                1,
+                datetime('now'),
+                datetime('now')
+            )
+        `);
+        await execute(`
+            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
+            VALUES (
+                'vis-agd-kanban',
+                'mod-agendamento',
+                'kanban',
+                'Kanban de Agendamentos',
+                '{"source": "tarefas", "filter": "origem = ''booking''", "groupBy": "status", "columns": ["titulo", "prazo", "atribuido_para"]}',
+                0,
+                NULL,
+                NULL,
+                'synced',
+                2,
+                datetime('now'),
+                datetime('now')
+            )
+        `);
 
-    console.log('[Bootstrap] Módulo de agendamento registrado');
+        console.log('[Bootstrap] Módulo de agendamento registrado');
+    } catch (e) { console.warn('[Seed] módulo agendamento:', e); }
 
     // ================================================================
     // Legado: índice parcial de unicidade para ordem ativa em rotas

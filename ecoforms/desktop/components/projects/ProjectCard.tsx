@@ -61,7 +61,7 @@ export function ProjectCard({ project, canManage, onEdit, onArchive }: ProjectCa
     };
 
     const handleOpenDetails = () => {
-        router.push(`/projects/${project.id}`);
+        router.push(`/projects/detalhe?id=${project.id}`);
     };
 
     const total = project.total_tarefas;

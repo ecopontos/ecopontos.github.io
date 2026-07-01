@@ -8,7 +8,7 @@ export const KANBAN_TAREFAS: QueryDef = {
            p.nome            AS projeto_nome,
            p.cor             AS projeto_cor,
            s.nome            AS setor_nome,
-           (SELECT COUNT(*) FROM comentarios c WHERE c.tarefa_id = t.id) AS total_comentarios
+           (SELECT COUNT(*) FROM tarefas_comentarios c WHERE c.tarefa_id = t.id) AS total_comentarios
     FROM tarefas t
     LEFT JOIN usuarios     u_criador ON u_criador.id = t.criado_por
     LEFT JOIN usuarios     u_atrib   ON u_atrib.id   = t.atribuido_para
@@ -40,7 +40,7 @@ export const KANBAN_LOOKUP_USUARIOS: QueryDef = {
 };
 
 export const KANBAN_LOOKUP_FORMS: QueryDef = {
-  sql: `SELECT id_formulario AS value, titulo AS label FROM registro_formularios WHERE ativo = 1 ORDER BY titulo`,
+  sql: `SELECT form_id AS value, titulo AS label FROM registro_formularios WHERE ativo = 1 ORDER BY titulo`,
   description: 'Formulários ativos para selects de vínculo',
   params: [],
   use: 'operacional',
@@ -48,7 +48,7 @@ export const KANBAN_LOOKUP_FORMS: QueryDef = {
 };
 
 export const KANBAN_LOOKUP_PROJETOS: QueryDef = {
-  sql: `SELECT id AS value, nome AS label FROM projetos WHERE arquivado = 0 ORDER BY nome`,
+  sql: `SELECT id AS value, nome AS label FROM projetos WHERE arquivado_em IS NULL ORDER BY nome`,
   description: 'Projetos não-arquivados para selects de vínculo',
   params: [],
   use: 'operacional',

@@ -1,9 +1,9 @@
-import { MAPEAMENTO_USUARIO_DELETE, USUARIO_DELETE, USUARIO_MAPEAMENTO_SUPABASE } from '../persistence/sqlite/queries/usuarios';
-import { TAREFAS_DELETE_BY_USER } from '../persistence/sqlite/queries/tarefas';
-import { AGENDAMENTOS_DELETE_BY_USER } from '../persistence/sqlite/queries/service';
-import { MANIFESTACOES_DELETE_BY_CLIENTE } from '../persistence/sqlite/queries/manifestacoes';
-import { LOG_ACOES_DELETE_BY_USER } from '../persistence/sqlite/queries/log_acoes';
-import { LOG_AUDITORIA_DELETE_BY_USER } from '../persistence/sqlite/queries/log_auditoria';
+import { MAPEAMENTO_USUARIO_DELETE, USUARIO_DELETE, USUARIO_MAPEAMENTO_SUPABASE } from '../../infrastructure/persistence/sqlite/queries/usuarios';
+import { TAREFAS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/tarefas';
+import { AGENDAMENTOS_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/service';
+import { MANIFESTACOES_DELETE_BY_CLIENTE } from '../../infrastructure/persistence/sqlite/queries/manifestacoes';
+import { LOG_ACOES_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_acoes';
+import { LOG_AUDITORIA_DELETE_BY_USER } from '../../infrastructure/persistence/sqlite/queries/log_auditoria';
 import type { SqlitePort } from '../ports/SqlitePort';
 import type { FileStoragePort } from '../ports/FileStoragePort';
 import type { SupabaseAdminPort } from '../ports/SupabaseAdminPort';

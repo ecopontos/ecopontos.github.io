@@ -103,7 +103,7 @@ export default function SlotDetailPage() {
                     )}
                     {(slot.status === 'rascunho' || slot.status === 'publicado') && (
                         <Button variant="outline" asChild>
-                            <Link href={`/admin/agendamentos/slots/${slot.id}/editar`}>Editar</Link>
+                            <Link href={`/admin/agendamentos/slots/editar?id=${slot.id}`}>Editar</Link>
                         </Button>
                     )}
                     {slot.status === 'rascunho' && (

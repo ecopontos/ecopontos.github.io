@@ -9,7 +9,7 @@ import {
   CLIENTE_INTERCORRENCIAS,
   CLIENTE_MANIFESTACOES,
   CLIENTE_ROTEIROS,
-} from "@/src/application/persistence/sqlite/queries/cliente-perfil";
+} from "@/src/infrastructure/persistence/sqlite/queries/cliente-perfil";
 import type {
   ClientePerfilKpisRow,
   ClienteColetaRow,
@@ -17,8 +17,8 @@ import type {
   ClienteIntercorrenciaRow,
   ClienteManifestacaoRow,
   ClienteRoteiroRow,
-} from "@/src/application/persistence/sqlite/queries/cliente-perfil";
-import { AGENDAMENTOS_BY_USER } from "@/src/application/persistence/sqlite/queries/service";
+} from "@/src/infrastructure/persistence/sqlite/queries/cliente-perfil";
+import { AGENDAMENTOS_BY_USER } from "@/src/infrastructure/persistence/sqlite/queries/service";
 
 export interface ClienteAgendamentoRow {
   id: string;

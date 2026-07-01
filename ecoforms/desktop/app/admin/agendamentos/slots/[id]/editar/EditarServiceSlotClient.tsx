@@ -96,7 +96,7 @@ export default function EditarServiceSlotClient() {
         <div className="space-y-6 max-w-2xl">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
-                    <Link href={`/admin/agendamentos/slots/${id}`}><ArrowLeft className="h-4 w-4" /></Link>
+                    <Link href={`/admin/agendamentos/slots/detalhe?id=${id}`}><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Editar Slot</h1>

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { EliminacaoTitularUseCase } from '../EliminacaoTitularUseCase';
-import { USUARIO_MAPEAMENTO_SUPABASE } from '../../persistence/sqlite/queries/usuarios';
+import { USUARIO_MAPEAMENTO_SUPABASE } from '../../../infrastructure/persistence/sqlite/queries/usuarios';
 import { FakeSqlitePort } from '../../../test/fakes/FakeSqlitePort';
 import { FakeFileStorage } from '../../../test/fakes/FakeFileStorage';
 import { FakeSupabaseAdmin } from '../../../test/fakes/FakeSupabaseAdmin';

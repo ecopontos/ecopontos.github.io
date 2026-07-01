@@ -26,5 +26,6 @@ export interface UpdateUserInput {
     email?: string;
     perfil?: string;
     ativo?: boolean;
+    passwordHash?: string;
     setores?: string[];
 }

@@ -698,7 +698,7 @@ export default function ClienteDetailPage() {
                         {contatos.map((c: Cliente) => (
                           <TableRow key={c.id}>
                             <TableCell className="font-medium">
-                              <Link href={`/clientes/${c.id}`} className="hover:underline">{c.nome}</Link>
+                              <Link href={`/clientes/detalhe?id=${c.id}`} className="hover:underline">{c.nome}</Link>
                             </TableCell>
                             <TableCell>{c.documento || "—"}</TableCell>
                             <TableCell>{c.telefone || "—"}</TableCell>
@@ -803,7 +803,7 @@ export default function ClienteDetailPage() {
                       <div key={v.id} className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/30 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <Link href={`/clientes/${v.pj_id}`} className="font-medium hover:underline truncate">
+                            <Link href={`/clientes/detalhe?id=${v.pj_id}`} className="font-medium hover:underline truncate">
                               {v.pj_nome}
                             </Link>
                             {v.funcao && (

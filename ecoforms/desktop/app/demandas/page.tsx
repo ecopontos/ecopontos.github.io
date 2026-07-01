@@ -125,7 +125,7 @@ export default function DemandasPage() {
                                     <TableRow
                                         key={d.id}
                                         className="cursor-pointer hover:bg-muted/50"
-                                        onClick={() => router.push(`/demandas/${d.id}`)}
+                                        onClick={() => router.push(`/demandas/detalhe?id=${d.id}`)}
                                     >
                                         <TableCell>
                                             <div>
@@ -171,7 +171,7 @@ export default function DemandasPage() {
                                                 size="icon"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    router.push(`/demandas/${d.id}`);
+                                                    router.push(`/demandas/detalhe?id=${d.id}`);
                                                 }}
                                             >
                                                 <ArrowRight className="h-4 w-4" />

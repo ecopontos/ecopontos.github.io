@@ -1,4 +1,4 @@
-import { LOG_ACAO_INSERT } from '../../persistence/sqlite/queries/log_acoes';
+import { LOG_ACAO_INSERT } from '../../../infrastructure/persistence/sqlite/queries/log_acoes';
 import { registerAction } from "../ActionRegistry";
 import type { ActionDemandaClose } from "../ActionRegistry";
 import { uuidv7 } from 'ecoforms-core';

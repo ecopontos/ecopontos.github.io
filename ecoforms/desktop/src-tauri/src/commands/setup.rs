@@ -58,19 +58,23 @@ pub fn bootstrap_seed_rbac(
     state: State<'_, DbState>,
     session: State<'_, SessionState>,
 ) -> Result<(), String> {
-    ensure_no_active_session(&session)?;
-
     let conn_guard = state.conn.lock().unwrap();
     let conn = conn_guard
         .as_ref()
         .ok_or_else(|| "Database not connected".to_string())?;
 
+    // Idempotent no-op regardless of session state: container bootstrapping
+    // (ensureColumnsIfNeeded) calls this command on every app access, including
+    // when a user is already logged in. Once RBAC is seeded there is nothing
+    // sensitive left to do, so this check must run before the session guard.
     let perfis_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM perfis", [], |row| row.get(0))
         .map_err(|e| format!("Erro ao verificar perfis existentes: {}", e))?;
     if perfis_count > 0 {
         return Ok(());
     }
+
+    ensure_no_active_session(&session)?;
 
     let existing_users: i64 = conn
         .query_row("SELECT COUNT(*) FROM usuarios", [], |row| row.get(0))

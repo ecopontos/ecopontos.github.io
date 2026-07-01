@@ -394,16 +394,17 @@ describe('HandlerRegistry roteiro.criado', () => {
         expect(params[8]).toBe('ativo');
     });
 
-    it('uses column tipo_residuo on insert', async () => {
+    it('uses canonical residuo column on insert', async () => {
         const { db, getHandler } = setup();
 
         await getHandler('roteiro.criado')(makeEnvelope('roteiro.criado', 'rot-2', {
             nome: 'Rota Sul',
-            tipo_residuo: 'Reciclável',
+            residuo: 'Reciclável',
         }));
 
         const [sql, params] = firstCall(db);
-        expect(sql).toContain('tipo_residuo');
+        expect(sql).toContain('residuo');
+        expect(sql).not.toContain('tipo_residuo');
         expect(params[3]).toBe('Reciclável');
     });
 });
@@ -411,7 +412,7 @@ describe('HandlerRegistry roteiro.criado', () => {
 // ── execucao.criada ────────────────────────────────────────────────────────
 
 describe('HandlerRegistry execucao.criada', () => {
-    it('inserts into execucao_coleta with roteiro_id and data_execucao', async () => {
+    it('inserts into execucao_coleta with roteiro_id and canonical veiculo_placa', async () => {
         const { db, getHandler } = setup();
 
         await getHandler('execucao.criada')(makeEnvelope('execucao.criada', 'exec-1', {
@@ -419,16 +420,20 @@ describe('HandlerRegistry execucao.criada', () => {
             data_execucao: '2026-06-17',
             status: 'agendada',
             motorista_id: 'mot-1',
+            veiculo_placa: 'ABC-1234',
         }));
 
         expect(db.execute).toHaveBeenCalledOnce();
         const [sql, params] = firstCall(db);
         expect(sql).toContain('INSERT OR IGNORE INTO execucao_coleta');
+        expect(sql).toContain('veiculo_placa');
+        expect(sql).not.toContain('ajudante_id, veiculo,');
         expect(params[0]).toBe('exec-1');
         expect(params[1]).toBe('rot-1');
         expect(params[2]).toBe('2026-06-17');
         expect(params[3]).toBe('agendada');
         expect(params[4]).toBe('mot-1');
+        expect(params[6]).toBe('ABC-1234');
     });
 
     it('uses status default when absent', async () => {
@@ -447,31 +452,32 @@ describe('HandlerRegistry execucao.criada', () => {
 // ── roteiro.atualizado ─────────────────────────────────────────────────────
 
 describe('HandlerRegistry roteiro.atualizado', () => {
-    it('updates roteiros using tipo_residuo column', async () => {
+    it('updates roteiros using canonical residuo column', async () => {
         const { db, getHandler } = setup();
 
         await getHandler('roteiro.atualizado')(makeEnvelope('roteiro.atualizado', 'rot-1', {
             nome: 'Rota Atualizada',
-            tipo_residuo: 'Madeira',
+            residuo: 'Madeira',
             situacao: 'ativo',
         }));
 
         expect(db.execute).toHaveBeenCalledOnce();
         const [sql, params] = firstCall(db);
-        expect(sql).toMatch(/UPDATE roteiros SET nome = \?, descricao = \?, tipo_residuo = \?/);
-        expect(sql).toContain('tipo_residuo');
+        expect(sql).toContain('UPDATE roteiros SET nome = ?, descricao = ?, residuo = ?, periodicidade = ?');
+        expect(sql).toContain('residuo');
+        expect(sql).not.toContain('tipo_residuo');
         expect(params[0]).toBe('Rota Atualizada');
         expect(params[2]).toBe('Madeira');
         expect(params[7]).toBe('ativo');
         expect(params[9]).toBe('rot-1');
     });
 
-    it('accepts tipo_residuo field directly when present', async () => {
+    it('accepts residuo field directly when present', async () => {
         const { db, getHandler } = setup();
 
         await getHandler('roteiro.atualizado')(makeEnvelope('roteiro.atualizado', 'rot-2', {
             nome: 'Rota B',
-            tipo_residuo: 'Reciclável',
+            residuo: 'Reciclável',
             situacao: 'inativo',
         }));
 
@@ -555,5 +561,89 @@ describe('HandlerRegistry intercorrencia.resolvida', () => {
         expect(params[1]).toBe('user-6');
         expect(params[2]).toBe('Substituição da caixa');
         expect(params[4]).toBe('int-1');
+    });
+});
+
+// Widget sync regression coverage
+
+describe('HandlerRegistry instancias_widgets_usuario.created', () => {
+    it('insere widgets usando as colunas canonicas do schema atual', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler('instancias_widgets_usuario.created')(makeEnvelope(
+            'instancias_widgets_usuario.created', 'widget-1', {
+                id: 'widget-1',
+                user_id: 'user-1',
+                dashboard_id: 'dash-1',
+                widget_type: 'kpi_card',
+                data_source: '{"metric":"open"}',
+                display_config: '{"title":"Abertos"}',
+                position_x: 1,
+                position_y: 2,
+                position_w: 3,
+                position_h: 4,
+                position_order: 5,
+            },
+        ));
+
+        expect(db.execute).toHaveBeenCalledOnce();
+        const [sql, params] = firstCall(db);
+        expect(sql).toContain('INSERT OR REPLACE INTO instancias_widgets_usuario');
+        expect(sql).toContain('(id, id_usuario, dashboard_id, widget_type, data_source, display_config,');
+        expect(sql).toContain('position_x, position_y, position_w, position_h, position_order,');
+        expect(sql).not.toContain('tipo_widget');
+        expect(sql).not.toContain('fonte_dados');
+        expect(params).toEqual([
+            'widget-1',
+            'user-1',
+            'dash-1',
+            'kpi_card',
+            '{"metric":"open"}',
+            '{"title":"Abertos"}',
+            1,
+            2,
+            3,
+            4,
+            5,
+            BASE_TIME,
+        ]);
+    });
+});
+
+describe('HandlerRegistry instancias_widgets_usuario.updated', () => {
+    it('atualiza widgets usando as colunas canonicas do schema atual', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler('instancias_widgets_usuario.updated')(makeEnvelope(
+            'instancias_widgets_usuario.updated', 'widget-2', {
+                id: 'widget-2',
+                widget_type: 'bar_chart',
+                data_source: '{"field":"status"}',
+                display_config: '{"title":"Status"}',
+                position_x: 6,
+                position_y: 7,
+                position_w: 8,
+                position_h: 9,
+                position_order: 10,
+            },
+        ));
+
+        expect(db.execute).toHaveBeenCalledOnce();
+        const [sql, params] = firstCall(db);
+        expect(sql).toContain('UPDATE instancias_widgets_usuario SET widget_type = ?, data_source = ?, display_config = ?');
+        expect(sql).toContain('position_x = ?, position_y = ?, position_w = ?, position_h = ?, position_order = ?');
+        expect(sql).not.toContain('tipo_widget');
+        expect(sql).not.toContain('config_exibicao');
+        expect(params).toEqual([
+            'bar_chart',
+            '{"field":"status"}',
+            '{"title":"Status"}',
+            6,
+            7,
+            8,
+            9,
+            10,
+            'widget-2',
+        ]);
     });
 });

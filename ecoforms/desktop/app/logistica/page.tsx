@@ -160,7 +160,7 @@ export default function LogisticaPage() {
                       {roteiros.map((r: Roteiro) => (
                         <TableRow key={r.id} className="hover:bg-muted/50">
                           <TableCell className="font-medium">
-                            <Link href={`/logistica/roteiros/${r.id}`} className="block">{r.nome}</Link>
+                            <Link href={`/logistica/roteiros/detalhe?id=${r.id}`} className="block">{r.nome}</Link>
                           </TableCell>
                           <TableCell>{r.tipoResiduo || "—"}</TableCell>
                           <TableCell>{r.periodicidade || "—"}</TableCell>
@@ -278,7 +278,7 @@ export default function LogisticaPage() {
                               )}
                             </TableCell>
                             <TableCell className="flex gap-1">
-                              <Link href={`/logistica/roteiros/${e.roteiroId}?exec=${e.id}&panel=coleta`}>
+                              <Link href={`/logistica/roteiros/detalhe?id=${e.roteiroId}&exec=${e.id}&panel=coleta`}>
                                 <Button size="sm" variant="outline" className="h-7 text-xs gap-1" title="Registrar coleta / checklist">
                                   <ClipboardCheck className="h-3.5 w-3.5" />
                                   Coleta
@@ -290,7 +290,7 @@ export default function LogisticaPage() {
                                   Mapa
                                 </Button>
                               </Link>
-                              <Link href={`/logistica/roteiros/${e.roteiroId}`}>
+                              <Link href={`/logistica/roteiros/detalhe?id=${e.roteiroId}`}>
                                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Ver roteiro">
                                   <ExternalLink className="h-3.5 w-3.5" />
                                 </Button>

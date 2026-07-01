@@ -98,12 +98,12 @@ export function UserList({ users, onEdit, onToggleStatus, loading }: UserListPro
                                         {canEdit && (
                                             <>
                                                 <Button variant="ghost" size="icon" asChild title="Exportar dados (LGPD)">
-                                                    <Link href={`/admin/users/${user.id}/exportar`}>
+                                                    <Link href={`/admin/users/exportar?id=${user.id}`}>
                                                         <Download className="h-4 w-4 text-muted-foreground" />
                                                     </Link>
                                                 </Button>
                                                 <Button variant="ghost" size="icon" asChild title="Eliminar dados (LGPD)">
-                                                    <Link href={`/admin/users/${user.id}/eliminar`}>
+                                                    <Link href={`/admin/users/eliminar?id=${user.id}`}>
                                                         <Trash2 className="h-4 w-4 text-red-400" />
                                                     </Link>
                                                 </Button>
