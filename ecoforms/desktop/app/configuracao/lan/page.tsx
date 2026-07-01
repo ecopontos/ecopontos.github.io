@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLanSync } from '../../../contexts/LanSyncContext';
+import { useLanSync } from '@/src/interface/hooks/catalog/sync';
 
 export default function LanConfigPage() {
     const {

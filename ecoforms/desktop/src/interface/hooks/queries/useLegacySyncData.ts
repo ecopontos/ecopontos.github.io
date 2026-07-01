@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useCallback, useEffect } from "react";
-import { fetchRoteirosFiltered, fetchPesagensFiltered, fetchLegacyFilterOptions } from "@/src/interface/hooks/queries/lookups";
+import { fetchRoteirosFiltered, fetchPesagensFiltered, fetchLegacyFilterOptions } from "@/src/interface/hooks/queries/lookups/legacy-sync";
 
 function isTauri() {
     return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;

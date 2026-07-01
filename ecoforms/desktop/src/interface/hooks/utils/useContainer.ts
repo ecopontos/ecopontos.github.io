@@ -1,6 +1,6 @@
 import { useMemo, useRef, useCallback } from 'react';
-import { getContainer, getContainerAsync } from '@/src/infrastructure/container';
-import type { Container } from '@/src/infrastructure/container';
+import { getContainer, getContainerAsync } from '@/src/interface/gateways/runtime-container';
+import type { Container } from '@/src/interface/gateways/runtime-container';
 
 export { getContainerAsync };
 

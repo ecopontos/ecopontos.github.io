@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FormContent } from "@/types";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 
 export function useFormTemplate(slug: string | undefined) {
     const [template, setTemplate] = useState<FormContent | null>(null);

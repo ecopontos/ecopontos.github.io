@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, FolderCheck } from "lucide-react";
 import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFirstRunSetup } from "@/src/interface/hooks/mutations/useFirstRunSetup";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
+import { useFirstRunSetup } from "@/src/interface/hooks/catalog/auth";
 import type { User } from "@/types";
 
 interface FirstRunSetupModalProps {

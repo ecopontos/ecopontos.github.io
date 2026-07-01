@@ -127,7 +127,7 @@ mod tests {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE usuarios (id TEXT PRIMARY KEY, perfil TEXT, ativo INTEGER);
-             CREATE TABLE tbl_configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);
+             CREATE TABLE configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);
              CREATE TABLE hierarquia_perfis (perfil TEXT PRIMARY KEY, nivel INTEGER);
              INSERT INTO usuarios (id, perfil, ativo) VALUES ('user-1', 'admin', 1);
              INSERT INTO hierarquia_perfis (perfil, nivel) VALUES ('admin', 0);",

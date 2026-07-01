@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { aplicarMapeamento, type ActionButtonConfig, type ActionContext, type ActionSyncOutbox } from "@/src/application/actions/ActionRegistry";
+import { useSetores } from "@/src/interface/hooks/catalog/auth";
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import * as LucideIcons from "lucide-react";
 
 interface ActionBarProps {
@@ -36,21 +38,7 @@ function EncaminharPanel({ context, onAction, onCancel }: {
     const [setorDestino, setSetorDestino] = useState("");
     const [tipoAcao, setTipoAcao] = useState("");
     const [descricao, setDescricao] = useState("");
-    const [rows, setRows] = useState<{ id: string; nome: string }[]>([]);
-
-    useEffect(() => {
-        async function load() {
-            try {
-                const { getContainerAsync } = await import("@/src/infrastructure/container");
-                const c = await getContainerAsync();
-                const result = await c.setorRepository.findAll();
-                setRows(result);
-            } catch (e) {
-                console.error('[EncaminharPanel] Erro ao carregar setores:', e);
-            }
-        }
-        load();
-    }, []);
+    const { data: rows } = useSetores(true);
 
     return (
         <div className="space-y-4">
@@ -102,21 +90,7 @@ function ReencaminharPanel({ context, onAction, onCancel }: {
 }) {
     const [setorDestino, setSetorDestino] = useState("");
     const [motivo, setMotivo] = useState("");
-    const [rows, setRows] = useState<{ id: string; nome: string }[]>([]);
-
-    useEffect(() => {
-        async function load() {
-            try {
-                const { getContainerAsync } = await import("@/src/infrastructure/container");
-                const c = await getContainerAsync();
-                const result = await c.setorRepository.findAll();
-                setRows(result);
-            } catch (e) {
-                console.error('[ReencaminharPanel] Erro ao carregar setores:', e);
-            }
-        }
-        load();
-    }, []);
+    const { data: rows } = useSetores(true);
 
     return (
         <div className="space-y-4">
@@ -183,7 +157,7 @@ export function ActionBar({ actions, context }: ActionBarProps) {
     try {
       const mapped = aplicarMapeamento(action.fieldMapping, context);
       // ADR-020 §2 — garante que eventBus nunca é undefined no ActionContext
-      const syncOutbox: ActionSyncOutbox = context.syncOutbox ?? (await import("@/src/infrastructure/container").then(m => m.getContainer().syncOutbox));
+      const syncOutbox: ActionSyncOutbox = context.syncOutbox ?? (await getContainerAsync()).syncOutbox;
       const ctxWithInput: ActionContext = {
         ...context,
         syncOutbox,

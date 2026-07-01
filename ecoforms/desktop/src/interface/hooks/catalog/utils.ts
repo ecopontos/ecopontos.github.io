@@ -19,7 +19,7 @@ export { useCEP } from '../utils/useCEP';                               // ativo
 export { useCrmDataSource } from '../utils/useCrmDataSource';       // ativo — data sources CRM para campos dinâmicos
 export { useManifestacaoWorkflow } from '../utils/useManifestacaoWorkflow'; // ativo — workflow de manifestações
 export { useNetworkParquet } from '../utils/useNetworkParquet';         // ativo — config de pasta de rede Parquet
-export { useGalleryStorage } from '../queries/useGalleryStorage';       // ativo — leitura/remoção da galeria via hook dedicado
+export { useGalleryStorage, type GalleryItem } from '../queries/useGalleryStorage';       // ativo — leitura/remoção da galeria via hook dedicado
 
 // --- Seed / Demo ---
 export { useSeedDemo } from '../mutations/useSeedDemo';                 // ativo — semeia dados de demonstração

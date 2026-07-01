@@ -25,7 +25,7 @@ export class SqliteEmailConfigRepository implements EmailConfigRepository {
     async get(): Promise<EmailConfig | null> {
         const rows = await this.db.query<EmailConfigRow>(
             `SELECT id, smtp_host, smtp_port, smtp_user, smtp_password, from_email, from_name, use_tls, enabled, atualizado_em
-             FROM tbl_email_config WHERE id = 'default' LIMIT 1`
+             FROM configuracao_email WHERE id = 'default' LIMIT 1`
         );
         return rows[0] ? rowToEntity(rows[0]) : null;
     }
@@ -33,17 +33,17 @@ export class SqliteEmailConfigRepository implements EmailConfigRepository {
     async save(config: EmailConfig): Promise<void> {
         const row = config.toRow();
         const exists = await this.db.query<{ id: string }>(
-            `SELECT id FROM tbl_email_config WHERE id = 'default' LIMIT 1`
+            `SELECT id FROM configuracao_email WHERE id = 'default' LIMIT 1`
         );
         if (exists.length === 0) {
             await this.db.execute(
-                `INSERT INTO tbl_email_config (id, smtp_host, smtp_port, smtp_user, smtp_password, from_email, from_name, use_tls, enabled, atualizado_em)
+                `INSERT INTO configuracao_email (id, smtp_host, smtp_port, smtp_user, smtp_password, from_email, from_name, use_tls, enabled, atualizado_em)
                  VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
                 [row.smtp_host, row.smtp_port, row.smtp_user, row.smtp_password, row.from_email, row.from_name, row.use_tls, row.enabled]
             );
         } else {
             await this.db.execute(
-                `UPDATE tbl_email_config SET smtp_host = ?, smtp_port = ?, smtp_user = ?, smtp_password = ?,
+                `UPDATE configuracao_email SET smtp_host = ?, smtp_port = ?, smtp_user = ?, smtp_password = ?,
                  from_email = ?, from_name = ?, use_tls = ?, enabled = ?, atualizado_em = datetime('now') WHERE id = 'default'`,
                 [row.smtp_host, row.smtp_port, row.smtp_user, row.smtp_password, row.from_email, row.from_name, row.use_tls, row.enabled]
             );

@@ -1,10 +1,9 @@
 export interface SyncResult {
-    success: boolean;
-    synced: {
-        form_registry: number;
-        data_registry: number;
-        suite_push: number;
-        suite_pull: number;
+    success: boolean;    synced: {
+        registro_formularios: number;
+        registro_dados: number;
+        pacotes_push: number;
+        pacotes_pull: number;
         usuarios: number;
         projects_push: number;
         projects_pull: number;

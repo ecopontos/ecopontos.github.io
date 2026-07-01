@@ -79,7 +79,7 @@ async fn resolve_auth_root(state: &Arc<LanServerState>) -> Result<PathBuf, Strin
         let lan_sync_path = tokio::task::spawn_blocking(move || -> Option<PathBuf> {
             let conn = LanServerState::open_db_connection(&db_path).ok()?;
             let value: String = conn.query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
                 [],
                 |row| row.get(0),
             ).ok()?;
@@ -391,10 +391,10 @@ mod tests {
         let db_path = db_dir.join("ecoforms.sqlite");
         let conn = Connection::open(&db_path).unwrap();
         conn.execute_batch(
-            "CREATE TABLE tbl_configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
+            "CREATE TABLE configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
         ).unwrap();
         conn.execute(
-            "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
+            "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
             [&shared_dir.to_string_lossy().to_string()],
         ).unwrap();
 

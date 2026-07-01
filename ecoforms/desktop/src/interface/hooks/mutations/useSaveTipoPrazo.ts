@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import { TipoPrazo } from "@/src/domain/tipo-prazo/TipoPrazo";
 
 export function useSaveTipoPrazo() {

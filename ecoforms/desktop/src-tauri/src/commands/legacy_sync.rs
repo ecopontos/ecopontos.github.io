@@ -114,7 +114,7 @@ fn read_or_create_backend_key(state: &DbState) -> Result<[u8; 32], String> {
 fn read_config_value(conn: &Connection, key: &str) -> Result<Option<String>, String> {
     let result: Result<Option<String>, rusqlite::Error> = conn
         .query_row(
-            "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1 LIMIT 1",
+            "SELECT valor FROM configuracoes_sistema WHERE chave = ?1 LIMIT 1",
             [key],
             |row| row.get(0),
         )
@@ -135,7 +135,7 @@ fn read_config_value(conn: &Connection, key: &str) -> Result<Option<String>, Str
 
 fn write_config_value(conn: &Connection, key: &str, value: &str) -> Result<(), String> {
     conn.execute(
-        "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em)
+        "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em)
          VALUES (?1, ?2, datetime('now'))
          ON CONFLICT(chave) DO UPDATE SET
              valor = excluded.valor,
@@ -147,7 +147,7 @@ fn write_config_value(conn: &Connection, key: &str, value: &str) -> Result<(), S
 }
 
 fn delete_config_value(conn: &Connection, key: &str) -> Result<(), String> {
-    conn.execute("DELETE FROM tbl_configuracoes_sistema WHERE chave = ?1", [key])
+    conn.execute("DELETE FROM configuracoes_sistema WHERE chave = ?1", [key])
         .map_err(|e| format!("Failed to delete config key {key}: {e}"))?;
     Ok(())
 }
@@ -367,7 +367,7 @@ fn save_pg_legacy_credentials(
         &user_id,
         &perfil,
         "sync.pg_legacy_config.save",
-        Some("tbl_configuracoes_sistema"),
+        Some("configuracoes_sistema"),
         None,
         None,
         None,
@@ -448,7 +448,7 @@ mod tests {
             "CREATE TABLE usuarios (id TEXT PRIMARY KEY, perfil TEXT, ativo INTEGER);
              CREATE TABLE hierarquia_perfis (perfil TEXT PRIMARY KEY, nivel INTEGER);
              CREATE TABLE permissoes (perfil TEXT, permissao TEXT);
-             CREATE TABLE tbl_configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);
+             CREATE TABLE configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);
              INSERT INTO usuarios (id, perfil, ativo) VALUES ('user-1', 'admin', 1);
              INSERT INTO hierarquia_perfis (perfil, nivel) VALUES ('admin', 0), ('operador', 4);
              INSERT INTO permissoes (perfil, permissao) VALUES ('admin', 'system.sync');",
@@ -527,7 +527,7 @@ mod tests {
         let conn = conn_guard.as_ref().unwrap();
         let stored: Option<String> = conn
             .query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = ?1",
                 [KEY_PASSWORD_ENC_V2],
                 |row| row.get(0),
             )
@@ -560,7 +560,7 @@ mod tests {
             let conn_guard = db_state.conn.lock().unwrap();
             let conn = conn_guard.as_ref().unwrap();
             conn.query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = ?1",
                 [KEY_PASSWORD_ENC_V2],
                 |row| row.get::<_, String>(0),
             )
@@ -589,7 +589,7 @@ mod tests {
             let conn_guard = db_state.conn.lock().unwrap();
             let conn = conn_guard.as_ref().unwrap();
             conn.query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = ?1",
                 [KEY_PASSWORD_ENC_V2],
                 |row| row.get::<_, String>(0),
             )
@@ -605,7 +605,7 @@ mod tests {
             let conn_guard = db.conn.lock().unwrap();
             let conn = conn_guard.as_ref().unwrap();
             conn.execute(
-                "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em) VALUES ('pg_legacy_password', 'legacy-pass', datetime('now'))",
+                "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em) VALUES ('pg_legacy_password', 'legacy-pass', datetime('now'))",
                 [],
             )
             .unwrap();
@@ -625,7 +625,7 @@ mod tests {
         let conn = conn_guard.as_ref().unwrap();
         let enc: Option<String> = conn
             .query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = ?1",
                 [KEY_PASSWORD_ENC_V2],
                 |row| row.get(0),
             )
@@ -634,7 +634,7 @@ mod tests {
         assert!(enc.is_some());
         let legacy: Option<String> = conn
             .query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = ?1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = ?1",
                 [KEY_PASSWORD_LEGACY],
                 |row| row.get(0),
             )

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { VisualData } from '@/components/module-runtime/VisualRenderer';
 
 export function useModuleVisuals(slug: string | null | undefined, userId: string | null | undefined, perfil: string | null | undefined) {

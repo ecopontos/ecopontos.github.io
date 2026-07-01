@@ -58,6 +58,15 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
     await execute(`CREATE INDEX IF NOT EXISTS idx_module_permissions_module_id ON permissoes_modulos(module_id)`);
 
     await execute(`
+        CREATE TABLE IF NOT EXISTS cursores_sync_lan (
+            domain          TEXT PRIMARY KEY,
+            last_event_id   TEXT NOT NULL DEFAULT '',
+            last_pulled_at  TEXT,
+            pulled_count    INTEGER NOT NULL DEFAULT 0
+        )
+    `);
+
+    await execute(`
         CREATE TABLE IF NOT EXISTS visuais_modulos (
             id             TEXT PRIMARY KEY,
             module_id      TEXT NOT NULL REFERENCES registro_modulos(id) ON DELETE CASCADE,
@@ -82,17 +91,6 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
 }
 
 export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise<void> {
-
-    const renameTableIfNeeded = async (legacyName: string, canonicalName: string): Promise<void> => {
-        const rows = await query<{ name: string }>(
-            `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)`,
-            [legacyName, canonicalName],
-        );
-        const names = new Set(rows.map((row) => row.name));
-        if (names.has(legacyName) && !names.has(canonicalName)) {
-            await execute(`ALTER TABLE ${legacyName} RENAME TO ${canonicalName}`);
-        }
-    };
 
     // ================================================================
     // 1. RBAC — perfis, hierarquia, permissões, setores, usuários
@@ -1101,43 +1099,15 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_suite_package_version ON pacotes (id_pacote, num_versao)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_suite_entity ON pacotes (tipo_entidade, id_entidade)`);
 
-    // tbl_suite — tabela normalizada para suite/pacotes (usada por FTS e sync)
-    await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_suite (
-            package_id      TEXT PRIMARY KEY,
-            version_no      INTEGER NOT NULL DEFAULT 1,
-            module_type     TEXT NOT NULL,
-            resource_type   TEXT NOT NULL,
-            status          TEXT NOT NULL DEFAULT 'draft',
-            owner_id        TEXT,
-            is_current      INTEGER NOT NULL DEFAULT 1,
-            locked_by       TEXT,
-            locked_at       TEXT,
-            ref_package_id  TEXT,
-            ref_package_ver INTEGER,
-            payload_json    TEXT NOT NULL DEFAULT '{}',
-            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-            closed_at       TEXT
-        )
-    `).catch((e) => console.warn('[Bootstrap] tbl_suite:', e));
-    // Migração: garante created_at em tbl_suite pré-existente
-    try {
-        const cols = await query<{ name: string }>(`PRAGMA table_info('tbl_suite')`);
-        if (!cols.some(c => c.name === 'created_at')) {
-            await execute(`ALTER TABLE tbl_suite ADD COLUMN created_at TEXT`);
-            console.log('[Bootstrap] added created_at to existing tbl_suite');
-        }
-    } catch { /* table may not exist */ }
-
     // Tabela FTS para busca full-text no inbox
     await execute(`
-        CREATE VIRTUAL TABLE IF NOT EXISTS suite_fts USING fts5(
+        CREATE VIRTUAL TABLE IF NOT EXISTS pacotes_fts USING fts5(
             suite_id UNINDEXED,
             texto_busca,
             content='',
             contentless_delete=1
         )
-    `).catch((e) => console.warn('[Bootstrap] suite_fts:', e));
+    `).catch((e) => console.warn('[Bootstrap] pacotes_fts:', e));
 
     // View normalizada para inbox (unifica pacotes + usuarios)
     await execute(`
@@ -1572,7 +1542,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
 
     // ADR-051 / ADR-011: escrow do sync_salt para rotacao e recuperacao de chave.
     // Migrado de desktop/migrations/011_add_key_escrow.sql para o schema canonico.
-    await renameTableIfNeeded('sync_salt_history', 'historico_sal_sync');
     await execute(`
         CREATE TABLE IF NOT EXISTS historico_sal_sync (
             id             TEXT PRIMARY KEY,
@@ -1585,7 +1554,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             FOREIGN KEY (user_id) REFERENCES usuarios(id)
         )
     `);
-    await execute(`DROP INDEX IF EXISTS idx_salt_history_user`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_historico_sal_sync_usuario ON historico_sal_sync(user_id, replaced_at DESC)`);
 
     await execute(`
@@ -1636,28 +1604,28 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ADR-020: Configurações do sistema (chave-valor)
     // ================================================================
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_configuracoes_sistema (
+        CREATE TABLE IF NOT EXISTS configuracoes_sistema (
             chave         TEXT PRIMARY KEY,
             valor         TEXT NOT NULL DEFAULT '',
             descricao     TEXT,
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('lan_sync_path', '', 'Caminho da pasta LAN para sincronização local (vazio = desativado)')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_host', '172.16.76.202', 'Host do PostgreSQL legado (sync roteiros/pesagens)')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_port', '5432', 'Porta do PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_db', 'geo_fpolis', 'Nome do banco PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_user', 'smma', 'Usuário do PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_password', '', 'Senha do PostgreSQL legado')`).catch(() => {});
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_email_config (
+        CREATE TABLE IF NOT EXISTS configuracao_email (
             id            TEXT PRIMARY KEY DEFAULT 'default',
             smtp_host     TEXT NOT NULL DEFAULT '',
             smtp_port     INTEGER NOT NULL DEFAULT 587,
@@ -1671,7 +1639,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em TEXT
         )
     `);
-    await execute(`ALTER TABLE tbl_email_config ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
+    await execute(`ALTER TABLE configuracao_email ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
 
     // ================================================================
     // 17. SEED — Catálogos iniciais (idempotente)
@@ -1801,11 +1769,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ================================================================
     // 18. SERVICE BOOKING ENGINE (ADR-018) — Tipos dinâmicos + Slots
     // ================================================================
-
-    await renameTableIfNeeded('tbl_service_types', 'tipos_servico');
-    await renameTableIfNeeded('tbl_service_slots', 'janelas_agendamento');
-    await renameTableIfNeeded('tbl_agendamentos', 'agendamentos');
-    await renameTableIfNeeded('tbl_agendamento_notificacoes', 'notificacoes_agendamento');
 
     await execute(`
         CREATE TABLE IF NOT EXISTS tipos_servico (
@@ -2169,7 +2132,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ================================================================
     // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica
     // ================================================================
-    await renameTableIfNeeded('geo_layers', 'camadas_geo');
     await execute(`
         CREATE TABLE IF NOT EXISTS camadas_geo (
             id            TEXT PRIMARY KEY,
@@ -2187,8 +2149,6 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`DROP INDEX IF EXISTS idx_geo_layers_visivel`).catch(() => {});
-    await execute(`DROP INDEX IF EXISTS idx_geo_layers_categoria`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_camadas_geo_visivel ON camadas_geo(visivel)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_camadas_geo_categoria ON camadas_geo(categoria)`);
 

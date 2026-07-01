@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, LayoutDashboard, Server, Edit, Trash2, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { ProtectedPage } from "@/components/auth/PermissionGuards"
-import { useSyncStatus } from "@/contexts/SyncContext"
+import { useSyncStatus } from "@/src/interface/hooks/catalog/sync"
 import { useSetores, type Setor } from "@/src/interface/hooks/catalog/auth"
 
 export default function SectorsPage() {

@@ -38,7 +38,7 @@ import {
     updateDeviceName,
     regenerateDeviceId,
     type DeviceConfig
-} from "@/src/infrastructure/config/device-config"
+} from "@/src/interface/gateways/device-config"
 
 export function useDeviceConfig() {
     const [deviceConfig, setDeviceConfig] = useState<DeviceConfig | null>(null)

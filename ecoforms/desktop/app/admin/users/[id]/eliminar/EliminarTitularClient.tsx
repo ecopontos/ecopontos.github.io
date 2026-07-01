@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Trash2, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { ProtectedPage } from "@/components/auth/PermissionGuards";
 import Link from "next/link";

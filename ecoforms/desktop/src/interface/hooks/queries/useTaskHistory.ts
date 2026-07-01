@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TaskHistoryEvent, TaskHistoryEventTipo } from "@/types";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 
 const TASK_HISTORY_EVENT_TYPES: TaskHistoryEventTipo[] = [
     'criacao',

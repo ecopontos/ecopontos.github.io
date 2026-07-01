@@ -103,7 +103,7 @@ pub fn bootstrap_set_lan_sync_path(
     }
 
     conn.execute(
-        "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em)
+        "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em)
          VALUES ('lan_sync_path', ?1, datetime('now'))
          ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em",
         [path.trim()],
@@ -494,7 +494,7 @@ mod tests {
                  setor_id TEXT NOT NULL,
                  PRIMARY KEY (usuario_id, setor_id)
              );
-             CREATE TABLE tbl_configuracoes_sistema (
+             CREATE TABLE configuracoes_sistema (
                  chave TEXT PRIMARY KEY,
                  valor TEXT NOT NULL,
                  descricao TEXT,

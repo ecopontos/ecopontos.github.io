@@ -70,7 +70,7 @@ import { BulkInsertDataRegistryUseCase } from '../application/data-registry/Bulk
 import { UpdateManifestacaoStatusUseCase } from '../application/ouvidoria/UpdateManifestacaoStatusUseCase';
 import { SeedManifestacaoCatalogUseCase } from '../application/ouvidoria/SeedManifestacaoCatalogUseCase';
 import { EnviarRespostaUseCase } from '../application/ouvidoria/EnviarRespostaUseCase';
-// AD-014: Ouvidoria migrada para suite + data_registry — use cases removidos
+// AD-014: Ouvidoria migrada para suite + registro_dados — use cases removidos
 import { CreateDemandaUseCase } from '../application/demanda/CreateDemandaUseCase';
 import {
     ListProjectsWithMetricsUseCase,

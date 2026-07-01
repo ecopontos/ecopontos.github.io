@@ -65,7 +65,7 @@ fn load_config(db: &rusqlite::Connection, crypto: Option<&SmtpCryptoState>) -> R
     let result = db.query_row(
         "SELECT smtp_host, smtp_port, smtp_user, smtp_password, smtp_password_encrypted,
                 from_email, from_name, use_tls, enabled
-         FROM tbl_email_config WHERE id = 'default'",
+         FROM configuracao_email WHERE id = 'default'",
         [],
         |row| Ok(EmailConfigRaw {
             smtp_host: row.get(0)?,
@@ -111,7 +111,7 @@ fn load_config(db: &rusqlite::Connection, crypto: Option<&SmtpCryptoState>) -> R
             // Legacy table without encrypted column — fallback
             let raw = db.query_row(
                 "SELECT smtp_host, smtp_port, smtp_user, smtp_password, from_email, from_name, use_tls, enabled
-                 FROM tbl_email_config WHERE id = 'default'",
+                 FROM configuracao_email WHERE id = 'default'",
                 [],
                 |row| Ok(EmailConfigRaw {
                     smtp_host: row.get(0)?,
@@ -242,7 +242,7 @@ pub fn migrate_smtp_password(state: State<DbState>, crypto: State<SmtpCryptoStat
     let key = guard.as_ref().ok_or("Crypto key not loaded. Login required.")?;
 
     // Ensure encrypted column exists
-    db.execute("ALTER TABLE tbl_email_config ADD COLUMN smtp_password_encrypted BLOB", [])
+    db.execute("ALTER TABLE configuracao_email ADD COLUMN smtp_password_encrypted BLOB", [])
         .map_err(|e| {
             if e.to_string().contains("duplicate column name") {
                 rusqlite::Error::QueryReturnedNoRows // silenced
@@ -254,7 +254,7 @@ pub fn migrate_smtp_password(state: State<DbState>, crypto: State<SmtpCryptoStat
 
     // Read plaintext password
     let plaintext: String = db.query_row(
-        "SELECT smtp_password FROM tbl_email_config WHERE id = 'default'",
+        "SELECT smtp_password FROM configuracao_email WHERE id = 'default'",
         [],
         |row| row.get(0),
     ).unwrap_or_default();
@@ -265,7 +265,7 @@ pub fn migrate_smtp_password(state: State<DbState>, crypto: State<SmtpCryptoStat
 
     let blob = encrypt_password(&plaintext, key)?;
     db.execute(
-        "UPDATE tbl_email_config SET smtp_password_encrypted = ?1, smtp_password = '' WHERE id = 'default'",
+        "UPDATE configuracao_email SET smtp_password_encrypted = ?1, smtp_password = '' WHERE id = 'default'",
         [&blob],
     ).map_err(|e| e.to_string())?;
 

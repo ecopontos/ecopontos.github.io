@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { uuidv7 } from 'ecoforms-core';
 import { computeCentroid, computeAreaM2, saveTerrenosBatch } from '@/src/interface/hooks/catalog/logistica';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
 import { EPSG_31981, EPSG_31982, looksProjected, reprojectGeometry } from '@/lib/geo/reproject';
 
 const MAX_FEATURES = 200_000;

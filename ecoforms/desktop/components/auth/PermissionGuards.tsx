@@ -6,7 +6,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { Permission } from "@/src/interface/hooks/catalog/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

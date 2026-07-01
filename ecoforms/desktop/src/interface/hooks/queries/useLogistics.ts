@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { Roteiro, RoteiroFilter, ExecucaoFilter, ExecucaoColeta, RoteiroCliente } from '@/src/domain/logistics/LogisticsRepository';
 
 export function useRoteiros(filter?: RoteiroFilter) {

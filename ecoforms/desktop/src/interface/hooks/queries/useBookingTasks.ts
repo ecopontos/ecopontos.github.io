@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 
 const PAGE_SIZE = 25;
 

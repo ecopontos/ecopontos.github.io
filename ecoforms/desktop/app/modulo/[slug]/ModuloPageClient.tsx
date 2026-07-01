@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
 import { toast } from 'sonner';
 import { FormRenderer } from '@/components/runtime/FormRenderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

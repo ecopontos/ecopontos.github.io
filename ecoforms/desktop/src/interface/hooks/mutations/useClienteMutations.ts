@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { Cliente, ClienteContato } from '@/types/clientes';
 
 export function useClienteMutations() {

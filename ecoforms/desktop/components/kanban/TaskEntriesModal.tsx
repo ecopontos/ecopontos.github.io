@@ -24,7 +24,7 @@ import {
     History,
 } from "lucide-react";
 import { TblSuiteRecord, FormField } from "@/types";
-import { fetchPacotesForTarefa } from "@/src/interface/hooks/queries/lookups";
+import { fetchPacotesForTarefa } from "@/src/interface/hooks/queries/lookups/pacotes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";

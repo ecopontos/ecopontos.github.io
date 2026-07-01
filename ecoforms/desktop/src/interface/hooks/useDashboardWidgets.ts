@@ -1,14 +1,14 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import {
     getAvailableWidgets,
     getWidgetById,
     type WidgetConfig,
 } from "@/src/application/widgets/WidgetRegistry";
 import { registerBuiltinWidgets } from "@/src/application/widgets/builtin/initializeWidgets";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "./utils/useContainer";
 import type { UserRole } from "@/src/interface/hooks/utils/usePermissions";
 
 export interface DashboardWidget extends WidgetConfig {

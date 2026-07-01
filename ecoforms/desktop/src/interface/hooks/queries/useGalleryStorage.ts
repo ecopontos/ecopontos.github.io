@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getSupabaseClient } from '@/src/infrastructure/persistence/supabase/supabaseClient';
+import { getUiSupabaseClient } from '../utils/useSupabaseClient';
 
 interface StorageFile {
     name: string;
@@ -33,7 +33,7 @@ class SupabaseGalleryStorage implements GalleryStoragePort {
         bucket: string,
         internalPath: string,
     ): Promise<GalleryItem[]> {
-        const client = getSupabaseClient();
+        const client = getUiSupabaseClient();
         const { data, error } = await client.storage
             .from(bucket)
             .list(internalPath, {
@@ -135,7 +135,7 @@ class SupabaseGalleryStorage implements GalleryStoragePort {
     }
 
     async deleteImage(item: Pick<GalleryItem, 'bucket' | 'path'>): Promise<void> {
-        const client = getSupabaseClient();
+        const client = getUiSupabaseClient();
         const { error } = await client.storage.from(item.bucket).remove([item.path]);
         if (error) {
             throw error;
@@ -149,7 +149,7 @@ class SupabaseGalleryStorage implements GalleryStoragePort {
         }
 
         try {
-            const client = getSupabaseClient();
+            const client = getUiSupabaseClient();
             const { data: metaRows, error } = await client
                 .from('suite')
                 .select('owner_id, created_at, payload_json')

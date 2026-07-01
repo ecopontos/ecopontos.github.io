@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSqlite } from '../queries/useSqlite';
-import { CEP_LOOKUP } from '@/src/infrastructure/persistence/sqlite/queries/system';
+import { CEP_LOOKUP } from '@/src/application/persistence/sqlite/queries/system';
 
 interface CEPData {
     CEP: string;

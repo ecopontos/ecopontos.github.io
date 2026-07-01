@@ -3,7 +3,8 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const UI_ROOTS = ['app', 'components', 'src/interface'].map((dir) => path.join(ROOT, dir));
-const TABLE_SCAN_ROOTS = ['scripts', 'src', 'src-tauri', 'migrations'].map((dir) => path.join(ROOT, dir));
+const UI_ALLOWED_BRIDGES = ['src/interface/gateways/'];
+const TABLE_SCAN_ROOTS = ['app', 'components', 'src/interface', 'scripts', 'src', 'src-tauri', 'migrations'].map((dir) => path.join(ROOT, dir));
 const REPORT_PATH = path.join(ROOT, 'docs', 'AUDITORIA_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md');
 const SELF_PATH = path.resolve(__filename);
 
@@ -13,16 +14,13 @@ const INFRA_IMPORT_PATTERNS = [
 ];
 
 const TABLE_PATTERNS = [
-    'tbl_service_types',
-    'tbl_service_slots',
-    'tbl_agendamentos',
-    'tbl_agendamento_notificacoes',
-    'tbl_configuracoes_sistema',
-    'tbl_email_config',
-    'geo_layers',
-    'sync_salt_history',
-    'suite_fts',
-    'app_config',
+    { label: 'tbl_', pattern: /\btbl_[a-z0-9_]+\b/gi },
+    { label: 'geo_layers', pattern: /\bgeo_layers\b/g },
+    { label: 'sync_salt_history', pattern: /\bsync_salt_history\b/g },
+    { label: 'suite_fts', pattern: /\bsuite_fts\b/g },
+    { label: 'app_config', pattern: /\bapp_config\b/g },
+    { label: 'data_registry', pattern: /\bdata_registry\b/g },
+    { label: 'module_registry', pattern: /\bmodule_registry\b/g },
 ];
 
 const INTEGRATION_RULES = [
@@ -74,6 +72,7 @@ function collectInfraImports() {
         for (const filePath of walk(root)) {
             if (path.resolve(filePath) === SELF_PATH) continue;
             if (!/\.(ts|tsx|js|jsx)$/.test(filePath)) continue;
+            if (UI_ALLOWED_BRIDGES.some((prefix) => rel(filePath).startsWith(prefix))) continue;
             const source = readText(filePath);
             const lines = source.split(/\r?\n/);
 
@@ -110,14 +109,20 @@ function collectTables() {
             const lines = source.split(/\r?\n/);
 
             lines.forEach((line, index) => {
-                TABLE_PATTERNS.forEach((tableName) => {
-                    if (!line.includes(tableName)) return;
-                    matches.push({
-                        tabela: tableName,
-                        arquivo: rel(filePath),
-                        linha: index + 1,
-                        classe: classify(tableName),
-                    });
+                const trimmed = line.trim();
+                if (/^(\/\/|\/\*|\*)/.test(trimmed)) return;
+
+                TABLE_PATTERNS.forEach(({ label, pattern }) => {
+                    pattern.lastIndex = 0;
+                    for (const match of line.matchAll(pattern)) {
+                        const tabela = match[0];
+                        matches.push({
+                            tabela,
+                            arquivo: rel(filePath),
+                            linha: index + 1,
+                            classe: classify(label),
+                        });
+                    }
                 });
             });
         }

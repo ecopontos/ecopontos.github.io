@@ -1,9 +1,9 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { useCallback, useMemo } from "react";
 import type { TblSuiteRecord } from "@/types";
-import { PACOTES_HISTORICO, PACOTE_RESTORE, PACOTE_CLOSE } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
+import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
+import { useSqlite } from "./useSqlite";
+import { PACOTES_HISTORICO, PACOTE_RESTORE, PACOTE_CLOSE } from "@/src/application/persistence/sqlite/queries/pacotes";
 
 const safeJsonParse = (val: string | null | undefined, fallback: unknown) => {
     if (!val) return fallback;
@@ -11,49 +11,32 @@ const safeJsonParse = (val: string | null | undefined, fallback: unknown) => {
 };
 
 export function useHistoryData() {
-    const [data, setData] = useState<TblSuiteRecord[]>([]);
-    const [loading, setLoading] = useState(true);
+    const sqlite = useSqlite();
+    const { data: rows, isPending, refetch } = useTauriQuery<TblSuiteRecord>(PACOTES_HISTORICO.sql, []);
 
-    const fetchHistory = useCallback(async () => {
-        setLoading(true);
-        try {
-            const c = await getContainerAsync();
-            const rows = await c.sqlite.query<TblSuiteRecord>(
-                PACOTES_HISTORICO.sql
-            );
-            setData(rows.map(r => {
-                const rec = { ...r } as TblSuiteRecord;
-                if (typeof rec.dados === 'string') {
-                    rec.dados = safeJsonParse(rec.dados, {}) as Record<string, unknown>;
-                }
-                return rec;
-            }));
-        } catch (e) {
-            console.error('[useHistoryData]', e);
-        } finally {
-            setLoading(false);
+    const data = useMemo(() => (rows ?? []).map((row) => {
+        const rec = { ...row } as TblSuiteRecord;
+        if (typeof rec.dados === "string") {
+            rec.dados = safeJsonParse(rec.dados, {}) as Record<string, unknown>;
         }
-    }, []);
-
-    useEffect(() => { fetchHistory(); }, [fetchHistory]);
+        return rec;
+    }), [rows]);
 
     const restoreRecord = useCallback(async (id: string) => {
-        const c = await getContainerAsync();
-        await c.sqlite.execute(
-            PACOTE_RESTORE.sql,
-            [id]
-        );
-        await fetchHistory();
-    }, [fetchHistory]);
+        await sqlite.execute(PACOTE_RESTORE.sql, [id]);
+        await refetch();
+    }, [sqlite, refetch]);
 
     const deleteRecord = useCallback(async (id: string) => {
-        const c = await getContainerAsync();
-        await c.sqlite.execute(
-            PACOTE_CLOSE.sql,
-            [id]
-        );
-        await fetchHistory();
-    }, [fetchHistory]);
+        await sqlite.execute(PACOTE_CLOSE.sql, [id]);
+        await refetch();
+    }, [sqlite, refetch]);
 
-    return { data, loading, restoreRecord, deleteRecord, refetch: fetchHistory };
+    return {
+        data,
+        loading: isPending,
+        restoreRecord,
+        deleteRecord,
+        refetch: () => refetch(),
+    };
 }

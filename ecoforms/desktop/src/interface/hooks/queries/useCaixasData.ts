@@ -1,8 +1,6 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
-import { PACOTES_ECOPONTO_CAIXAS_ATUAIS } from "@/src/infrastructure/persistence/sqlite/queries/pacotes";
+import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
+import { PACOTES_ECOPONTO_CAIXAS_ATUAIS } from "@/src/application/persistence/sqlite/queries/pacotes";
 
 interface CaixasRow {
     id: string;
@@ -12,25 +10,14 @@ interface CaixasRow {
 }
 
 export function useCaixasData() {
-    const [rawData, setRawData] = useState<CaixasRow[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isPending, refetch } = useTauriQuery<CaixasRow>(
+        PACOTES_ECOPONTO_CAIXAS_ATUAIS.sql,
+        [],
+    );
 
-    const fetch = useCallback(async () => {
-        setLoading(true);
-        try {
-            const c = await getContainerAsync();
-            const rows = await c.sqlite.query<CaixasRow>(
-                PACOTES_ECOPONTO_CAIXAS_ATUAIS.sql
-            );
-            setRawData(rows);
-        } catch {
-            setRawData([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { fetch(); }, [fetch]);
-
-    return { rawData, loading, refetch: fetch };
+    return {
+        rawData: data ?? [],
+        loading: isPending,
+        refetch,
+    };
 }

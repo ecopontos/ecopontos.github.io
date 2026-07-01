@@ -16,10 +16,10 @@ import { CalendarIcon, User, Layers, Info, FileText, Settings } from "lucide-rea
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { canManageByRole } from "@/src/interface/hooks/catalog/auth";
 
-import { fetchFormDefinitionAtivo } from '@/src/interface/hooks/queries/lookups';
+import { fetchFormDefinitionAtivo } from '@/src/interface/hooks/queries/lookups/forms';
 import { FormViewer } from "../runtime/FormViewer";
 import type { FormFieldValue } from "../runtime/FormFieldRenderer";
 import type { FormField } from "@/types";

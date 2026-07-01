@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { ManifestacaoSummary, ManifestacaoFilter, Cobranca } from '@/src/domain/ouvidoria/ManifestacaoRepository';
 
 export function useManifestacoes(filter?: ManifestacaoFilter) {

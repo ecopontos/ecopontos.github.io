@@ -31,7 +31,7 @@ import { NewTaskModal } from "./NewTaskModal";
 import { EditTaskModal } from "./EditTaskModal";
 import { TaskEntriesModal } from "./TaskEntriesModal";
 import { SolicitacaoReviewModal } from "./SolicitacaoReviewModal";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import {
     AlertDialog,
     AlertDialogAction,

@@ -44,7 +44,7 @@ export function useLayerActions({
         const file = e.target.files?.[0];
         if (!file) return;
         // Limites para não travar a UI (parse/render síncrono) nem inchar o SQLite,
-        // que guarda o GeoJSON cru como uma linha em geo_layers.
+        // que guarda o GeoJSON cru como uma linha em camadas_geo.
         const MAX_BYTES = 8 * 1024 * 1024;     // 8 MB
         const MAX_FEATURES = 5000;
         if (file.size > MAX_BYTES) {

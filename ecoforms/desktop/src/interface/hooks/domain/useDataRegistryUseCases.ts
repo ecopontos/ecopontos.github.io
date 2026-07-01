@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { getContainer } from '../../../infrastructure/container';
+import { useContainer } from '../utils/useContainer';
 
 export function useDataRegistryUseCases() {
-    return useMemo(() => getContainer().dataRegistry, []);
+    const container = useContainer();
+    return useMemo(() => container.dataRegistry, [container]);
 }

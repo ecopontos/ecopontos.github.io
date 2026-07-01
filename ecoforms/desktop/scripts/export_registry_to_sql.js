@@ -22,12 +22,12 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function exportData() {
-    console.log('Fetching data_registry...');
+    console.log('Fetching registro_dados...');
 
     // Fetch all rows (using primitive pagination if needed, but Supabase JS usually caps at 1000)
     // We expect < 1000 for now. If more, implement loop.
     const { data, error } = await supabase
-        .from('data_registry')
+        .from('registro_dados')
         .select('id, tipo, chave, conteudo, versao, criado_em, atualizado_em')
         .order('id');
 
@@ -38,9 +38,9 @@ async function exportData() {
 
     console.log(`Found ${data.length} rows.`);
 
-    const filePath = path.join(__dirname, '../../docs/migrations/data_registry_rows.sql');
+    const filePath = path.join(__dirname, '../../docs/migrations/registro_dados_rows.sql');
 
-    const header = `INSERT INTO "public"."data_registry" ("id", "tipo", "chave", "conteudo", "versao", "criado_em", "atualizado_em") VALUES\n`;
+    const header = `INSERT INTO "public"."registro_dados" ("id", "tipo", "chave", "conteudo", "versao", "criado_em", "atualizado_em") VALUES\n`;
 
     const rows = data.map((row, index) => {
         const isLast = index === data.length - 1;

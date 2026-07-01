@@ -46,7 +46,7 @@ export class LanFileStorage {
     async getLanPath(): Promise<string> {
         try {
             const rows = await this.sqlite.query<{ valor: string }>(
-                `SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path'`,
+                `SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_sync_path'`,
                 [],
             );
             return rows[0]?.valor?.trim() ?? '';

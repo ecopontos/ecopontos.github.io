@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useServiceTypeMutations } from "@/src/interface/hooks/catalog/service";
 import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import type { Setor } from "@/src/domain/setor/Setor";
 
 export default function NovoServiceTypePage() {

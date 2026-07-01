@@ -4,7 +4,7 @@ use std::path::{Component, Path, PathBuf};
 
 pub fn read_lan_sync_path(conn: &Connection) -> Result<Option<PathBuf>, String> {
     let result = conn.query_row(
-        "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
+        "SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
         [],
         |row| row.get::<_, String>(0),
     );
@@ -148,12 +148,12 @@ mod tests {
     fn read_lan_sync_path_returns_configured_path() {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch(
-            "CREATE TABLE tbl_configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
+            "CREATE TABLE configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
         )
         .unwrap();
         let target = temp_dir("lan-path-config");
         db.execute(
-            "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
+            "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
             [&target.to_string_lossy().to_string()],
         )
         .unwrap();

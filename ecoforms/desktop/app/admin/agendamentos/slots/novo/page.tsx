@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { useServiceTypes, useServiceMutations } from "@/src/interface/hooks/catalog/service";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { TaskDateSection, DEFAULT_RECORRENCIA } from "@/components/kanban/TaskDateSection";
 import type { TipoPrazo, RecorrenciaConfig } from "@/components/kanban/TaskDateSection";
 import type { AberturaRegra } from "@/src/application/service/CreateServiceSlotUseCase";

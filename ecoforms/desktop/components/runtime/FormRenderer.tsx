@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import { isFieldEmpty } from "@/src/lib/utils";
 import { useVisibilityEvaluator } from "@/src/interface/hooks/catalog/forms";
-import { fetchFormMetadata, insertTarefaFromSolicitacao, insertPacoteFromForm } from "@/src/interface/hooks/queries/lookups";
+import { fetchFormMetadata, insertTarefaFromSolicitacao, insertPacoteFromForm } from "@/src/interface/hooks/queries/lookups/forms";
 
 interface FormRendererProps {
     content: FormContent;

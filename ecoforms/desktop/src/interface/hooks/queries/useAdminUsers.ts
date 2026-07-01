@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { useUserUseCases } from "../domain/useUserUseCases";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import type { User } from "@/types";
 import type { CreateUserInput, UpdateUserInput, UserDto } from "@/src/application/user/dto/UserDto";
 

@@ -33,41 +33,59 @@ Prioridade sugerida:
 3. Revisar exports sem uso somente se houver objetivo de reduzir API interna.
 4. Ignorar, por enquanto, exports de componentes UI e catalogos compartilhados.
 
+## Progresso aplicado em 2026-06-30
+
+**Lote 1 concluido**
+
+Foram removidos com gate limpo (`npx tsc --noEmit` + `npm run lint`):
+
+- `components/lan/LanStatusBadge.tsx`
+- `src/interface/hooks/mutations/useSaveTipoResiduo.ts`
+- `src/interface/hooks/queries/useTiposResiduo.ts`
+- `src/infrastructure/storage/InMemoryStorageAdapter.ts`
+- `src/infrastructure/persistence/SQLiteDBWrapper.ts`
+
+**Lote 2 concluido**
+
+Tambem foram removidos com gate limpo (`npx tsc --noEmit` + `npm run lint`):
+
+- `src/application/ports/SyncRepository.ts`
+- `src/application/service/RealizarAgendamentoUseCase.ts`
+- `src/application/task/CompleteTaskUseCase.ts`
+- `src/application/widgets/SchemaDiscoveryService.ts`
+- `src/domain/task/TaskEvents.ts`
+- `src/infrastructure/sync/base64.ts`
+- `src/infrastructure/sync/UserWidgetInboundHandler.ts`
+- `src/interface/presenters/toDemandaViewModel.ts`
+- `src/interface/presenters/toTaskViewModel.ts`
+
+**Lote 3 concluido**
+
+Removidos apos revisao manual, com `npx tsc --noEmit` passando e `npm run lint` reduzindo o baseline para **0 erros / 146 warnings**:
+
+- `app/admin/agendamentos/slots/[id]/SlotDetailClient.tsx`
+- `app/admin/service-types/[id]/EditServiceTypeClient.tsx`
+- `src/application/kanban/KanbanDto.ts`
+
+**Lote 4 concluido**
+
+Removidos apos triagem dos itens duvidosos, mantendo `logger.ts` como falso positivo confirmado:
+
+- `src/domain/project/Project.ts`
+- `src/infrastructure/persistence/sqlite/queries/inbox.ts`
+- `src/infrastructure/persistence/sqlite/queries/ouvidoria.ts`
+
+Tambem foram removidas as dependencias JS sem uso confirmado:
+
+- `@tauri-apps/plugin-shell`
+- `@types/bcryptjs`
+- `@types/proj4`
+
 ---
 
-## Alta confianca — arquivos sem referencia aparente
+## Alta confianca — status final
 
-Estes arquivos foram listados por `knip` como `Unused files` e a validacao pontual nao encontrou chamadas/imports diretos relevantes.
-
-| Arquivo | Observacao |
-|---|---|
-| `app/admin/agendamentos/slots/[id]/SlotDetailClient.tsx` | Provavel remanescente apos split para `page.client.tsx`/rotas estaticas. |
-| `app/admin/service-types/[id]/EditServiceTypeClient.tsx` | Provavel remanescente apos introducao de `page.client.tsx`. |
-| `components/lan/LanStatusBadge.tsx` | Componente sem uso encontrado. |
-| `src/application/kanban/KanbanDto.ts` | DTO antigo; tipos atuais parecem vir de `types` e hooks. |
-| `src/application/ports/SyncRepository.ts` | Port nao referenciado. |
-| `src/application/service/RealizarAgendamentoUseCase.ts` | Use case antigo sem referencia aparente. |
-| `src/application/task/CompleteTaskUseCase.ts` | Use case sem referencia aparente no container atual. |
-| `src/application/widgets/SchemaDiscoveryService.ts` | Servico sem referencia aparente. |
-| `src/domain/task/TaskEvents.ts` | Eventos antigos de task sem uso encontrado. |
-| `src/infrastructure/persistence/SQLiteDBWrapper.ts` | Wrapper antigo sem referencia aparente. |
-| `src/infrastructure/storage/InMemoryStorageAdapter.ts` | Adapter antigo sem referencia aparente. |
-| `src/infrastructure/sync/base64.ts` | Helper sem uso; conversao local existe em `app/admin/exportar-mobile/page.tsx`. |
-| `src/infrastructure/sync/UserWidgetInboundHandler.ts` | Handler sem registro/uso encontrado. |
-| `src/interface/hooks/mutations/useSaveTipoResiduo.ts` | Hook sem uso encontrado. |
-| `src/interface/hooks/queries/useTiposResiduo.ts` | Hook sem uso encontrado. |
-| `src/interface/presenters/toDemandaViewModel.ts` | Presenter documentado, mas sem import real encontrado. |
-| `src/interface/presenters/toTaskViewModel.ts` | Presenter documentado, mas sem import real encontrado. |
-
-### Acao recomendada
-
-Remover em um PR separado, em blocos pequenos. Depois de cada bloco:
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm test -- --runInBand # se aplicavel; caso contrario npm test
-```
+O backlog de alta confianca foi esgotado nesta rodada. Os candidatos inicialmente listados foram removidos em quatro lotes com gate objetivo.
 
 ---
 
@@ -77,9 +95,9 @@ npm test -- --runInBand # se aplicavel; caso contrario npm test
 
 | Dependencia | Status observado | Recomendacao |
 |---|---|---|
-| `@tauri-apps/plugin-shell` | Nao apareceu uso JS. O uso ativo e Rust: `tauri-plugin-shell` em `src-tauri`. | Remover de `package.json` se nenhum import JS for introduzido. Manter crate Rust. |
-| `@types/bcryptjs` | `bcryptjs` e usado em `SqliteUserRepository.ts`; pacote v3 tende a trazer tipos proprios. | Testar remocao com `npx tsc --noEmit`. |
-| `@types/proj4` | `proj4` e usado em `lib/geo/reproject.ts` e script JS; tipos podem vir do pacote. | Testar remocao com `npx tsc --noEmit`. |
+| `@tauri-apps/plugin-shell` | Removida do `package.json`; nenhum uso JS encontrado. | Concluido no lote 1 da Fase E. |
+| `@types/bcryptjs` | Removida; `bcryptjs` segue com tipos suficientes para o projeto. | Concluido no lote 1 da Fase E. |
+| `@types/proj4` | Removida; `proj4` segue tipado sem pacote extra. | Concluido no lote 1 da Fase E. |
 
 `proj4` e `bcryptjs` em si nao devem ser removidos: ambos possuem uso real.
 
@@ -89,10 +107,7 @@ npm test -- --runInBand # se aplicavel; caso contrario npm test
 
 | Item | Motivo |
 |---|---|
-| `src/domain/project/Project.ts` | `knip` apontou como unused, mas ha muitos tipos/projetos ativos em outros arquivos. Confirmar se este arquivo especifico foi substituido por `ProjectRepository.ts`/`ProjectStatus.ts`. |
-| `src/infrastructure/persistence/sqlite/queries/inbox.ts` | Pode ter sido substituido por `inbox_view.ts`; validar historico antes de remover. |
-| `src/infrastructure/persistence/sqlite/queries/ouvidoria.ts` | Pode ser catalogo antigo substituido por `manifestacoes.ts`; validar imports indiretos. |
-| `src/lib/logger.ts` | `knip` marcou, mas `rg` encontrou uso em `app/view/page.client.tsx`. Provavel falso positivo por alias/config. Nao remover sem investigar. |
+| `src/lib/logger.ts` | `knip` marcou, mas `rg` encontrou uso em `app/view/page.client.tsx`. Falso positivo confirmado; manter. |
 
 ---
 

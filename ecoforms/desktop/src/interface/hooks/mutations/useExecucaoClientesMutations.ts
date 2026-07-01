@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import type { ExecucaoCliente } from "@/src/domain/logistics/LogisticsRepository";
 import { uuidv7 } from "ecoforms-core";
 

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { ShowForManager, HideForRole } from "@/components/auth/PermissionGuards";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { DatabaseStatus } from "@/components/database/DatabaseSelector";

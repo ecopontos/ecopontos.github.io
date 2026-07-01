@@ -20,12 +20,11 @@ export class EventSyncAdapter implements SyncPort {
 
     async syncAll(_options?: { forcePush?: boolean }): Promise<SyncResult> {
         const result: SyncResult = {
-            success: true,
-            synced: {
-                form_registry: 0,
-                data_registry: 0,
-                suite_push: 0,
-                suite_pull: 0,
+            success: true,            synced: {
+                registro_formularios: 0,
+                registro_dados: 0,
+                pacotes_push: 0,
+                pacotes_pull: 0,
                 usuarios: 0,
                 projects_push: 0,
                 projects_pull: 0,

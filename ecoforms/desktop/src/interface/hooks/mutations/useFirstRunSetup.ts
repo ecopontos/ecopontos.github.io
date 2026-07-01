@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { getSupabaseClient } from '@/src/infrastructure/persistence/supabase/supabaseClient';
+import { getUiSupabaseClient } from '../utils/useSupabaseClient';
 import { useTauriInvoke } from '@/src/interface/hooks/catalog/tauri';
 import { useContainerAsync } from '@/src/interface/hooks/catalog/utils';
 
@@ -67,7 +67,7 @@ export function useFirstRunSetup() {
         }
 
         try {
-            const client = getSupabaseClient();
+            const client = getUiSupabaseClient();
             const email = `${username}@ecoforms.local`;
             const { error } = await client.auth.signUp({
                 email,

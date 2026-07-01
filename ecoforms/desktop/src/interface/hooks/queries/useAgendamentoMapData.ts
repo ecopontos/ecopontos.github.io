@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
-import { AGENDAMENTOS_MAP_POINTS_BY_SLOT } from '@/src/infrastructure/persistence/sqlite/queries/service';
+import { AGENDAMENTOS_MAP_POINTS_BY_SLOT } from '@/src/application/persistence/sqlite/queries/service';
 import { useSqlite } from '../queries/useSqlite';
 
 export interface AgendamentoMapPoint {

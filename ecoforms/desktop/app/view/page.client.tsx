@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { TblSuiteRecord, FormRegistry } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { FormRenderer } from "@/components/runtime/FormRenderer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, CheckCircle, XCircle, Edit, AlertTriangle, Save, X } from "lucide-react";
@@ -19,12 +19,8 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
 import { useSubmissionData } from "@/src/interface/hooks/catalog/forms";
-import {
-  fetchPacoteById,
-  fetchFormByIdOrSlug,
-  updatePacoteStatus,
-  updatePacoteDados,
-} from "@/src/interface/hooks/queries/lookups";
+import { fetchFormByIdOrSlug } from "@/src/interface/hooks/queries/lookups/forms";
+import { fetchPacoteById, updatePacoteStatus, updatePacoteDados } from "@/src/interface/hooks/queries/lookups/pacotes";
 
 type QueryRow = Record<string, unknown>;
 

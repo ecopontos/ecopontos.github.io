@@ -1,7 +1,7 @@
 ﻿'use client';
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
-import { fetchTarefaAnexos, insertTarefaAnexo, deleteTarefaAnexo } from '@/src/interface/hooks/queries/lookups';
+import { fetchTarefaAnexos, insertTarefaAnexo, deleteTarefaAnexo } from '@/src/interface/hooks/queries/lookups/tasks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Trash2, FileText, ImageIcon, FileArchive, File, Download, Loader2 } from 'lucide-react';

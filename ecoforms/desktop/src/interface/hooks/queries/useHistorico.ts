@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { ExecucaoHistorico } from '@/src/domain/logistics/LogisticsRepository';
 
 export function useHistoricoByExecucao(execucaoId: string | null) {

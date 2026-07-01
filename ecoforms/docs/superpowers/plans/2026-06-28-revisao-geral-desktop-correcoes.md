@@ -25,6 +25,22 @@
 - `node scripts/audit-db-consistency.js`: passou, 0 issues.
 - `npm run build`: passou e gerou `desktop/out`.
 
+**Atualizacao de 2026-06-30 — reorganizacao backend local/integracoes:**
+
+- O lote principal de remocao de compatibilidade retroativa foi concluido, porque o app nunca entrou em producao e nao existe base instalada para migrar.
+- A auditoria foi ampliada para varrer SQL embutido na UI e separar falso positivo de substring/comentario.
+- Os lotes seguintes fecharam os residuos em sync/scripts/testes; `node scripts/audit-architecture-boundaries.js` agora reporta **0** referencias a nomes de tabela fora da convencao lusofona.
+- O trabalho restante relevante saiu das Fases B/C/D e ficou concentrado em validacao real; o backlog logico de codigo morto foi esgotado e a poda inicial de dependencias ja foi aplicada.
+
+**Fechamento local de 2026-06-30 — gate final:**
+
+- `npm test`: passou, 34 arquivos e 255 testes.
+- `node scripts/audit-db-consistency.js`: passou, 0 issues.
+- `cargo check`: passou.
+- `cargo test --lib`: passou, 72 testes.
+- `npm run build`: passou e gerou `desktop/out`.
+- `npm run build:tauri`: passou e gerou `desktop/src-tauri/target/release/app`.
+
 ---
 
 ## Ordem recomendada
@@ -69,14 +85,15 @@
 ### Criterios de aceite
 
 - [x] `npm run build` gera o artefato esperado pelo Tauri.
-- [ ] `npm run build:tauri` nao falha por ausencia de `out`.
+- [x] `npm run build:tauri` nao falha por ausencia de `out`.
 - [ ] O app empacotado abre `/login`, `/`, uma rota dinamica de task e uma rota dinamica de modulo sem depender do dev server.
 
-**Implementacao parcial nesta rodada:**
+**Implementacao concluida localmente nesta rodada:**
 
 - Rotas dinamicas criticas ganharam entradas estaticas equivalentes por query string (`/tasks/detalhe?id=...`, `/modulo?slug=...`, etc.).
 - `app/not-found.tsx` redireciona deep links antigos para essas entradas estaticas.
 - `npm run build` passou e o artefato exportado contem `out/404.html`, ponto necessario para validar o fallback no binario Tauri.
+- `npm run build:tauri` passou e gerou o binario release `src-tauri/target/release/app`.
 
 ---
 
@@ -482,18 +499,25 @@
 - [x] Plano operacional `desktop/docs/PLANO_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md` criado para consolidar nomenclatura SQL lusofona, reduzir adapters chamados pela UI, classificar integracoes externas legadas e transformar auditorias em fases.
 - [x] Fase A ganhou automacao via `npm run audit:architecture`, com relatorio em `desktop/docs/AUDITORIA_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md` e linha de base inicial de 237 imports de infraestrutura na UI/interface e 193 referencias SQL fora da convencao.
 - [x] Fase C teve os primeiros fluxos sensiveis encapsulados: `useSupabaseAdmin` agora busca `profiles` via backend Rust, `FirstRunSetupModal` migrou para `useFirstRunSetup`, `GalleryGrid` migrou para `useGalleryStorage` e `useKanbanMutations` migrou patches para `useTaskPatchStorage`.
+- [x] Fase C fechou o sublote de query packs: `src/interface/**` deixou de importar `src/infrastructure/persistence/sqlite/queries/**` diretamente, os catalogos usados pela interface foram promovidos para `src/application/persistence/sqlite/queries` e o residual da auditoria ficou concentrado em pontes de `container`, Supabase e helpers legados (111 imports de infraestrutura no total, 0 desvios SQL).
+- [x] Fase C aplicou o lote de reducao do residual de `container` e adapters de suporte: hooks simples migraram para `useSqlite`/`useTauriQuery`/use cases, os imports remanescentes de `@/src/infrastructure/container` foram concentrados em `useContainer.ts`, `AccessFilterBuilder` e `supabaseClient` ficaram encapsulados em utilitarios da interface, e a auditoria caiu de 111 para 15 imports de infraestrutura na UI, mantendo 0 desvios SQL.
+- [x] Fase C foi efetivamente fechada: `ActionBar` e `app/admin/settings/page.tsx` deixaram de importar infraestrutura direta, as pontes finais foram catalogadas em `src/interface/gateways` e `node scripts/audit-architecture-boundaries.js` voltou para **0 imports de infraestrutura na UI** e **0 desvios SQL**, com `npx tsc --noEmit` e `npm run lint` passando em **0 erros / 147 warnings**.
+- [x] Fase D foi formalizada em runtime e documentacao: [ExternalIntegrationsCatalog.ts](/root/ecopontos.github.io/ecoforms/desktop/src/application/config/ExternalIntegrationsCatalog.ts:1) virou a fonte de verdade das integracoes externas/legadas, [REGISTRO_INTEGRACOES_EXTERNAS.md](/root/ecopontos.github.io/ecoforms/desktop/docs/REGISTRO_INTEGRACOES_EXTERNAS.md:1) consolidou finalidade/credencial/fallback/dono tecnico, e `postgres_legacy_sync` passou a estar marcado como `deprecated` com plano de retirada.
+- [~] Fase E avancou em quatro lotes de limpeza: [EPICOS_LIMPEZA_FASE_E.md](/root/ecopontos.github.io/ecoforms/desktop/docs/EPICOS_LIMPEZA_FASE_E.md:1) consolidou os epicos, vinte arquivos mortos/órfãos foram removidos, `@tauri-apps/plugin-shell`, `@types/bcryptjs` e `@types/proj4` sairam do frontend desktop sem regressao em `tsc`/`lint`, e o baseline de lint caiu para **146 warnings**.
 - [x] Fase B teve o primeiro lote de rename aplicado: `sync_salt_history -> historico_sal_sync` e `geo_layers -> camadas_geo`, com compatibilidade idempotente no bootstrap/migrate-ptbr e queda da auditoria SQL de 193 para 173 ocorrencias.
 - [x] Fase B teve o segundo lote aplicado no modulo de agendamentos: `tbl_service_types -> tipos_servico`, `tbl_service_slots -> janelas_agendamento`, `tbl_agendamentos -> agendamentos` e `tbl_agendamento_notificacoes -> notificacoes_agendamento`, com compatibilidade idempotente no bootstrap/migrate-ptbr e queda da auditoria SQL de 173 para 67 ocorrencias.
+- [x] Fase B teve o terceiro lote aplicado em configuracoes: `tbl_configuracoes_sistema -> configuracoes_sistema`, `tbl_email_config -> configuracao_email` e eliminacao do desvio `app_config` no runtime, com queda da auditoria SQL de 67 para 24 ocorrencias.
+- [x] Fase B recebeu ajustes complementares no mesmo dia: `geo_layers.ts -> camadas_geo.ts` e `suite_fts -> pacotes_fts`, reduzindo a auditoria SQL de 24 para 20 ocorrencias, todas concentradas em compatibilidade de transicao.
 
 ## Plano de reorganizacao arquitetural pos-ADR-063
 
 > Este bloco acompanha `desktop/docs/PLANO_REORGANIZACAO_BACKEND_LOCAL_INTEGRACOES.md`. Ele nao substitui o plano detalhado; serve como checklist executivo dentro da revisao geral.
 
 - [x] **Fase A — Inventario executavel.** Medir imports diretos de `src/infrastructure/**` na UI/interface e tabelas nao lusofonas em bootstrap, queries, Rust e migrations.
-- [~] **Fase B — Schema SQL lusofono.** Renomear por modulo, com compatibilidade idempotente, priorizando Service Booking, configuracoes, sync security, geo e suite auxiliar.
-- [~] **Fase C — UI sem adapter direto.** Encapsular Supabase Admin/Storage, first-run, query packs e container generico atras de hooks/use cases/ports.
-- [ ] **Fase D — Integracoes externas classificadas.** Registrar PostgreSQL legado, Supabase, PocketBase, APIs publicas e LAN server por finalidade, autoridade, credencial, fallback e disponibilidade exigida.
-- [ ] **Fase E — Auditorias viram epicos.** Converter codigo morto, dependencias sem uso, nomenclatura SQL, UUID v7 e validacao real em lotes pequenos com gate objetivo.
+- [x] **Fase B — Schema SQL lusofono.** Concluida sem camada de compatibilidade retroativa, convergindo os modulos priorizados para nomes canonicos em portugues.
+- [x] **Fase C — UI sem adapter direto.** Concluida no boundary atual: app/componentes e hooks da interface nao importam `src/infrastructure/**` diretamente; bridges internos ficaram catalogados em `src/interface/gateways` e excecoes temporarias seguem auditadas.
+- [x] **Fase D — Integracoes externas classificadas.** Concluida com catalogo runtime e registro documental cobrindo PostgreSQL legado, Supabase, PocketBase, APIs publicas, pasta LAN e LAN server.
+- [~] **Fase E — Auditorias viram epicos.** Backlog consolidado e limpo no plano logico; resta a validacao real fora do ambiente local.
 
 ## Gate final de validacao
 

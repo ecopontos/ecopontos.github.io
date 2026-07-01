@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { ModuleRuntimeDto } from '@/src/domain/module/ModuleRegistry';
 
 export function useModuleRuntime(slug: string | null | undefined, perfil: string | null | undefined) {

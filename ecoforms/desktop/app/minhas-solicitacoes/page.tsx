@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, RefreshCw, Clock, CheckCircle, XCircle, Plus, ChevronRight, Archive } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import Link from "next/link";
 import { useSolicitacoesList, SolicitacaoPackage } from "@/src/interface/hooks/catalog/forms";
 

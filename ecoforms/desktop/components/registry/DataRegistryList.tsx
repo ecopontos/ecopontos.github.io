@@ -226,7 +226,7 @@ export function DataRegistryList({ type, onEdit, onDelete, onCreate, onImport }:
     };
 
     const sanitizeFileName = (name: string) => {
-        return name.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim().replace(/\s+/g, "_").slice(0, 50) || "data_registry";
+        return name.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim().replace(/\s+/g, "_").slice(0, 50) || "registro_dados";
     };
 
     const handleExport = async () => {

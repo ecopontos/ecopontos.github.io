@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { getContainer } from '@/src/infrastructure/container';
-import type { SyncOutbox } from '@/src/infrastructure/sync/SyncOutbox';
+import { useContainer } from './useContainer';
 
-export function useSyncOutbox(): SyncOutbox {
-    return useMemo(() => getContainer().syncOutbox, []);
+export function useSyncOutbox() {
+    const container = useContainer();
+    return useMemo(() => container.syncOutbox, [container]);
 }
 
 /** @deprecated Use useSyncOutbox */

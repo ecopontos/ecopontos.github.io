@@ -12,7 +12,6 @@ use database::DbState;
 use commands::crypto::{CryptoState, SmtpCryptoState};
 use session::SessionState;
 use sha2::{Sha256, Digest};
-#[cfg(debug_assertions)]
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 use std::sync::Mutex;

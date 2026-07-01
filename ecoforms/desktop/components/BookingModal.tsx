@@ -16,7 +16,7 @@ import { useServiceSlotById } from "@/src/interface/hooks/catalog/service";
 import { useServiceTypes } from "@/src/interface/hooks/catalog/service";
 import { useAgendamentoMutations } from "@/src/interface/hooks/catalog/service";
 import { useAdminUsers } from "@/src/interface/hooks/catalog/auth";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import type { FormFieldValue } from "@/components/runtime/FormFieldRenderer";
 import type { FormContent } from "@/types";
 import { formatDateBR } from "@/src/lib/date";

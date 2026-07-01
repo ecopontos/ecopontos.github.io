@@ -2,7 +2,7 @@
  * useNetworkParquet
  *
  * Gerencia a configuração da pasta de rede compartilhada para armazenamento de arquivos Parquet.
- * A pasta é salva na tabela `app_config` (chave `network.parquet_path`) via SQLite local,
+ * A pasta é salva na tabela `configuracoes_sistema` (chave `network.parquet_path`) via SQLite local,
  * garantindo que a configuração persista entre sessões e seja acessível ao backend Rust.
  *
  * Retorno:
@@ -14,14 +14,14 @@
  *   - `isListing: boolean`      — true enquanto lista os arquivos
  *   - `setPath(path: string)`   — atualiza o caminho localmente (não salva ainda)
  *   - `probe()`                 — testa o caminho atual (leitura, escrita, existência)
- *   - `save()`                  — persiste o caminho no app_config e faz probe automático
+ *   - `save()`                  — persiste o caminho no configuracoes_sistema e faz probe automático
  *   - `listFiles()`             — lista arquivos .parquet na pasta configurada
  */
 import { useState, useEffect, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { toast } from "sonner"
 import { useSqlite } from "../queries/useSqlite"
-import { APP_CONFIG_GET, APP_CONFIG_SAVE } from '@/src/infrastructure/persistence/sqlite/queries/system'
+import { SISTEMA_CONFIG_GET, SISTEMA_CONFIG_SAVE } from '@/src/application/persistence/sqlite/queries/system'
 
 interface ProbeResult {
     accessible: boolean
@@ -48,7 +48,7 @@ export function useNetworkParquet() {
     const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
-        sqlite.query<{ value: string }>(APP_CONFIG_GET.sql, ['network.parquet_path'])
+        sqlite.query<{ value: string }>(SISTEMA_CONFIG_GET.sql, ['network.parquet_path'])
             .then(rows => { if (rows[0]?.value) setPath(rows[0].value); })
             .catch(() => {});
     }, [sqlite])
@@ -93,8 +93,8 @@ export function useNetworkParquet() {
         setIsSaving(true)
         try {
             await sqlite.execute(
-                APP_CONFIG_SAVE.sql,
-                [path]
+                SISTEMA_CONFIG_SAVE.sql,
+                ['network.parquet_path', path]
             )
             toast.success("Pasta de rede salva com sucesso")
         } catch (e) {

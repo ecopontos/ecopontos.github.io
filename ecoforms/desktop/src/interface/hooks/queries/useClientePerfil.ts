@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { useSqlite } from "./useSqlite";
 import {
   CLIENTE_PERFIL_KPIS,
   CLIENTE_COLETAS,
@@ -9,7 +9,7 @@ import {
   CLIENTE_INTERCORRENCIAS,
   CLIENTE_MANIFESTACOES,
   CLIENTE_ROTEIROS,
-} from "@/src/infrastructure/persistence/sqlite/queries/cliente-perfil";
+} from "@/src/application/persistence/sqlite/queries/cliente-perfil";
 import type {
   ClientePerfilKpisRow,
   ClienteColetaRow,
@@ -17,8 +17,8 @@ import type {
   ClienteIntercorrenciaRow,
   ClienteManifestacaoRow,
   ClienteRoteiroRow,
-} from "@/src/infrastructure/persistence/sqlite/queries/cliente-perfil";
-import { AGENDAMENTOS_BY_USER } from "@/src/infrastructure/persistence/sqlite/queries/service";
+} from "@/src/application/persistence/sqlite/queries/cliente-perfil";
+import { AGENDAMENTOS_BY_USER } from "@/src/application/persistence/sqlite/queries/service";
 
 export interface ClienteAgendamentoRow {
   id: string;
@@ -41,6 +41,7 @@ const EMPTY_KPIS: ClientePerfilKpisRow = {
 };
 
 export function useClientePerfilKpis(clienteId: string | null, enabled: boolean = true) {
+  const sqlite = useSqlite();
   const [data, setData] = useState<ClientePerfilKpisRow>(EMPTY_KPIS);
   const [loading, setLoading] = useState(false);
 
@@ -48,8 +49,7 @@ export function useClientePerfilKpis(clienteId: string | null, enabled: boolean 
     if (!clienteId || !enabled) return;
     setLoading(true);
     try {
-      const c = await getContainerAsync();
-      const rows = await c.sqlite.query<ClientePerfilKpisRow>(
+      const rows = await sqlite.query<ClientePerfilKpisRow>(
         CLIENTE_PERFIL_KPIS.sql,
         [clienteId, clienteId, clienteId, clienteId, clienteId, clienteId],
       );
@@ -57,7 +57,7 @@ export function useClientePerfilKpis(clienteId: string | null, enabled: boolean 
     } finally {
       setLoading(false);
     }
-  }, [clienteId, enabled]);
+  }, [clienteId, enabled, sqlite]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -65,6 +65,7 @@ export function useClientePerfilKpis(clienteId: string | null, enabled: boolean 
 }
 
 function useClientePerfilList<T>(clienteId: string | null, enabled: boolean, sql: string, paramCount: number = 1) {
+  const sqlite = useSqlite();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -72,13 +73,12 @@ function useClientePerfilList<T>(clienteId: string | null, enabled: boolean, sql
     if (!clienteId || !enabled) return;
     setLoading(true);
     try {
-      const c = await getContainerAsync();
-      const rows = await c.sqlite.query<T>(sql, Array(paramCount).fill(clienteId));
+      const rows = await sqlite.query<T>(sql, Array(paramCount).fill(clienteId));
       setData(rows);
     } finally {
       setLoading(false);
     }
-  }, [clienteId, enabled, sql, paramCount]);
+  }, [clienteId, enabled, sql, paramCount, sqlite]);
 
   useEffect(() => { fetch(); }, [fetch]);
 

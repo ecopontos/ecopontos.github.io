@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { loadCrmDataSource } from '@/src/infrastructure/config/crm-datasources';
+import { loadCrmDataSource } from '@/src/interface/gateways/crm-datasources';
 
 export function useCrmDataSource<T = unknown>(dataSourceName: string | null | undefined) {
     const [rows, setRows] = useState<T[]>([]);

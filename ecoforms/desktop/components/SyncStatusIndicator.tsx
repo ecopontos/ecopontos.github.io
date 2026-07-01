@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { useSyncStatus } from '@/contexts/SyncContext';
+import { useSyncStatus } from '@/src/interface/hooks/catalog/sync';
 import { useKeyboardShortcuts } from '@/src/interface/hooks/catalog/utils';
 import { Button } from '@/components/ui/button';
 import {

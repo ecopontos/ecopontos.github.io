@@ -7,10 +7,12 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchFormSchemasAtivos, fetchTarefaById, fetchPacotesForTarefa } from "@/src/interface/hooks/queries/lookups";
-import type { TarefaRow, PacoteRow } from "@/src/interface/hooks/queries/lookups";
+import { fetchFormSchemasAtivos } from "@/src/interface/hooks/queries/lookups/forms";
+import { fetchTarefaById } from "@/src/interface/hooks/queries/lookups/tasks";
+import { fetchPacotesForTarefa, type PacoteRow } from "@/src/interface/hooks/queries/lookups/pacotes";
+import type { TarefaRow } from "@/src/interface/hooks/queries/lookups/tasks";
 import { ReadOnlyFormRenderer } from "@/components/runtime/ReadOnlyFormRenderer";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import type { FormContent } from "@/types";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {

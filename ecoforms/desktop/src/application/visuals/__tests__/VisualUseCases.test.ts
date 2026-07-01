@@ -333,7 +333,7 @@ describe('GetModuleVisuaisUseCase', () => {
         const db: SqlitePort = {
             query: async (_sql: string, _params?: unknown[]) => {
                 if (_sql.includes('registro_modulos')) return modules as any;
-                if (_sql.includes('data_registry')) return [
+                if (_sql.includes('registro_dados')) return [
                     { id: 'r1', tipo: 'inspecao', conteudo: '{"status":"ativo"}' },
                     { id: 'r2', tipo: 'inspecao', conteudo: '{"status":"inativo"}' },
                 ] as any;

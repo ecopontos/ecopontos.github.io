@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import type { CreateServiceTypeInput } from "@/src/application/service/CreateServiceTypeUseCase";
 import type { UpdateServiceTypeInput } from "@/src/application/service/UpdateServiceTypeUseCase";
 

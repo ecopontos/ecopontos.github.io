@@ -1,9 +1,15 @@
-import { useCallback, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { useAuth } from '@/contexts/AuthContext';
-import { useContainer } from '../utils/useContainer';
-import type { ProfileSyncResult } from '@/src/infrastructure/sync/SupabaseUserSyncService';
-export type { ProfileSyncResult };
+import { useCallback, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
+import { useContainer } from "../utils/useContainer";
+
+export interface ProfileSyncResult {
+    synced: number;
+    created: number;
+    updated: number;
+    skipped: number;
+    errors: string[];
+}
 
 interface AdminResponse {
     success: boolean;
@@ -19,10 +25,10 @@ export function useSupabaseAdmin() {
     const callAdmin = useCallback(async (
         operation: string,
         payload: Record<string, unknown> = {},
-        table = 'usuarios',
+        table = "usuarios",
     ): Promise<AdminResponse> => {
-        if (!user) throw new Error('Not authenticated');
-        return invoke<AdminResponse>('supabase_admin_query', {
+        if (!user) throw new Error("Not authenticated");
+        return invoke<AdminResponse>("supabase_admin_query", {
             request: { table, operation, user_id: user.id, payload },
         });
     }, [user]);
@@ -30,7 +36,7 @@ export function useSupabaseAdmin() {
     const syncFromSupabase = useCallback(async (): Promise<ProfileSyncResult> => {
         setSyncing(true);
         try {
-            const response = await callAdmin('read_profiles', {}, 'perfis');
+            const response = await callAdmin("read_profiles", {}, "perfis");
             if (!response.success) throw new Error(response.message);
             const profiles = (Array.isArray(response.data) ? response.data : []) as Parameters<typeof container.userProfileSync.syncFromSupabase>[0];
             if (!profiles.length) return { synced: 0, created: 0, updated: 0, skipped: 0, errors: [] };
@@ -41,25 +47,25 @@ export function useSupabaseAdmin() {
     }, [callAdmin, container]);
 
     const readUsers = useCallback(
-        () => callAdmin('read_users', {}),
+        () => callAdmin("read_users", {}),
         [callAdmin],
     );
 
     const createSupabaseUser = useCallback(
         (email: string, password: string, metadata: Record<string, unknown>) =>
-            callAdmin('create_user', { email, password, user_metadata: metadata }),
+            callAdmin("create_user", { email, password, user_metadata: metadata }),
         [callAdmin],
     );
 
     const updateSupabaseUser = useCallback(
         (supabaseId: string, metadata: Record<string, unknown>) =>
-            callAdmin('update_user', { supabase_id: supabaseId, user_metadata: metadata }),
+            callAdmin("update_user", { supabase_id: supabaseId, user_metadata: metadata }),
         [callAdmin],
     );
 
     const deleteSupabaseUser = useCallback(
         (supabaseId: string) =>
-            callAdmin('delete_user', { supabase_id: supabaseId }),
+            callAdmin("delete_user", { supabase_id: supabaseId }),
         [callAdmin],
     );
 

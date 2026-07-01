@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import type { NotificacaoSolicitante } from "@/src/domain/notificacao-solicitante/NotificacaoSolicitante";
 
 export function useNotificacoesSolicitante(manifestacaoId?: string) {

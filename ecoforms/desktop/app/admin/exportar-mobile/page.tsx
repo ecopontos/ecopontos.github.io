@@ -35,14 +35,14 @@ const TABLES = [
     "usuarios",
     "tarefas",
     "clientes",
-    "tbl_demandas",
-    "tbl_agendamentos",
-    "tbl_manifestacoes",
-    "tbl_setores",
-    "tbl_roteiros",
+    "demandas",
+    "agendamentos",
+    "manifestacoes",
+    "setores",
+    "roteiros",
     "ecopontos",
-    "data_registry",
-    "module_registry",
+    "registro_dados",
+    "registro_modulos",
 ];
 
 function base64ToBytes(b64: string): Uint8Array {
@@ -73,7 +73,7 @@ export default function ExportarMobilePage() {
         (async () => {
             try {
                 const rows = await sqlite.query<{ valor: string }>(
-                    `SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1`,
+                    `SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1`,
                 );
                 if (!cancelled) {
                     setLanSyncPath(rows[0]?.valor?.trim() ?? "");

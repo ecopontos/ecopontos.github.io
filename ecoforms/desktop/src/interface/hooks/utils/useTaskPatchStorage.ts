@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getSupabaseClient } from '@/src/infrastructure/persistence/supabase/supabaseClient';
+import { getUiSupabaseClient } from './useSupabaseClient';
 import type { TaskPatchFile } from '@/components/kanban/PatchHistoryPanel';
 
 export interface TaskPatchStorage {
@@ -14,7 +14,7 @@ class SupabaseTaskPatchStorage implements TaskPatchStorage {
     async uploadTaskPatch(userId: string, taskId: string, payload: unknown): Promise<string> {
         const timestamp = Date.now();
         const patchPath = `users/${userId}/inbox/${taskId}/patches/${timestamp}.json`;
-        const client = getSupabaseClient();
+        const client = getUiSupabaseClient();
         const { error } = await client.storage.from(this.bucket).upload(
             patchPath,
             JSON.stringify(payload),
@@ -29,7 +29,7 @@ class SupabaseTaskPatchStorage implements TaskPatchStorage {
     }
 
     async listTaskPatches(userId: string, taskId: string): Promise<TaskPatchFile[]> {
-        const client = getSupabaseClient();
+        const client = getUiSupabaseClient();
         const { data, error } = await client.storage
             .from(this.bucket)
             .list(`users/${userId}/inbox/${taskId}/patches/`);
@@ -45,7 +45,7 @@ class SupabaseTaskPatchStorage implements TaskPatchStorage {
     }
 
     async loadTaskPatchPayloads(userId: string, taskId: string): Promise<Record<string, unknown>[]> {
-        const client = getSupabaseClient();
+        const client = getUiSupabaseClient();
         const prefix = `users/${userId}/inbox/${taskId}/patches/`;
         const { data, error } = await client.storage.from(this.bucket).list(prefix);
 

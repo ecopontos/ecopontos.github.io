@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/preserve-manual-memoization */
 import { useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
 import { useTauriQuery } from '../tauri/useTauriQuery';
 import { KanbanTask, KanbanProject, ProjetoStatus, Interessado } from '@/types';
 import {
   PROJETO_DETAIL,
   PROJETO_TAREFAS,
   PROJETO_EVENTOS,
-} from '@/src/infrastructure/persistence/sqlite/queries/projetos';
+} from '@/src/application/persistence/sqlite/queries/projetos';
 
 import { ProjectWithMetrics } from './useProjects';
 

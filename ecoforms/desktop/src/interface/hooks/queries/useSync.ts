@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { getContainer } from '../../../infrastructure/container';
+import { useContainer } from '../utils/useContainer';
 
 function getErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
@@ -9,7 +9,8 @@ function getErrorMessage(error: unknown): string {
  * Hook para acessar o serviço de sincronização com gerenciamento de estado (loading, erro).
  */
 export function useSync() {
-    const syncService = useMemo(() => getContainer().sync, []);
+    const container = useContainer();
+    const syncService = useMemo(() => container.sync, [container]);
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export function useSync() {
         try {
             const result = await syncService.syncAll();
             if (!result.success) {
-                setError(result.errors?.join(", ") || "Erro desconhecido na sincronização");
+                setError(result.errors?.join(', ') || 'Erro desconhecido na sincronização');
             }
             return result;
         } catch (err: unknown) {

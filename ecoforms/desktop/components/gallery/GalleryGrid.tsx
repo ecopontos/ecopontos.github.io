@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useGalleryStorage } from "@/src/interface/hooks/catalog/utils";
-import type { GalleryItem } from "@/src/interface/hooks/queries/useGalleryStorage";
+import type { GalleryItem } from "@/src/interface/hooks/catalog/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ImageDialog } from "./ImageDialog";
