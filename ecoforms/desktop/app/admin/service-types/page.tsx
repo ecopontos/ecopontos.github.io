@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useServiceTypes } from "@/src/interface/hooks/catalog/service";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 import type { Setor } from "@/src/domain/setor/Setor";
 

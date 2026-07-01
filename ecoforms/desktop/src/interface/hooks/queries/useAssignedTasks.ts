@@ -1,8 +1,6 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
-import { TAREFAS_ATRIBUIDAS_NOTIFICACAO } from "@/src/infrastructure/persistence/sqlite/queries/tarefas";
+import { useTauriQuery } from "@/src/interface/hooks/catalog/tauri";
+import { TAREFAS_ATRIBUIDAS_NOTIFICACAO } from "@/src/application/persistence/sqlite/queries/tarefas";
 
 export interface AssignedTaskNotification {
     id: string;
@@ -18,27 +16,14 @@ export interface AssignedTaskNotification {
 }
 
 export function useAssignedTasks(userId: string | undefined) {
-    const [tasks, setTasks] = useState<AssignedTaskNotification[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isPending } = useTauriQuery<AssignedTaskNotification>(
+        TAREFAS_ATRIBUIDAS_NOTIFICACAO.sql,
+        userId ? [userId] : [],
+        { enabled: Boolean(userId) },
+    );
 
-    const fetchTasks = useCallback(async () => {
-        if (!userId) { setLoading(false); return; }
-        setLoading(true);
-        try {
-            const c = await getContainerAsync();
-            const result = await c.sqlite.query<AssignedTaskNotification>(
-                TAREFAS_ATRIBUIDAS_NOTIFICACAO.sql,
-                [userId]
-            );
-            setTasks(result);
-        } catch (e) {
-            console.error('[useAssignedTasks]', e);
-        } finally {
-            setLoading(false);
-        }
-    }, [userId]);
-
-    useEffect(() => { fetchTasks(); }, [fetchTasks]);
-
-    return { tasks, loading };
+    return {
+        tasks: userId ? (data ?? []) : [],
+        loading: userId ? isPending : false,
+    };
 }

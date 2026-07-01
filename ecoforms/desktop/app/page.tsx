@@ -43,7 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { openInNewWindow } from "@/src/lib/window-utils";
 import { useSync } from "@/src/interface/hooks/catalog/sync";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { useFormPermissions } from "@/src/interface/hooks/catalog/auth";
 import { HideForRole } from "@/components/auth/PermissionGuards";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -54,7 +54,7 @@ import { getAvailableWidgets } from "@/src/application/widgets/WidgetRegistry";
 import type { WidgetConfig } from "@/src/application/widgets/WidgetRegistry";
 import type { UserRole } from "@/src/interface/hooks/catalog/auth";
 import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
-import { closePacotes } from "@/src/interface/hooks/queries/lookups";
+import { closePacotes } from "@/src/interface/hooks/queries/lookups/pacotes";
 import {
   useInboxData,
   useAssignedTasks,

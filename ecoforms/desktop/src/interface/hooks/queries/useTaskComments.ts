@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
-import { useAuth } from "@/contexts/AuthContext";
+import { getContainerAsync } from "../utils/useContainer";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 
 export function useTaskComments() {
     const { user } = useAuth();

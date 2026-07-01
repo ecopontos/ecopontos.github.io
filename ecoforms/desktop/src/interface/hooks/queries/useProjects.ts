@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/preserve-manual-memoization */
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
+import { getContainerAsync } from '../utils/useContainer';
 import { KanbanProject, Interessado, ProjetoStatus } from '@/types';
 
 export interface ProjectWithMetrics extends KanbanProject {

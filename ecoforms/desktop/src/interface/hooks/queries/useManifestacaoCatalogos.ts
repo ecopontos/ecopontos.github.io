@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import {
   MANIFESTACOES_CATALOGOS_TIPOS,
   MANIFESTACOES_CATALOGOS_ORIGENS,
   MANIFESTACOES_CATALOGOS_CLASSIFICACOES,
   MANIFESTACOES_CATALOGOS_SITUACOES,
-} from '@/src/infrastructure/persistence/sqlite/queries/manifestacoes';
+} from '@/src/application/persistence/sqlite/queries/manifestacoes';
 
 interface CatalogoItem {
   id: string;

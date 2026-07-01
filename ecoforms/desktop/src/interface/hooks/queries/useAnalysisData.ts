@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PACOTES_ANALISE } from "@/src/infrastructure/persistence/sqlite/queries/analysis";
-import { getContainerAsync } from "@/src/infrastructure/container";
-import { fetchPacoteFormTypes } from "@/src/interface/hooks/queries/lookups";
+import { PACOTES_ANALISE } from "@/src/application/persistence/sqlite/queries/analysis";
+import { fetchPacoteFormTypes } from "@/src/interface/hooks/queries/lookups/pacotes";
+import { useSqlite } from "./useSqlite";
 
 export function usePacoteFormTypes() {
     const [formTypes, setFormTypes] = useState<string[]>([]);
@@ -44,6 +44,7 @@ export function usePacotesAnalise(
     limit: number,
     refetchTrigger: number,
 ) {
+    const sqlite = useSqlite();
     const [records, setRecords] = useState<AnalysisRecord[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -52,19 +53,19 @@ export function usePacotesAnalise(
         const load = async () => {
             if (!formType) { if (!cancelled) setRecords([]); return; }
             const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 1000));
+            const likeSearch = searchText ? "%" + searchText + "%" : "";
             const params: unknown[] = [
                 formType,
-                searchText || '',
-                searchText ? `%${searchText}%` : '',
-                searchText ? `%${searchText}%` : '',
-                status || 'all',
-                status || 'all',
+                searchText || "",
+                likeSearch,
+                likeSearch,
+                status || "all",
+                status || "all",
                 safeLimit,
             ];
             if (!cancelled) setLoading(true);
             try {
-                const c = await getContainerAsync();
-                const rows = await c.sqlite.query<AnalysisRecord>(PACOTES_ANALISE.sql, params);
+                const rows = await sqlite.query<AnalysisRecord>(PACOTES_ANALISE.sql, params);
                 if (!cancelled) setRecords(rows);
             } catch {
                 if (!cancelled) setRecords([]);
@@ -74,7 +75,7 @@ export function usePacotesAnalise(
         };
         load();
         return () => { cancelled = true; };
-    }, [formType, searchText, status, limit, refetchTrigger]);
+    }, [formType, searchText, status, limit, refetchTrigger, sqlite]);
 
     return { records, loading };
 }

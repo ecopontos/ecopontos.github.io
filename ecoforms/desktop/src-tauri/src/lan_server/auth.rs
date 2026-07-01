@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tokio::fs;
 
 use super::state::LanServerState;
+use crate::uuid_v7::uuid_v7_string;
 
 const AUTH_TOKEN_FILE: &str = ".ecoforms-lan-token";
 const DEVICE_ID_HEADER: &str = "x-device-id";
@@ -51,7 +52,7 @@ pub async fn record_rejection(
 
     let _ = tokio::task::spawn_blocking(move || {
         let conn = LanServerState::open_db_connection(&db_path)?;
-        let audit_id = uuid::Uuid::new_v4().simple().to_string();
+        let audit_id = uuid_v7_string();
         let now = chrono::Utc::now().to_rfc3339();
         let metadata = serde_json::json!({
             "reason": reason,
@@ -78,7 +79,7 @@ async fn resolve_auth_root(state: &Arc<LanServerState>) -> Result<PathBuf, Strin
         let lan_sync_path = tokio::task::spawn_blocking(move || -> Option<PathBuf> {
             let conn = LanServerState::open_db_connection(&db_path).ok()?;
             let value: String = conn.query_row(
-                "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
+                "SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_sync_path' LIMIT 1",
                 [],
                 |row| row.get(0),
             ).ok()?;
@@ -390,10 +391,10 @@ mod tests {
         let db_path = db_dir.join("ecoforms.sqlite");
         let conn = Connection::open(&db_path).unwrap();
         conn.execute_batch(
-            "CREATE TABLE tbl_configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
+            "CREATE TABLE configuracoes_sistema (chave TEXT PRIMARY KEY, valor TEXT, atualizado_em TEXT);",
         ).unwrap();
         conn.execute(
-            "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
+            "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em) VALUES ('lan_sync_path', ?1, datetime('now'))",
             [&shared_dir.to_string_lossy().to_string()],
         ).unwrap();
 

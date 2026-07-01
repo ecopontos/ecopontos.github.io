@@ -9,7 +9,7 @@
  *   Regra v2: NUNCA usa UPDATE em suite — sempre INSERT de nova versão.
  */
 import { useState } from "react"
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import type { SolicitacaoPackage } from "../queries/useSolicitacoesList"
 
 export function useSolicitacaoEditor(userId: string | undefined) {

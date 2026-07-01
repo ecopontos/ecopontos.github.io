@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { useProjectDetail } from "@/src/interface/hooks/catalog/kanban";
 import { useProjectMutations } from "@/src/interface/hooks/catalog/kanban";
 import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";

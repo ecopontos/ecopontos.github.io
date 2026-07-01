@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
+import { getContainerAsync } from "../utils/useContainer";
 import type { WidgetConfig } from "@/src/application/widgets/WidgetRegistry";
 
 export function useWidgetMutations(onSuccess?: () => void) {

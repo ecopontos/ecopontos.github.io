@@ -3,12 +3,11 @@ import type { SyncPort, SyncResult } from '../../application/ports/SyncPort';
 export class NullSyncAdapter implements SyncPort {
     async syncAll(_options?: { forcePush?: boolean }): Promise<SyncResult> {
         return {
-            success: true,
-            synced: {
-                form_registry: 0,
-                data_registry: 0,
-                suite_push: 0,
-                suite_pull: 0,
+            success: true,            synced: {
+                registro_formularios: 0,
+                registro_dados: 0,
+                pacotes_push: 0,
+                pacotes_pull: 0,
                 usuarios: 0,
                 projects_push: 0,
                 projects_pull: 0,

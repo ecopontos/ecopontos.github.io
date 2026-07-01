@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModules } from '@/src/interface/hooks/catalog/modules-views';
-import { fetchFormsAtivos, fetchDataRegistryTipos } from '@/src/interface/hooks/queries/lookups';
+import { fetchFormsAtivos, fetchDataRegistryTipos } from '@/src/interface/hooks/queries/lookups/forms';
 import type { ModuleConfig, ModulePermissionConfig } from '@/src/domain/module/ModuleRegistry';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ import {
   ChevronLeft, ChevronRight, Check, Plus, Trash2,
   Boxes, FileText, Database, LayoutTemplate, GitBranch, Shield, Rocket, LayoutDashboard,
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
 import { SelectDashboardModal } from '@/components/dashboard-composer/SelectDashboardModal';
 
 interface FormOption {

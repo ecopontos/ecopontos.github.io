@@ -11,7 +11,7 @@ import { useManifestacaoById, useManifestacaoTramitacoes, useManifestacaoRespost
 import { useNotificacoesSolicitante } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useManifestacaoCatalogos } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useSubassuntos, useSubunidades, useProgramasOrcamentarios } from "@/src/interface/hooks/catalog/manifestacoes";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { ManifestacaoWorkflowActions } from "@/components/ouvidoria/ManifestacaoWorkflowActions";
 import { DadosManifestacaoCard } from "./_components/DadosManifestacaoCard";
 import { ClassificacaoCompetenciaForm } from "./_components/ClassificacaoCompetenciaForm";

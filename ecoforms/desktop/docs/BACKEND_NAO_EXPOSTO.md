@@ -102,7 +102,7 @@ via `getContainerAsync()` — padrão correto.
 - `ListHierarquiaPerfisUseCase` → `useHierarquiaPerfis` usa `c.hierarquiaPerfilRepository.findAll()`
 - `ListNotificacoesSolicitanteUseCase` → `useNotificacoesSolicitante` usa `c.notificacaoSolicitanteRepository`
 - `ListTiposPrazoUseCase` → `useTiposPrazo` usa `c.tipoPrazoRepository`
-- `ListTiposResiduoUseCase` → `useTiposResiduo` usa `c.tipoResiduoRepository`
+- `ListTiposResiduoUseCase` → removido em auditorias anteriores; a listagem de tipos de residuo segue direto pelos hooks/repositorios ativos.
 
 ---
 

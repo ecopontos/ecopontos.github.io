@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Interessado, KanbanProject, UnifiedTaskView } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { getAccessiblePerfis } from '@/src/infrastructure/persistence/AccessFilterBuilder';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
+import { getAccessiblePerfisForPerfil } from '../utils/useAccessFilters';
+import { getContainerAsync } from '../utils/useContainer';
 
 type JsonObject = Record<string, unknown>;
 
@@ -19,7 +19,7 @@ export function useKanbanData(
 
     const accessiblePerfis = useMemo(() => {
         if (!user?.perfil) return [];
-        return getAccessiblePerfis(user.perfil);
+        return getAccessiblePerfisForPerfil(user.perfil);
     }, [user]);
 
     const [projects, setProjects] = useState<KanbanProject[]>([]);

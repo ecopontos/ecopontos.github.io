@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -11,9 +11,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, ShieldCheck, FolderCheck, Search, UserPlus } from "lucide-react";
+import { Loader2, ShieldCheck, FolderCheck } from "lucide-react";
 import { useTauriInvoke } from "@/src/interface/hooks/catalog/tauri";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
+import { useFirstRunSetup } from "@/src/interface/hooks/catalog/auth";
 import type { User } from "@/types";
 
 interface FirstRunSetupModalProps {
@@ -23,14 +24,6 @@ interface FirstRunSetupModalProps {
 
 type Step = "lan_path" | "select_user" | "create_admin";
 
-interface SeedUser {
-    id?: string;
-    nome: string;
-    username: string;
-    password: string;
-    perfil: string;
-    setor?: string;
-}
 
 interface UserSummary {
     id: string;
@@ -46,7 +39,6 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
     const { login } = useAuth();
     const [step, setStep] = useState<Step>("lan_path");
     const [lanPath, setLanPath] = useState("");
-    const [lanPathValid, setLanPathValid] = useState(false);
     const [lanPathError, setLanPathError] = useState<string | null>(null);
     const [testing, setTesting] = useState(false);
 
@@ -62,51 +54,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const invoke = useTauriInvoke();
-
-    const saveLanPath = useCallback(async (path: string) => {
-        try {
-            await invoke('bootstrap_set_lan_sync_path', { path: path.trim() });
-        } catch (e: unknown) {
-            if (String(e).includes("no such table")) {
-                console.warn("[FirstRun] Table missing, retrying after ensureColumnsIfNeeded...");
-                await new Promise(r => setTimeout(r, 500));
-                await invoke('bootstrap_set_lan_sync_path', { path: path.trim() });
-            } else {
-                console.error("[FirstRun] Failed to save lan_sync_path:", e);
-                throw e;
-            }
-        }
-    }, [invoke]);
-
-    const tryLoadUsers = useCallback(async (path: string): Promise<boolean> => {
-        try {
-            const { getContainerAsync } = await import("@/src/infrastructure/container");
-            const c = await getContainerAsync();
-            const lan = c.lanFileStorage as import("@/src/infrastructure/storage/LanFileStorage").LanFileStorage;
-
-            const seed = await lan.readExpectedUsersSeed();
-            if (seed && Array.isArray(seed.users) && seed.users.length > 0) {
-                const imported = await invoke<UserSummary[]>('bootstrap_import_seed_users', {
-                    users: seed.users,
-                });
-                setUsers(imported);
-                setUserSource("seed");
-                return imported.length > 0;
-            }
-
-            const lanUsers = await lan.listUsersFromLan();
-            if (lanUsers.length > 0) {
-                setUsers(lanUsers);
-                setUserSource("lan");
-                return true;
-            }
-
-            return false;
-        } catch (e) {
-            console.warn("[FirstRun] Failed to load users from LAN:", e);
-            return false;
-        }
-    }, []);
+    const { saveLanPath, loadUsers, testLanConnection, mirrorAdminToSupabase } = useFirstRunSetup();
 
     const handleTestAndAdvance = async () => {
         setLanPathError(null);
@@ -114,19 +62,17 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
         try {
             await saveLanPath(lanPath.trim());
 
-            const { getContainerAsync } = await import("@/src/infrastructure/container");
-            const c = await getContainerAsync();
-            const lan = c.lanFileStorage as import("@/src/infrastructure/storage/LanFileStorage").LanFileStorage;
-
-            const result = await lan.testConnection();
+            const result = await testLanConnection();
             if (!result.ok) {
                 setLanPathError(result.message);
                 setTesting(false);
                 return;
             }
 
-            const found = await tryLoadUsers(lanPath.trim());
-            if (found) {
+            const loaded = await loadUsers();
+            setUsers(loaded.users);
+            setUserSource(loaded.source);
+            if (loaded.users.length > 0) {
                 setStep("select_user");
             } else {
                 setStep("create_admin");
@@ -164,28 +110,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
             );
             console.log("[FirstRun] Admin criado:", result);
 
-            if (navigator.onLine) {
-                try {
-                    const { supabase } = await import(
-                        "@/src/infrastructure/persistence/supabase/supabaseClient"
-                    );
-                    const email = `${u}@ecoforms.local`;
-                    const { error: sbErr } = await supabase.auth.signUp({
-                        email,
-                        password: p,
-                        options: {
-                            data: { nome: n, perfil: "admin", org_id: "ecoforms-org-001" },
-                        },
-                    });
-                    if (sbErr) {
-                        console.warn("[FirstRun] Supabase Auth signUp:", sbErr.message);
-                    } else {
-                        console.log("[FirstRun] Admin registrado no Supabase Auth.");
-                    }
-                } catch (e) {
-                    console.warn("[FirstRun] Supabase Auth indisponível (non-fatal):", e);
-                }
-            }
+            await mirrorAdminToSupabase(n, u, p);
 
             onComplete();
         } catch (err: unknown) {
@@ -279,7 +204,7 @@ export function FirstRunSetupModal({ open, onComplete }: FirstRunSetupModalProps
                             <Input
                                 id="lan-path"
                                 value={lanPath}
-                                onChange={(e) => { setLanPath(e.target.value); setLanPathValid(false); }}
+                                onChange={(e) => { setLanPath(e.target.value); }}
                                 placeholder={`Ex: \\\\servidor\\compartilhado\\ecoforms`}
                                 className="font-mono text-sm"
                                 disabled={testing}

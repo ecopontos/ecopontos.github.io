@@ -87,7 +87,7 @@ describe('LanPullService', () => {
     it('pullDomain atualiza cursor após ingestão', async () => {
         await service.pullDomain('tarefas');
 
-        const cursorUpdates = sqlite.executed.filter(e => e.sql.includes('tbl_lan_sync_cursors'));
+        const cursorUpdates = sqlite.executed.filter(e => e.sql.includes('cursores_sync_lan'));
         expect(cursorUpdates).toHaveLength(1);
         expect(cursorUpdates[0].params[0]).toBe('tarefas');
         expect(cursorUpdates[0].params[1]).toBe('019-bbb');

@@ -7,7 +7,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchFormByIdOrSlug } from "@/src/interface/hooks/queries/lookups";
+import { fetchFormByIdOrSlug } from "@/src/interface/hooks/queries/lookups/forms";
 import { FormRegistry } from "@/types";
 import { SchemaEditor } from "@/components/forms/SchemaEditor";
 

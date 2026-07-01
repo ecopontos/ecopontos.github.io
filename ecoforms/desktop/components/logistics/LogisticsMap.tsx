@@ -3,7 +3,7 @@
 import { useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/src/interface/hooks/catalog/auth';
 import { useMapInstance } from './hooks/useMapInstance';
 import { useGeoDataLayers } from './hooks/useGeoDataLayers';
 import { useExecucaoLayers } from './hooks/useExecucaoLayers';

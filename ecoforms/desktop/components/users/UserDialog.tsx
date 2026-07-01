@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { invoke } from "@/src/interface/hooks/catalog/tauri"
-import { fetchSetoresAll, fetchEscalas } from "@/src/interface/hooks/queries/lookups"
+import { fetchEscalas } from "@/src/interface/hooks/queries/lookups/admin";
+import { fetchSetoresAll } from "@/src/interface/hooks/queries/lookups/users"
 import {
     Dialog,
     DialogContent,

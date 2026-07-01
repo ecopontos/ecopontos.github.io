@@ -17,10 +17,10 @@ import { JsonEditor } from "./JsonEditor";
 import { Save, ArrowLeft, Play, PanelLeftClose, PanelLeftOpen, Settings, Eye, Code, Plus, Clock, Database } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { FormAccessModal } from "./FormAccessModal";
 import { useDataRegistryTypesNew as useDataRegistryTypes } from "@/src/interface/hooks/catalog/data-registry";
-import { fetchFormByIdOrSlug, updateFormRegistry, insertFormRegistry } from "@/src/interface/hooks/queries/lookups";
+import { fetchFormByIdOrSlug, updateFormRegistry, insertFormRegistry } from "@/src/interface/hooks/queries/lookups/forms";
 import {
     Select,
     SelectContent,

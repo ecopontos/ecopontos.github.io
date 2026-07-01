@@ -1,7 +1,15 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback } from "react";
-import { getContainerAsync } from '@/src/infrastructure/container';
-import { USUARIOS_COM_ACESSO_FORM } from '@/src/infrastructure/persistence/sqlite/queries/usuarios';
+import { getContainerAsync } from "../utils/useContainer";
+import { USUARIOS_COM_ACESSO_FORM } from "@/src/application/persistence/sqlite/queries/usuarios";
+
+interface UserAccessInfoRow {
+    id: string;
+    nome: string;
+    email: string;
+    perfil: string;
+    acesso_explicito: boolean | number;
+}
 
 export interface UserAccessInfo {
     id: string;
@@ -23,11 +31,17 @@ export function useUsersByForm(formId?: string) {
         setLoading(true);
         try {
             const c = await getContainerAsync();
-            const rows = await c.sqlite.query<UserAccessInfo>(
+            const rows = await c.sqlite.query<UserAccessInfoRow>(
                 USUARIOS_COM_ACESSO_FORM.sql,
                 [currentFormId],
             );
-            setUsers(rows.map(r => ({ ...r, explicit_grant: Boolean(r.explicit_grant) })));
+            setUsers(rows.map(r => ({
+                id: r.id,
+                nome: r.nome,
+                email: r.email,
+                perfil: r.perfil,
+                explicit_grant: Boolean(r.acesso_explicito),
+            })));
         } catch (error) {
             console.error("Error fetching users by form access:", error);
             setUsers([]);

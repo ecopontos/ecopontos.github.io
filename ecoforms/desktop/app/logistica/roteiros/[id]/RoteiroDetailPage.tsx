@@ -27,7 +27,7 @@ import ItinerarioMap from "@/components/logistics/ItinerarioMap";
 import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
 import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 
 function htmlEscape(s: string | null | undefined): string {
   return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

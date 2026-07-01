@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { Roteiro, RoteiroCliente, ExecucaoColeta, ChecklistExecucao, Intercorrencia } from '@/src/domain/logistics/LogisticsRepository';
 
 export function useLogisticsMutations() {

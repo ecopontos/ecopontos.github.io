@@ -28,9 +28,6 @@ const MIGRATION_STEPS: [string, string][] = [
     ['log_auditoria.new_value',                'ALTER TABLE log_auditoria RENAME COLUMN new_value TO valor_novo'],
     ['log_auditoria.metadata',                 'ALTER TABLE log_auditoria RENAME COLUMN metadata TO metadados'],
     ['log_auditoria.synced',                   'ALTER TABLE log_auditoria RENAME COLUMN synced TO sincronizado'],
-
-    ['data_registry → registro_dados',         'ALTER TABLE data_registry RENAME TO registro_dados'],
-
     ['decision_registry → registro_decisoes',  'ALTER TABLE decision_registry RENAME TO registro_decisoes'],
     ['registro_decisoes.target_type',          'ALTER TABLE registro_decisoes RENAME COLUMN target_type TO tipo_alvo'],
     ['registro_decisoes.action',               'ALTER TABLE registro_decisoes RENAME COLUMN action TO acao'],
@@ -42,8 +39,6 @@ const MIGRATION_STEPS: [string, string][] = [
     ['registro_decisoes.consequence_config',   'ALTER TABLE registro_decisoes RENAME COLUMN consequence_config TO config_consequencia'],
 
     ['form_registry → registro_formularios',   'ALTER TABLE form_registry RENAME TO registro_formularios'],
-
-    ['module_registry → registro_modulos',     'ALTER TABLE module_registry RENAME TO registro_modulos'],
     ['registro_modulos.name',                  'ALTER TABLE registro_modulos RENAME COLUMN name TO nome'],
     ['registro_modulos.description',           'ALTER TABLE registro_modulos RENAME COLUMN description TO descricao'],
     ['registro_modulos.entity_type',           'ALTER TABLE registro_modulos RENAME COLUMN entity_type TO tipo_entidade'],

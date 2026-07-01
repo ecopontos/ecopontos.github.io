@@ -1,11 +1,12 @@
 ﻿'use client';
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
-import { fetchTarefaAnexos, insertTarefaAnexo, deleteTarefaAnexo } from '@/src/interface/hooks/queries/lookups';
+import { fetchTarefaAnexos, insertTarefaAnexo, deleteTarefaAnexo } from '@/src/interface/hooks/queries/lookups/tasks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Trash2, FileText, Image, FileArchive, File, Download, Loader2 } from 'lucide-react';
+import { Upload, Trash2, FileText, ImageIcon, FileArchive, File, Download, Loader2 } from 'lucide-react';
 import { useFileStorage } from '@/src/interface/hooks/catalog/utils';
+import { uuidv7 } from 'ecoforms-core';
 
 interface TaskAttachment {
     id: string;
@@ -56,15 +57,11 @@ export function TaskAttachments({ taskId, userId, readOnly = false, onAttachment
         loadAttachments();
     }, [taskId]);
 
-    // Generate unique ID
-    const generateId = () => {
-        return `anexo_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    };
 
     // Get file icon based on MIME type
     const getFileIcon = (mimeType: string | null) => {
         if (!mimeType) return <File className="h-4 w-4" />;
-        if (mimeType.startsWith('image/')) return <Image className="h-4 w-4 text-blue-500" />;
+        if (mimeType.startsWith('image/')) return <ImageIcon className="h-4 w-4 text-blue-500" />;
         if (mimeType.includes('pdf') || mimeType.includes('document')) return <FileText className="h-4 w-4 text-red-500" />;
         if (mimeType.includes('zip') || mimeType.includes('archive')) return <FileArchive className="h-4 w-4 text-yellow-500" />;
         return <File className="h-4 w-4 text-gray-500" />;
@@ -105,7 +102,7 @@ export function TaskAttachments({ taskId, userId, readOnly = false, onAttachment
 
     // Upload single file
     const uploadFile = async (file: File) => {
-        const attachmentId = generateId();
+        const attachmentId = uuidv7();
         const storagePath = `attachments/${taskId}/${attachmentId}_${file.name}`;
 
         // Upload via FileStoragePort

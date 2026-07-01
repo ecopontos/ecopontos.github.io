@@ -50,7 +50,7 @@ test.beforeEach(async ({ page }) => {
           const sql = (args?.sql as string) || '';
           const params = (args?.argumentsValues ?? []) as unknown[];
 
-          if (sql.includes('module_registry WHERE slug =')) {
+          if (sql.includes('registro_modulos WHERE slug =')) {
             return [MOCK_MODULE];
           }
           if (sql.includes('module_permissions WHERE module_id')) {
@@ -59,7 +59,7 @@ test.beforeEach(async ({ page }) => {
           if (sql.includes('registro_formularios WHERE form_id IN')) {
             return [MOCK_FORM];
           }
-          if (sql.includes('data_registry WHERE tipo =')) {
+          if (sql.includes('registro_dados WHERE tipo =')) {
             return MOCK_DATA_REGISTRY;
           }
           if (sql.includes('usuarios WHERE')) {

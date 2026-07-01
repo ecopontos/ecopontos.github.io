@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { uuidv7 } from 'ecoforms-core';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@/src/interface/hooks/catalog/tauri';
 import type { Anexo } from '@/src/domain/ouvidoria/ManifestacaoRepository';

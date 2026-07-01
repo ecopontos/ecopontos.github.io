@@ -18,11 +18,11 @@
  *   - `fetchAvailableForms(): Promise<void>`          — recarrega os formulários disponíveis
  */
 import { useState, useEffect, useCallback } from "react"
-import { getContainerAsync } from "@/src/infrastructure/container"
+import { getContainerAsync } from "../utils/useContainer"
 import {
   SOLICITACOES_POR_USUARIO,
   FORMS_AD_HOC_DISPONIVEIS,
-} from '@/src/infrastructure/persistence/sqlite/queries/solicitacoes';
+} from '@/src/application/persistence/sqlite/queries/solicitacoes';
 
 export interface SolicitacaoPackage {
     id_pacote: string

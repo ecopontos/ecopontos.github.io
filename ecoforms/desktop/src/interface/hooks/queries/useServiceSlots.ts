@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { getContainerAsync } from "../utils/useContainer";
 import type { ServiceSlot } from "@/src/domain/service/ServiceSlot";
 
 export function useServiceSlots(filtros?: { status?: string; serviceTypeId?: string }) {

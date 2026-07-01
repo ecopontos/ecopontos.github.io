@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getContainerAsync } from '../../../infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { CreateBookingInput } from '../../../application/service/CreateBookingUseCase';
 
 export function useAgendamentoMutations() {

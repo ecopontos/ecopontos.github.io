@@ -1,7 +1,7 @@
 import type { QueryDef } from './_types';
 
 export const AGENDAMENTOS_RESUMO: QueryDef = {
-    sql: `SELECT status, COUNT(*) AS total FROM tbl_agendamentos GROUP BY status`,
+    sql: `SELECT status, COUNT(*) AS total FROM agendamentos GROUP BY status`,
     description: 'Resumo de agendamentos por status',
     params: [],
     use: 'dashboard',
@@ -10,7 +10,7 @@ export const AGENDAMENTOS_RESUMO: QueryDef = {
 
 export const AGENDAMENTOS_POR_SLOT: QueryDef = {
     sql: `SELECT a.*, u.nome AS responsavel_nome
-          FROM tbl_agendamentos a
+          FROM agendamentos a
           LEFT JOIN usuarios u ON u.id = a.responsavel_id
           WHERE a.slot_id = ?
           ORDER BY a.criado_em ASC`,
@@ -22,9 +22,9 @@ export const AGENDAMENTOS_POR_SLOT: QueryDef = {
 
 export const AGENDAMENTOS_POR_CLIENTE: QueryDef = {
     sql: `SELECT a.*, st.nome AS tipo_nome, ss.data_inicio, ss.data_fim
-          FROM tbl_agendamentos a
-          JOIN tbl_service_slots ss ON ss.id = a.slot_id
-          JOIN tbl_service_types st ON st.id = a.service_type_id
+          FROM agendamentos a
+          JOIN janelas_agendamento ss ON ss.id = a.slot_id
+          JOIN tipos_servico st ON st.id = a.service_type_id
           WHERE a.cliente_id = ?
           ORDER BY ss.data_inicio DESC`,
     description: 'Histórico de agendamentos de um cliente',
@@ -38,9 +38,9 @@ export const AGENDAMENTO_BY_ID_WITH_DETAILS: QueryDef = {
                  ag.bairro, ag.vagas_solicitadas, ag.status, ag.dados_formulario,
                  sl.titulo AS slot_titulo, sl.local, sl.data_inicio, sl.data_fim,
                  st.nome  AS service_type_nome
-          FROM tbl_agendamentos ag
-          JOIN tbl_service_slots  sl ON sl.id = ag.slot_id
-          JOIN tbl_service_types  st ON st.id = ag.service_type_id
+          FROM agendamentos ag
+          JOIN janelas_agendamento  sl ON sl.id = ag.slot_id
+          JOIN tipos_servico  st ON st.id = ag.service_type_id
           WHERE ag.id = ?`,
     description: 'Agendamento por id com joins em slot e service type (EditTaskModal)',
     params: ['id'],
@@ -51,9 +51,9 @@ export const AGENDAMENTO_BY_ID_WITH_DETAILS: QueryDef = {
 export const AGENDAMENTOS_BY_USER: QueryDef = {
     sql: `SELECT a.id, a.status, a.cliente_nome, a.vagas_solicitadas, a.criado_em,
                  ss.titulo AS slot_titulo, ss.data_inicio, st.nome AS tipo_nome
-          FROM tbl_agendamentos a
-          JOIN tbl_service_slots ss ON ss.id = a.slot_id
-          JOIN tbl_service_types st ON st.id = a.service_type_id
+          FROM agendamentos a
+          JOIN janelas_agendamento ss ON ss.id = a.slot_id
+          JOIN tipos_servico st ON st.id = a.service_type_id
           WHERE a.cliente_id = ? OR a.criado_por = ?
           ORDER BY a.criado_em DESC`,
     description: 'Agendamentos criados por ou de um cliente (exportacao GDPR)',
@@ -63,7 +63,7 @@ export const AGENDAMENTOS_BY_USER: QueryDef = {
 };
 
 export const AGENDAMENTOS_DELETE_BY_USER: QueryDef = {
-    sql: `DELETE FROM tbl_agendamentos WHERE cliente_id = ? OR criado_por = ?`,
+    sql: `DELETE FROM agendamentos WHERE cliente_id = ? OR criado_por = ?`,
     description: 'Deleta agendamentos vinculados a um usuario (eliminacao titular)',
     params: ['user_id_a', 'user_id_b'],
     use: 'operacional',
@@ -73,7 +73,7 @@ export const AGENDAMENTOS_DELETE_BY_USER: QueryDef = {
 export const AGENDAMENTOS_VAGAS_OCUPACAO: QueryDef = {
     sql: `SELECT ss.id, ss.titulo, ss.capacidade, ss.vagas_ocupadas,
                  ROUND(CAST(ss.vagas_ocupadas AS REAL) / ss.capacidade, 2) AS ocupacao_pct
-          FROM tbl_service_slots ss
+          FROM janelas_agendamento ss
           WHERE ss.status = 'publicado' AND ss.capacidade IS NOT NULL
           ORDER BY ocupacao_pct DESC`,
     description: 'Ocupação percentual dos slots publicados com capacidade',
@@ -86,8 +86,8 @@ export const SLOTS_COM_VAGAS_DISPONIVEIS: QueryDef = {
     sql: `SELECT ss.*, st.nome AS tipo_nome, st.icone, st.cor, st.form_id,
                  st.validator_key, st.abertura_regra,
                  (ss.capacidade - ss.vagas_ocupadas) AS vagas_livres
-          FROM tbl_service_slots ss
-          JOIN tbl_service_types st ON st.id = ss.service_type_id
+          FROM janelas_agendamento ss
+          JOIN tipos_servico st ON st.id = ss.service_type_id
           WHERE ss.status = 'publicado'
             AND (ss.capacidade IS NULL OR ss.vagas_ocupadas < ss.capacidade)
             AND (ss.abertura_em IS NULL OR ss.abertura_em <= datetime('now'))
@@ -115,7 +115,7 @@ export const TAREFAS_CAMPO_HOJE: QueryDef = {
 };
 
 export const AGENDAMENTOS_NOTIFICACOES: QueryDef = {
-  sql: `SELECT * FROM tbl_agendamento_notificacoes
+  sql: `SELECT * FROM notificacoes_agendamento
           WHERE agendamento_id = ?
           ORDER BY criado_em ASC`,
   description: 'Notificações de um agendamento',
@@ -130,7 +130,7 @@ export const AGENDAMENTOS_MAP_POINTS_BY_SLOT: QueryDef = {
          c.endereco, c.numero, c.cidade,
          COALESCE(t.centroid_lat, c.latitude)  AS latitude,
          COALESCE(t.centroid_lng, c.longitude) AS longitude
-  FROM tbl_agendamentos a
+  FROM agendamentos a
   JOIN clientes c ON c.id = a.cliente_id
   LEFT JOIN terrenos t ON t.id = c.terreno_id
   WHERE a.slot_id = ?
@@ -146,9 +146,9 @@ export const AGENDAMENTOS_MAP_POINTS_BY_SLOT: QueryDef = {
 export const AGENDAMENTOS_POR_USUARIO_EXPORT: QueryDef = {
   sql: `SELECT a.id, a.status, a.cliente_nome, a.vagas_solicitadas, a.criado_em,
         ss.titulo AS slot_titulo, ss.data_inicio, st.nome AS tipo_nome
- FROM tbl_agendamentos a
- JOIN tbl_service_slots ss ON ss.id = a.slot_id
- JOIN tbl_service_types st ON st.id = a.service_type_id
+ FROM agendamentos a
+ JOIN janelas_agendamento ss ON ss.id = a.slot_id
+ JOIN tipos_servico st ON st.id = a.service_type_id
  WHERE a.cliente_id = ? OR a.criado_por = ?
  ORDER BY a.criado_em DESC`,
   description: 'Agendamentos de um usuário para exportação GDPR',

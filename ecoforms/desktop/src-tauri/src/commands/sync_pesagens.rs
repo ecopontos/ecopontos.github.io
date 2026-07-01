@@ -3,13 +3,12 @@ use std::collections::HashSet;
 use postgres::{Client, NoTls};
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use uuid::Uuid;
-
 use crate::commands::audit::log_audit;
 use crate::commands::crypto::CryptoState;
 use crate::commands::legacy_sync::{build_conn_string, load_pg_legacy_credentials};
 use crate::database::DbState;
 use crate::session::SessionState;
+use crate::uuid_v7::uuid_v7_string;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SyncPesagensResult {
@@ -146,7 +145,7 @@ pub fn sync_pesagens_externas(
         let execucao_id = match execucao_id {
             Some(id) => id,
             None => {
-                let new_id = Uuid::new_v4().to_string();
+                let new_id = uuid_v7_string();
                 let result = sqlite_conn.execute(
                     "INSERT INTO execucao_coleta (id, roteiro_id, data_execucao, status, criado_em) VALUES (?1, ?2, ?3, 'concluida', datetime('now'))",
                     rusqlite::params![new_id, roteiro_local_id, dt_pesagem_only],
@@ -189,7 +188,7 @@ pub fn sync_pesagens_externas(
                 ],
             ),
             None => {
-                let new_id = Uuid::new_v4().to_string();
+                let new_id = uuid_v7_string();
                 sqlite_conn.execute(
                     "INSERT INTO execucao_pesagens
                         (id, execucao_id, id_balanca, id_despacho, codigo_despacho, data_pesagem,

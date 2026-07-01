@@ -4,6 +4,9 @@
  * Hooks para RBAC, verificação de permissões, gerenciamento de usuários
  * e integração com Supabase Admin.
  */
+// --- Contexto de autenticação ---
+export { useAuth } from '@/contexts/AuthContext';
+
 
 // --- RBAC e permissões ---
 export {
@@ -25,6 +28,9 @@ export {
 } from '../queries/useAdminUsers';
 export { useSetores } from '../queries/useSetores';                      // ativo — setores ativos
 export type { Setor } from '../queries/useSetores';
+
+// --- Bootstrap e first-run ---
+export { useFirstRunSetup } from '../mutations/useFirstRunSetup';
 
 // --- Supabase Admin ---
 export { useSupabaseAdmin } from '../queries/useSupabaseAdmin';          // ativo — sync Supabase → SQLite (admin)

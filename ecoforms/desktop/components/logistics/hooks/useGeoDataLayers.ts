@@ -274,7 +274,7 @@ export function useGeoDataLayers(mapRef: RefObject<maplibregl.Map | null>, initi
         if (map.getLayer('clientes-cluster-count')) map.setLayoutProperty('clientes-cluster-count', 'visibility', cliVis);
         if (map.getLayer('clientes-point'))         map.setLayoutProperty('clientes-point',         'visibility', cliVis);
 
-        // 3. Camadas genéricas (geo_layers)
+        // 3. Camadas genéricas (camadas_geo)
         geoLayersRef.current.forEach(layer => addGeoLayerToMap(map, layer));
 
         // 4. Itinerário (linha de rota + pins numerados)

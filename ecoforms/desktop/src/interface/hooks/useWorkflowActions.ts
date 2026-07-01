@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { getAvailableActions, type ActionButtonConfig } from "@/src/application/actions/ActionRegistry";
 
 export function useWorkflowActions(

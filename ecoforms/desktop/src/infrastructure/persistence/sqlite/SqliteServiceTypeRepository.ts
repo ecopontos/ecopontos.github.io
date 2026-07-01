@@ -47,7 +47,7 @@ export class SqliteServiceTypeRepository implements ServiceTypeRepository {
 
     async findById(id: string): Promise<ServiceType | null> {
         const rows = await this.db.query<ServiceTypeRow>(
-            `SELECT * FROM tbl_service_types WHERE id = ? LIMIT 1`,
+            `SELECT * FROM tipos_servico WHERE id = ? LIMIT 1`,
             [id],
         );
         return rows[0] ? rowToEntity(rows[0]) : null;
@@ -55,8 +55,8 @@ export class SqliteServiceTypeRepository implements ServiceTypeRepository {
 
     async findAll(ativo?: boolean): Promise<ServiceType[]> {
         const sql = ativo !== undefined
-            ? `SELECT * FROM tbl_service_types WHERE ativo = ? ORDER BY nome`
-            : `SELECT * FROM tbl_service_types ORDER BY nome`;
+            ? `SELECT * FROM tipos_servico WHERE ativo = ? ORDER BY nome`
+            : `SELECT * FROM tipos_servico ORDER BY nome`;
         const params = ativo !== undefined ? [ativo ? 1 : 0] : [];
         const rows = await this.db.query<ServiceTypeRow>(sql, params);
         return rows.map(rowToEntity);
@@ -66,7 +66,7 @@ export class SqliteServiceTypeRepository implements ServiceTypeRepository {
         if (setorIds.length === 0) return [];
         const placeholders = setorIds.map(() => '?').join(',');
         const whereAtivo = ativo !== undefined ? 'AND ativo = ?' : '';
-        const sql = `SELECT * FROM tbl_service_types WHERE setor_id IN (${placeholders}) ${whereAtivo} ORDER BY nome`;
+        const sql = `SELECT * FROM tipos_servico WHERE setor_id IN (${placeholders}) ${whereAtivo} ORDER BY nome`;
         const params: unknown[] = [...setorIds];
         if (ativo !== undefined) params.push(ativo ? 1 : 0);
         const rows = await this.db.query<ServiceTypeRow>(sql, params);
@@ -76,7 +76,7 @@ export class SqliteServiceTypeRepository implements ServiceTypeRepository {
     async save(type: ServiceType): Promise<void> {
         const p = type.toProps();
         await this.db.execute(
-            `INSERT INTO tbl_service_types (
+            `INSERT INTO tipos_servico (
                 id, nome, descricao, form_id, validator_key,
                 requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao,
                 icone, cor, ativo, setor_id, criado_em, atualizado_em

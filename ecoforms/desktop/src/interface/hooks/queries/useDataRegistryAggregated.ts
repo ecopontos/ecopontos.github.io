@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDataRegistryUseCases } from "../domain/useDataRegistryUseCases";
-import { loadCrmDataSource, getCrmDataSourceNames } from "@/src/infrastructure/config/crm-datasources";
+import { loadCrmDataSource, getCrmDataSourceNames } from "@/src/interface/gateways/crm-datasources";
 export { getCrmDataSourceNames };
 
 export function useDataRegistryAggregated(tipo: string | undefined): {

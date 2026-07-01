@@ -43,7 +43,7 @@ export class EliminacaoTitularUseCase {
 
         // 2 — Cascade local
         const deletes: Array<[string, string, unknown[]]> = [
-            [AGENDAMENTOS_DELETE_BY_USER.sql, 'tbl_agendamentos', [userId, userId]],
+            [AGENDAMENTOS_DELETE_BY_USER.sql, 'agendamentos', [userId, userId]],
             [MANIFESTACOES_DELETE_BY_CLIENTE.sql, 'manifestacoes', [userId]],
             [TAREFAS_DELETE_BY_USER.sql, 'tarefas', [userId, userId]],
             [LOG_ACOES_DELETE_BY_USER.sql, 'log_acoes', [userId]],

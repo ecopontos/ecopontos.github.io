@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { canManageByRole } from "@/src/interface/hooks/catalog/auth";
 import { useProjects, useProjectMutations, ProjectWithMetrics } from "@/src/interface/hooks/catalog/kanban";
 import { ProjectCard } from "@/components/projects/ProjectCard";

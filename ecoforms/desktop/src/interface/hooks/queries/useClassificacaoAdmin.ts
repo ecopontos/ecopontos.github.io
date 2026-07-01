@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { ModeloResposta } from '@/src/domain/ouvidoria/ManifestacaoRepository';
 import {
   CLASSIFICACAO_SUBASSUNTOS,
   CLASSIFICACAO_SUBUNIDADES,
   CLASSIFICACAO_PROGRAMAS_ORCAMENTARIOS,
-} from '@/src/infrastructure/persistence/sqlite/queries/classificacao';
+} from '@/src/application/persistence/sqlite/queries/classificacao';
 
 interface CatalogoItem { id: string; nome: string; }
 

@@ -58,6 +58,15 @@ async function ensureModuleTables(execute: ExecuteFn): Promise<void> {
     await execute(`CREATE INDEX IF NOT EXISTS idx_module_permissions_module_id ON permissoes_modulos(module_id)`);
 
     await execute(`
+        CREATE TABLE IF NOT EXISTS cursores_sync_lan (
+            domain          TEXT PRIMARY KEY,
+            last_event_id   TEXT NOT NULL DEFAULT '',
+            last_pulled_at  TEXT,
+            pulled_count    INTEGER NOT NULL DEFAULT 0
+        )
+    `);
+
+    await execute(`
         CREATE TABLE IF NOT EXISTS visuais_modulos (
             id             TEXT PRIMARY KEY,
             module_id      TEXT NOT NULL REFERENCES registro_modulos(id) ON DELETE CASCADE,
@@ -1096,43 +1105,15 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_suite_package_version ON pacotes (id_pacote, num_versao)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_suite_entity ON pacotes (tipo_entidade, id_entidade)`);
 
-    // tbl_suite — tabela normalizada para suite/pacotes (usada por FTS e sync)
-    await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_suite (
-            package_id      TEXT PRIMARY KEY,
-            version_no      INTEGER NOT NULL DEFAULT 1,
-            module_type     TEXT NOT NULL,
-            resource_type   TEXT NOT NULL,
-            status          TEXT NOT NULL DEFAULT 'draft',
-            owner_id        TEXT,
-            is_current      INTEGER NOT NULL DEFAULT 1,
-            locked_by       TEXT,
-            locked_at       TEXT,
-            ref_package_id  TEXT,
-            ref_package_ver INTEGER,
-            payload_json    TEXT NOT NULL DEFAULT '{}',
-            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-            closed_at       TEXT
-        )
-    `).catch((e) => console.warn('[Bootstrap] tbl_suite:', e));
-    // Migração: garante created_at em tbl_suite pré-existente
-    try {
-        const cols = await query<{ name: string }>(`PRAGMA table_info('tbl_suite')`);
-        if (!cols.some(c => c.name === 'created_at')) {
-            await execute(`ALTER TABLE tbl_suite ADD COLUMN created_at TEXT`);
-            console.log('[Bootstrap] added created_at to existing tbl_suite');
-        }
-    } catch { /* table may not exist */ }
-
     // Tabela FTS para busca full-text no inbox
     await execute(`
-        CREATE VIRTUAL TABLE IF NOT EXISTS suite_fts USING fts5(
+        CREATE VIRTUAL TABLE IF NOT EXISTS pacotes_fts USING fts5(
             suite_id UNINDEXED,
             texto_busca,
             content='',
             contentless_delete=1
         )
-    `).catch((e) => console.warn('[Bootstrap] suite_fts:', e));
+    `).catch((e) => console.warn('[Bootstrap] pacotes_fts:', e));
 
     // View normalizada para inbox (unifica pacotes + usuarios)
     await execute(`
@@ -1566,10 +1547,10 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_sync_applied_log_entity ON log_eventos_aplicados(tipo_entidade, id_entidade)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_sync_applied_log_source ON log_eventos_aplicados(dispositivo_origem)`);
 
-    // ADR-051 / ADR-011: escrow do sync_salt para rotação e recuperação de chave.
-    // Migrado de desktop/migrations/011_add_key_escrow.sql para o schema canônico.
+    // ADR-051 / ADR-011: escrow do sync_salt para rotacao e recuperacao de chave.
+    // Migrado de desktop/migrations/011_add_key_escrow.sql para o schema canonico.
     await execute(`
-        CREATE TABLE IF NOT EXISTS sync_salt_history (
+        CREATE TABLE IF NOT EXISTS historico_sal_sync (
             id             TEXT PRIMARY KEY,
             user_id        TEXT NOT NULL,
             salt_encrypted TEXT NOT NULL,
@@ -1580,7 +1561,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             FOREIGN KEY (user_id) REFERENCES usuarios(id)
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_salt_history_user ON sync_salt_history(user_id, replaced_at DESC)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_historico_sal_sync_usuario ON historico_sal_sync(user_id, replaced_at DESC)`);
 
     await execute(`
         CREATE TABLE IF NOT EXISTS log_gaps_sync (
@@ -1630,28 +1611,28 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ADR-020: Configurações do sistema (chave-valor)
     // ================================================================
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_configuracoes_sistema (
+        CREATE TABLE IF NOT EXISTS configuracoes_sistema (
             chave         TEXT PRIMARY KEY,
             valor         TEXT NOT NULL DEFAULT '',
             descricao     TEXT,
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('lan_sync_path', '', 'Caminho da pasta LAN para sincronização local (vazio = desativado)')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_host', '172.16.76.202', 'Host do PostgreSQL legado (sync roteiros/pesagens)')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_port', '5432', 'Porta do PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_db', 'geo_fpolis', 'Nome do banco PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_user', 'smma', 'Usuário do PostgreSQL legado')`).catch(() => {});
-    await execute(`INSERT OR IGNORE INTO tbl_configuracoes_sistema (chave, valor, descricao)
+    await execute(`INSERT OR IGNORE INTO configuracoes_sistema (chave, valor, descricao)
         VALUES ('pg_legacy_password', '', 'Senha do PostgreSQL legado')`).catch(() => {});
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_email_config (
+        CREATE TABLE IF NOT EXISTS configuracao_email (
             id            TEXT PRIMARY KEY DEFAULT 'default',
             smtp_host     TEXT NOT NULL DEFAULT '',
             smtp_port     INTEGER NOT NULL DEFAULT 587,
@@ -1665,7 +1646,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em TEXT
         )
     `);
-    await execute(`ALTER TABLE tbl_email_config ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
+    await execute(`ALTER TABLE configuracao_email ADD COLUMN smtp_password_encrypted BLOB`).catch(() => {});
 
     await execute(`
         CREATE TABLE IF NOT EXISTS app_config (
@@ -1805,7 +1786,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ================================================================
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_service_types (
+        CREATE TABLE IF NOT EXISTS tipos_servico (
             id                   TEXT PRIMARY KEY,
             nome                 TEXT NOT NULL,
             descricao            TEXT,
@@ -1822,13 +1803,13 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em        TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_service_types_ativo ON tbl_service_types(ativo)`);
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN setor_id TEXT REFERENCES setores(id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_service_types_ativo ON tipos_servico(ativo)`);
+    await execute(`ALTER TABLE tipos_servico ADD COLUMN setor_id TEXT REFERENCES setores(id)`).catch(() => {});
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_service_slots (
+        CREATE TABLE IF NOT EXISTS janelas_agendamento (
             id              TEXT PRIMARY KEY,
-            service_type_id TEXT NOT NULL REFERENCES tbl_service_types(id),
+            service_type_id TEXT NOT NULL REFERENCES tipos_servico(id),
             titulo          TEXT NOT NULL,
             descricao       TEXT,
             data_inicio     TEXT NOT NULL,
@@ -1846,34 +1827,34 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em   TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_type   ON tbl_service_slots(service_type_id)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_status ON tbl_service_slots(status)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_datas  ON tbl_service_slots(data_inicio, data_fim)`);
-    await execute(`ALTER TABLE tbl_service_slots ADD COLUMN tipo_prazo TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_service_slots ADD COLUMN recorrencia TEXT`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_type   ON janelas_agendamento(service_type_id)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_status ON janelas_agendamento(status)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_datas  ON janelas_agendamento(data_inicio, data_fim)`);
+    await execute(`ALTER TABLE janelas_agendamento ADD COLUMN tipo_prazo TEXT`).catch(() => {});
+    await execute(`ALTER TABLE janelas_agendamento ADD COLUMN recorrencia TEXT`).catch(() => {});
 
     // ADR-019: Desacoplamento Booking/Task
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
+    await execute(`ALTER TABLE tipos_servico ADD COLUMN abertura_regra TEXT NOT NULL DEFAULT '{"tipo":"imediato"}'`).catch(() => {});
     // ADR-053: Flag requerMapa para exibição de roteiro geográfico
-    await execute(`ALTER TABLE tbl_service_types ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
-    await execute(`UPDATE tbl_service_types SET requer_mapa = 1 WHERE id IN ('volumosos', 'evento')`).catch(() => {});
+    await execute(`ALTER TABLE tipos_servico ADD COLUMN requer_mapa INTEGER NOT NULL DEFAULT 0`).catch(() => {});
+    await execute(`UPDATE tipos_servico SET requer_mapa = 1 WHERE id IN ('volumosos', 'evento')`).catch(() => {});
 
     // Seed: executa APÓS o ALTER que adiciona `requer_mapa` (referenciado no INSERT).
     try {
-        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tbl_service_types`);
+        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM tipos_servico`);
         if (c[0]?.n === 0) {
-            await execute(`INSERT INTO tbl_service_types (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
+            await execute(`INSERT INTO tipos_servico (id, nome, descricao, form_id, validator_key, requer_fotos, bairros_obrigatorios, requer_mapa, capacidade_padrao, icone, cor, ativo) VALUES
                 ('museu',     'Museu do Lixo',       'Visitas ao Museu do Lixo para grupos de até 25 pessoas',  'form-agendamento-museu',     'museu',     0, 0, 0, 25,  '🏛️', '#3B82F6', 1),
                 ('volumosos', 'Coleta de Volumosos', 'Retirada de resíduos volumosos por zona de bairros',      'form-agendamento-volumosos', 'volumosos', 1, 1, 1, 10, '🚚', '#22C55E', 1),
                 ('evento',    'Palestra / Evento',   'Palestras e eventos com demanda livre',                   'form-agendamento-evento',    'evento',    0, 0, 1, NULL,'🎤', '#F59E0B', 1)
             `);
-            console.log('[Seed] tbl_service_types OK');
+            console.log('[Seed] tipos_servico OK');
         }
-    } catch (e) { console.warn('[Seed] tbl_service_types:', e); }
+    } catch (e) { console.warn('[Seed] tipos_servico:', e); }
 
-    await execute(`ALTER TABLE tbl_service_slots ADD COLUMN abertura_em TEXT`).catch(() => {});
+    await execute(`ALTER TABLE janelas_agendamento ADD COLUMN abertura_em TEXT`).catch(() => {});
     await execute(`ALTER TABLE tarefas ADD COLUMN agendamento_id TEXT`).catch(() => {});
-    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_abertura ON tbl_service_slots(abertura_em)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_service_slots_abertura ON janelas_agendamento(abertura_em)`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_agendamento    ON tarefas(agendamento_id)`).catch(() => {});
     // ADR-026: rastreabilidade de origem (demanda/agendamento/manifestacao/suite/manual)
     await execute(`ALTER TABLE tarefas ADD COLUMN origem_tipo TEXT`).catch(() => {});
@@ -1881,10 +1862,10 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_tarefas_origem ON tarefas(origem_tipo, origem_id)`).catch(() => {});
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_agendamentos (
+        CREATE TABLE IF NOT EXISTS agendamentos (
             id               TEXT PRIMARY KEY,
-            slot_id          TEXT NOT NULL REFERENCES tbl_service_slots(id),
-            service_type_id  TEXT NOT NULL REFERENCES tbl_service_types(id),
+            slot_id          TEXT NOT NULL REFERENCES janelas_agendamento(id),
+            service_type_id  TEXT NOT NULL REFERENCES tipos_servico(id),
             cliente_id       TEXT NOT NULL,
             cliente_nome     TEXT NOT NULL,
             vagas_solicitadas INTEGER NOT NULL DEFAULT 1,
@@ -1902,26 +1883,26 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             atualizado_em    TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_slot    ON tbl_agendamentos(slot_id)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_cliente ON tbl_agendamentos(cliente_id)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_status  ON tbl_agendamentos(status)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_setor   ON tbl_agendamentos(setor_id)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_slot    ON agendamentos(slot_id)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_cliente ON agendamentos(cliente_id)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_status  ON agendamentos(status)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_agendamentos_setor   ON agendamentos(setor_id)`);
     // Guards para bancos criados antes de colunas adicionadas ao DDL
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN cliente_nome TEXT NOT NULL DEFAULT ''`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN service_type_id TEXT NOT NULL DEFAULT ''`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN vagas_solicitadas INTEGER NOT NULL DEFAULT 1`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN bairro TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN task_id TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN cliente_email TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN cliente_telefone TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN responsavel_id TEXT`).catch(() => {});
-    await execute(`ALTER TABLE tbl_agendamentos ADD COLUMN setor_id TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN cliente_nome TEXT NOT NULL DEFAULT ''`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN service_type_id TEXT NOT NULL DEFAULT ''`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN vagas_solicitadas INTEGER NOT NULL DEFAULT 1`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN bairro TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN task_id TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN cliente_email TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN cliente_telefone TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN responsavel_id TEXT`).catch(() => {});
+    await execute(`ALTER TABLE agendamentos ADD COLUMN setor_id TEXT`).catch(() => {});
 
     // ADR-042: triggers de validação de status para bancos existentes
     // (CREATE TABLE IF NOT EXISTS com CHECK só protege novas instalações)
     await execute(`
         CREATE TRIGGER IF NOT EXISTS chk_agendamentos_status_insert
-        BEFORE INSERT ON tbl_agendamentos
+        BEFORE INSERT ON agendamentos
         BEGIN
             SELECT RAISE(ABORT,'status de agendamento inválido')
             WHERE NEW.status NOT IN ('pendente','confirmado','realizado','cancelado');
@@ -1929,7 +1910,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `).catch(() => {});
     await execute(`
         CREATE TRIGGER IF NOT EXISTS chk_agendamentos_status_update
-        BEFORE UPDATE OF status ON tbl_agendamentos
+        BEFORE UPDATE OF status ON agendamentos
         BEGIN
             SELECT RAISE(ABORT,'status de agendamento inválido')
             WHERE NEW.status NOT IN ('pendente','confirmado','realizado','cancelado');
@@ -1937,7 +1918,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `).catch(() => {});
     await execute(`
         CREATE TRIGGER IF NOT EXISTS chk_slots_status_insert
-        BEFORE INSERT ON tbl_service_slots
+        BEFORE INSERT ON janelas_agendamento
         BEGIN
             SELECT RAISE(ABORT,'status de slot inválido')
             WHERE NEW.status NOT IN ('rascunho','publicado','encerrado','cancelado');
@@ -1945,7 +1926,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `).catch(() => {});
     await execute(`
         CREATE TRIGGER IF NOT EXISTS chk_slots_status_update
-        BEFORE UPDATE OF status ON tbl_service_slots
+        BEFORE UPDATE OF status ON janelas_agendamento
         BEGIN
             SELECT RAISE(ABORT,'status de slot inválido')
             WHERE NEW.status NOT IN ('rascunho','publicado','encerrado','cancelado');
@@ -1953,16 +1934,16 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `).catch(() => {});
 
     await execute(`
-        CREATE TABLE IF NOT EXISTS tbl_agendamento_notificacoes (
+        CREATE TABLE IF NOT EXISTS notificacoes_agendamento (
             id             TEXT PRIMARY KEY,
-            agendamento_id TEXT NOT NULL REFERENCES tbl_agendamentos(id),
+            agendamento_id TEXT NOT NULL REFERENCES agendamentos(id),
             canal          TEXT NOT NULL,
             status         TEXT NOT NULL,
             detalhe        TEXT,
             criado_em      TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_agd_notif_agendamento ON tbl_agendamento_notificacoes(agendamento_id)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_agd_notif_agendamento ON notificacoes_agendamento(agendamento_id)`);
 
     // ================================================================
     // MÓDULO: Agendamento (Service Booking Engine)
@@ -2017,7 +1998,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             'mod-agendamento',
             'table',
             'Slots de Agendamento',
-            '{"source": "tbl_service_slots", "columns": ["titulo", "tipo_prazo", "data_inicio", "data_fim", "capacidade", "vagas_ocupadas", "status"], "filterable": true}',
+            '{"source": "janelas_agendamento", "columns": ["titulo", "tipo_prazo", "data_inicio", "data_fim", "capacidade", "vagas_ocupadas", "status"], "filterable": true}',
             1,
             NULL,
             NULL,
@@ -2164,27 +2145,27 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     `);
 
     // ================================================================
-    // 19b. CAMADAS GEOGRÁFICAS GENÉRICAS — Mapa de Logística
+    // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica
     // ================================================================
     await execute(`
-        CREATE TABLE IF NOT EXISTS geo_layers (
-            id           TEXT PRIMARY KEY,
-            nome         TEXT NOT NULL,
-            tipo         TEXT NOT NULL DEFAULT 'geojson'
-                             CHECK(tipo IN ('geojson','kml','gpx')),
-            categoria    TEXT DEFAULT 'outro'
-                             CHECK(categoria IN ('terreno','pontos_gps','infraestrutura','outro')),
-            geojson      TEXT,
-            storage_path TEXT,
-            cor          TEXT NOT NULL DEFAULT '#3B82F6',
-            visivel      INTEGER NOT NULL DEFAULT 1,
-            criado_por   TEXT REFERENCES usuarios(id),
-            criado_em    TEXT NOT NULL DEFAULT (datetime('now')),
+        CREATE TABLE IF NOT EXISTS camadas_geo (
+            id            TEXT PRIMARY KEY,
+            nome          TEXT NOT NULL,
+            tipo          TEXT NOT NULL DEFAULT 'geojson'
+                              CHECK(tipo IN ('geojson','kml','gpx')),
+            categoria     TEXT DEFAULT 'outro'
+                              CHECK(categoria IN ('terreno','pontos_gps','infraestrutura','outro')),
+            geojson       TEXT,
+            storage_path  TEXT,
+            cor           TEXT NOT NULL DEFAULT '#3B82F6',
+            visivel       INTEGER NOT NULL DEFAULT 1,
+            criado_por    TEXT REFERENCES usuarios(id),
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
             atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
         )
     `);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_geo_layers_visivel   ON geo_layers(visivel)`);
-    await execute(`CREATE INDEX IF NOT EXISTS idx_geo_layers_categoria ON geo_layers(categoria)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_camadas_geo_visivel ON camadas_geo(visivel)`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_camadas_geo_categoria ON camadas_geo(categoria)`);
 
     // ================================================================
     // ADR-043: Tabela ecopontos — criação se ainda não existe

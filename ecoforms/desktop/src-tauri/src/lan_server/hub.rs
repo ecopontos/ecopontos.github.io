@@ -26,7 +26,7 @@ pub async fn resolve_role_from_db(state: &Arc<LanServerState>) -> LanRole {
     let result = tokio::task::spawn_blocking(move || {
         let conn = LanServerState::open_db_connection(&db_path).ok()?;
         let role_str: Option<String> = conn.query_row(
-            "SELECT valor FROM tbl_configuracoes_sistema WHERE chave = 'lan_server_role'",
+            "SELECT valor FROM configuracoes_sistema WHERE chave = 'lan_server_role'",
             [],
             |row| row.get(0),
         ).ok();
@@ -57,7 +57,7 @@ pub async fn persist_role(state: &Arc<LanServerState>, role: &LanRole) -> Result
     tokio::task::spawn_blocking(move || {
         let conn = LanServerState::open_db_connection(&db_path)?;
         conn.execute(
-            "INSERT OR REPLACE INTO tbl_configuracoes_sistema (chave, valor, atualizado_em)
+            "INSERT OR REPLACE INTO configuracoes_sistema (chave, valor, atualizado_em)
              VALUES ('lan_server_role', ?1, datetime('now'))",
             [&role_val],
         ).map_err(|e| format!("Persist role error: {e}"))?;

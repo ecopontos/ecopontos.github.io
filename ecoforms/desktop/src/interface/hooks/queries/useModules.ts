@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 import type { ModuleRegistry } from '@/src/domain/module/ModuleRegistry';
 import type { CreateModuleInput } from '@/src/application/module/CreateModuleUseCase';
 

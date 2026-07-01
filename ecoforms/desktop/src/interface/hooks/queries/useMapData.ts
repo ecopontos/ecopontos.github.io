@@ -20,7 +20,7 @@ import {
   upsertGeoLayer,
   toggleGeoLayerVisivel as toggleGeoLayerVisivelLookup,
   deleteGeoLayer as deleteGeoLayerLookup,
-} from '@/src/interface/hooks/queries/lookups';
+} from '@/src/interface/hooks/queries/lookups/geo';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -492,7 +492,7 @@ export async function deleteTerrenoById(id: string): Promise<void> {
     await deleteTerrenoByIdSafe(id);
 }
 
-// ─── Mutações geo_layers ───────────────────────────────────────────────────────
+// ─── Mutações camadas_geo ───────────────────────────────────────────────────────
 
 export async function saveGeoLayer(layer: {
     id: string;

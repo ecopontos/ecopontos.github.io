@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { uuidv7 } from 'ecoforms-core';
-import { getContainerAsync } from '@/src/infrastructure/container';
+import { getContainerAsync } from '../utils/useContainer';
 
 export function useSeedDemo() {
   const [loading, setLoading] = useState(false);

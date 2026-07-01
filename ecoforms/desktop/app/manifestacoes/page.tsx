@@ -10,7 +10,7 @@ import {
   useManifestacaoMutations,
 } from "@/src/interface/hooks/catalog/manifestacoes";
 import { useSetores } from "@/src/interface/hooks/catalog/auth";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import type { ManifestacaoSummary } from "@/src/domain/ouvidoria/ManifestacaoRepository";
 import { isManifestacaoTerminal } from "@/src/domain/ouvidoria/ManifestacaoWorkflowPolicy";
 import { MANIFESTACAO_LIST_TABS } from "@/src/interface/workflow/ManifestacaoWorkflowConfig";

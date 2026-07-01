@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { usePermissions, UsePermissionsReturn } from "./usePermissions";
 import { useAssignedActiveForms } from "@/src/interface/hooks/queries/useAssignedActiveForms";
 

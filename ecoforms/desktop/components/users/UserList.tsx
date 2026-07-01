@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Edit2, Ban, CheckCircle, Download, Trash2 } from "lucide-react"
 import { User } from "@/types"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "@/src/interface/hooks/catalog/auth"
 import Link from "next/link"
 
 interface UserListProps {

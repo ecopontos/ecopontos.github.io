@@ -1,10 +1,13 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
-import { getInboxAccessFilter } from "@/src/interface/hooks/utils/useAccessFilters";
-import { buildInboxAccessFilter, type SqlFilter } from "@/src/infrastructure/persistence/AccessFilterBuilder";
-import { fetchInboxNormalizada } from "@/src/interface/hooks/queries/lookups";
+import { getContainerAsync } from "../utils/useContainer";
+import {
+    buildFallbackInboxAccessFilter,
+    getInboxAccessFilter,
+    type SqlFilter,
+} from "@/src/interface/hooks/utils/useAccessFilters";
+import { fetchInboxNormalizada } from "@/src/interface/hooks/queries/lookups/inbox";
 
 export interface InboxViewRow {
     id: string;
@@ -30,7 +33,7 @@ export function useInboxData(userId: string | undefined, userPerfil: string | un
         getContainerAsync()
             .then(c => getInboxAccessFilter(userId, userPerfil, c.sqlite))
             .then(setAccessFilter)
-            .catch(() => setAccessFilter(buildInboxAccessFilter(userId, userPerfil)));
+            .catch(() => setAccessFilter(buildFallbackInboxAccessFilter(userId, userPerfil)));
     }, [userId, userPerfil]);
 
     const fetchData = useCallback(async () => {

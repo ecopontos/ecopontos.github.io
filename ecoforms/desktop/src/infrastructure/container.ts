@@ -70,7 +70,7 @@ import { BulkInsertDataRegistryUseCase } from '../application/data-registry/Bulk
 import { UpdateManifestacaoStatusUseCase } from '../application/ouvidoria/UpdateManifestacaoStatusUseCase';
 import { SeedManifestacaoCatalogUseCase } from '../application/ouvidoria/SeedManifestacaoCatalogUseCase';
 import { EnviarRespostaUseCase } from '../application/ouvidoria/EnviarRespostaUseCase';
-// AD-014: Ouvidoria migrada para suite + data_registry — use cases removidos
+// AD-014: Ouvidoria migrada para suite + registro_dados — use cases removidos
 import { CreateDemandaUseCase } from '../application/demanda/CreateDemandaUseCase';
 import {
     ListProjectsWithMetricsUseCase,
@@ -105,6 +105,7 @@ import { SqliteSuiteRepository } from './persistence/sqlite/SqliteSuiteRepositor
 import { SqliteClienteRepository } from './persistence/sqlite/SqliteClienteRepository';
 import { SqliteUserRepository } from './persistence/sqlite/SqliteUserRepository';
 import { UserSnapshotService } from './sync/UserSnapshotService';
+import { RemoteUserProfileSync } from './sync/RemoteUserProfileSync';
 import { LanFileStorage } from './storage/LanFileStorage';
 import { LanDomainSyncService } from './sync/LanDomainSyncService';
 import { setCreateTaskRemocao } from './sync/HandlerRegistry';
@@ -119,6 +120,10 @@ import { SqliteHierarquiaPerfilRepository } from './persistence/sqlite/SqliteHie
 import { SqliteTipoPrazoRepository } from './persistence/sqlite/SqliteTipoPrazoRepository';
 import { SqliteNotificacaoSolicitanteRepository } from './persistence/sqlite/SqliteNotificacaoSolicitanteRepository';
 import { SqliteTipoResiduoRepository } from './persistence/sqlite/SqliteTipoResiduoRepository';
+import { getPocketBaseConfig } from './pocketbase/PocketBaseConfig';
+import { PocketBaseClient } from './pocketbase/PocketBaseClient';
+import { PocketBaseTipoResiduoRepository } from './pocketbase/PocketBaseTipoResiduoRepository';
+import { HybridTipoResiduoRepository } from './pocketbase/HybridTipoResiduoRepository';
 import { SqliteExecucaoClienteRepository } from './persistence/sqlite/SqliteExecucaoClienteRepository';
 import { SqliteEmailConfigRepository } from './persistence/sqlite/SqliteEmailConfigRepository';
 import { SqliteSetorRepository } from './persistence/sqlite/SqliteSetorRepository';
@@ -319,6 +324,7 @@ export interface Container {
     lanFileStorage: import('./storage/LanFileStorage').LanFileStorage;
     lanPullService: LanPullService;
     sqliteUserRepository: import('./persistence/sqlite/SqliteUserRepository').SqliteUserRepository;
+    userProfileSync: RemoteUserProfileSync;
     // Catálogos e configurações
     hierarquiaPerfilRepository: import('../domain/hierarquia-perfil/HierarquiaPerfilRepository').HierarquiaPerfilRepository;
     tipoPrazoRepository: import('../domain/tipo-prazo/TipoPrazoRepository').TipoPrazoRepository;
@@ -441,6 +447,7 @@ function buildContainer(overrides: Partial<Container> = {}, _bootstrap: Containe
     const lanDomainSyncService = new LanDomainSyncService(lanFileStorage);
     const lanPullService = new LanPullService(lanDomainSyncService, sqlite);
     const userSnapshotService = new UserSnapshotService(sqlite, lanDomainSyncService, lanFileStorage);
+    const userProfileSync = new RemoteUserProfileSync(sqlite);
     const sqliteUserRepository = new SqliteUserRepository(sqlite, () => {
         userSnapshotService.publishUserSnapshot();
     });
@@ -585,7 +592,17 @@ function buildContainer(overrides: Partial<Container> = {}, _bootstrap: Containe
     const hierarquiaPerfilRepository = new SqliteHierarquiaPerfilRepository(sqlite);
     const tipoPrazoRepository = new SqliteTipoPrazoRepository(sqlite);
     const notificacaoSolicitanteRepository = new SqliteNotificacaoSolicitanteRepository(sqlite);
-    const tipoResiduoRepository = new SqliteTipoResiduoRepository(sqlite);
+    const localTipoResiduoRepository = new SqliteTipoResiduoRepository(sqlite);
+    const pocketBaseConfig = getPocketBaseConfig();
+    const tipoResiduoRepository = pocketBaseConfig.enabled
+        ? new HybridTipoResiduoRepository(
+            localTipoResiduoRepository,
+            new PocketBaseTipoResiduoRepository(
+                new PocketBaseClient(pocketBaseConfig),
+                pocketBaseConfig.tipoResiduoCollection,
+            ),
+        )
+        : localTipoResiduoRepository;
     const execucaoClienteRepository = new SqliteExecucaoClienteRepository(sqlite);
     const emailConfigRepository = new SqliteEmailConfigRepository(sqlite);
     const setorRepository = new SqliteSetorRepository(sqlite);
@@ -615,6 +632,7 @@ function buildContainer(overrides: Partial<Container> = {}, _bootstrap: Containe
         lanFileStorage,
         lanPullService,
         sqliteUserRepository,
+        userProfileSync,
         hierarquiaPerfilRepository,
         ecopontoRepository,
         tipoPrazoRepository,

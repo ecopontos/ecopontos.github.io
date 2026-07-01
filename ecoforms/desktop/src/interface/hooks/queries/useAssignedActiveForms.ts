@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getContainerAsync } from "@/src/infrastructure/container";
+import { useTaskUseCases } from "../domain/useTaskUseCases";
 
 export function useAssignedActiveForms(userId: string | undefined): string[] | undefined {
+    const taskUseCases = useTaskUseCases();
     const [forms, setForms] = useState<string[] | undefined>(undefined);
 
     useEffect(() => {
@@ -11,8 +12,7 @@ export function useAssignedActiveForms(userId: string | undefined): string[] | u
         const load = async () => {
             if (!userId) { if (!cancelled) setForms(undefined); return; }
             try {
-                const c = await getContainerAsync();
-                const rows = await c.tasks.findAssignedActiveForms.execute(userId);
+                const rows = await taskUseCases.findAssignedActiveForms.execute(userId);
                 if (!cancelled) setForms(rows);
             } catch {
                 if (!cancelled) setForms(undefined);
@@ -20,7 +20,7 @@ export function useAssignedActiveForms(userId: string | undefined): string[] | u
         };
         load();
         return () => { cancelled = true; };
-    }, [userId]);
+    }, [taskUseCases, userId]);
 
     return forms;
 }

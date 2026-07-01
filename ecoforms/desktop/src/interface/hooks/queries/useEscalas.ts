@@ -6,7 +6,7 @@ import {
   insertEscala,
   updateEscala,
   deleteEscala,
-} from '@/src/interface/hooks/queries/lookups';
+} from '@/src/interface/hooks/queries/lookups/admin';
 
 export interface Escala {
   id: string;

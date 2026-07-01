@@ -6,6 +6,7 @@ use tauri::State;
 use crate::commands::audit::log_audit;
 use crate::database::DbState;
 use crate::session::SessionState;
+use crate::uuid_v7::uuid_v7_string;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateFirstAdminResult {
@@ -102,7 +103,7 @@ pub fn bootstrap_set_lan_sync_path(
     }
 
     conn.execute(
-        "INSERT INTO tbl_configuracoes_sistema (chave, valor, atualizado_em)
+        "INSERT INTO configuracoes_sistema (chave, valor, atualizado_em)
          VALUES ('lan_sync_path', ?1, datetime('now'))
          ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em",
         [path.trim()],
@@ -179,7 +180,7 @@ pub fn bootstrap_import_seed_users(
             .map_err(|e| format!("Erro ao gerar hash do seed {}: {}", username, e))?;
         let salt: [u8; 32] = rand::thread_rng().gen();
         let sync_salt = hex::encode(salt);
-        let generated_id = user.id.unwrap_or_else(|| format!("{:x}", rand::random::<u128>()));
+        let generated_id = user.id.unwrap_or_else(uuid_v7_string);
         let ativo = if user.ativo.unwrap_or(true) { 1 } else { 0 };
         let perfil = user.perfil.trim().to_string();
 
@@ -283,7 +284,7 @@ pub fn create_first_admin(
     }
 
     // 3. Gerar ID, hash da senha e sync_salt
-    let user_id = format!("{:x}", rand::random::<u128>());
+    let user_id = uuid_v7_string();
     let password_hash = bcrypt::hash(password, 12)
         .map_err(|e| format!("Erro ao hash senha: {}", e))?;
 
@@ -353,7 +354,7 @@ pub fn seed_default_admin_conn(conn: &Connection) -> Result<Option<String>, Stri
         return Ok(None);
     }
 
-    let user_id = format!("{:x}", rand::random::<u128>());
+    let user_id = uuid_v7_string();
     let password_hash = bcrypt::hash("admin", 12)
         .map_err(|e| format!("Erro ao hash senha: {}", e))?;
 
@@ -493,7 +494,7 @@ mod tests {
                  setor_id TEXT NOT NULL,
                  PRIMARY KEY (usuario_id, setor_id)
              );
-             CREATE TABLE tbl_configuracoes_sistema (
+             CREATE TABLE configuracoes_sistema (
                  chave TEXT PRIMARY KEY,
                  valor TEXT NOT NULL,
                  descricao TEXT,

@@ -75,9 +75,9 @@ const DOMAIN_CONFIGS: Record<string, DomainUpsertConfig> = {
         }),
     },
     agendamentos: {
-        table: 'tbl_agendamentos',
+        table: 'agendamentos',
         upsertSql: (s) => ({
-            sql: `INSERT INTO tbl_agendamentos (id, slot_id, service_type_id, cliente_id, cliente_nome,
+            sql: `INSERT INTO agendamentos (id, slot_id, service_type_id, cliente_id, cliente_nome,
                     vagas_solicitadas, bairro, dados_formulario, status, task_id,
                     cliente_email, cliente_telefone, responsavel_id, setor_id,
                     criado_por, criado_em, atualizado_em)
@@ -236,7 +236,7 @@ export class LanPullService {
 
     private async getCursor(domain: string): Promise<string> {
         const rows = await this.sqlite.query<{ last_event_id: string }>(
-            `SELECT last_event_id FROM tbl_lan_sync_cursors WHERE domain = ? LIMIT 1`,
+            `SELECT last_event_id FROM cursores_sync_lan WHERE domain = ? LIMIT 1`,
             [domain],
         );
         return rows[0]?.last_event_id ?? '';
@@ -244,7 +244,7 @@ export class LanPullService {
 
     private async setCursor(domain: string, lastEventId: string, count: number): Promise<void> {
         await this.sqlite.execute(
-            `INSERT INTO tbl_lan_sync_cursors (domain, last_event_id, last_pulled_at, pulled_count)
+            `INSERT INTO cursores_sync_lan (domain, last_event_id, last_pulled_at, pulled_count)
              VALUES (?, ?, datetime('now'), ?)
              ON CONFLICT(domain) DO UPDATE SET
                last_event_id = excluded.last_event_id,

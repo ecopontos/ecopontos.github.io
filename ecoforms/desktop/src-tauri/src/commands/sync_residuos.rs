@@ -7,6 +7,7 @@ use crate::commands::crypto::CryptoState;
 use crate::commands::legacy_sync::{build_conn_string, load_pg_legacy_credentials};
 use crate::database::DbState;
 use crate::session::SessionState;
+use crate::uuid_v7::uuid_v7_string;
 
 #[derive(Debug, Serialize)]
 pub struct ResiduoExterno {
@@ -157,7 +158,7 @@ pub fn sync_residuos_externos(
                 rusqlite::params![descricao, codigo, sigla, ativo as i32, id_cad_residuo],
             )
         } else {
-            let new_id = uuid::Uuid::new_v4().to_string();
+            let new_id = uuid_v7_string();
             sqlite_conn.execute(
                 "INSERT INTO tipos_residuo (id, codigo, nome, descricao, cor, ativo, id_externo, sigla, criado_em) VALUES (?1, ?2, ?3, ?4, '#6B7280', ?5, ?6, ?7, datetime('now'))",
                 rusqlite::params![new_id, codigo, descricao, descricao, ativo as i32, id_cad_residuo, sigla],

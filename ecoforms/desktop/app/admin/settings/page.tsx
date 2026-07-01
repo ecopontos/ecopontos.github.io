@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Monitor, Save, RefreshCw, History, Trash2, FolderOpen, CheckCircle2, XCircle, AlertTriangle, FileArchive, List, Network } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useSyncStatus } from '@/contexts/SyncContext';
+import { useSyncStatus } from '@/src/interface/hooks/catalog/sync';
 import { Switch } from '@/components/ui/switch';
 import {
     Select,
@@ -22,7 +22,8 @@ import { useSyncSettings } from "@/src/interface/hooks/catalog/sync";
 import { useNetworkParquet } from "@/src/interface/hooks/catalog/utils";
 import { StorageStatusCard } from "@/components/admin/StorageStatusCard";
 import { Badge } from "@/components/ui/badge";
-import { getSistemaConfig, saveSistemaConfig } from '@/src/interface/hooks/queries/lookups';
+import { getSistemaConfig, saveSistemaConfig } from '@/src/interface/hooks/queries/lookups/admin';
+import { getContainerAsync } from "@/src/interface/hooks/catalog/utils";
 
 const SYNC_INTERVALS = [
     { value: '60000', label: '1 minuto' },
@@ -446,11 +447,8 @@ function LanSyncSection() {
         setTesting(true);
         setTestResult(null);
         try {
-            const { LanFileStorage } = await import("@/src/infrastructure/storage/LanFileStorage");
-            const { getContainerAsync } = await import("@/src/infrastructure/container");
             const c = await getContainerAsync();
-            const lan = new LanFileStorage(c.sqlite);
-            const result = await lan.testConnection();
+            const result = await c.lanFileStorage.testConnection();
             setTestResult(result);
         } catch (e) {
             setTestResult({ ok: false, message: String(e) });

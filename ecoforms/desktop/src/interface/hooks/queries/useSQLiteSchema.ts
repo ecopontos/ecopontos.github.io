@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSqlite } from './useSqlite';
-import { SQLITE_TABLE_INFO } from '@/src/infrastructure/persistence/sqlite/queries/system';
+import { SQLITE_TABLE_INFO } from '@/src/application/persistence/sqlite/queries/system';
 
 export function useSQLiteColumnExists(tableName: string, columnName: string) {
     const sqlite = useSqlite();

@@ -273,7 +273,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         const agId = d.agendamentoId ?? env.aggregate.id;
         await db.execute(
-            `UPDATE tbl_agendamentos SET status = 'pendente', atualizado_em = ? WHERE id = ?`,
+            `UPDATE agendamentos SET status = 'pendente', atualizado_em = ? WHERE id = ?`,
             [env.time, agId],
         );
     });
@@ -282,7 +282,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         const agId = d.agendamentoId ?? env.aggregate.id;
         await db.execute(
-            `UPDATE tbl_agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
+            `UPDATE agendamentos SET status = 'confirmado', atualizado_em = ? WHERE id = ?`,
             [env.time, agId],
         );
     });
@@ -291,7 +291,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         const agId = d.agendamentoId ?? env.aggregate.id;
         await db.execute(
-            `UPDATE tbl_agendamentos SET status = 'cancelado', atualizado_em = ? WHERE id = ?`,
+            `UPDATE agendamentos SET status = 'cancelado', atualizado_em = ? WHERE id = ?`,
             [env.time, agId],
         );
     });
@@ -300,7 +300,7 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         const d = env.data as Record<string, unknown>;
         const agId = d.agendamentoId ?? env.aggregate.id;
         await db.execute(
-            `UPDATE tbl_agendamentos SET status = 'realizado', atualizado_em = ? WHERE id = ?`,
+            `UPDATE agendamentos SET status = 'realizado', atualizado_em = ? WHERE id = ?`,
             [env.time, agId],
         );
     });

@@ -335,8 +335,8 @@ mod tests {
 
     #[test]
     fn extract_target_table_insert_or_replace() {
-        let normalized = strip_comments_and_strings("INSERT OR REPLACE INTO tbl_permissions (a) VALUES (1)");
-        assert_eq!(extract_target_table(&normalized, &StatementKind::Insert), Some("TBL_PERMISSIONS".to_string()));
+        let normalized = strip_comments_and_strings("INSERT OR REPLACE INTO permissoes_modulos (a) VALUES (1)");
+        assert_eq!(extract_target_table(&normalized, &StatementKind::Insert), Some("PERMISSOES_MODULOS".to_string()));
     }
 
     #[test]

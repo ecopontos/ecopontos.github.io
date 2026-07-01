@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
 import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 
 const PERIODICIDADES = ["Diária", "Semanal", "Quinzenal", "Mensal"];
 const TURNOS = ["Manhã", "Tarde", "Noite", "Integral"];

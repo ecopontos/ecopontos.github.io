@@ -10,6 +10,7 @@ use crate::database::DbState;
 use crate::session::SessionState;
 use crate::commands::rbac::check_permission;
 use crate::commands::audit::log_audit;
+use crate::uuid_v7::uuid_v7_string;
 
 /// Derive an AES-256 key from a recovery passphrase using Argon2id (OWASP 2026).
 /// Parameters: 64 MiB memory, 3 iterations, 4 parallelism.
@@ -119,11 +120,11 @@ pub fn rotate_sync_salt(
     // 4. Encrypt old salt with recovery key → escrow
     let salt_encrypted = encrypt_salt_internal(&current_salt, &recovery_key)?;
     let salt_hash = hash_salt(&current_salt);
-    let escrow_id = format!("salt-{}", uuid::Uuid::new_v4());
+    let escrow_id = format!("salt-{}", uuid_v7_string());
 
     // 5. Store encrypted old salt in history (replaced_by = ator da rotação)
     conn.execute(
-        "INSERT INTO sync_salt_history (id, user_id, salt_encrypted, salt_hash, replaced_by, reason) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO historico_sal_sync (id, user_id, salt_encrypted, salt_hash, replaced_by, reason) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         rusqlite::params![escrow_id, user_id, salt_encrypted, salt_hash, actor_id, reason.clone().unwrap_or_default()],
     ).map_err(|e| format!("Falha ao salvar escrow: {}", e))?;
 
@@ -157,7 +158,7 @@ pub fn recover_sync_salt(
 
     // Get all historical salts, newest first
     let mut stmt = conn
-        .prepare("SELECT salt_encrypted, salt_hash FROM sync_salt_history WHERE user_id = ?1 ORDER BY replaced_at DESC")
+        .prepare("SELECT salt_encrypted, salt_hash FROM historico_sal_sync WHERE user_id = ?1 ORDER BY replaced_at DESC")
         .map_err(|e| e.to_string())?;
 
     let rows: Vec<(String, String)> = stmt
@@ -208,9 +209,9 @@ pub fn list_salt_history(
     check_permission(conn, &actor_perfil, "system.config")?;
 
     let mut stmt = conn
-        .prepare("SELECT id, salt_hash, replaced_at, replaced_by, reason FROM sync_salt_history WHERE user_id = ?1 ORDER BY replaced_at DESC")
+        .prepare("SELECT id, salt_hash, replaced_at, replaced_by, reason FROM historico_sal_sync WHERE user_id = ?1 ORDER BY replaced_at DESC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([&user_id], |row| {
             Ok(serde_json::json!({
@@ -224,6 +225,6 @@ pub fn list_salt_history(
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
         .collect();
-    
+
     Ok(rows)
 }

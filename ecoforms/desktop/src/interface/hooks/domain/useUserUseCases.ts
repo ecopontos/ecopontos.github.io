@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { getContainer } from '../../../infrastructure/container';
+import { useContainer } from '../utils/useContainer';
 
 export function useUserUseCases() {
-    return useMemo(() => getContainer().users, []);
+    const container = useContainer();
+    return useMemo(() => container.users, [container]);
 }

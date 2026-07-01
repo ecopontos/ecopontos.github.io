@@ -95,9 +95,7 @@ Presenters convertem DTOs (retornados pelos use cases) em **ViewModels** otimiza
 
 | Presenter | Domínio | O que formata |
 |-----------|---------|---------------|
-| `toTaskViewModel.ts` | Task | Status label, flag de atraso |
 | `toClientViewModel.ts` | Client | CNPJ formatado, endereço completo, status color |
-| `toDemandaViewModel.ts` | Demanda | Labels de status/origem, datas em pt-BR |
 
 Para criar um novo presenter:
 1. Crie `interface/presenters/to<Domain>ViewModel.ts`

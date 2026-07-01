@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useCaixasData } from "@/src/interface/hooks/catalog/forms";
 import { useRemocaoAnalytics } from "@/src/interface/hooks/catalog/logistica";
 import { useSetores } from "@/src/interface/hooks/catalog/auth";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/src/interface/hooks/catalog/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

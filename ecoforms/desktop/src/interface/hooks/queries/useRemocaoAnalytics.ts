@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchRegistroDadosByTipoEcoponto } from "@/src/interface/hooks/queries/lookups";
+import { fetchRegistroDadosByTipoEcoponto } from "@/src/interface/hooks/queries/lookups/geo";
 
 interface HistoricoEntry {
     timestamp: string;

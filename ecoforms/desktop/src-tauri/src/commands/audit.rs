@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 use serde_json::json;
+use crate::uuid_v7::uuid_v7_string;
 
 /// Registra uma entrada de auditoria em log_auditoria e opcionalmente na fila_eventos_sync.
 #[allow(clippy::too_many_arguments)]
@@ -14,7 +15,7 @@ pub fn log_audit(
     new_value: Option<&str>,
     metadata: Option<&str>,
 ) -> Result<String, String> {
-    let audit_id = format!("{:x}", rand::random::<u128>());
+    let audit_id = uuid_v7_string();
     let now = chrono::Utc::now().to_rfc3339();
 
     conn.execute(
@@ -35,7 +36,7 @@ pub fn log_audit(
     ).map_err(|e| format!("Erro ao registrar audit log: {}", e))?;
 
     // Inserir evento audit.registro na fila_eventos_sync para envio à nuvem
-    let event_id = format!("{:x}", rand::random::<u128>());
+    let event_id = uuid_v7_string();
     let envelope = json!({
         "v": 2,
         "id": event_id,
