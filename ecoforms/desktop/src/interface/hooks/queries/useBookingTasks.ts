@@ -2,15 +2,21 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getContainerAsync } from "../utils/useContainer";
+import type { StatusAgendamento } from "@/src/domain/service/Agendamento";
 
 const PAGE_SIZE = 25;
 
 export interface BookingRow {
     id: string;
     titulo: string;
-    status: string;
+    status: StatusAgendamento;
     criadoEm: string;
     atribuidoPara: string | null;
+    clienteTelefone: string | null;
+    clienteEmail: string | null;
+    bairro: string | null;
+    vagasSolicitadas: number;
+    dadosFormulario: Record<string, unknown>;
 }
 
 export function useBookingTasks(slotId: string | null) {
@@ -20,13 +26,29 @@ export function useBookingTasks(slotId: string | null) {
     const [hasMore, setHasMore] = useState(false);
     const offsetRef = useRef(0);
 
-    const mapAgendamentos = (agendamentos: { id: string; clienteNome: string; status: string; criadoEm: string; responsavelId?: string | null }[]): BookingRow[] =>
+    const mapAgendamentos = (agendamentos: {
+        id: string;
+        clienteNome: string;
+        status: StatusAgendamento;
+        criadoEm: string;
+        responsavelId?: string | null;
+        clienteTelefone?: string | null;
+        clienteEmail?: string | null;
+        bairro?: string | null;
+        vagasSolicitadas: number;
+        dadosFormulario: Record<string, unknown>;
+    }[]): BookingRow[] =>
         agendamentos.map(a => ({
-            id:            a.id,
-            titulo:        a.clienteNome,
-            status:        a.status,
-            criadoEm:      a.criadoEm,
-            atribuidoPara: a.responsavelId ?? null,
+            id:               a.id,
+            titulo:           a.clienteNome,
+            status:           a.status,
+            criadoEm:         a.criadoEm,
+            atribuidoPara:    a.responsavelId ?? null,
+            clienteTelefone:  a.clienteTelefone ?? null,
+            clienteEmail:     a.clienteEmail ?? null,
+            bairro:           a.bairro ?? null,
+            vagasSolicitadas: a.vagasSolicitadas,
+            dadosFormulario:  a.dadosFormulario,
         }));
 
     const reload = useCallback(async () => {
