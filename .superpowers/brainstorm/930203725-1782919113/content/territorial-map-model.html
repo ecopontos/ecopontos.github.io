@@ -1,0 +1,55 @@
+﻿<h2>Integração Territorial, Clientes e Logística</h2>
+<p class="subtitle">Modelo atual encontrado no código e o ponto de decisão para geolocalização por polígonos.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Relações atuais</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:stretch">
+      <div class="placeholder" style="min-height:120px">
+        <strong>Clientes</strong><br>
+        id<br>
+        nome<br>
+        latitude/longitude<br>
+        territorial<br>
+        terreno_id previsto
+      </div>
+      <div class="placeholder" style="min-height:120px">
+        <strong>Terrenos / Polígonos</strong><br>
+        id<br>
+        codigo_cadastral<br>
+        geojson<br>
+        centroid_lat/lng
+      </div>
+      <div class="placeholder" style="min-height:120px">
+        <strong>Logística</strong><br>
+        roteiros<br>
+        roteiro_clientes<br>
+        execucao_clientes<br>
+        mapa / itinerário
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">
+      <div class="pros">
+        <h4>Já existe</h4>
+        <ul>
+          <li>Mapa usa clientes, coordenadas e terrenos</li>
+          <li>Roteiros vinculam clientes por cliente_id</li>
+          <li>Terrenos têm GeoJSON e código cadastral</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Gap</h4>
+        <ul>
+          <li>territorial é texto solto no cliente</li>
+          <li>não resolve polígono automaticamente</li>
+          <li>não alimenta localização no mapa</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Decisão central</h3>
+  <p>O campo <strong>Territorial (ID Imóvel)</strong> deve virar a chave de ligação entre o cliente e um polígono de terreno, permitindo localizar o usuário no mapa pelo imóvel cadastrado, mesmo sem latitude/longitude manual.</p>
+</div>
