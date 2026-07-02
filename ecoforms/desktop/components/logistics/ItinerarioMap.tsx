@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
 import type { ClienteGeo, ItinerarioStop, TerrenoGeo } from "@/src/interface/hooks/catalog/logistica";
 import { createBaseMap } from "@/lib/map-base";
+import { deriveCoordOrigem } from "@/lib/itinerary";
 
 interface Props {
   clientesGeo: ClienteGeo[];
@@ -252,6 +253,36 @@ export default function ItinerarioMap({ clientesGeo, itinerario, terrenosGeo, se
           "text-allow-overlap": true,
         },
         paint: { "text-color": "#f97316" },
+      });
+    }
+
+    // --- override markers: distinguish stops resolved via parada-level override ---
+    const overrideFeatures: FeatureCollection["features"] = routePoints
+      .filter((s) => {
+        const origem = deriveCoordOrigem(s);
+        return origem === "parada_ponto_operacional" || origem === "parada_imovel_centroid";
+      })
+      .map((s) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point", coordinates: [s.longitude!, s.latitude!] },
+        properties: { cliente_id: s.cliente_id },
+      }));
+    const overrideGeo: FeatureCollection = { type: "FeatureCollection", features: overrideFeatures };
+
+    if (map.getSource("stops-override")) {
+      (map.getSource("stops-override") as maplibregl.GeoJSONSource).setData(overrideGeo);
+    } else {
+      map.addSource("stops-override", { type: "geojson", data: overrideGeo });
+      map.addLayer({
+        id: "stops-override-ring",
+        type: "circle",
+        source: "stops-override",
+        paint: {
+          "circle-radius": 10,
+          "circle-color": "transparent",
+          "circle-stroke-width": 2.5,
+          "circle-stroke-color": "#a855f7",
+        },
       });
     }
 
