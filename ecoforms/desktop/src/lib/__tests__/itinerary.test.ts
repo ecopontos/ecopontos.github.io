@@ -43,11 +43,27 @@ describe("deriveCoordOrigem", () => {
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
+                ponto_operacional_lat: null,
+                ponto_operacional_lng: null,
                 roteiro_terreno_id: "terreno-override-1",
                 terreno_centroid_lat: -23.55,
                 terreno_centroid_lng: -46.63,
             }),
         ).toBe("roteiro_terreno_override");
+    });
+
+    it("retorna ponto_operacional quando há ponto operacional, mesmo com centroide também presente (precedência)", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                ponto_operacional_lat: -23.55,
+                ponto_operacional_lng: -46.63,
+                roteiro_terreno_id: null,
+                terreno_centroid_lat: -23.54,
+                terreno_centroid_lng: -46.62,
+            }),
+        ).toBe("ponto_operacional");
     });
 });
 

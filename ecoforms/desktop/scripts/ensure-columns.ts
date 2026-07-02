@@ -2209,6 +2209,28 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         }
     }
 
+    // ── Fase 4 — georreferenciamento: pontos operacionais do imóvel (terreno) ──
+    // Pontos práticos de acesso/coleta/vistoria, distintos do centroide da poligonal
+    // (que representa o imóvel mas pode ser ruim para operação). `principal` determina
+    // qual ponto a query de logística (CLIENTES_GEO, ROTEIRO_CLIENTES_ITINERARIO) prefere.
+    await execute(`
+        CREATE TABLE IF NOT EXISTS imovel_pontos_operacionais (
+            id            TEXT PRIMARY KEY,
+            imovel_id     TEXT NOT NULL REFERENCES terrenos(id) ON DELETE CASCADE,
+            tipo          TEXT CHECK(tipo IN
+                ('entrada','portaria','coleta','referencia','acesso_servico','vistoria')),
+            latitude      REAL NOT NULL,
+            longitude     REAL NOT NULL,
+            principal     INTEGER NOT NULL DEFAULT 0,
+            origem        TEXT CHECK(origem IN ('manual','gps','centroide','importacao')),
+            observacao    TEXT,
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_imovel ON imovel_pontos_operacionais(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_principal ON imovel_pontos_operacionais(imovel_id, principal)`).catch(() => {});
+
     // ================================================================
     // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica
     // ================================================================

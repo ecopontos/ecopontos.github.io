@@ -77,6 +77,7 @@ export function countSemLocalizacao(stops: GeoStop[]): number {
 // Ordem de fallback usada por ROTEIRO_CLIENTES_ITINERARIO (ver comentário e SQL em
 // desktop/src/infrastructure/persistence/sqlite/queries/terrenos.ts) para resolver a posição
 // de cada parada — hoje só existia implícita no SQL, documentada aqui explicitamente:
+//   0. imovel_pontos_operacionais  — ponto operacional principal do terreno resolvido em 1 ou 2 (Fase 4)
 //   1. roteiro_clientes.terreno_id  — override de terreno específico para esta parada neste roteiro
 //   2. clientes.terreno_id          — terreno cadastrado no cliente (se não houver override acima)
 //   3. terrenos.centroid_lat/lng    — centroide do terreno resolvido em 1 ou 2, se ele tiver centroide
@@ -84,11 +85,15 @@ export function countSemLocalizacao(stops: GeoStop[]): number {
 // Se nada disso resolver, a parada fica sem localização (ver deriveMotivoSemLocalizacao).
 
 /** Rótulo de origem da coordenada final usada por uma parada do itinerário. */
-export type CoordOrigem = 'cliente_latlng' | 'terreno_centroid' | 'roteiro_terreno_override';
+export type CoordOrigem = 'ponto_operacional' | 'cliente_latlng' | 'terreno_centroid' | 'roteiro_terreno_override';
 
 export interface CoordOrigemStop {
     latitude: number | null;
     longitude: number | null;
+    /** imovel_pontos_operacionais.latitude "cru" do terreno resolvido (Fase 4). */
+    ponto_operacional_lat?: number | null | undefined;
+    /** imovel_pontos_operacionais.longitude "cru" do terreno resolvido (Fase 4). */
+    ponto_operacional_lng?: number | null | undefined;
     /** rc.terreno_id "cru" (não coalescido) — presente só quando o roteiro sobrescreve o terreno do cliente. */
     roteiro_terreno_id: string | null | undefined;
     /** terrenos.centroid_lat "cru" do terreno resolvido (rc.terreno_id ou clientes.terreno_id). */
@@ -100,13 +105,14 @@ export interface CoordOrigemStop {
 /**
  * Deriva de onde veio a coordenada final de uma parada, comparando os valores "crus" que a
  * query ROTEIRO_CLIENTES_ITINERARIO já retorna (sem precisar de coluna nova no banco nem de
- * uma nova query): se o terreno resolvido tem centroide, a origem é `terreno_centroid` (veio de
- * clientes.terreno_id) ou `roteiro_terreno_override` (veio de roteiro_clientes.terreno_id, que
- * sobrescreveu o terreno do cliente); caso contrário, se a parada ainda tem posição, ela veio de
- * clientes.latitude/longitude. Retorna null quando a parada não tem localização resolvida.
+ * uma nova query): tem precedência o ponto operacional (Fase 4), depois o centroide do terreno
+ * (terreno_centroid ou roteiro_terreno_override), e por fim clientes.latitude/longitude.
+ * Retorna null quando a parada não tem localização resolvida.
  */
 export function deriveCoordOrigem(stop: CoordOrigemStop): CoordOrigem | null {
     if (stop.latitude == null || stop.longitude == null) return null;
+    const usouPontoOperacional = stop.ponto_operacional_lat != null && stop.ponto_operacional_lng != null;
+    if (usouPontoOperacional) return 'ponto_operacional';
     const usouCentroideDoTerreno = stop.terreno_centroid_lat != null && stop.terreno_centroid_lng != null;
     if (!usouCentroideDoTerreno) return 'cliente_latlng';
     return stop.roteiro_terreno_id != null ? 'roteiro_terreno_override' : 'terreno_centroid';
@@ -139,6 +145,7 @@ export function deriveMotivoSemLocalizacao(stop: MotivoSemLocalizacaoStop): Moti
 
 /** Rótulos amigáveis (pt-BR) para exibição de CoordOrigem na UI. */
 export const COORD_ORIGEM_LABELS: Record<CoordOrigem, string> = {
+    ponto_operacional: 'Ponto operacional do imóvel',
     cliente_latlng: 'Coordenada do cadastro do cliente',
     terreno_centroid: 'Centroide do terreno vinculado ao cliente',
     roteiro_terreno_override: 'Centroide do terreno vinculado neste roteiro (substitui o do cliente)',

@@ -182,3 +182,38 @@ export interface ImovelDisponivel {
   cidade?: string | null;
   estado?: string | null;
 }
+
+// ── Fase 4 — georreferenciamento: pontos operacionais ──
+
+export const PONTO_OPERACIONAL_TIPOS = [
+  'entrada',
+  'portaria',
+  'coleta',
+  'referencia',
+  'acesso_servico',
+  'vistoria',
+] as const;
+
+export type PontoOperacionalTipo = typeof PONTO_OPERACIONAL_TIPOS[number];
+
+export const ORIGENS_PONTO = [
+  'manual',
+  'gps',
+  'centroide',
+  'importacao',
+] as const;
+
+export type OrigemPonto = typeof ORIGENS_PONTO[number];
+
+export interface PontoOperacional {
+  id: string;
+  imovel_id: string; // FK para terrenos.id
+  tipo?: PontoOperacionalTipo | null;
+  latitude: number;
+  longitude: number;
+  principal: number; // SQLite INTEGER 0|1
+  origem?: OrigemPonto | null;
+  observacao?: string | null;
+  criado_em?: string | null;
+  atualizado_em?: string | null;
+}

@@ -51,6 +51,7 @@ type SearchMode = "nome" | "cep" | "bairro";
 
 /** Cor do indicador de origem da coordenada — apenas visual, o rótulo real vai no title/tooltip. */
 const COORD_ORIGEM_DOT_COLOR: Record<CoordOrigem, string> = {
+  ponto_operacional: "#f97316",
   cliente_latlng: "#3b82f6",
   terreno_centroid: "#22c55e",
   roteiro_terreno_override: "#a855f7",

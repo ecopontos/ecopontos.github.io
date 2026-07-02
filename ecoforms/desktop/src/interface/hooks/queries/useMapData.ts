@@ -76,6 +76,10 @@ export interface ItinerarioStop {
     terreno_centroid_lat: number | null;
     /** terrenos.centroid_lng "cru" do terreno resolvido (rc ou c) — usado para saber se a coordenada final veio do centroide. */
     terreno_centroid_lng: number | null;
+    /** imovel_pontos_operacionais.latitude "cru" do terreno resolvido (Fase 4) — ponto operacional principal. */
+    ponto_operacional_lat: number | null;
+    /** imovel_pontos_operacionais.longitude "cru" do terreno resolvido (Fase 4) — ponto operacional principal. */
+    ponto_operacional_lng: number | null;
 }
 
 // ─── Helpers espaciais ────────────────────────────────────────────────────────
