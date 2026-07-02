@@ -21,11 +21,21 @@ import { useAllUsers } from "@/src/interface/hooks/catalog/auth";
 import { useExecucaoClientes } from "@/src/interface/hooks/catalog/logistica";
 import { useExecucaoClientesMutations } from "@/src/interface/hooks/catalog/logistica";
 import type { Roteiro, RoteiroCliente, ExecucaoColeta } from "@/src/domain/logistics/LogisticsRepository";
+import type { ItinerarioStop } from "@/src/interface/hooks/catalog/logistica";
 import { ExecucaoColetaStateMachine } from "@/src/domain/logistics/ExecucaoColetaStateMachine";
 import { NovaExecucaoDialog } from "@/components/logistics/NovaExecucaoDialog";
 import ItinerarioMap from "@/components/logistics/ItinerarioMap";
 import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
-import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
+import {
+  nearestNeighborOrder,
+  countSemLocalizacao,
+  totalRouteKm,
+  deriveCoordOrigem,
+  deriveMotivoSemLocalizacao,
+  COORD_ORIGEM_LABELS,
+  MOTIVO_SEM_LOCALIZACAO_LABELS,
+  type GeoStop,
+} from "@/lib/itinerary";
 import { toast } from "sonner";
 import { useAuth } from "@/src/interface/hooks/catalog/auth";
 
@@ -68,6 +78,22 @@ export default function RoteiroDetailPage() {
   const semLocMapa = countSemLocalizacao(geoStops);
   const totalKmMapa = totalRouteKm(geoStops);
 
+  const itinerarioByCliente = useMemo(() => {
+    const map = new Map<string, ItinerarioStop>();
+    for (const s of itinerario || []) map.set(s.cliente_id, s);
+    return map;
+  }, [itinerario]);
+
+  // Paradas sem localização resolvida (latitude/longitude nulos), com o motivo provável —
+  // ver deriveMotivoSemLocalizacao (desktop/lib/itinerary.ts).
+  const paradasSemLocalizacao = useMemo(
+    () =>
+      [...(itinerario || [])]
+        .filter((s) => deriveMotivoSemLocalizacao(s) !== null)
+        .sort((a, b) => a.ordem - b.ordem),
+    [itinerario],
+  );
+
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<Partial<typeof roteiro>>({});
   const [showAddExecucao, setShowAddExecucao] = useState(false);
@@ -93,7 +119,9 @@ export default function RoteiroDetailPage() {
     } catch { toast.error("Erro ao remover cliente"); }
   };
 
-  const handleOptimizeRota = async () => {
+  // Reordena o itinerário por proximidade (vizinho mais próximo, distância em linha reta —
+  // não é cálculo de rota viária, ver lib/itinerary.ts).
+  const handleOptimizeOrdem = async () => {
     if (geoStops.filter((s) => s.lat != null && s.lng != null).length < 3) {
       toast.error("Pontos com localização insuficientes para otimizar.");
       return;
@@ -104,14 +132,14 @@ export default function RoteiroDetailPage() {
       .map((cid, i) => ({ clienteId: cid, ordem: i + 1 }))
       .filter((c) => sortedNow.find((s) => s.clienteId === c.clienteId)?.ordem !== c.ordem);
     if (changes.length === 0) {
-      toast.info("Rota já está otimizada.");
+      toast.info("Itinerário já está com a ordem otimizada por proximidade.");
       return;
     }
     try {
       await updateClienteOrdemBatch(id!, changes);
-      toast.success("Rota otimizada por proximidade");
+      toast.success("Ordem do itinerário otimizada por proximidade");
       refetchClientes();
-    } catch { toast.error("Erro ao otimizar rota"); }
+    } catch { toast.error("Erro ao otimizar ordem do itinerário"); }
   };
 
   const handleMoveUp = async (clienteId: string, currentOrdem: number) => {
@@ -227,14 +255,33 @@ export default function RoteiroDetailPage() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow><TableHead className="w-10">#</TableHead><TableHead>Nome</TableHead><TableHead>Observação</TableHead><TableHead className="w-20"></TableHead><TableHead className="w-10"></TableHead></TableRow>
+                    <TableRow><TableHead className="w-10">#</TableHead><TableHead>Nome</TableHead><TableHead>Observação</TableHead><TableHead className="w-44">Localização</TableHead><TableHead className="w-20"></TableHead><TableHead className="w-10"></TableHead></TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[...clientesRoteiro].sort((a, b) => a.ordem - b.ordem).map((c, idx) => (
+                    {[...clientesRoteiro].sort((a, b) => a.ordem - b.ordem).map((c, idx) => {
+                      const stop = itinerarioByCliente.get(c.clienteId);
+                      const coordOrigem = stop ? deriveCoordOrigem(stop) : null;
+                      const motivo = stop ? deriveMotivoSemLocalizacao(stop) : null;
+                      return (
                       <TableRow key={c.id}>
                         <TableCell className="text-muted-foreground text-sm">{c.ordem}</TableCell>
                         <TableCell>{c.clienteNome || c.clienteId}</TableCell>
                         <TableCell>{c.observacao || "—"}</TableCell>
+                        <TableCell>
+                          {coordOrigem ? (
+                            <span className="text-xs text-muted-foreground" title={`Origem da coordenada: ${COORD_ORIGEM_LABELS[coordOrigem]}`}>
+                              {COORD_ORIGEM_LABELS[coordOrigem]}
+                            </span>
+                          ) : (
+                            <span
+                              className="text-xs text-amber-600 inline-flex items-center gap-1"
+                              title={motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
+                            >
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              {motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-0.5">
                             <Button size="icon" variant="ghost" className="h-7 w-7" title="Mover para cima"
@@ -253,7 +300,8 @@ export default function RoteiroDetailPage() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -268,10 +316,15 @@ export default function RoteiroDetailPage() {
                 <CardTitle className="flex items-center gap-2"><MapPin className="h-4 w-4" />Mapa do Itinerário</CardTitle>
                 <CardDescription className="flex items-center gap-3 mt-1 flex-wrap">
                   {totalKmMapa > 0 && (
-                    <span className="inline-flex items-center gap-1"><Route className="h-3 w-3" />{totalKmMapa.toFixed(1)} km (linha reta)</span>
+                    <span
+                      className="inline-flex items-center gap-1"
+                      title="Distância em linha reta entre as paradas — aproximação, não é um cálculo de rota viária"
+                    >
+                      <Route className="h-3 w-3" />{totalKmMapa.toFixed(1)} km — rota aproximada (linha reta)
+                    </span>
                   )}
                   {semLocMapa > 0 && (
-                    <span className="text-amber-600 inline-flex items-center gap-1" title="Pontos sem coordenada não aparecem no mapa nem entram na otimização">
+                    <span className="text-amber-600 inline-flex items-center gap-1" title="Pontos sem coordenada não aparecem no mapa nem entram na otimização da ordem">
                       <AlertTriangle className="h-3 w-3" />{semLocMapa} de {clientesRoteiro.length} sem localização
                     </span>
                   )}
@@ -280,14 +333,32 @@ export default function RoteiroDetailPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleOptimizeRota}
+                onClick={handleOptimizeOrdem}
                 disabled={saving || clientesRoteiro.length < 3}
-                title="Reordenar por proximidade (vizinho mais próximo)"
+                title="Otimizar ordem por proximidade (vizinho mais próximo, distância em linha reta)"
               >
-                <Wand2 className="h-4 w-4 mr-1" />Otimizar rota
+                <Wand2 className="h-4 w-4 mr-1" />Otimizar ordem por proximidade
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {paradasSemLocalizacao.length > 0 && (
+                <div className="rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-2 text-xs space-y-1">
+                  <p className="font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {paradasSemLocalizacao.length} parada(s) sem localização resolvida
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+                    {paradasSemLocalizacao.map((s) => {
+                      const motivo = deriveMotivoSemLocalizacao(s);
+                      return (
+                        <li key={s.cliente_id} className="text-amber-800 dark:text-amber-300 truncate">
+                          {s.nome} — {motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "motivo desconhecido"}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
               {clientesRoteiro.length === 0 ? (
                 <p className="text-muted-foreground">Nenhum cliente vinculado — adicione pontos na aba Clientes.</p>
               ) : (

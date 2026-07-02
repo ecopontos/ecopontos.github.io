@@ -154,6 +154,19 @@ export const CLIENTES_GEO_COUNT: QueryDef = {
   returns: '{ count: number }',
 };
 
+/**
+ * Ordem de fallback usada para resolver a posição (latitude/longitude) de cada parada do
+ * itinerário — hoje só existe implícita neste SQL, documentada aqui e em `deriveCoordOrigem`/
+ * `deriveMotivoSemLocalizacao` (`desktop/lib/itinerary.ts`):
+ *   1. `roteiro_clientes.terreno_id`  — override de terreno específico para esta parada neste roteiro
+ *   2. `clientes.terreno_id`          — terreno cadastrado no cliente (usado se não houver override acima)
+ *   3. `terrenos.centroid_lat/lng`    — centroide do terreno resolvido em 1 ou 2, se ele tiver centroide calculado
+ *   4. `clientes.latitude/longitude`  — coordenada do próprio cliente, usada se o terreno não tiver centroide
+ * Se nada disso resolver, a parada fica sem localização (latitude/longitude nulos no resultado).
+ * As colunas `roteiro_terreno_id`, `terreno_centroid_lat/lng` abaixo são expostas apenas para a UI
+ * derivar, no client, a origem da coordenada usada (Fase 1 do plano de logística/roteiros) —
+ * não introduzem colunas novas no banco, apenas reexpõem valores já lidos por este JOIN.
+ */
 export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
   sql: `SELECT rc.ordem,
               c.id  AS cliente_id,
@@ -162,13 +175,17 @@ export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
               COALESCE(t.centroid_lng, c.longitude) AS longitude,
               COALESCE(rc.terreno_id, c.terreno_id)  AS terreno_id,
               t.nome              AS terreno_nome,
-              t.codigo_cadastral
+              t.codigo_cadastral,
+              rc.terreno_id       AS roteiro_terreno_id,
+              c.terreno_id        AS cliente_terreno_id,
+              t.centroid_lat      AS terreno_centroid_lat,
+              t.centroid_lng      AS terreno_centroid_lng
        FROM roteiro_clientes rc
        JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN terrenos t ON t.id = COALESCE(rc.terreno_id, c.terreno_id)
        WHERE rc.roteiro_id = ? AND rc.ativo = 1 AND c.ativo = 1
        ORDER BY rc.ordem`,
-  description: 'Paradas de um roteiro com nome e posição — useItinerario',
+  description: 'Paradas de um roteiro com nome, posição e origem da coordenada (raw terreno_id/centroid p/ diagnóstico na UI) — useItinerario',
   params: ['roteiro_id'],
   use: 'operacional',
   returns: 'ItinerarioStop[]',

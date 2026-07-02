@@ -29,13 +29,59 @@ import { useClientes } from "@/src/interface/hooks/catalog/clientes";
 import { useClientesByRoteiro, useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
 import { useClientesGeo, useItinerario, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
 import type { RoteiroCliente } from "@/src/domain/logistics/LogisticsRepository";
+import type { ItinerarioStop } from "@/src/interface/hooks/catalog/logistica";
 import type { Cliente } from "@/types/clientes";
 import ItinerarioMap from "./ItinerarioMap";
-import { nearestNeighborOrder, countSemLocalizacao, totalRouteKm, type GeoStop } from "@/lib/itinerary";
+import {
+  nearestNeighborOrder,
+  countSemLocalizacao,
+  totalRouteKm,
+  deriveCoordOrigem,
+  deriveMotivoSemLocalizacao,
+  COORD_ORIGEM_LABELS,
+  MOTIVO_SEM_LOCALIZACAO_LABELS,
+  type GeoStop,
+  type CoordOrigem,
+  type MotivoSemLocalizacao,
+} from "@/lib/itinerary";
 
 const PAGE_SIZE = 50;
 
 type SearchMode = "nome" | "cep" | "bairro";
+
+/** Cor do indicador de origem da coordenada — apenas visual, o rótulo real vai no title/tooltip. */
+const COORD_ORIGEM_DOT_COLOR: Record<CoordOrigem, string> = {
+  cliente_latlng: "#3b82f6",
+  terreno_centroid: "#22c55e",
+  roteiro_terreno_override: "#a855f7",
+};
+
+/** Indicador compacto (bolinha ou alerta) da origem da coordenada de uma parada — ver `deriveCoordOrigem`. */
+function CoordOrigemIndicator({
+  origem,
+  motivo,
+}: {
+  origem: CoordOrigem | null;
+  motivo: MotivoSemLocalizacao | null;
+}) {
+  if (origem) {
+    return (
+      <span
+        className="inline-block w-2 h-2 rounded-full shrink-0"
+        style={{ backgroundColor: COORD_ORIGEM_DOT_COLOR[origem] }}
+        title={`Origem da coordenada: ${COORD_ORIGEM_LABELS[origem]}`}
+      />
+    );
+  }
+  return (
+    <span
+      className="inline-flex shrink-0"
+      title={motivo ? `Sem localização: ${MOTIVO_SEM_LOCALIZACAO_LABELS[motivo]}` : "Sem localização"}
+    >
+      <AlertTriangle className="h-3 w-3 text-amber-500" />
+    </span>
+  );
+}
 
 function SortableItem({
   item,
@@ -44,6 +90,7 @@ function SortableItem({
   onSelect,
   onRemove,
   saving,
+  itinerarioStop,
 }: {
   item: RoteiroCliente;
   cliente: Cliente | undefined;
@@ -51,6 +98,7 @@ function SortableItem({
   onSelect: () => void;
   onRemove: () => void;
   saving: boolean;
+  itinerarioStop: ItinerarioStop | undefined;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.clienteId,
@@ -59,12 +107,14 @@ function SortableItem({
   const nome = cliente?.nome || item.clienteNome || item.clienteId;
   const logradouro = cliente?.endereco || "";
   const numero = cliente?.numero || "";
+  const coordOrigem = itinerarioStop ? deriveCoordOrigem(itinerarioStop) : null;
+  const motivoSemLoc = itinerarioStop ? deriveMotivoSemLocalizacao(itinerarioStop) : null;
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`grid grid-cols-[1.5rem_2rem_1fr_8.5rem_2.5rem_1.5rem] items-center gap-1 px-2 py-1.5 rounded border bg-background select-none text-sm cursor-pointer ${
+      className={`grid grid-cols-[1.5rem_2rem_1rem_1fr_8.5rem_2.5rem_1.5rem] items-center gap-1 px-2 py-1.5 rounded border bg-background select-none text-sm cursor-pointer ${
         isDragging ? "opacity-50 shadow-lg z-50" : ""
       } ${isSelected ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
       onClick={onSelect}
@@ -78,6 +128,9 @@ function SortableItem({
         <GripVertical className="h-4 w-4" />
       </div>
       <span className="text-xs font-bold text-muted-foreground text-right">{item.ordem}</span>
+      <span className="flex items-center justify-center">
+        <CoordOrigemIndicator origem={coordOrigem} motivo={motivoSemLoc} />
+      </span>
       <span className="truncate font-medium" title={nome}>{nome}</span>
       <span className="text-xs text-muted-foreground truncate" title={logradouro}>{logradouro || "—"}</span>
       <span className="text-xs text-muted-foreground text-right">{numero || "—"}</span>
@@ -155,6 +208,22 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
   const sorted = useMemo(
     () => [...(clientesRoteiro || [])].sort((a, b) => a.ordem - b.ordem),
     [clientesRoteiro],
+  );
+
+  const itinerarioByCliente = useMemo(() => {
+    const map = new Map<string, ItinerarioStop>();
+    for (const s of itinerario || []) map.set(s.cliente_id, s);
+    return map;
+  }, [itinerario]);
+
+  // Paradas sem localização resolvida (latitude/longitude nulos), com o motivo provável —
+  // ver deriveMotivoSemLocalizacao (desktop/lib/itinerary.ts).
+  const paradasSemLocalizacao = useMemo(
+    () =>
+      [...(itinerario || [])]
+        .filter((s) => deriveMotivoSemLocalizacao(s) !== null)
+        .sort((a, b) => a.ordem - b.ordem),
+    [itinerario],
   );
 
   const existingIds = useMemo(() => new Set(sorted.map((c) => c.clienteId)), [sorted]);
@@ -257,7 +326,9 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
   const semLoc = countSemLocalizacao(geoStops);
   const totalKm = totalRouteKm(geoStops);
 
-  const handleOptimize = async () => {
+  // Reordena o itinerário por proximidade (vizinho mais próximo, distância em linha reta —
+  // não é cálculo de rota viária, ver lib/itinerary.ts).
+  const handleOptimizeOrdem = async () => {
     if (geoStops.filter((s) => s.lat != null && s.lng != null).length < 3) {
       toast.error("Pontos com localização insuficientes para otimizar.");
       return;
@@ -267,15 +338,15 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
       .map((cid, i) => ({ clienteId: cid, ordem: i + 1 }))
       .filter((c) => sorted.find((s) => s.clienteId === c.clienteId)?.ordem !== c.ordem);
     if (changes.length === 0) {
-      toast.info("Rota já está otimizada.");
+      toast.info("Itinerário já está com a ordem otimizada por proximidade.");
       return;
     }
     try {
       await updateClienteOrdemBatch(roteiroId, changes);
-      toast.success("Rota otimizada por proximidade");
+      toast.success("Ordem do itinerário otimizada por proximidade");
       refetch();
     } catch {
-      toast.error("Erro ao otimizar rota");
+      toast.error("Erro ao otimizar ordem do itinerário");
     }
   };
 
@@ -432,35 +503,56 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                   size="sm"
                   variant="outline"
                   className="h-6 text-xs gap-1"
-                  onClick={handleOptimize}
+                  onClick={handleOptimizeOrdem}
                   disabled={saving}
-                  title="Reordenar por proximidade (vizinho mais próximo)"
+                  title="Otimizar ordem por proximidade (vizinho mais próximo, distância em linha reta)"
                 >
                   <Wand2 className="h-3 w-3" />
-                  Otimizar
+                  Otimizar ordem
                 </Button>
               )}
             </div>
             {(totalKm > 0 || semLoc > 0) && (
               <div className="flex items-center gap-3 text-[10px] flex-wrap">
                 {totalKm > 0 && (
-                  <span className="text-muted-foreground inline-flex items-center gap-1">
-                    <Route className="h-3 w-3" />{totalKm.toFixed(1)} km (linha reta)
+                  <span
+                    className="text-muted-foreground inline-flex items-center gap-1"
+                    title="Distância em linha reta entre as paradas — aproximação, não é um cálculo de rota viária"
+                  >
+                    <Route className="h-3 w-3" />{totalKm.toFixed(1)} km — rota aproximada (linha reta)
                   </span>
                 )}
                 {semLoc > 0 && (
                   <span
                     className="text-amber-600 inline-flex items-center gap-1"
-                    title="Pontos sem coordenada não aparecem no mapa nem entram na otimização"
+                    title="Pontos sem coordenada não aparecem no mapa nem entram na otimização da ordem"
                   >
                     <AlertTriangle className="h-3 w-3" />{semLoc} de {sorted.length} sem localização
                   </span>
                 )}
               </div>
             )}
-            <div className="grid grid-cols-[1.5rem_2rem_1fr_8.5rem_2.5rem_1.5rem] gap-1 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {paradasSemLocalizacao.length > 0 && (
+              <div className="rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-1.5 text-[10px] max-h-16 overflow-y-auto space-y-0.5">
+                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                  Paradas sem localização resolvida:
+                </p>
+                <ul className="space-y-0.5">
+                  {paradasSemLocalizacao.map((s) => {
+                    const motivo = deriveMotivoSemLocalizacao(s);
+                    return (
+                      <li key={s.cliente_id} className="text-amber-800 dark:text-amber-300 truncate">
+                        {s.nome} — {motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "motivo desconhecido"}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            <div className="grid grid-cols-[1.5rem_2rem_1rem_1fr_8.5rem_2.5rem_1.5rem] gap-1 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span></span>
               <span className="text-right">Ord</span>
+              <span></span>
               <span>Nome</span>
               <span>Logradouro</span>
               <span className="text-right">Nº</span>
@@ -491,6 +583,7 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                           onSelect={() => setSelectedClienteId(c.clienteId)}
                           onRemove={() => handleRemove(c.clienteId)}
                           saving={saving}
+                          itinerarioStop={itinerarioByCliente.get(c.clienteId)}
                         />
                       ))}
                     </div>
@@ -519,7 +612,9 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                 <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: "#f97316" }} /> No roteiro</span>
                 <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full opacity-40" style={{ backgroundColor: "#22c55e" }} /> PF</span>
                 <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full opacity-40" style={{ backgroundColor: "#3b82f6" }} /> PJ</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "#f97316" }} /> Rota</span>
+                <span className="flex items-center gap-1" title="Linha reta entre as paradas — aproximação, não é o traçado real da via">
+                  <span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "#f97316" }} /> Rota aproximada (linha reta)
+                </span>
                 <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 border border-orange-500 opacity-60" style={{ backgroundColor: "#f97316", opacity: 0.3 }} /> Terreno</span>
               </div>
             </div>
