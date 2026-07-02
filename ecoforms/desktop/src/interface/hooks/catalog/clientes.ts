@@ -15,6 +15,9 @@ export {
   usePfUnassigned,
   usePjByPfId,
   usePjUnassignedToPf,
+  useImoveisByClienteId,
+  useImoveisDisponiveis,
+  useSugestoesVinculo,
 } from '../queries/useClientes';
 
 // --- Mutations ---

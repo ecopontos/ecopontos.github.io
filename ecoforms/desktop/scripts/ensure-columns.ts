@@ -2162,6 +2162,53 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         )
     `);
 
+    // ── Fase 3 — georreferenciamento: vínculo N:N cliente↔imóvel (terreno) ──
+    // Substitui gradualmente o FK 1:1 `clientes.terreno_id` (ADR-038) por uma relação
+    // com proveniência (tipo_relacao, confianca, origem, vigência). `imovel_id` aponta
+    // para `terrenos.id` — não cria um domínio cadastral paralelo (ver ADR-038 e plano
+    // 2026-07-02-clientes-geolocalizacao-georreferenciamento.md, diretriz 4).
+    await execute(`
+        CREATE TABLE IF NOT EXISTS cliente_imovel_vinculos (
+            id            TEXT PRIMARY KEY,
+            cliente_id    TEXT NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+            imovel_id     TEXT NOT NULL REFERENCES terrenos(id) ON DELETE CASCADE,
+            tipo_relacao  TEXT CHECK(tipo_relacao IN
+                ('proprietario','ocupante','responsavel','sindico','gestor','contribuinte','ponto_coleta','contato')),
+            principal     INTEGER NOT NULL DEFAULT 0,
+            confianca     TEXT CHECK(confianca IN ('alta','media','baixa')),
+            origem        TEXT CHECK(origem IN
+                ('manual','importacao','codigo_cadastral','geocode_inside_polygon','gps_inside_polygon','fiscalizacao','sync')),
+            valido_de     TEXT,
+            valido_ate    TEXT,
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(cliente_id, imovel_id)
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_cliente  ON cliente_imovel_vinculos(cliente_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_imovel    ON cliente_imovel_vinculos(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_principal ON cliente_imovel_vinculos(cliente_id, principal)`).catch(() => {});
+
+    // Backfill: migra `clientes.terreno_id` existentes para a nova tabela antes de a UI
+    // depender dela. A coluna legada `clientes.terreno_id` é mantida (não removida neste PR)
+    // porque leituras de mapa/logística ainda a consultam; ela é sincronizada por
+    // linkClienteToImovel/unlinkClienteFromImovel quando o vínculo é principal.
+    {
+        const migrated = await query<{ cnt: number }>(
+            "SELECT COUNT(*) as cnt FROM pragma_table_info('cliente_imovel_vinculos') WHERE name='id'"
+        );
+        if ((migrated[0]?.cnt ?? 0) > 0) {
+            await execute(
+                `INSERT OR IGNORE INTO cliente_imovel_vinculos
+                    (id, cliente_id, imovel_id, tipo_relacao, principal, confianca, origem, criado_em, atualizado_em)
+                 SELECT 'cvinc-' || c.id || '-' || c.terreno_id, c.id, c.terreno_id,
+                        'responsavel', 1, 'alta', 'codigo_cadastral', datetime('now'), datetime('now')
+                 FROM clientes c
+                 WHERE c.terreno_id IS NOT NULL AND c.terreno_id != ''`
+            ).catch(() => {});
+        }
+    }
+
     // ================================================================
     // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica
     // ================================================================
