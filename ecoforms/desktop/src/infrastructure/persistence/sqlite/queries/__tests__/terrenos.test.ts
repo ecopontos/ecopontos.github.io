@@ -5,6 +5,7 @@ import {
     TERRENOS_RTREE_UPSERT,
     CLIENTES_GEO,
     CLIENTES_GEO_IN_VIEWPORT,
+    CLIENTES_GEO_COUNT,
     ROTEIRO_CLIENTES_ITINERARIO,
     PONTO_OP_INSERT,
     PONTO_OP_SET_PRINCIPAL,
@@ -61,5 +62,15 @@ describe('precedência de ponto operacional (Fase 4)', () => {
     it('PONTO_OP_SET_PRINCIPAL promove apenas um ponto a principal', () => {
         expect(PONTO_OP_SET_PRINCIPAL.sql).toContain('SET principal = 1');
         expect(PONTO_OP_SET_PRINCIPAL.params).toEqual(['id']);
+    });
+
+    it('ROTEIRO_CLIENTES_ITINERARIO não usa mais roteiro_terreno_id (override removido)', () => {
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).not.toContain('rc.terreno_id');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).not.toContain('roteiro_terreno_id');
+    });
+
+    it('CLIENTES_GEO_COUNT usa cliente_imovel_vinculos para resolver posição', () => {
+        expect(CLIENTES_GEO_COUNT.sql).toContain('cliente_imovel_vinculos');
+        expect(CLIENTES_GEO_COUNT.sql).toContain('cv.principal = 1');
     });
 });
