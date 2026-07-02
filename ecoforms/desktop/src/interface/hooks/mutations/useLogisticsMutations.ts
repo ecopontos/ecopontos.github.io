@@ -61,6 +61,15 @@ export function useLogisticsMutations() {
         });
     }, []);
 
+    const updateParadaLocalizacao = useCallback(async (
+        roteiroId: string, clienteId: string, update: { imovelId: string | null; pontoOperacionalId: string | null },
+    ) => {
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.logisticsRepository.updateParadaLocalizacao(roteiroId, clienteId, update);
+        });
+    }, []);
+
     const saveExecucao = useCallback(async (exec: ExecucaoColeta) => {
         return withLoading(async () => {
             const c = await getContainerAsync();
@@ -122,7 +131,7 @@ export function useLogisticsMutations() {
 
     return {
         saveRoteiro, removeRoteiro,
-        addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateClienteOrdemBatch,
+        addClienteToRoteiro, removeClienteFromRoteiro, updateClienteOrdem, updateClienteOrdemBatch, updateParadaLocalizacao,
         saveExecucao, updateExecucaoStatus, transicaoExecucaoStatus, removeExecucao,
         saveChecklistItem, completeChecklistItem,
         saveIntercorrencia, resolverIntercorrencia,
