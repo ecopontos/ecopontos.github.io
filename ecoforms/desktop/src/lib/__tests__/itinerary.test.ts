@@ -7,7 +7,6 @@ describe("deriveCoordOrigem", () => {
             deriveCoordOrigem({
                 latitude: null,
                 longitude: null,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: null,
                 terreno_centroid_lng: null,
             }),
@@ -19,37 +18,21 @@ describe("deriveCoordOrigem", () => {
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: null,
                 terreno_centroid_lng: null,
             }),
         ).toBe("cliente_latlng");
     });
 
-    it("retorna terreno_centroid quando o centroide veio do terreno cadastrado no cliente (sem override do roteiro)", () => {
+    it("retorna terreno_centroid quando o centroide veio do terreno cadastrado no cliente", () => {
         expect(
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: -23.55,
                 terreno_centroid_lng: -46.63,
             }),
         ).toBe("terreno_centroid");
-    });
-
-    it("retorna roteiro_terreno_override quando roteiro_clientes.terreno_id sobrescreveu o terreno do cliente", () => {
-        expect(
-            deriveCoordOrigem({
-                latitude: -23.55,
-                longitude: -46.63,
-                ponto_operacional_lat: null,
-                ponto_operacional_lng: null,
-                roteiro_terreno_id: "terreno-override-1",
-                terreno_centroid_lat: -23.55,
-                terreno_centroid_lng: -46.63,
-            }),
-        ).toBe("roteiro_terreno_override");
     });
 
     it("retorna ponto_operacional quando há ponto operacional, mesmo com centroide também presente (precedência)", () => {
@@ -59,7 +42,6 @@ describe("deriveCoordOrigem", () => {
                 longitude: -46.63,
                 ponto_operacional_lat: -23.55,
                 ponto_operacional_lng: -46.63,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: -23.54,
                 terreno_centroid_lng: -46.62,
             }),
