@@ -49,7 +49,7 @@ describe('precedência de ponto operacional (Fase 4)', () => {
     });
 
     it('ROTEIRO_CLIENTES_ITINERARIO faz JOIN determinístico por ponto principal e expõe colunas crus', () => {
-        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('COALESCE(po.latitude, t.centroid_lat, c.latitude)');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('po.latitude, t.centroid_lat, c.latitude');
         expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('NOT EXISTS');
         expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('po2.principal > po.principal');
         expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('AS ponto_operacional_lat');
@@ -92,5 +92,31 @@ describe('evidência GPS de campo (Fase 5, parte Desktop)', () => {
         expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('t.centroid_lat AS terreno_centroid_lat');
         expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('t.centroid_lng AS terreno_centroid_lng');
         expect(GPS_EVIDENCIA_BY_IMOVEL.params).toEqual(['imovel_id']);
+    });
+});
+
+describe('override de localização por parada (Fase 3 logística)', () => {
+    it('ROTEIRO_CLIENTES_ITINERARIO prioriza ponto_operacional_id explícito da parada', () => {
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('po_parada.latitude');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('LEFT JOIN imovel_pontos_operacionais po_parada ON po_parada.id = rc.ponto_operacional_id');
+    });
+
+    it('ROTEIRO_CLIENTES_ITINERARIO resolve imovel_id da parada para ponto principal ou centroide desse imóvel', () => {
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('LEFT JOIN terrenos t_parada ON t_parada.id = rc.imovel_id');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('po_imovel_parada.imovel_id = rc.imovel_id');
+    });
+
+    it('ROTEIRO_CLIENTES_ITINERARIO expõe os campos crus para deriveCoordOrigem distinguir override', () => {
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('AS parada_ponto_operacional_id');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('AS parada_ponto_operacional_lat');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('AS parada_imovel_ponto_operacional_lat');
+        expect(ROTEIRO_CLIENTES_ITINERARIO.sql).toContain('AS parada_imovel_centroid_lat');
+    });
+
+    it('ROTEIRO_CLIENTES_ITINERARIO mantém a precedência do override de parada sobre o vínculo automático no COALESCE', () => {
+        const latCoalesce = ROTEIRO_CLIENTES_ITINERARIO.sql.match(/COALESCE\(po_parada\.latitude[^)]*\)/)?.[0] ?? '';
+        expect(latCoalesce.indexOf('po_parada')).toBeLessThan(latCoalesce.indexOf('po.latitude'));
+        expect(latCoalesce.indexOf('po_imovel_parada')).toBeLessThan(latCoalesce.indexOf('po.latitude'));
+        expect(latCoalesce.indexOf('t_parada')).toBeLessThan(latCoalesce.indexOf('po.latitude'));
     });
 });

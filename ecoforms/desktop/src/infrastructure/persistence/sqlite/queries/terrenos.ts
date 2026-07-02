@@ -186,34 +186,44 @@ export const CLIENTES_GEO_COUNT: QueryDef = {
  * Ordem de fallback usada para resolver a posição (latitude/longitude) de cada parada do
  * itinerário — documentada aqui e em `deriveCoordOrigem`/`deriveMotivoSemLocalizacao`
  * (`desktop/lib/itinerary.ts`):
- *   0. `imovel_pontos_operacionais`   — ponto operacional principal do imóvel vinculado (Fase 4)
- *   1. `cliente_imovel_vinculos`      — vínculo principal do cliente resolve o imóvel (Fase 3)
- *   2. `terrenos.centroid_lat/lng`    — centroide do imóvel resolvido em 1, se tiver centroide
- *   3. `clientes.latitude/longitude`  — coordenada do próprio cliente, usada se não houver vínculo/centroide
+ *   0. `roteiro_clientes.ponto_operacional_id` — override explícito de ponto nesta parada (Fase 3 logística)
+ *   1. `roteiro_clientes.imovel_id` → ponto operacional principal desse imóvel (Fase 3 logística)
+ *   2. `roteiro_clientes.imovel_id` → centroide desse imóvel, se não tiver ponto principal (Fase 3 logística)
+ *   3. `imovel_pontos_operacionais`   — ponto operacional principal do imóvel vinculado (Fase 4 georref)
+ *   4. `cliente_imovel_vinculos`      — vínculo principal do cliente resolve o imóvel (Fase 3 georref)
+ *   5. `clientes.latitude/longitude`  — coordenada do próprio cliente, usada se não houver vínculo/centroide
  * Se nada disso resolver, a parada fica sem localização (latitude/longitude nulos no resultado).
  *
- * Histórico: até a migração da Fase 3 (follow-up), a resolução passava por `clientes.terreno_id`
- * (FK 1:1, ADR-038) e por um override `roteiro_clientes.terreno_id` (per-stop) que nunca foi
- * escrito pelo app — ambos removidos da resolução. O override por parada pode voltar como
- * feature dedicada no plano de logística (Fase 3 daquele plano) se necessário.
+ * Histórico: até a migração da Fase 3 (follow-up) do georreferenciamento, a resolução passava por
+ * `clientes.terreno_id` (FK 1:1, ADR-038) e por um override `roteiro_clientes.terreno_id` (per-stop)
+ * que nunca foi escrito pelo app — ambos removidos da resolução. Os níveis 0-2 acima são o override
+ * por parada dedicado, reintroduzido como feature real na Fase 3 do plano de logística.
  *
- * As colunas `terreno_centroid_lat/lng`, `ponto_operacional_lat/lng` abaixo são expostas apenas
- * para a UI derivar, no client, a origem da coordenada usada — não introduzem colunas novas no
+ * As colunas `terreno_centroid_lat/lng`, `ponto_operacional_lat/lng`, `parada_*` abaixo são expostas
+ * apenas para a UI derivar, no client, a origem da coordenada usada — não introduzem colunas novas no
  * banco, apenas reexpõem valores já lidos por este JOIN.
  */
 export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
   sql: `SELECT rc.ordem,
               c.id  AS cliente_id,
               c.nome,
-              COALESCE(po.latitude, t.centroid_lat, c.latitude)  AS latitude,
-              COALESCE(po.longitude, t.centroid_lng, c.longitude) AS longitude,
-              cv.imovel_id      AS terreno_id,
-              t.nome            AS terreno_nome,
-              t.codigo_cadastral,
+              COALESCE(po_parada.latitude, po_imovel_parada.latitude, t_parada.centroid_lat, po.latitude, t.centroid_lat, c.latitude)  AS latitude,
+              COALESCE(po_parada.longitude, po_imovel_parada.longitude, t_parada.centroid_lng, po.longitude, t.centroid_lng, c.longitude) AS longitude,
+              COALESCE(rc.imovel_id, cv.imovel_id) AS terreno_id,
+              COALESCE(t_parada.nome, t.nome)      AS terreno_nome,
+              COALESCE(t_parada.codigo_cadastral, t.codigo_cadastral) AS codigo_cadastral,
               t.centroid_lat    AS terreno_centroid_lat,
               t.centroid_lng    AS terreno_centroid_lng,
               po.latitude       AS ponto_operacional_lat,
-              po.longitude      AS ponto_operacional_lng
+              po.longitude      AS ponto_operacional_lng,
+              rc.ponto_operacional_id AS parada_ponto_operacional_id,
+              po_parada.latitude AS parada_ponto_operacional_lat,
+              po_parada.longitude AS parada_ponto_operacional_lng,
+              rc.imovel_id      AS parada_imovel_id,
+              po_imovel_parada.latitude AS parada_imovel_ponto_operacional_lat,
+              po_imovel_parada.longitude AS parada_imovel_ponto_operacional_lng,
+              t_parada.centroid_lat AS parada_imovel_centroid_lat,
+              t_parada.centroid_lng AS parada_imovel_centroid_lng
        FROM roteiro_clientes rc
        JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN cliente_imovel_vinculos cv ON cv.cliente_id = c.id AND cv.principal = 1
@@ -224,9 +234,17 @@ export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
            WHERE po2.imovel_id = po.imovel_id
              AND (po2.principal > po.principal
                   OR (po2.principal = po.principal AND po2.criado_em < po.criado_em)))
+       LEFT JOIN imovel_pontos_operacionais po_parada ON po_parada.id = rc.ponto_operacional_id
+       LEFT JOIN terrenos t_parada ON t_parada.id = rc.imovel_id
+       LEFT JOIN imovel_pontos_operacionais po_imovel_parada ON po_imovel_parada.imovel_id = rc.imovel_id
+         AND NOT EXISTS (
+           SELECT 1 FROM imovel_pontos_operacionais po_imovel_parada2
+           WHERE po_imovel_parada2.imovel_id = po_imovel_parada.imovel_id
+             AND (po_imovel_parada2.principal > po_imovel_parada.principal
+                  OR (po_imovel_parada2.principal = po_imovel_parada.principal AND po_imovel_parada2.criado_em < po_imovel_parada.criado_em)))
        WHERE rc.roteiro_id = ? AND rc.ativo = 1 AND c.ativo = 1
        ORDER BY rc.ordem`,
-  description: 'Paradas de um roteiro com nome, posição e origem da coordenada (vínculo principal; ponto op > terreno centroid > cliente lat/lng; raw p/ diagnóstico na UI) — useItinerario',
+  description: 'Paradas de um roteiro com nome, posição e origem da coordenada (override de parada > vínculo principal > cliente lat/lng; raw p/ diagnóstico na UI) — useItinerario',
   params: ['roteiro_id'],
   use: 'operacional',
   returns: 'ItinerarioStop[]',

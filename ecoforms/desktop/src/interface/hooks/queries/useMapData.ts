@@ -76,6 +76,16 @@ export interface ItinerarioStop {
     ponto_operacional_lat: number | null;
     /** imovel_pontos_operacionais.longitude "cru" do terreno resolvido (Fase 4) — ponto operacional principal. */
     ponto_operacional_lng: number | null;
+    /** roteiro_clientes.ponto_operacional_id — override explícito de ponto nesta parada (Fase 3 logística). */
+    parada_ponto_operacional_id: string | null;
+    parada_ponto_operacional_lat: number | null;
+    parada_ponto_operacional_lng: number | null;
+    /** roteiro_clientes.imovel_id — override de imóvel nesta parada (Fase 3 logística). */
+    parada_imovel_id: string | null;
+    parada_imovel_ponto_operacional_lat: number | null;
+    parada_imovel_ponto_operacional_lng: number | null;
+    parada_imovel_centroid_lat: number | null;
+    parada_imovel_centroid_lng: number | null;
 }
 
 // ─── Helpers espaciais ────────────────────────────────────────────────────────
