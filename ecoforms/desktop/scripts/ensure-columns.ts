@@ -1707,7 +1707,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 30 WHERE id = 'reclamacao' AND prazo_dias_corridos IS NULL`);
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 20 WHERE id = 'solicitacao' AND prazo_dias_corridos IS NULL`);
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 30, prazo_urgente_dias = 5 WHERE id = 'denuncia' AND prazo_dias_corridos IS NULL`);
-    } catch (e) { /* silencioso */ }
+    } catch (_e) { /* silencioso */ }
 
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM situacoes`);
@@ -2069,7 +2069,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tblRotas_ordem_ativa
             ON rotas (idRoteiro, Ordem) WHERE Inativo = 0`);
-    } catch (e) {
+    } catch (_e) {
         // tabela legada pode não existir — silencioso
     }
 
@@ -2078,7 +2078,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ================================================================
     try {
         await execute(`ALTER TABLE tarefas_anexos RENAME COLUMN criado_em TO created_at`);
-    } catch (e) {
+    } catch (_e) {
         // coluna já renomeada ou não existe — silencioso
     }
 

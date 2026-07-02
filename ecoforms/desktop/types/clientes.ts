@@ -25,11 +25,11 @@ const CATEGORIAS_PF = [
   'Outro',
 ] as const;
 
-const CATEGORIAS_CLIENTE = [...CATEGORIAS_PJ, ...CATEGORIAS_PF] as const;
+const _CATEGORIAS_CLIENTE = [...CATEGORIAS_PJ, ...CATEGORIAS_PF] as const;
 
 export type CategoriaPJ = typeof CATEGORIAS_PJ[number];
 
-export type CategoriaCliente = typeof CATEGORIAS_CLIENTE[number];
+export type CategoriaCliente = typeof _CATEGORIAS_CLIENTE[number];
 
 export function categoriasPorTipo(tipo: 'PF' | 'PJ'): readonly string[] {
   return tipo === 'PF' ? CATEGORIAS_PF : CATEGORIAS_PJ;
