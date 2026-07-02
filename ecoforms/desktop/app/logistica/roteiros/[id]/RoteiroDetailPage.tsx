@@ -3,7 +3,7 @@
 import { Fragment, useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouteParamOrQuery } from "@/src/interface/hooks/routing/useRouteParamOrQuery";
-import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw, MapPin, Wand2, Route, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Truck, Users, ChevronUp, ChevronDown, Printer, Search, ClipboardCheck, Scale, RefreshCw, MapPin, Wand2, Route, AlertTriangle, Compass } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import type { Roteiro, RoteiroCliente, ExecucaoColeta } from "@/src/domain/logis
 import type { ItinerarioStop } from "@/src/interface/hooks/catalog/logistica";
 import { ExecucaoColetaStateMachine } from "@/src/domain/logistics/ExecucaoColetaStateMachine";
 import { NovaExecucaoDialog } from "@/components/logistics/NovaExecucaoDialog";
+import { ParadaLocalizacaoDialog } from "@/components/logistics/ParadaLocalizacaoDialog";
 import ItinerarioMap from "@/components/logistics/ItinerarioMap";
 import { useItinerario, useClientesGeo, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
 import {
@@ -61,6 +62,7 @@ export default function RoteiroDetailPage() {
   const { data: clientesGeo } = useClientesGeo();
   const { data: terrenosGeo } = useTerrenos();
   const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
+  const [paradaLocalizacaoTarget, setParadaLocalizacaoTarget] = useState<{ clienteId: string; clienteNome: string } | null>(null);
 
   const geoStops: GeoStop[] = useMemo(() => {
     const coordById = new Map(
@@ -268,19 +270,29 @@ export default function RoteiroDetailPage() {
                         <TableCell>{c.clienteNome || c.clienteId}</TableCell>
                         <TableCell>{c.observacao || "—"}</TableCell>
                         <TableCell>
-                          {coordOrigem ? (
-                            <span className="text-xs text-muted-foreground" title={`Origem da coordenada: ${COORD_ORIGEM_LABELS[coordOrigem]}`}>
-                              {COORD_ORIGEM_LABELS[coordOrigem]}
-                            </span>
-                          ) : (
-                            <span
-                              className="text-xs text-amber-600 inline-flex items-center gap-1"
-                              title={motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
+                          <div className="flex items-center gap-1.5">
+                            {coordOrigem ? (
+                              <span className="text-xs text-muted-foreground" title={`Origem da coordenada: ${COORD_ORIGEM_LABELS[coordOrigem]}`}>
+                                {COORD_ORIGEM_LABELS[coordOrigem]}
+                              </span>
+                            ) : (
+                              <span
+                                className="text-xs text-amber-600 inline-flex items-center gap-1"
+                                title={motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
+                              >
+                                <AlertTriangle className="h-3 w-3 shrink-0" />
+                                {motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground shrink-0"
+                              title="Definir ponto operacional ou imóvel específico para esta parada"
+                              onClick={() => setParadaLocalizacaoTarget({ clienteId: c.clienteId, clienteNome: c.clienteNome || c.clienteId })}
                             >
-                              <AlertTriangle className="h-3 w-3 shrink-0" />
-                              {motivo ? MOTIVO_SEM_LOCALIZACAO_LABELS[motivo] : "Sem localização"}
-                            </span>
-                          )}
+                              <Compass className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-0.5">
@@ -463,6 +475,20 @@ export default function RoteiroDetailPage() {
         roteiroId={id!}
         usuarios={usuarios}
       />
+
+      {paradaLocalizacaoTarget && id && (
+        <ParadaLocalizacaoDialog
+          open={!!paradaLocalizacaoTarget}
+          onClose={() => setParadaLocalizacaoTarget(null)}
+          roteiroId={id}
+          clienteId={paradaLocalizacaoTarget.clienteId}
+          clienteNome={paradaLocalizacaoTarget.clienteNome}
+          vinculoImovelId={itinerarioByCliente.get(paradaLocalizacaoTarget.clienteId)?.terreno_id ?? null}
+          overrideImovelId={clientesRoteiro?.find((c) => c.clienteId === paradaLocalizacaoTarget.clienteId)?.imovelId ?? null}
+          overridePontoOperacionalId={clientesRoteiro?.find((c) => c.clienteId === paradaLocalizacaoTarget.clienteId)?.pontoOperacionalId ?? null}
+          onSaved={refetchClientes}
+        />
+      )}
     </div>
   );
 }
