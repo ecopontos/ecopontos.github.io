@@ -703,6 +703,14 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_roteiro_clientes_cliente ON roteiro_clientes(cliente_id)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_roteiro_clientes_ordem   ON roteiro_clientes(roteiro_id, ordem)`);
 
+    // ── Fase 3 (logística): override de localização por parada ──
+    // imovel_id: override de qual imóvel resolve esta parada (independente do vínculo principal
+    // do cliente — útil quando o cliente tem mais de um vínculo em cliente_imovel_vinculos).
+    // ponto_operacional_id: override fino de um ponto específico desse imóvel; sempre implica um
+    // imovel_id preenchido junto pela UI (não validado por CHECK — ver plano/spec).
+    await execute(`ALTER TABLE roteiro_clientes ADD COLUMN imovel_id TEXT REFERENCES terrenos(id)`).catch(() => {});
+    await execute(`ALTER TABLE roteiro_clientes ADD COLUMN ponto_operacional_id TEXT REFERENCES imovel_pontos_operacionais(id)`).catch(() => {});
+
     await execute(`
         CREATE TABLE IF NOT EXISTS execucao_coleta (
             id                       TEXT PRIMARY KEY,
