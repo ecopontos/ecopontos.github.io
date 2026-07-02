@@ -371,22 +371,36 @@ export class SqliteClienteRepository implements ClienteRepository {
             `UPDATE cliente_imovel_vinculos SET ${sets.join(', ')} WHERE id = ?`,
             params
         );
-        // Se mudou principal→true, sincroniza coluna legada.
-        if (update.principal) {
+        // Se mudou o status de principal, sincroniza a coluna legada clientes.terreno_id.
+        if (update.principal !== undefined) {
             const rows = await this.db.query<{ cliente_id: string; imovel_id: string }>(
                 'SELECT cliente_id, imovel_id FROM cliente_imovel_vinculos WHERE id = ?',
                 [vinculoId]
             );
-            if (rows[0]) {
+            const v = rows[0];
+            if (v && update.principal) {
                 // Garante unicidade do principal: desmarca outros principais do mesmo cliente.
                 await this.db.execute(
                     `UPDATE cliente_imovel_vinculos SET principal = 0 WHERE cliente_id = ? AND id != ?`,
-                    [rows[0].cliente_id, vinculoId]
+                    [v.cliente_id, vinculoId]
                 );
                 await this.db.execute(
                     `UPDATE clientes SET terreno_id = ?, atualizado_em = datetime('now') WHERE id = ?`,
-                    [rows[0].imovel_id, rows[0].cliente_id]
+                    [v.imovel_id, v.cliente_id]
                 );
+            } else if (v && !update.principal) {
+                // Desmarcado como principal: se não sobrar outro principal para o cliente,
+                // limpa a coluna legada (mesmo comportamento de unlinkClienteFromImovel).
+                const remaining = await this.db.query<{ cnt: number }>(
+                    'SELECT COUNT(*) as cnt FROM cliente_imovel_vinculos WHERE cliente_id = ? AND principal = 1',
+                    [v.cliente_id]
+                );
+                if ((remaining[0]?.cnt ?? 0) === 0) {
+                    await this.db.execute(
+                        `UPDATE clientes SET terreno_id = NULL, atualizado_em = datetime('now') WHERE id = ?`,
+                        [v.cliente_id]
+                    );
+                }
             }
         }
     }
