@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { categoriasPorTipo, type CategoriaCliente, type Cliente } from "@/types/clientes";
 import { maskCep, fetchCep } from "@/src/lib/cep";
-import { geocodeFromCep } from "@/src/lib/geocoding";
+import { geocodeFromCep, type GeoProvider, type GeoPrecision } from "@/src/lib/geocoding";
 
 function maskDocument(value: string, tipo: "PF" | "PJ") {
   const digits = value.replace(/\D/g, "");
@@ -54,6 +54,11 @@ export default function NovoClientePage() {
     observacoes: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    geocode_provider: null as GeoProvider | null,
+    geocode_source_query: null as string | null,
+    geocode_display_name: null as string | null,
+    geocode_precision: null as GeoPrecision | null,
+    geocode_at: null as string | null,
     territorial: "",
   });
 
@@ -94,11 +99,41 @@ export default function NovoClientePage() {
         ...prev,
         latitude: result.latitude,
         longitude: result.longitude,
+        geocode_provider: result.provider ?? "nominatim",
+        geocode_source_query: result.source_query ?? null,
+        geocode_display_name: result.display_name ?? null,
+        geocode_precision: result.precision ?? null,
+        geocode_at: new Date().toISOString(),
       }));
       toast.success("Coordenadas encontradas");
     } else {
       toast.error("Não foi possível obter as coordenadas");
     }
+  };
+
+  /** Usuário digitou lat/lng manualmente — marca proveniência como manual, distinta da busca via Nominatim. */
+  const handleManualLatChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: value ? Number(value) : null,
+      geocode_provider: "manual",
+      geocode_precision: "manual",
+      geocode_source_query: null,
+      geocode_display_name: null,
+      geocode_at: new Date().toISOString(),
+    }));
+  };
+
+  const handleManualLngChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      longitude: value ? Number(value) : null,
+      geocode_provider: "manual",
+      geocode_precision: "manual",
+      geocode_source_query: null,
+      geocode_display_name: null,
+      geocode_at: new Date().toISOString(),
+    }));
   };
 
   const handleSubmit = async () => {
@@ -126,6 +161,11 @@ export default function NovoClientePage() {
         observacoes: form.observacoes || null,
         latitude: form.latitude,
         longitude: form.longitude,
+        geocode_provider: form.geocode_provider,
+        geocode_source_query: form.geocode_source_query,
+        geocode_display_name: form.geocode_display_name,
+        geocode_precision: form.geocode_precision,
+        geocode_at: form.geocode_at,
         territorial: form.territorial || null,
         ativo: 1,
         criado_em: now,
@@ -275,12 +315,12 @@ export default function NovoClientePage() {
           </div>
           <div className="space-y-2">
             <Label>Latitude</Label>
-            <Input value={form.latitude?.toString() || ""} onChange={e => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} placeholder="-23.550520" type="number" step="any" />
+            <Input value={form.latitude?.toString() || ""} onChange={e => handleManualLatChange(e.target.value)} placeholder="-23.550520" type="number" step="any" />
           </div>
           <div className="space-y-2">
             <Label>Longitude</Label>
             <div className="flex gap-2">
-              <Input value={form.longitude?.toString() || ""} onChange={e => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} placeholder="-46.633308" type="number" step="any" className="flex-1" />
+              <Input value={form.longitude?.toString() || ""} onChange={e => handleManualLngChange(e.target.value)} placeholder="-46.633308" type="number" step="any" className="flex-1" />
               <Button
                 type="button"
                 variant="outline"

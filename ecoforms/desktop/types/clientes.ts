@@ -53,6 +53,15 @@ export interface Cliente {
   observacoes?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  /** Proveniência da coordenada (Fase 1 — georreferenciamento). Ver desktop/src/lib/geocoding.ts para os tipos GeoProvider/GeoPrecision. */
+  geocode_provider?: string | null;
+  geocode_source_query?: string | null;
+  geocode_display_name?: string | null;
+  geocode_precision?: string | null;
+  geocode_at?: string | null;
+  geocode_confidence?: string | null;
+  geocode_validated_at?: string | null;
+  geocode_validated_by?: string | null;
   territorial?: string | null; // ID do imóvel cadastrado na prefeitura
   pj_id?: string | null; // ID da PJ a qual esta PF está vinculada como contato
   ativo: number; // SQLite INTEGER 0|1

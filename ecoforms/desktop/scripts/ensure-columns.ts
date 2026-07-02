@@ -291,6 +291,22 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`ALTER TABLE clientes ADD COLUMN observacoes TEXT`).catch(() => {});
     // migração: adiciona territorial (ID do imóvel cadastrado na prefeitura)
     await execute(`ALTER TABLE clientes ADD COLUMN territorial TEXT`).catch(() => {});
+    // migração: proveniência da geocodificação (Fase 1 — georreferenciamento de clientes)
+    // geocode_provider: nominatim | gps | manual | importacao | terreno_centroid | ponto_operacional
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_provider TEXT`).catch(() => {});
+    // geocode_source_query: string textual enviada ao Nominatim
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_source_query TEXT`).catch(() => {});
+    // geocode_display_name: display_name retornado pelo Nominatim
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_display_name TEXT`).catch(() => {});
+    // geocode_precision: address_exact | street_interpolated | street | neighborhood | postcode | city | manual | gps | polygon_centroid | operational_point
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_precision TEXT`).catch(() => {});
+    // geocode_at: timestamp ISO de quando a geocodificação ocorreu
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_at TEXT`).catch(() => {});
+    // geocode_confidence / geocode_validated_at / geocode_validated_by: reservados para Fase 2+ (validação de candidatos),
+    // adicionados agora por serem baratos, mas não preenchidos nesta fase.
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_confidence TEXT`).catch(() => {});
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_validated_at TEXT`).catch(() => {});
+    await execute(`ALTER TABLE clientes ADD COLUMN geocode_validated_by TEXT`).catch(() => {});
     // (migração de solicitante_* em manifestacoes movida para após CREATE TABLE manifestacoes)
 
     await execute(`

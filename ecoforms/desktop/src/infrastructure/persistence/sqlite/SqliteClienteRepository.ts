@@ -20,6 +20,14 @@ interface ClienteRow {
     observacoes?: string | null;
     latitude?: number | null;
     longitude?: number | null;
+    geocode_provider?: string | null;
+    geocode_source_query?: string | null;
+    geocode_display_name?: string | null;
+    geocode_precision?: string | null;
+    geocode_at?: string | null;
+    geocode_confidence?: string | null;
+    geocode_validated_at?: string | null;
+    geocode_validated_by?: string | null;
     territorial?: string | null;
     pj_id?: string | null;
     ativo: number;
@@ -58,6 +66,14 @@ function rowToCliente(row: ClienteRow): Cliente {
         observacoes: row.observacoes ?? null,
         latitude: row.latitude ?? null,
         longitude: row.longitude ?? null,
+        geocode_provider: row.geocode_provider ?? null,
+        geocode_source_query: row.geocode_source_query ?? null,
+        geocode_display_name: row.geocode_display_name ?? null,
+        geocode_precision: row.geocode_precision ?? null,
+        geocode_at: row.geocode_at ?? null,
+        geocode_confidence: row.geocode_confidence ?? null,
+        geocode_validated_at: row.geocode_validated_at ?? null,
+        geocode_validated_by: row.geocode_validated_by ?? null,
         territorial: row.territorial ?? null,
         pj_id: row.pj_id ?? null,
         ativo: row.ativo,
@@ -244,30 +260,41 @@ export class SqliteClienteRepository implements ClienteRepository {
                 `UPDATE clientes SET
                     tipo = ?, categoria = ?, nome = ?, documento = ?, email = ?, telefone = ?,
                     cep = ?, endereco = ?, numero = ?, bairro = ?, cidade = ?, estado = ?,
-                    complemento = ?, observacoes = ?, latitude = ?, longitude = ?, territorial = ?,
-                    pj_id = ?, ativo = ?, atualizado_em = ?
+                    complemento = ?, observacoes = ?, latitude = ?, longitude = ?,
+                    geocode_provider = ?, geocode_source_query = ?, geocode_display_name = ?,
+                    geocode_precision = ?, geocode_at = ?, geocode_confidence = ?,
+                    geocode_validated_at = ?, geocode_validated_by = ?,
+                    territorial = ?, pj_id = ?, ativo = ?, atualizado_em = ?
                 WHERE id = ?`,
                 [
                     cliente.tipo, cliente.categoria ?? null, cliente.nome, cliente.documento, cliente.email, cliente.telefone,
                     cliente.cep, cliente.endereco, cliente.numero, cliente.bairro, cliente.cidade,
                     cliente.estado, cliente.complemento, cliente.observacoes ?? null,
-                    cliente.latitude ?? null, cliente.longitude ?? null, cliente.territorial ?? null,
-                    cliente.pj_id ?? null, cliente.ativo, now, cliente.id,
+                    cliente.latitude ?? null, cliente.longitude ?? null,
+                    cliente.geocode_provider ?? null, cliente.geocode_source_query ?? null, cliente.geocode_display_name ?? null,
+                    cliente.geocode_precision ?? null, cliente.geocode_at ?? null, cliente.geocode_confidence ?? null,
+                    cliente.geocode_validated_at ?? null, cliente.geocode_validated_by ?? null,
+                    cliente.territorial ?? null, cliente.pj_id ?? null, cliente.ativo, now, cliente.id,
                 ]
             );
         } else {
             await this.db.execute(
                 `INSERT INTO clientes
                     (id, tipo, categoria, nome, documento, email, telefone, cep, endereco, numero,
-                     bairro, cidade, estado, complemento, observacoes, latitude, longitude, territorial,
-                     pj_id, ativo, criado_em, atualizado_em)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                     bairro, cidade, estado, complemento, observacoes, latitude, longitude,
+                     geocode_provider, geocode_source_query, geocode_display_name, geocode_precision,
+                     geocode_at, geocode_confidence, geocode_validated_at, geocode_validated_by,
+                     territorial, pj_id, ativo, criado_em, atualizado_em)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     cliente.id, cliente.tipo, cliente.categoria ?? null, cliente.nome, cliente.documento, cliente.email,
                     cliente.telefone, cliente.cep, cliente.endereco, cliente.numero, cliente.bairro,
                     cliente.cidade, cliente.estado, cliente.complemento, cliente.observacoes ?? null,
-                    cliente.latitude ?? null, cliente.longitude ?? null, cliente.territorial ?? null,
-                    cliente.pj_id ?? null, cliente.ativo, now, now,
+                    cliente.latitude ?? null, cliente.longitude ?? null,
+                    cliente.geocode_provider ?? null, cliente.geocode_source_query ?? null, cliente.geocode_display_name ?? null,
+                    cliente.geocode_precision ?? null, cliente.geocode_at ?? null, cliente.geocode_confidence ?? null,
+                    cliente.geocode_validated_at ?? null, cliente.geocode_validated_by ?? null,
+                    cliente.territorial ?? null, cliente.pj_id ?? null, cliente.ativo, now, now,
                 ]
             );
         }

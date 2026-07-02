@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { maskCep, fetchCep } from "@/src/lib/cep";
 import { geocodeFromCep } from "@/src/lib/geocoding";
+import { formatGeocodeProvenance } from "@/src/lib/geocodeProvenance";
 
 function maskPhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -162,11 +163,41 @@ export default function ClienteDetailPage() {
         ...prev,
         latitude: result.latitude,
         longitude: result.longitude,
+        geocode_provider: result.provider ?? "nominatim",
+        geocode_source_query: result.source_query ?? null,
+        geocode_display_name: result.display_name ?? null,
+        geocode_precision: result.precision ?? null,
+        geocode_at: new Date().toISOString(),
       }));
       toast.success("Coordenadas encontradas");
     } else {
       toast.error("Não foi possível obter as coordenadas");
     }
+  };
+
+  /** Usuário digitou lat/lng manualmente em modo de edição — marca proveniência como manual. */
+  const handleManualLatChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: value ? Number(value) : null,
+      geocode_provider: "manual",
+      geocode_precision: "manual",
+      geocode_source_query: null,
+      geocode_display_name: null,
+      geocode_at: new Date().toISOString(),
+    }));
+  };
+
+  const handleManualLngChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      longitude: value ? Number(value) : null,
+      geocode_provider: "manual",
+      geocode_precision: "manual",
+      geocode_source_query: null,
+      geocode_display_name: null,
+      geocode_at: new Date().toISOString(),
+    }));
   };
 
   const handleAddContato = async () => {
@@ -501,7 +532,7 @@ export default function ClienteDetailPage() {
               <div className="space-y-2">
                 <Label>Latitude</Label>
                 {editMode ? (
-                  <Input value={form.latitude?.toString() || ""} onChange={e => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} placeholder="-23.550520" type="number" step="any" />
+                  <Input value={form.latitude?.toString() || ""} onChange={e => handleManualLatChange(e.target.value)} placeholder="-23.550520" type="number" step="any" />
                 ) : (
                   <p>{cliente.latitude ?? "—"}</p>
                 )}
@@ -510,7 +541,7 @@ export default function ClienteDetailPage() {
                 <Label>Longitude</Label>
                 {editMode ? (
                   <div className="flex gap-2">
-                    <Input value={form.longitude?.toString() || ""} onChange={e => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} placeholder="-46.633308" type="number" step="any" className="flex-1" />
+                    <Input value={form.longitude?.toString() || ""} onChange={e => handleManualLngChange(e.target.value)} placeholder="-46.633308" type="number" step="any" className="flex-1" />
                     <Button
                       type="button"
                       variant="outline"
@@ -530,6 +561,12 @@ export default function ClienteDetailPage() {
                   <p>{cliente.longitude ?? "—"}</p>
                 )}
               </div>
+              {!editMode && (cliente.latitude != null && cliente.longitude != null) && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Fonte da coordenada</Label>
+                  <p className="text-sm text-muted-foreground">{formatGeocodeProvenance(cliente)}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
