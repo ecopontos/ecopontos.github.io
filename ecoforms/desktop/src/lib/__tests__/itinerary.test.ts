@@ -47,6 +47,64 @@ describe("deriveCoordOrigem", () => {
             }),
         ).toBe("ponto_operacional");
     });
+
+    it("retorna parada_ponto_operacional quando há override explícito de ponto na parada (precedência máxima)", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_ponto_operacional_lat: -23.55,
+                parada_ponto_operacional_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_ponto_operacional");
+    });
+
+    it("retorna parada_ponto_operacional quando o imovel_id da parada resolve para o ponto operacional principal desse imóvel", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_ponto_operacional_lat: -23.55,
+                parada_imovel_ponto_operacional_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_ponto_operacional");
+    });
+
+    it("retorna parada_imovel_centroid quando o imovel_id da parada não tem ponto principal, cai no centroide desse imóvel", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_centroid_lat: -23.55,
+                parada_imovel_centroid_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_imovel_centroid");
+    });
+
+    it("cai para ponto_operacional (vínculo automático) quando não há override de parada", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                ponto_operacional_lat: -23.55,
+                ponto_operacional_lng: -46.63,
+                terreno_centroid_lat: -23.54,
+                terreno_centroid_lng: -46.62,
+            }),
+        ).toBe("ponto_operacional");
+    });
 });
 
 describe("deriveMotivoSemLocalizacao", () => {
