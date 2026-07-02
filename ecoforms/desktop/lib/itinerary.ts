@@ -77,15 +77,14 @@ export function countSemLocalizacao(stops: GeoStop[]): number {
 // Ordem de fallback usada por ROTEIRO_CLIENTES_ITINERARIO (ver comentário e SQL em
 // desktop/src/infrastructure/persistence/sqlite/queries/terrenos.ts) para resolver a posição
 // de cada parada — hoje só existia implícita no SQL, documentada aqui explicitamente:
-//   0. imovel_pontos_operacionais  — ponto operacional principal do terreno resolvido em 1 ou 2 (Fase 4)
-//   1. roteiro_clientes.terreno_id  — override de terreno específico para esta parada neste roteiro
-//   2. clientes.terreno_id          — terreno cadastrado no cliente (se não houver override acima)
-//   3. terrenos.centroid_lat/lng    — centroide do terreno resolvido em 1 ou 2, se ele tiver centroide
-//   4. clientes.latitude/longitude  — coordenada do próprio cliente, usada se o terreno não tiver centroide
+//   0. imovel_pontos_operacionais  — ponto operacional principal do imóvel vinculado (Fase 4)
+//   1. cliente_imovel_vinculos      — vínculo principal do cliente resolve o imóvel (Fase 3)
+//   2. terrenos.centroid_lat/lng    — centroide do imóvel resolvido em 1, se tiver centroide
+//   3. clientes.latitude/longitude  — coordenada do próprio cliente, usada se não houver vínculo/centroide
 // Se nada disso resolver, a parada fica sem localização (ver deriveMotivoSemLocalizacao).
 
 /** Rótulo de origem da coordenada final usada por uma parada do itinerário. */
-export type CoordOrigem = 'ponto_operacional' | 'cliente_latlng' | 'terreno_centroid' | 'roteiro_terreno_override';
+export type CoordOrigem = 'ponto_operacional' | 'cliente_latlng' | 'terreno_centroid';
 
 export interface CoordOrigemStop {
     latitude: number | null;
@@ -94,11 +93,9 @@ export interface CoordOrigemStop {
     ponto_operacional_lat?: number | null | undefined;
     /** imovel_pontos_operacionais.longitude "cru" do terreno resolvido (Fase 4). */
     ponto_operacional_lng?: number | null | undefined;
-    /** rc.terreno_id "cru" (não coalescido) — presente só quando o roteiro sobrescreve o terreno do cliente. */
-    roteiro_terreno_id: string | null | undefined;
-    /** terrenos.centroid_lat "cru" do terreno resolvido (rc.terreno_id ou clientes.terreno_id). */
+    /** terrenos.centroid_lat "cru" do terreno resolvido (vínculo principal). */
     terreno_centroid_lat: number | null | undefined;
-    /** terrenos.centroid_lng "cru" do terreno resolvido (rc.terreno_id ou clientes.terreno_id). */
+    /** terrenos.centroid_lng "cru" do terreno resolvido (vínculo principal). */
     terreno_centroid_lng: number | null | undefined;
 }
 
@@ -106,7 +103,7 @@ export interface CoordOrigemStop {
  * Deriva de onde veio a coordenada final de uma parada, comparando os valores "crus" que a
  * query ROTEIRO_CLIENTES_ITINERARIO já retorna (sem precisar de coluna nova no banco nem de
  * uma nova query): tem precedência o ponto operacional (Fase 4), depois o centroide do terreno
- * (terreno_centroid ou roteiro_terreno_override), e por fim clientes.latitude/longitude.
+ * e por fim clientes.latitude/longitude.
  * Retorna null quando a parada não tem localização resolvida.
  */
 export function deriveCoordOrigem(stop: CoordOrigemStop): CoordOrigem | null {
@@ -115,7 +112,7 @@ export function deriveCoordOrigem(stop: CoordOrigemStop): CoordOrigem | null {
     if (usouPontoOperacional) return 'ponto_operacional';
     const usouCentroideDoTerreno = stop.terreno_centroid_lat != null && stop.terreno_centroid_lng != null;
     if (!usouCentroideDoTerreno) return 'cliente_latlng';
-    return stop.roteiro_terreno_id != null ? 'roteiro_terreno_override' : 'terreno_centroid';
+    return 'terreno_centroid';
 }
 
 /** Motivo provável de uma parada não ter localização resolvida. */
@@ -148,7 +145,6 @@ export const COORD_ORIGEM_LABELS: Record<CoordOrigem, string> = {
     ponto_operacional: 'Ponto operacional do imóvel',
     cliente_latlng: 'Coordenada do cadastro do cliente',
     terreno_centroid: 'Centroide do terreno vinculado ao cliente',
-    roteiro_terreno_override: 'Centroide do terreno vinculado neste roteiro (substitui o do cliente)',
 };
 
 /** Rótulos amigáveis (pt-BR) para exibição de MotivoSemLocalizacao na UI. */
