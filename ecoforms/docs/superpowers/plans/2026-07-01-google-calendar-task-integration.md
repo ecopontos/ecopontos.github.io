@@ -18,9 +18,22 @@
 - Escopo OAuth: `https://www.googleapis.com/auth/calendar.events` (somente eventos). Agenda `primary`.
 - Refresh token **nunca** em texto plano no SQLite - vai ao keychain do SO por comando Tauri. Nao importar modulos nativos (`keytar`, `http`, `net`) no bundle Next/browser.
 - NÃ£o publica para terceiros, nÃ£o Ã© bidirecional, nÃ£o usa server-side.
-- Variavel de ambiente necessaria: `VITE_GOOGLE_OAUTH_CLIENT_ID` (OAuth client do tipo "Desktop app"). Sem `client_secret`.
+- Variavel de ambiente necessaria: `NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID` (OAuth client do tipo "Desktop app"). Sem `client_secret`. Nao usar `import.meta.env` neste projeto Next.js.
 - Todos os paths deste plano sao relativos a raiz do repositorio atual (`ecoforms/`). Comandos `npm`/`npx` rodam em `desktop/`.
 - Antes de executar: usar worktree isolado ou arvore limpa. Se `git status --short` mostrar alteracoes alheias, nao fazer commits por task ate isolar a execucao.
+
+## Revision Guardrails (2026-07-01)
+
+Estes ajustes sao obrigatorios antes de executar as tasks abaixo. Eles corrigem riscos encontrados na revisao do plano contra o codigo atual.
+
+- **Identidade do usuario:** `CurrentUserPort` deve ler a sessao local do desktop/Tauri (`get_session` ou fonte equivalente usada por `AuthContext`), nao apenas Supabase Auth. O login Supabase e non-fatal hoje; usar somente Supabase pode retornar `null` com usuario local autenticado.
+- **Refresh de access token:** o drainer nao pode falhar simplesmente por access token ausente/expirado. Introduzir uma porta explicita `TokenRefresher`/`OAuthTokenRefresher` ou mover essa responsabilidade para um metodo `TokenStore.getValidAccessToken(userId)`, usando refresh token e persistindo novo access token.
+- **Deduplicacao multi-maquina:** ETag/projection local nao impedem duplicidade quando o mesmo usuario usa duas maquinas. O evento Google deve receber identificador deterministico por task, preferencialmente `extendedProperties.private.ecoformsTaskId` e busca previa por `privateExtendedProperty`, ou a projection deve ser sincronizada entre maquinas. Sem isso, o plano deve assumir duplicidade como risco aceito.
+- **Lifecycle global:** o drainer/reconciler deve ser montado em um provider/layout autenticado global. Nao deixar o worker depender da tela de Settings estar aberta.
+- **Caminhos reais de mutacao:** antes da Task 10, mapear tambem mutacoes via Kanban/repositories/hooks que alteram `tarefas`. Se algum caminho nao passa pelos use cases listados, ele deve acionar `CalendarIntegrationService` ou ser coberto por reconciler em intervalo curto.
+- **OAuth loopback:** comando Rust deve ter timeout/cancelamento e resposta de erro limpa para abandono do fluxo, `state` invalido ou ausencia de `code`.
+- **Hash canonico:** usar SHA-256 conforme a spec, nao hash curto nao criptografico. Custo e irrelevante e reduz risco de colisao.
+- **Encoding:** este arquivo contem mojibake herdado (`Ã§`, `Ã¡`). Corrigir para UTF-8 em uma alteracao separada, para nao misturar revisao funcional com churn de texto.
 
 ## File Structure
 
@@ -38,7 +51,8 @@
 - `src/infrastructure/calendar/GoogleCalendarAdapter.ts` â€” `CalendarGateway` (REST v3).
 - `src/infrastructure/calendar/GoogleOAuthClient.ts` â€” fluxo loopback + refresh.
 - `src/infrastructure/calendar/TauriTokenStore.ts` - `TokenStore` via comandos Tauri (keychain).
-- `src/infrastructure/calendar/SupabaseCurrentUserPort.ts` â€” `CurrentUserPort` via `supabaseClient`.
+- `src/infrastructure/calendar/GoogleOAuthTokenRefresher.ts` - renova access token a partir do refresh token.
+- `src/infrastructure/calendar/LocalSessionCurrentUserPort.ts` â€” `CurrentUserPort` via sessao local/Tauri, alinhado ao `AuthContext`.
 - `src/interface/hooks/useGoogleCalendar.ts` â€” conectar/desconectar/status; lifecycle do drainer/reconciler.
 - `desktop/components/settings/GoogleCalendarSettings.tsx` â€” UI de configuraÃ§Ã£o.
 - `migrations/022_calendar_integration.sql` - schema.
@@ -64,6 +78,7 @@
 - `CalendarProjection.findByTaskId / upsert(row) / delete(taskId) / listAllTaskIds()`
 - `CalendarGateway.upsertEvent(event, existingEventId?, accessToken) / deleteEvent(eventId, accessToken)`
 - `TokenStore.getRefreshToken/setRefreshToken/clear/getAccessToken/setAccessToken`
+- `TokenRefresher.getValidAccessToken(userId, now): Promise<string | null>` (renova access token usando refresh token quando necessario)
 - `CurrentUserPort.getCurrentUserId(): Promise<string|null>`
 
 - [ ] **Step 1: Criar `ports.ts`**
@@ -135,6 +150,10 @@ export interface TokenStore {
     clear(userId: string): Promise<void>;
 }
 
+export interface TokenRefresher {
+    getValidAccessToken(userId: string, now: string): Promise<string | null>;
+}
+
 export interface CurrentUserPort {
     getCurrentUserId(): Promise<string | null>;
 }
@@ -194,7 +213,7 @@ git commit -m "feat(calendar): add ports, types and schema for Google Calendar i
 
 **Interfaces:**
 - Consumes: `Task` (domain), `GoogleEvent` (Task 1).
-- Produces: `TaskCalendarSnapshot`, `snapshotFromTask(task): TaskCalendarSnapshot`, `snapshotHash(snap): string`, `toEvent(snap): GoogleEvent | null` (`null` quando sem `prazo`).
+- Produces: `TaskCalendarSnapshot`, `snapshotFromTask(task): TaskCalendarSnapshot`, `snapshotHash(snap): Promise<string>`, `toEvent(snap): GoogleEvent | null` (`null` quando sem `prazo`).
 
 - [ ] **Step 1: Escrever o teste (falha)**
 
@@ -251,8 +270,8 @@ describe('TaskToEventMapper', () => {
         const a = snapshotFromTask(buildTask({ titulo: 'A', prazo: '2026-07-10', tipoPrazo: 'unico' }));
         const b = snapshotFromTask(buildTask({ titulo: 'A', prazo: '2026-07-10', tipoPrazo: 'unico' }));
         const c = snapshotFromTask(buildTask({ titulo: 'B', prazo: '2026-07-10', tipoPrazo: 'unico' }));
-        expect(snapshotHash(a)).toBe(snapshotHash(b));
-        expect(snapshotHash(a)).not.toBe(snapshotHash(c));
+        await expect(snapshotHash(a)).resolves.toBe(await snapshotHash(b));
+        expect(await snapshotHash(a)).not.toBe(await snapshotHash(c));
     });
 
     it('inclui descricao no snapshot e no evento', () => {
@@ -296,20 +315,10 @@ export function snapshotFromTask(task: Task): TaskCalendarSnapshot {
     };
 }
 
-export function snapshotHash(s: TaskCalendarSnapshot): string {
-    // cyrb53 â€” hash determinista, suficiente para dedup de projeÃ§Ã£o (nÃ£o criptogrÃ¡fico).
+export async function snapshotHash(s: TaskCalendarSnapshot): Promise<string> {
     const input = [s.titulo, s.descricao ?? '', s.prazo ?? '', s.prazoFim ?? '', s.tipoPrazo ?? '', s.recorrencia ?? ''].join('|');
-    let h1 = 0xdeadbeef ^ input.length;
-    let h2 = 0x41c6ce57 ^ input.length;
-    for (let i = 0; i < input.length; i++) {
-        const ch = input.charCodeAt(i);
-        h1 = Math.imul(h1 ^ ch, 2654435761);
-        h2 = Math.imul(h2 ^ ch, 1597334677);
-    }
-    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-    const out = 4294967296 * (2097151 & h2) + (h1 >>> 0);
-    return out.toString(16).padStart(14, '0');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+    return 'sha256:' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function addDayIso(dateIso: string): string {
@@ -423,7 +432,7 @@ describe('CalendarIntegrationService', () => {
         expect(outbox.inserted).toHaveLength(1);
         // simula o drainer gravando a projection com o hash ja sincronizado
         const snap = snapshotFromTask(task);
-        proj.store.set('t1', { taskId: 't1', googleCalendarId: 'primary', googleEventId: 'e1', etag: null, lastSyncedHash: snapshotHash(snap), lastSyncedAt: 'x' });
+        proj.store.set('t1', { taskId: 't1', googleCalendarId: 'primary', googleEventId: 'e1', etag: null, lastSyncedHash: await snapshotHash(snap), lastSyncedAt: 'x' });
         outbox.inserted.length = 0;
         // 2a mutacao sem mudanca de hash: nao enfileira
         await svc.onTaskChanged(task, { now: '2026-07-01T00:00:00Z' });
@@ -502,7 +511,7 @@ export class CalendarIntegrationService {
 
         if (desired) {
             const snap = snapshotFromTask(task);
-            const hash = snapshotHash(snap);
+            const hash = await snapshotHash(snap);
             if (!proj || proj.lastSyncedHash !== hash) {
                 await this.outbox.insert({ taskId: task.id, op: 'upsert', payload: JSON.stringify(snap), now: opts.now });
             }
@@ -839,7 +848,7 @@ git commit -m "feat(calendar): add SqliteTaskCalendarProjectionRepository"
 - Test: `desktop/src/application/calendar/__tests__/CalendarOutboxDrainer.test.ts`
 
 **Interfaces:**
-- Consumes: `CalendarOutbox`, `CalendarProjection`, `CalendarGateway`, `TokenStore`, `CurrentUserPort` (Task 1); `toEvent`, `snapshotHash`, `TaskCalendarSnapshot` (Task 2).
+- Consumes: `CalendarOutbox`, `CalendarProjection`, `CalendarGateway`, `TokenRefresher`, `CurrentUserPort` (Task 1); `toEvent`, `snapshotHash`, `TaskCalendarSnapshot` (Task 2).
 - Produces: `class CalendarOutboxDrainer { drainOnce(opts): Promise<DrainStats> }` e helper `backoffSeconds(attempts)`.
 
 - [ ] **Step 1: Escrever o teste (falha)**
@@ -848,7 +857,7 @@ git commit -m "feat(calendar): add SqliteTaskCalendarProjectionRepository"
 // src/application/calendar/__tests__/CalendarOutboxDrainer.test.ts
 import { describe, it, expect } from 'vitest';
 import { CalendarOutboxDrainer, backoffSeconds } from '../CalendarOutboxDrainer';
-import type { CalendarGateway, CalendarOutbox, CalendarOutboxItem, CalendarProjection, CurrentUserPort, GoogleEvent, TokenStore } from '../ports';
+import type { CalendarGateway, CalendarOutbox, CalendarOutboxItem, CalendarProjection, CurrentUserPort, GoogleEvent, TokenRefresher } from '../ports';
 
 class FakeOutbox implements CalendarOutbox {
     pending: CalendarOutboxItem[] = [];
@@ -865,12 +874,9 @@ class FakeGateway implements CalendarGateway {
     async upsertEvent(e: GoogleEvent) { if (this.failWith) throw this.failWith(new Error('boom')); this.upserts.push(e); return { id: 'evt-' + (this.upserts.length), etag: '"e"' }; }
     async deleteEvent(id: string) { if (this.failWith) throw this.failWith(new Error('boom')); this.deletes.push(id); }
 }
-class FakeTokenStore implements TokenStore {
-    refresh = 'r'; access = 'a';
-    async getRefreshToken() { return this.refresh; }
-    async setRefreshToken() {} async clear() {}
-    async getAccessToken() { return this.access; }
-    async setAccessToken() {}
+class FakeTokenRefresher implements TokenRefresher {
+    access: string | null = 'a';
+    async getValidAccessToken() { return this.access; }
 }
 function fakeUser(id: string | null): CurrentUserPort { return { getCurrentUserId: async () => id }; }
 
@@ -882,7 +888,7 @@ describe('CalendarOutboxDrainer', () => {
     it('upsert cria evento e grava projection', async () => {
         const outbox = new FakeOutbox(); outbox.pending = [item()];
         const proj = { findByTaskId: async () => null, upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => [] } as CalendarProjection;
-        const drainer = new CalendarOutboxDrainer(outbox, proj, new FakeGateway(), new FakeTokenStore(), fakeUser('me'));
+        const drainer = new CalendarOutboxDrainer(outbox, proj, new FakeGateway(), new FakeTokenRefresher(), fakeUser('me'));
         const stats = await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
         expect(stats.succeeded).toBe(1);
         expect(outbox.done).toEqual(['i1']);
@@ -892,7 +898,7 @@ describe('CalendarOutboxDrainer', () => {
         const outbox = new FakeOutbox(); outbox.pending = [item({ op: 'cancel' })];
         const gw = new FakeGateway();
         const proj = { findByTaskId: async () => ({ taskId: 't1', googleCalendarId: 'primary', googleEventId: 'evt-9', etag: null, lastSyncedHash: 'h', lastSyncedAt: 'x' }), upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => ['t1'] } as unknown as CalendarProjection;
-        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenStore(), fakeUser('me'));
+        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenRefresher(), fakeUser('me'));
         await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
         expect(gw.deletes).toEqual(['evt-9']);
         expect(outbox.done).toEqual(['i1']);
@@ -901,7 +907,7 @@ describe('CalendarOutboxDrainer', () => {
     it('cancel sem projection e idempotente (done)', async () => {
         const outbox = new FakeOutbox(); outbox.pending = [item({ op: 'cancel' })];
         const proj = { findByTaskId: async () => null, upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => [] } as CalendarProjection;
-        const drainer = new CalendarOutboxDrainer(outbox, proj, new FakeGateway(), new FakeTokenStore(), fakeUser('me'));
+        const drainer = new CalendarOutboxDrainer(outbox, proj, new FakeGateway(), new FakeTokenRefresher(), fakeUser('me'));
         await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
         expect(outbox.done).toEqual(['i1']);
     });
@@ -910,7 +916,7 @@ describe('CalendarOutboxDrainer', () => {
         const outbox = new FakeOutbox(); const it = item({ attempts: 0 }); outbox.pending = [it];
         const gw = new FakeGateway(); gw.failWith = (e) => { (e as Error & { status?: number }).status = 500; return e; };
         const proj = { findByTaskId: async () => null, upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => [] } as CalendarProjection;
-        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenStore(), fakeUser('me'));
+        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenRefresher(), fakeUser('me'));
         await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
         expect(outbox.failed).toEqual(['i1']);
         expect(outbox.dead).toHaveLength(0);
@@ -920,14 +926,14 @@ describe('CalendarOutboxDrainer', () => {
         const outbox = new FakeOutbox(); outbox.pending = [item({ attempts: 7 })];
         const gw = new FakeGateway(); gw.failWith = (e) => { (e as Error & { status?: number }).status = 500; return e; };
         const proj = { findByTaskId: async () => null, upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => [] } as CalendarProjection;
-        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenStore(), fakeUser('me'));
+        const drainer = new CalendarOutboxDrainer(outbox, proj, gw, new FakeTokenRefresher(), fakeUser('me'));
         await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
         expect(outbox.dead).toEqual(['i1']);
     });
 
-    it('sem refresh token marca failed (espera conexao)', async () => {
+    it('sem token valido marca failed (espera conexao)', async () => {
         const outbox = new FakeOutbox(); outbox.pending = [item()];
-        const tokens = new FakeTokenStore(); tokens.refresh = null;
+        const tokens = new FakeTokenRefresher(); tokens.access = null;
         const proj = { findByTaskId: async () => null, upsert: async () => {}, delete: async () => {}, listAllTaskIds: async () => [] } as CalendarProjection;
         const drainer = new CalendarOutboxDrainer(outbox, proj, new FakeGateway(), tokens, fakeUser('me'));
         await drainer.drainOnce({ now: '2026-07-01T00:00:00Z' });
@@ -951,7 +957,7 @@ Expected: FAIL â€” classe inexistente.
 
 ```ts
 // src/application/calendar/CalendarOutboxDrainer.ts
-import type { CalendarGateway, CalendarOutbox, CalendarProjection, CurrentUserPort, TokenStore } from './ports';
+import type { CalendarGateway, CalendarOutbox, CalendarProjection, CurrentUserPort, TokenRefresher } from './ports';
 import { snapshotHash, toEvent } from './TaskToEventMapper';
 import type { TaskCalendarSnapshot } from './TaskToEventMapper';
 
@@ -977,7 +983,7 @@ export class CalendarOutboxDrainer {
         private readonly outbox: CalendarOutbox,
         private readonly projection: CalendarProjection,
         private readonly gateway: CalendarGateway,
-        private readonly tokens: TokenStore,
+        private readonly tokenRefresher: TokenRefresher,
         private readonly currentUser: CurrentUserPort,
     ) {}
 
@@ -1009,10 +1015,8 @@ export class CalendarOutboxDrainer {
     private async process(it: { id: string; taskId: string; op: 'upsert' | 'cancel'; payload: string }, now: string): Promise<void> {
         const me = await this.currentUser.getCurrentUserId();
         if (!me) throw new Error('no-current-user');
-        const refresh = await this.tokens.getRefreshToken(me);
-        if (!refresh) throw new Error('not-connected');
-        const access = await this.tokens.getAccessToken(me);
-        if (!access) throw new Error('no-access-token');
+        const access = await this.tokenRefresher.getValidAccessToken(me, now);
+        if (!access) throw new Error('not-connected');
 
         if (it.op === 'upsert') {
             const snap = JSON.parse(it.payload) as TaskCalendarSnapshot;
@@ -1025,7 +1029,7 @@ export class CalendarOutboxDrainer {
             const res = await this.gateway.upsertEvent(event, proj?.googleEventId, access);
             await this.projection.upsert({
                 taskId: it.taskId, googleCalendarId: 'primary', googleEventId: res.id,
-                etag: res.etag, lastSyncedHash: snapshotHash(snap), lastSyncedAt: now,
+                etag: res.etag, lastSyncedHash: await snapshotHash(snap), lastSyncedAt: now,
             });
             return;
         }
@@ -1107,7 +1111,7 @@ describe('CalendarReconciler', () => {
     it('nao enfileira quando hash coincide', async () => {
         const tasks = new InMemoryTaskRepository();
         const t = mk(); await tasks.save(t);
-        const correct = snapshotHash(snapshotFromTask(t));
+        const correct = await snapshotHash(snapshotFromTask(t));
         const spy = new SpyOutbox();
         const projStore = new Map<string, CalendarProjectionRow>([['t1', proj('t1', correct)]]);
         const projection: CalendarProjection = { findByTaskId: async id => projStore.get(id) ?? null, upsert: async r => projStore.set(r.taskId, r), delete: async id => projStore.delete(id), listAllTaskIds: async () => [...projStore.keys()] };
@@ -1174,7 +1178,7 @@ export class CalendarReconciler {
             activeByMe.set(t.id, active);
             if (active) {
                 const snap = snapshotFromTask(t);
-                const hash = snapshotHash(snap);
+                const hash = await snapshotHash(snap);
                 const proj = await this.projection.findByTaskId(t.id);
                 if (!proj || proj.lastSyncedHash !== hash) {
                     await this.outbox.insert({ taskId: t.id, op: 'upsert', payload: JSON.stringify(snap), now: opts.now });
@@ -1332,12 +1336,13 @@ git commit -m "feat(calendar): add GoogleCalendarAdapter (REST v3) with 404 tole
 
 ---
 
-## Task 9: GoogleOAuthClient + TauriTokenStore + SupabaseCurrentUserPort + Tauri commands
+## Task 9: GoogleOAuthClient + TauriTokenStore + LocalSessionCurrentUserPort + Tauri commands
 
 **Files:**
 - Create: `desktop/src/infrastructure/calendar/GoogleOAuthClient.ts`
 - Create: `desktop/src/infrastructure/calendar/TauriTokenStore.ts`
-- Create: `desktop/src/infrastructure/calendar/SupabaseCurrentUserPort.ts`
+- Create: `desktop/src/infrastructure/calendar/GoogleOAuthTokenRefresher.ts`
+- Create: `desktop/src/infrastructure/calendar/LocalSessionCurrentUserPort.ts`
 - Create: `desktop/src/infrastructure/calendar/__tests__/GoogleOAuthClient.test.ts`
 - Create: `desktop/src-tauri/src/commands/google_calendar.rs`
 - Modify: `desktop/src-tauri/src/commands/mod.rs`
@@ -1346,13 +1351,14 @@ git commit -m "feat(calendar): add GoogleCalendarAdapter (REST v3) with 404 tole
 - Modify: `desktop/src-tauri/capabilities/default.json`
 
 **Interfaces:**
-- Consumes: `TokenStore`, `CurrentUserPort` (Task 1); `getSupabaseClient` real de `src/infrastructure/persistence/supabase/supabaseClient`; Tauri `invoke`.
+- Consumes: `TokenStore`, `TokenRefresher`, `CurrentUserPort` (Task 1); sessao local Tauri (`get_session`); Tauri `invoke`.
 - Produz:
   - `class GoogleOAuthClient { startAuth(): Promise<AuthResult>; completeAuth(code, redirectUri, codeVerifier): Promise<Tokens>; refresh(refreshToken): Promise<Tokens> }`
   - `class TauriTokenStore implements TokenStore`
-  - `class SupabaseCurrentUserPort implements CurrentUserPort`
+  - `class GoogleOAuthTokenRefresher implements TokenRefresher`
+  - `class LocalSessionCurrentUserPort implements CurrentUserPort`
   - comandos Tauri `google_calendar_start_auth`, `google_calendar_token_get`, `google_calendar_token_set`, `google_calendar_token_clear`.
-- OAuth: loopback `http://127.0.0.1:{port}`; client_id de `import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID`; PKCE `S256`; `state` obrigatório.
+- OAuth: loopback `http://127.0.0.1:{port}`; client_id de `process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID`; PKCE `S256`; `state` obrigatório. O comando Tauri deve ter timeout/cancelamento para fluxo abandonado.
 - Regra de runtime: frontend Next/browser **não** importa `keytar`, `http` ou `net`. Listener loopback, abertura do browser e keychain ficam em Rust.
 
 - [ ] **Step 1: Adicionar dependências Rust**
@@ -1459,7 +1465,7 @@ async function asHttpError(resp: Response): Promise<HttpError> {
 }
 
 export class GoogleOAuthClient {
-    constructor(private readonly clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? '') {}
+    constructor(private readonly clientId = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? '') {}
 
     async startAuth(): Promise<AuthResult> {
         if (!this.clientId) throw new Error('missing-google-oauth-client-id');
@@ -1577,7 +1583,9 @@ pub fn google_calendar_token_clear(user_id: String) -> Result<(), String> {
 
 > Adicionar também `urlencoding = "2"` em `Cargo.toml`, registrar `pub mod google_calendar;` em `src-tauri/src/commands/mod.rs` e incluir os 4 comandos no `tauri::generate_handler![...]` de `src-tauri/src/lib.rs`.
 
-- [ ] **Step 6: Implementar `TauriTokenStore` e `SupabaseCurrentUserPort`**
+- [ ] **Step 6: Implementar `TauriTokenStore`, `GoogleOAuthTokenRefresher` e `LocalSessionCurrentUserPort`**
+
+`GoogleOAuthTokenRefresher` deve consultar `TauriTokenStore.getAccessToken`. Se o access token estiver ausente/expirado, deve usar `GoogleOAuthClient.refresh(refreshToken)`, persistir o novo access token e retornar o token valido. Sem refresh token, retorna `null` sem incrementar tentativas permanentemente.
 
 ```ts
 // src/infrastructure/calendar/TauriTokenStore.ts
@@ -1607,14 +1615,14 @@ export class TauriTokenStore implements TokenStore {
 ```
 
 ```ts
-// src/infrastructure/calendar/SupabaseCurrentUserPort.ts
-import { getSupabaseClient } from '../persistence/supabase/supabaseClient';
+// src/infrastructure/calendar/LocalSessionCurrentUserPort.ts
+import { invoke } from '@tauri-apps/api/core';
 import type { CurrentUserPort } from '../../application/calendar/ports';
 
-export class SupabaseCurrentUserPort implements CurrentUserPort {
+export class LocalSessionCurrentUserPort implements CurrentUserPort {
     async getCurrentUserId(): Promise<string | null> {
-        const { data } = await getSupabaseClient().auth.getUser();
-        return data?.user?.id ?? null;
+        const session = await invoke<{ user_id: string; perfil: string } | null>('get_session');
+        return session?.user_id ?? null;
     }
 }
 ```
@@ -1789,7 +1797,7 @@ git commit -m "feat(calendar): wire CalendarIntegrationService into task use cas
 
 **Interfaces:**
 - Consumes: todas as peÃ§as anteriores.
-- Produz: instÃ¢ncias de `CalendarOutbox`, `CalendarProjection`, `CalendarGateway`, `TokenStore`, `CurrentUserPort`, `CalendarIntegrationService`, `CalendarOutboxDrainer`, `CalendarReconciler` expostas no `Container`; injeÃ§Ã£o nos 6 use cases; garantia de tabelas (`ensureCalendarTables`).
+- Produz: instÃ¢ncias de `CalendarOutbox`, `CalendarProjection`, `CalendarGateway`, `TokenStore`, `TokenRefresher`, `CurrentUserPort`, `CalendarIntegrationService`, `CalendarOutboxDrainer`, `CalendarReconciler` expostas no `Container`; injeÃ§Ã£o nos 6 use cases; garantia de tabelas (`ensureCalendarTables`).
 
 - [ ] **Step 1: Estender a interface `Container`**
 
@@ -1800,6 +1808,7 @@ calendarDrainer: CalendarOutboxDrainer;
 calendarReconciler: CalendarReconciler;
 calendarTokenStore: TokenStore;
 calendarCurrentUser: CurrentUserPort;
+calendarTokenRefresher: TokenRefresher;
 ```
 
 - [ ] **Step 2: Implementar `ensureCalendarTables(sqlite)` idempotente**
@@ -1829,8 +1838,10 @@ Chame `await ensureCalendarTables(sqlite);` dentro de `initDatabase()`/`getConta
 import { SqliteCalendarOutboxRepository } from './persistence/sqlite/SqliteCalendarOutboxRepository';
 import { SqliteTaskCalendarProjectionRepository } from './persistence/sqlite/SqliteTaskCalendarProjectionRepository';
 import { GoogleCalendarAdapter } from './calendar/GoogleCalendarAdapter';
+import { GoogleOAuthClient } from './calendar/GoogleOAuthClient';
 import { TauriTokenStore } from './calendar/TauriTokenStore';
-import { SupabaseCurrentUserPort } from './calendar/SupabaseCurrentUserPort';
+import { GoogleOAuthTokenRefresher } from './calendar/GoogleOAuthTokenRefresher';
+import { LocalSessionCurrentUserPort } from './calendar/LocalSessionCurrentUserPort';
 import { CalendarIntegrationService } from '../application/calendar/CalendarIntegrationService';
 import { CalendarOutboxDrainer } from '../application/calendar/CalendarOutboxDrainer';
 import { CalendarReconciler } from '../application/calendar/CalendarReconciler';
@@ -1839,12 +1850,13 @@ const calendarOutbox = new SqliteCalendarOutboxRepository(sqlite);
 const calendarProjection = new SqliteTaskCalendarProjectionRepository(sqlite);
 const calendarGateway = new GoogleCalendarAdapter();
 const calendarTokenStore = new TauriTokenStore();
-const calendarCurrentUser = new SupabaseCurrentUserPort();
+const calendarTokenRefresher = new GoogleOAuthTokenRefresher(calendarTokenStore, new GoogleOAuthClient());
+const calendarCurrentUser = new LocalSessionCurrentUserPort();
 const calendarIntegration = new CalendarIntegrationService(calendarOutbox, calendarProjection, calendarCurrentUser);
-const calendarDrainer = new CalendarOutboxDrainer(calendarOutbox, calendarProjection, calendarGateway, calendarTokenStore, calendarCurrentUser);
+const calendarDrainer = new CalendarOutboxDrainer(calendarOutbox, calendarProjection, calendarGateway, calendarTokenRefresher, calendarCurrentUser);
 const calendarReconciler = new CalendarReconciler(taskRepository, calendarProjection, calendarOutbox, calendarCurrentUser);
 ```
-Injete `calendarIntegration` ao instanciar `CreateTaskUseCase`, `MoveTaskUseCase`, `AssignTaskUseCase`, `ArchiveTaskUseCase`, `UnarchiveTaskUseCase`, `DeleteTaskUseCase`. Exponha `calendarIntegration`, `calendarDrainer`, `calendarReconciler`, `calendarTokenStore`, `calendarCurrentUser` no objeto retornado.
+Injete `calendarIntegration` ao instanciar `CreateTaskUseCase`, `MoveTaskUseCase`, `AssignTaskUseCase`, `ArchiveTaskUseCase`, `UnarchiveTaskUseCase`, `DeleteTaskUseCase`. Exponha `calendarIntegration`, `calendarDrainer`, `calendarReconciler`, `calendarTokenStore`, `calendarTokenRefresher`, `calendarCurrentUser` no objeto retornado.
 
 - [ ] **Step 4: Typecheck + testes**
 
@@ -1866,7 +1878,7 @@ git commit -m "feat(calendar): register calendar services in DI container"
 - Create: `desktop/src/interface/hooks/useGoogleCalendar.ts`
 
 **Interfaces:**
-- Consumes: `Container` (via hook existente de container; usar o mesmo padrÃ£o de outros hooks de `interface/hooks`), `window` events (focus/online).
+- Consumes: `Container` (via hook existente de container; usar o mesmo padrÃ£o de outros hooks de `interface/hooks`), `window` events (focus/online). Deve ser montado por um provider/layout autenticado global; a tela de Settings apenas chama connect/disconnect/status.
 
 - [ ] **Step 1: Implementar o hook**
 
