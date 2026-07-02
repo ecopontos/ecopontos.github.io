@@ -105,6 +105,23 @@ describe("deriveCoordOrigem", () => {
             }),
         ).toBe("ponto_operacional");
     });
+
+    it("retorna parada_ponto_operacional (não parada_imovel_centroid) quando o imóvel da parada tem tanto ponto principal quanto centroide (precedência)", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_ponto_operacional_lat: -23.55,
+                parada_imovel_ponto_operacional_lng: -46.63,
+                parada_imovel_centroid_lat: -23.54,
+                parada_imovel_centroid_lng: -46.62,
+                ponto_operacional_lat: -23.53,
+                ponto_operacional_lng: -46.61,
+                terreno_centroid_lat: -23.52,
+                terreno_centroid_lng: -46.60,
+            }),
+        ).toBe("parada_ponto_operacional");
+    });
 });
 
 describe("deriveMotivoSemLocalizacao", () => {
