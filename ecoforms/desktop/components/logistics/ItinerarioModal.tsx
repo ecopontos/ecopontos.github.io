@@ -386,7 +386,7 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-6xl flex flex-col gap-3 p-0 h-[min(700px,85vh)]">
+      <DialogContent className="max-w-[95vw] flex flex-col gap-3 p-0 h-[min(800px,90vh)]">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
