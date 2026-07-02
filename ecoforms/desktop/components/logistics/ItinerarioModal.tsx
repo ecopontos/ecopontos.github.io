@@ -18,7 +18,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Search, X, Users, MapIcon, Wand2, Route, AlertTriangle } from "lucide-react";
+import { GripVertical, Trash2, Search, X, Users, MapIcon, Wand2, Route, AlertTriangle, Compass } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { uuidv7 } from "ecoforms-core";
 import { useClientes } from "@/src/interface/hooks/catalog/clientes";
 import { useClientesByRoteiro, useLogisticsMutations } from "@/src/interface/hooks/catalog/logistica";
 import { useClientesGeo, useItinerario, useTerrenos } from "@/src/interface/hooks/catalog/logistica";
+import { ParadaLocalizacaoDialog } from "./ParadaLocalizacaoDialog";
 import type { RoteiroCliente } from "@/src/domain/logistics/LogisticsRepository";
 import type { ItinerarioStop } from "@/src/interface/hooks/catalog/logistica";
 import type { Cliente } from "@/types/clientes";
@@ -54,6 +55,8 @@ const COORD_ORIGEM_DOT_COLOR: Record<CoordOrigem, string> = {
   ponto_operacional: "#f97316",
   cliente_latlng: "#3b82f6",
   terreno_centroid: "#22c55e",
+  parada_ponto_operacional: "#a855f7",
+  parada_imovel_centroid: "#ec4899",
 };
 
 /** Indicador compacto (bolinha ou alerta) da origem da coordenada de uma parada — ver `deriveCoordOrigem`. */
@@ -91,6 +94,8 @@ function SortableItem({
   onRemove,
   saving,
   itinerarioStop,
+  roteiroId: _roteiroId,
+  onEditLocalizacao,
 }: {
   item: RoteiroCliente;
   cliente: Cliente | undefined;
@@ -99,6 +104,8 @@ function SortableItem({
   onRemove: () => void;
   saving: boolean;
   itinerarioStop: ItinerarioStop | undefined;
+  roteiroId: string;
+  onEditLocalizacao: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.clienteId,
@@ -114,7 +121,7 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`grid grid-cols-[1.5rem_2rem_1rem_1fr_8.5rem_2.5rem_1.5rem] items-center gap-1 px-2 py-1.5 rounded border bg-background select-none text-sm cursor-pointer ${
+      className={`grid grid-cols-[1.5rem_2rem_1rem_1rem_1fr_8.5rem_2.5rem_1.5rem] items-center gap-1 px-2 py-1.5 rounded border bg-background select-none text-sm cursor-pointer ${
         isDragging ? "opacity-50 shadow-lg z-50" : ""
       } ${isSelected ? "border-primary bg-primary/5" : "hover:bg-accent"}`}
       onClick={onSelect}
@@ -131,6 +138,14 @@ function SortableItem({
       <span className="flex items-center justify-center">
         <CoordOrigemIndicator origem={coordOrigem} motivo={motivoSemLoc} />
       </span>
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground shrink-0"
+        title="Definir ponto operacional ou imóvel específico para esta parada"
+        onClick={(e) => { e.stopPropagation(); onEditLocalizacao(); }}
+      >
+        <Compass className="h-3.5 w-3.5" />
+      </button>
       <span className="truncate font-medium" title={nome}>{nome}</span>
       <span className="text-xs text-muted-foreground truncate" title={logradouro}>{logradouro || "—"}</span>
       <span className="text-xs text-muted-foreground text-right">{numero || "—"}</span>
@@ -179,6 +194,7 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
   const [showMap, setShowMap] = useState(true);
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [paradaLocalizacaoTarget, setParadaLocalizacaoTarget] = useState<{ clienteId: string; clienteNome: string } | null>(null);
 
   const { data: clientesRoteiro, refetch } = useClientesByRoteiro(roteiroId);
   const clienteFilter = useMemo(() => {
@@ -549,9 +565,10 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                 </ul>
               </div>
             )}
-            <div className="grid grid-cols-[1.5rem_2rem_1rem_1fr_8.5rem_2.5rem_1.5rem] gap-1 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="grid grid-cols-[1.5rem_2rem_1rem_1rem_1fr_8.5rem_2.5rem_1.5rem] gap-1 px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span></span>
               <span className="text-right">Ord</span>
+              <span></span>
               <span></span>
               <span>Nome</span>
               <span>Logradouro</span>
@@ -584,6 +601,13 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
                           onRemove={() => handleRemove(c.clienteId)}
                           saving={saving}
                           itinerarioStop={itinerarioByCliente.get(c.clienteId)}
+                          roteiroId={roteiroId}
+                          onEditLocalizacao={() =>
+                            setParadaLocalizacaoTarget({
+                              clienteId: c.clienteId,
+                              clienteNome: clientMap.get(c.clienteId)?.nome || c.clienteNome || c.clienteId,
+                            })
+                          }
                         />
                       ))}
                     </div>
@@ -621,6 +645,21 @@ export function ItinerarioModal({ roteiroId, roteiroNome, open, onClose }: Props
           )}
         </div>
       </DialogContent>
+      {paradaLocalizacaoTarget && (
+        <ParadaLocalizacaoDialog
+          open={!!paradaLocalizacaoTarget}
+          onClose={() => setParadaLocalizacaoTarget(null)}
+          roteiroId={roteiroId}
+          clienteId={paradaLocalizacaoTarget.clienteId}
+          clienteNome={paradaLocalizacaoTarget.clienteNome}
+          vinculoImovelId={itinerarioByCliente.get(paradaLocalizacaoTarget.clienteId)?.terreno_id ?? null}
+          overrideImovelId={sorted.find((c) => c.clienteId === paradaLocalizacaoTarget.clienteId)?.imovelId ?? null}
+          overridePontoOperacionalId={
+            sorted.find((c) => c.clienteId === paradaLocalizacaoTarget.clienteId)?.pontoOperacionalId ?? null
+          }
+          onSaved={refetch}
+        />
+      )}
     </Dialog>
   );
 }
