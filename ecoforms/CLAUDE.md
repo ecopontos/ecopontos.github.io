@@ -132,7 +132,6 @@ Dois runtimes compartilham este codebase:
 - **Schema migrations**: `scripts/ensure-columns.ts` — única fonte de verdade do schema. Contém `CREATE TABLE IF NOT EXISTS` + `ADD COLUMN` + seed de dados. Chamado automaticamente no boot pelo `container.ts` (`ensureColumnsIfNeeded`) e manualmente via `npx ts-node scripts/ensure-columns.ts`
 - **`src-tauri/src/database.rs`**: camada de execução Rust pura — abre conexão, executa queries, não contém DDL
 - A interface SQL generica aceita bootstrap sem sessao apenas para metadata/DDL e seeds idempotentes nao sensiveis; criacao de usuarios, LAN path inicial e RBAC inicial passam por comandos Rust dedicados.
-- **`docs/db/schema_consolidado_corrigido.sql`**: referência documental do schema completo — deve permanecer sincronizado com `ensure-columns.ts`
 - **Supabase PostgreSQL**: apenas `public.profiles` (espelho de `auth.users` para sync de usuários na Fase 5). Tráfego de dados operacionais continua via Storage.
 - **`supabase_user_map`**: tabela SQLite que mapeia `local_id` ↔ `supabase_id` para sync de usuários (Fase 5)
 
@@ -245,7 +244,7 @@ Use cases **emit** events instead of calling sync logic inline; handlers react a
 
 - Supabase client (`supabaseClient.ts`) uses anon key — após login, sessão Supabase Auth é estabelecida em paralelo (`syncSupabaseAuth`), dando `auth.uid()` válido para políticas RLS authenticated
 - Storage upload overload: `upload(path, data)` 2-arg OR `upload(bucket, path, data)` 3-arg — check `typeof pathOrData === 'string'` to disambiguate
-- New SQLite columns must be added in **both** `scripts/ensure-columns.ts` (CREATE TABLE IF NOT EXISTS block + ADD COLUMN guard) **and** `docs/db/schema_consolidado_corrigido.sql` (reference doc). `database.rs` is query-only — never add DDL there.
+- New SQLite columns must be added in `scripts/ensure-columns.ts` (CREATE TABLE IF NOT EXISTS block + ADD COLUMN guard) — the single source of truth for schema. `database.rs` is query-only — never add DDL there. (There is no separate `docs/db/schema_consolidado_corrigido.sql` reference doc in this repo — don't reference it or attempt to update it.)
 - `tbl_setores` requires `descricao TEXT`, `criado_em TEXT`, `atualizado_em TEXT` — added in Fase 6 fixes
 - **Do NOT use `useSQLiteQuery`/`useSQLiteMutation` directly in business hooks** — these are deprecated; use `getContainerAsync()` → repository or use case. For simple queries with no domain logic, calling the repository directly (`c.xxxRepository.findAll()`) is correct and preferred over wrapping in a trivial use case.
 - `KanbanRepository` (`SqliteKanbanRepository`) encapsulates all kanban SQL — hooks must not embed raw SQL
