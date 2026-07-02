@@ -132,8 +132,9 @@ export const AGENDAMENTOS_MAP_POINTS_BY_SLOT: QueryDef = {
          COALESCE(po.longitude, t.centroid_lng, c.longitude) AS longitude
   FROM agendamentos a
   JOIN clientes c ON c.id = a.cliente_id
-  LEFT JOIN terrenos t ON t.id = c.terreno_id
-  LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = c.terreno_id
+  LEFT JOIN cliente_imovel_vinculos cv ON cv.cliente_id = c.id AND cv.principal = 1
+  LEFT JOIN terrenos t ON t.id = cv.imovel_id
+  LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = cv.imovel_id
     AND NOT EXISTS (
       SELECT 1 FROM imovel_pontos_operacionais po2
       WHERE po2.imovel_id = po.imovel_id
@@ -143,7 +144,7 @@ export const AGENDAMENTOS_MAP_POINTS_BY_SLOT: QueryDef = {
     AND a.status != 'cancelado'
     AND (po.latitude IS NOT NULL OR t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
   ORDER BY a.criado_em`,
-  description: 'Pontos georreferenciados de agendamentos ativos de um slot (ponto op > terreno centroid > cliente lat/lng)',
+  description: 'Pontos georreferenciados de agendamentos ativos de um slot (vínculo principal; ponto op > terreno centroid > cliente lat/lng)',
   params: ['slot_id'],
   use: 'operacional',
   returns: 'AgendamentoMapPoint[]',
