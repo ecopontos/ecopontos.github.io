@@ -83,13 +83,15 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
         return this.db.query<RoteiroCliente>(`
             SELECT
                 rc.id,
-                rc.roteiro_id   AS roteiroId,
-                rc.cliente_id   AS clienteId,
+                rc.roteiro_id AS roteiroId,
+                rc.cliente_id AS clienteId,
                 rc.ordem,
                 rc.observacao,
                 rc.ativo,
-                rc.criado_em    AS criadoEm,
-                c.nome          AS clienteNome
+                rc.criado_em AS criadoEm,
+                c.nome AS clienteNome,
+                rc.imovel_id AS imovelId,
+                rc.ponto_operacional_id AS pontoOperacionalId
             FROM roteiro_clientes rc
             JOIN clientes c ON rc.cliente_id = c.id
             WHERE rc.roteiro_id = ? AND rc.ativo = 1
@@ -129,6 +131,17 @@ export class SqliteLogisticsRepository implements LogisticsRepository {
                 [item.ordem, roteiroId, item.clienteId]
             );
         }
+    }
+
+    async updateParadaLocalizacao(
+        roteiroId: string,
+        clienteId: string,
+        update: { imovelId: string | null; pontoOperacionalId: string | null },
+    ): Promise<void> {
+        await this.db.execute(
+            'UPDATE roteiro_clientes SET imovel_id = ?, ponto_operacional_id = ? WHERE roteiro_id = ? AND cliente_id = ?',
+            [update.imovelId, update.pontoOperacionalId, roteiroId, clienteId],
+        );
     }
 
     // --- Execucao Coleta ---
