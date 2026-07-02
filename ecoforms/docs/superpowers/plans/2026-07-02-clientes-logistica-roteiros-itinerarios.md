@@ -18,6 +18,17 @@ Melhorar a integracao entre o cadastro de clientes e o modulo de Logistica, deix
 
 O objetivo e reduzir ambiguidades no mapa, melhorar roteirizacao/coleta, permitir auditoria da execucao e preparar o app para uso offline sem depender de servicos externos no momento da operacao.
 
+## Relacao com o plano de georreferenciamento
+
+Este plano depende de `2026-07-02-clientes-geolocalizacao-georreferenciamento.md` e nao deve duplicar as entidades que ele define:
+
+- `imovel_id` (usado abaixo em `roteiro_paradas`, `execucao_paradas` e na prioridade de resolucao de coordenada) referencia `terrenos.id` — mesma tabela e mesma convencao adotada no outro plano, nao um dominio cadastral novo.
+- `imovel_pontos_operacionais` e criada na Fase 4 do plano de georreferenciamento. A Fase 3 deste plano **reaproveita** essa tabela — nao recria.
+- `cliente_imovel_vinculos` e criada na Fase 3 do plano de georreferenciamento. A prioridade de resolucao de coordenada (diretriz 3) so pode considerar o nivel "vinculo principal" depois que essa tabela existir.
+- A captura de GPS em campo com `accuracy`/`timestamp` (Fase 5 deste plano) reaproveita a mesma integracao de `GeolocationField.js`/`GPSField.v2.js` descrita na Fase 5 do plano de georreferenciamento — a parte nova aqui e comparar contra a parada planejada, nao capturar GPS de novo.
+
+Ordem de execucao sugerida entre os dois planos: Fase 1-2 deste plano podem rodar em paralelo com qualquer fase do outro (sao so nomenclatura e diagnostico). Fase 3 deste plano depende da Fase 3 e 4 do plano de georreferenciamento estarem concluidas. Fase 5 deste plano depende da Fase 5 do plano de georreferenciamento.
+
 ## Descobertas no codigo atual
 
 ### Modelo funcional existente
@@ -252,11 +263,13 @@ Prioridade sugerida para resolver coordenada da parada:
 1. roteiro_paradas.ponto_operacional_id
 2. roteiro_paradas.imovel_id -> ponto operacional principal do imovel
 3. roteiro_paradas.imovel_id -> centroide do imovel
-4. cliente_imovel_vinculo principal -> ponto operacional principal
+4. cliente_imovel_vinculos (vinculo principal) -> ponto operacional principal
 5. cliente.terreno_id -> ponto operacional principal
 6. cliente.terreno_id -> centroide
 7. cliente.latitude/longitude
 ```
+
+Niveis 1-3 e 5-7 podem ser implementados assim que `imovel_pontos_operacionais` existir (Fase 4 do plano de georreferenciamento). O nivel 4 so fica disponivel depois que `cliente_imovel_vinculos` existir (Fase 3 do plano de georreferenciamento) — ate la, o fallback pula direto de `roteiro_paradas.imovel_id` (niveis 1-3) para `cliente.terreno_id` (niveis 5-7).
 
 Essa prioridade deve ser documentada e visivel em diagnostico da parada.
 
@@ -410,13 +423,14 @@ Tarefas:
 
 ### Fase 3 - Ponto operacional
 
+Pre-requisito: Fase 4 do plano de georreferenciamento (`imovel_pontos_operacionais`) concluida — esta fase reaproveita a tabela, nao cria uma nova.
+
 Objetivo: parar de usar centroide como destino operacional quando houver alternativa melhor.
 
 Tarefas:
 
-- Integrar com o plano de georreferenciamento de clientes.
-- Criar tabela de pontos operacionais por imovel.
-- Permitir escolher ponto operacional no roteiro/parada.
+- Adicionar `imovel_id` e `ponto_operacional_id` em `roteiro_paradas` (FK para `terrenos.id` e `imovel_pontos_operacionais.id`, respectivamente).
+- Permitir escolher ponto operacional no roteiro/parada, a partir dos pontos ja cadastrados para o imovel.
 - Atualizar mapa do itinerario para destacar poligonal e ponto operacional.
 - Permitir "usar centroide como ponto inicial" com baixa/média confianca.
 
@@ -435,13 +449,14 @@ Tarefas:
 
 ### Fase 5 - Observado versus planejado
 
+Pre-requisito: Fase 5 do plano de georreferenciamento (integracao `GeolocationField`/`GPSField.v2` com `accuracy`/`timestamp`) concluida — esta fase consome essa captura, nao implementa GPS de novo.
+
 Objetivo: melhorar auditoria operacional.
 
 Tarefas:
 
-- Registrar GPS observado por parada no runtime/mobile.
-- Armazenar acuracia do GPS.
-- Calcular distancia entre planejado e observado.
+- Associar o GPS capturado (Fase 5 do plano de georreferenciamento) ao `execucao_paradas` correspondente, em vez de a um cliente/imovel isolado.
+- Calcular distancia entre planejado (`latitude_planejada`/`longitude_planejada`) e observado.
 - Exibir alerta quando distancia exceder limite configuravel.
 - Incluir divergencia em relatorios.
 
@@ -480,4 +495,3 @@ Ao final, o app deve conseguir responder:
 - Uma alteracao posterior no cadastro afetou ou nao uma execucao antiga?
 
 Essa melhoria preserva a simplicidade do modelo atual, mas cria uma ponte mais segura entre cadastro, georreferenciamento, planejamento logistico e evidencia de campo.
-
