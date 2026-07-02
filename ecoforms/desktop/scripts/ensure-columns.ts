@@ -2231,6 +2231,31 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_imovel ON imovel_pontos_operacionais(imovel_id)`).catch(() => {});
     await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_principal ON imovel_pontos_operacionais(imovel_id, principal)`).catch(() => {});
 
+    // ── Fase 5 (parte Desktop) — evidência de GPS de campo ──
+    // Registro de um ponto GPS observado (mobile, futuramente) ou lançado manualmente no
+    // Desktop para fins de teste, a ser comparado contra a poligonal/ponto operacional do
+    // imóvel vinculado. `imovel_id` é nullable porque nem todo cliente tem terreno vinculado
+    // (mesma ressalva das diretrizes 4/5 do plano de georreferenciamento). A interligação real
+    // com a captura do mobile (GeolocationField/GPSField.v2) é trabalho futuro, fora deste PR.
+    await execute(`
+        CREATE TABLE IF NOT EXISTS imovel_gps_evidencias (
+            id            TEXT PRIMARY KEY,
+            imovel_id     TEXT REFERENCES terrenos(id) ON DELETE CASCADE,
+            cliente_id    TEXT NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+            latitude      REAL NOT NULL,
+            longitude     REAL NOT NULL,
+            accuracy      REAL,
+            provider      TEXT CHECK(provider IN ('gps','network','manual','importacao')),
+            altitude      REAL,
+            heading       REAL,
+            capturado_em  TEXT,
+            origem        TEXT CHECK(origem IN ('mobile_campo','manual')),
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_gps_evidencias_imovel  ON imovel_gps_evidencias(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_gps_evidencias_cliente ON imovel_gps_evidencias(cliente_id)`).catch(() => {});
+
     // ================================================================
     // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica
     // ================================================================

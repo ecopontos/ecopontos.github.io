@@ -301,3 +301,32 @@ export const PONTO_OP_SET_PRINCIPAL: QueryDef = {
   use: 'operacional',
   returns: 'void',
 };
+
+// ── Fase 5 (parte Desktop): evidência GPS de campo ──
+// A comparação (dentro/fora da poligonal, distância até a referência) é feita client-side
+// via `compareGpsEvidence` (src/lib/gpsEvidence.ts), reaproveitando pointInPolygon/haversineMeters
+// já usados na Fase 3 — por isso GPS_EVIDENCIA_BY_IMOVEL traz o geojson/centroide do terreno junto.
+
+export const GPS_EVIDENCIA_INSERT: QueryDef = {
+  sql: `INSERT INTO imovel_gps_evidencias
+        (id, imovel_id, cliente_id, latitude, longitude, accuracy, provider, altitude, heading, capturado_em, origem, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  description: 'Insere um registro de evidência GPS de campo — insertGpsEvidencia',
+  params: ['id', 'imovel_id', 'cliente_id', 'latitude', 'longitude', 'accuracy', 'provider', 'altitude', 'heading', 'capturado_em', 'origem'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const GPS_EVIDENCIA_BY_IMOVEL: QueryDef = {
+  sql: `SELECT ge.id, ge.imovel_id, ge.cliente_id, ge.latitude, ge.longitude, ge.accuracy,
+               ge.provider, ge.altitude, ge.heading, ge.capturado_em, ge.origem, ge.criado_em,
+               t.geojson AS terreno_geojson, t.centroid_lat AS terreno_centroid_lat, t.centroid_lng AS terreno_centroid_lng
+        FROM imovel_gps_evidencias ge
+        LEFT JOIN terrenos t ON t.id = ge.imovel_id
+        WHERE ge.imovel_id = ?
+        ORDER BY ge.criado_em DESC`,
+  description: 'Evidências GPS de um imóvel, com geojson/centroide do terreno para comparação client-side via compareGpsEvidence',
+  params: ['imovel_id'],
+  use: 'operacional',
+  returns: 'GpsEvidenciaRow[]',
+};

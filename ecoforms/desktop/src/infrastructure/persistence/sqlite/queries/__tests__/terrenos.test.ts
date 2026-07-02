@@ -9,6 +9,8 @@ import {
     ROTEIRO_CLIENTES_ITINERARIO,
     PONTO_OP_INSERT,
     PONTO_OP_SET_PRINCIPAL,
+    GPS_EVIDENCIA_INSERT,
+    GPS_EVIDENCIA_BY_IMOVEL,
 } from '../terrenos';
 
 describe('terrenos spatial queries', () => {
@@ -72,5 +74,23 @@ describe('precedência de ponto operacional (Fase 4)', () => {
     it('CLIENTES_GEO_COUNT usa cliente_imovel_vinculos para resolver posição', () => {
         expect(CLIENTES_GEO_COUNT.sql).toContain('cliente_imovel_vinculos');
         expect(CLIENTES_GEO_COUNT.sql).toContain('cv.principal = 1');
+    });
+});
+
+describe('evidência GPS de campo (Fase 5, parte Desktop)', () => {
+    it('GPS_EVIDENCIA_INSERT grava nos parâmetros esperados, na ordem certa', () => {
+        expect(GPS_EVIDENCIA_INSERT.sql).toContain('INSERT INTO imovel_gps_evidencias');
+        expect(GPS_EVIDENCIA_INSERT.params).toEqual([
+            'id', 'imovel_id', 'cliente_id', 'latitude', 'longitude',
+            'accuracy', 'provider', 'altitude', 'heading', 'capturado_em', 'origem',
+        ]);
+    });
+
+    it('GPS_EVIDENCIA_BY_IMOVEL traz o geojson/centroide do terreno junto para comparação client-side', () => {
+        expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('FROM imovel_gps_evidencias ge');
+        expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('t.geojson AS terreno_geojson');
+        expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('t.centroid_lat AS terreno_centroid_lat');
+        expect(GPS_EVIDENCIA_BY_IMOVEL.sql).toContain('t.centroid_lng AS terreno_centroid_lng');
+        expect(GPS_EVIDENCIA_BY_IMOVEL.params).toEqual(['imovel_id']);
     });
 });
