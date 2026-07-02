@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { extractBbox } from '@/lib/geo/bbox';
 import {
   fetchClientesGeo,
@@ -68,13 +68,9 @@ export interface ItinerarioStop {
     terreno_id: string | null;
     terreno_nome: string | null;
     codigo_cadastral: string | null;
-    /** rc.terreno_id "cru" (não coalescido) — presente apenas quando o roteiro sobrescreve o terreno do cliente. */
-    roteiro_terreno_id: string | null;
-    /** c.terreno_id "cru" (não coalescido) — terreno cadastrado no cliente, independente do roteiro. */
-    cliente_terreno_id: string | null;
-    /** terrenos.centroid_lat "cru" do terreno resolvido (rc ou c) — usado para saber se a coordenada final veio do centroide. */
+    /** terrenos.centroid_lat "cru" do terreno resolvido (vínculo principal) — usado para saber se a coordenada final veio do centroide. */
     terreno_centroid_lat: number | null;
-    /** terrenos.centroid_lng "cru" do terreno resolvido (rc ou c) — usado para saber se a coordenada final veio do centroide. */
+    /** terrenos.centroid_lng "cru" do terreno resolvido (vínculo principal) — usado para saber se a coordenada final veio do centroide. */
     terreno_centroid_lng: number | null;
     /** imovel_pontos_operacionais.latitude "cru" do terreno resolvido (Fase 4) — ponto operacional principal. */
     ponto_operacional_lat: number | null;
