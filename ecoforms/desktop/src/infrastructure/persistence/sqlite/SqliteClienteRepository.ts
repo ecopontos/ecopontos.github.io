@@ -328,6 +328,19 @@ export class SqliteClienteRepository implements ClienteRepository {
         // mantendo as leituras de mapa/logística (CLIENTES_GEO, ROTEIRO_CLIENTES_ITINERARIO)
         // funcionando sem precisar migrá-las neste PR.
         if (principal) {
+            // Garante que este vínculo esteja marcado como principal mesmo quando o
+            // INSERT OR IGNORE acima não fez nada (vínculo cliente↔imóvel já existia).
+            await this.db.execute(
+                `UPDATE cliente_imovel_vinculos SET principal = 1, atualizado_em = datetime('now') WHERE id = ?`,
+                [id]
+            );
+            // Garante unicidade do principal: desmarca outros principais do mesmo cliente
+            // (mesmo padrão de updateVinculoImovel). Sem isso, CLIENTES_GEO,
+            // ROTEIRO_CLIENTES_ITINERARIO e demais JOINs em `principal = 1` duplicam linhas.
+            await this.db.execute(
+                `UPDATE cliente_imovel_vinculos SET principal = 0 WHERE cliente_id = ? AND id != ?`,
+                [clienteId, id]
+            );
             await this.db.execute(
                 `UPDATE clientes SET terreno_id = ?, atualizado_em = datetime('now') WHERE id = ?`,
                 [imovelId, clienteId]
