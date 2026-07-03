@@ -35,6 +35,33 @@ function normalizeFieldOptions(options: FormField["options"]): FieldOption[] {
     );
 }
 
+/** Helpers para field.config (usado por vistoria_checklist) — bug F. */
+function getConfigBool(field: FormField, key: string, fallback: boolean): boolean {
+    const cfg = field.config;
+    if (cfg && typeof cfg === 'object' && typeof (cfg as Record<string, unknown>)[key] === 'boolean') {
+        return (cfg as Record<string, unknown>)[key] as boolean;
+    }
+    return fallback;
+}
+
+function getConfigNumber(field: FormField, key: string, fallback: number): number {
+    const cfg = field.config;
+    if (cfg && typeof cfg === 'object' && typeof (cfg as Record<string, unknown>)[key] === 'number') {
+        return (cfg as Record<string, unknown>)[key] as number;
+    }
+    return fallback;
+}
+
+function updateConfig(
+    field: FormField,
+    update: (patch: Partial<FormField>) => void,
+    key: string,
+    value: unknown,
+): void {
+    const prev = (field.config && typeof field.config === 'object') ? field.config as Record<string, unknown> : {};
+    update({ config: { ...prev, [key]: value } });
+}
+
 function getDataSourceValue(value: FormField["dataSource"]): string {
     return typeof value === "string" ? value : "";
 }
@@ -327,6 +354,55 @@ export function FieldPropertiesPanel({ field, index, allFields, onUpdate }: Fiel
                     </Select>
                     <p className="text-[10px] text-muted-foreground">
                         Semear ao iniciar carrega a fonte uma vez quando o grupo estiver vazio. Manual mantém a fonte declarada no schema sem hidratação automática.
+                    </p>
+                </div>
+            )}
+
+            {/* Configuracoes de Checklist (vistoria_checklist) — bug F: antes so eram
+                editaveis via JSON. Estes flags sao lidos pelo VistoriaChecklistRenderer
+                via field.config.{permitirFotos, obrigatorioObservacaoNC, obrigatorioFotoNC, maxFotos}. */}
+            {['checklist', 'vistoria_checklist', 'vistoria-checklist', 'dynamic_toggle_list', 'dynamic-toggle-list'].includes(field.type) && (
+                <div className="space-y-3 border-t pt-3">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Configurações de Vistoria
+                    </Label>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor={`ck-photos-${field.id}`} className="text-sm">Permitir fotos</Label>
+                        <Switch
+                            id={`ck-photos-${field.id}`}
+                            checked={getConfigBool(field, 'permitirFotos', true)}
+                            onCheckedChange={(checked) => updateConfig(field, update, 'permitirFotos', checked)}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor={`ck-obs-nc-${field.id}`} className="text-sm">Observação obrigatória em NC</Label>
+                        <Switch
+                            id={`ck-obs-nc-${field.id}`}
+                            checked={getConfigBool(field, 'obrigatorioObservacaoNC', true)}
+                            onCheckedChange={(checked) => updateConfig(field, update, 'obrigatorioObservacaoNC', checked)}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor={`ck-foto-nc-${field.id}`} className="text-sm">Foto obrigatória em NC</Label>
+                        <Switch
+                            id={`ck-foto-nc-${field.id}`}
+                            checked={getConfigBool(field, 'obrigatorioFotoNC', true)}
+                            onCheckedChange={(checked) => updateConfig(field, update, 'obrigatorioFotoNC', checked)}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs">Máximo de fotos por item</Label>
+                        <Input
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={getConfigNumber(field, 'maxFotos', 5)}
+                            onChange={(e) => updateConfig(field, update, 'maxFotos', Math.max(1, Number(e.target.value) || 5))}
+                            className="h-9"
+                        />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                        As categorias/itens do checklist podem vir do Data Registry (Código Fonte acima) ou ser editadas na aba JSON do schema.
                     </p>
                 </div>
             )}

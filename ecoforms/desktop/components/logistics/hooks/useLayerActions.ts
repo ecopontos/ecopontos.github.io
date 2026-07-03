@@ -14,7 +14,7 @@ import {
     type ClienteGeo,
     type ItinerarioStop,
 } from '@/src/interface/hooks/catalog/logistica';
-import { removeGeoLayerFromMap } from '../map-layers';
+import { removeGeoLayerFromMap, geojsonBounds } from '../map-layers';
 
 interface UseLayerActionsParams {
     mapRef: RefObject<maplibregl.Map | null>;
@@ -75,11 +75,19 @@ export function useLayerActions({
                 criado_por: userId ?? null,
             });
             await refetchLayers();
+            // Enquadra o mapa na area do poligono recem-importado. Antes o upload so
+            // refetchLayers(); o fit inicial (fittedRef) ja havia trigado no load, entao a
+            // viewport nao mudava e um poligono fora dela ficava "invisivel" mesmo renderizado.
+            const map = mapRef.current;
+            if (map?.isStyleLoaded()) {
+                const bounds = geojsonBounds(geojson);
+                if (bounds) map.fitBounds(bounds, { padding: 60, maxZoom: 16, animate: true });
+            }
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
-    }, [userId, refetchLayers]);
+    }, [userId, refetchLayers, mapRef]);
 
     const handleToggleLayer = useCallback(async (layer: GeoLayer) => {
         const novo = layer.visivel === 0;

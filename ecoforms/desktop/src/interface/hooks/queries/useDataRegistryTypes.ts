@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useDataRegistryUseCases } from "../domain/useDataRegistryUseCases";
 
-export function useDataRegistryTypesNew(): { types: string[]; loading: boolean } {
+export function useDataRegistryTypesNew(): { types: string[]; loading: boolean; refetch: () => void } {
     const dr = useDataRegistryUseCases();
     const [types, setTypes] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [tick, setTick] = useState(0);
+    const refetch = () => setTick(t => t + 1);
 
     useEffect(() => {
         let cancelled = false;
@@ -21,9 +23,10 @@ export function useDataRegistryTypesNew(): { types: string[]; loading: boolean }
         };
         load();
         return () => { cancelled = true; };
-    }, [dr.listTypes]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dr.listTypes, tick]);
 
-    return { types, loading };
+    return { types, loading, refetch };
 }
 
 export function useDataRegistryTypeCountsNew(): { counts: Map<string, number>; loading: boolean } {

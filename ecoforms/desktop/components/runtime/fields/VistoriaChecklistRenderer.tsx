@@ -171,7 +171,8 @@ export function VistoriaChecklistRenderer({ field, value, onChange, readOnly = f
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
     // Fetch dynamic checklist definition if dataSource is present
-    const { data: fetchedData } = useDataRegistryAggregated(getRegistrySource(field));
+    // Bug C: captura loading/error para feedback ao usuario.
+    const { data: fetchedData, loading, error } = useDataRegistryAggregated(getRegistrySource(field));
 
     const config = field.config || {};
     const permitirFotos = getBooleanConfigValue(config.permitirFotos, true);
@@ -501,6 +502,25 @@ export function VistoriaChecklistRenderer({ field, value, onChange, readOnly = f
 
     return (
         <div className="space-y-4">
+            {/* Loading / Error feedback (bug C) */}
+            {loading && (
+                <div className="bg-blue-50 border border-blue-100 rounded-md p-3 text-sm text-blue-800 flex items-center gap-2">
+                    <span className="animate-pulse">⏳</span> Carregando checklist…
+                </div>
+            )}
+            {error && !loading && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" /> Falha ao carregar checklist do registry: {error}
+                </div>
+            )}
+
+            {/* Empty state quando nao ha categorias nem do registry nem do schema */}
+            {!loading && !error && categorias.length === 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-800 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" /> Nenhuma categoria de checklist configurada.
+                </div>
+            )}
+
             {/* Summary Card */}
             <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex flex-col items-center justify-center text-blue-900">
