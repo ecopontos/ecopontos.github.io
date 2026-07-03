@@ -43,6 +43,8 @@ export async function geocodeWithCache(query: string, limit = 5): Promise<Nomina
         return Array.isArray(data) ? (data as NominatimHit[]) : [];
     });
 
-    geocodeCache.set(query, hits);
+    // Não cacheia falha/miss vazio: um erro transitório de rede (Nominatim fora do ar,
+    // 429/5xx) não deve suprimir novas tentativas pelo TTL inteiro do cache (24h).
+    if (hits.length) geocodeCache.set(query, hits);
     return hits;
 }

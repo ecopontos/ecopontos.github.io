@@ -177,6 +177,23 @@ describe("geocodeCandidates (Fase 2)", () => {
         expect(cands).toEqual([]);
     });
 
+    it("não cacheia falha de rede transitória (res.ok=false) — próxima busca tenta de novo", async () => {
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce({ ok: false, json: async () => ({}) })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => [{ lat: "-23.55", lon: "-46.63", display_name: "X", class: "highway", type: "residential" }],
+            });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const first = await geocodeCandidates("Rua Falha, São Paulo, SP");
+        expect(first).toEqual([]);
+
+        const second = await geocodeCandidates("Rua Falha, São Paulo, SP");
+        expect(second).toHaveLength(1);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
     it("cache hit não dispara nova chamada de rede", async () => {
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,
