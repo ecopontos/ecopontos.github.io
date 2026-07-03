@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect } from "react";
 import { FormField } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,13 +34,46 @@ interface Participant {
     funcao?: string;
 }
 
+/** Chaves alternativas aceitas para identificar um participante (bug G). */
+const ID_KEYS = ["id", "ID", "Id", "chave", "key", "participant_id", "usuario_id", "user_id"] as const;
+const NOME_KEYS = ["nome", "name", "nome_completo", "nomeCompleto", "fullname", "full_name", "label"] as const;
+const GALPAO_KEYS = ["galpao", "setor", "area", "departamento", "department"] as const;
+const FUNCAO_KEYS = ["funcao", "cargo", "role", "papel", "title"] as const;
+
+function pickString(record: Record<string, unknown>, keys: readonly string[]): string | undefined {
+    for (const k of keys) {
+        const v = record[k];
+        if (typeof v === "string" && v.trim() !== "") return v;
+    }
+    return undefined;
+}
+
 export function PresenceRenderer({ field, value, onChange, readOnly = false }: PresenceRendererProps) {
     // Value structure: { statuses: { userId: 'presente' }, summary: { presente: 1, ... } }
     const [statuses, setStatuses] = useState<Record<string, PresenceStatus>>(value?.statuses || {});
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Bug D: ressincroniza o estado local quando o `value` prop muda externamente
+    // (ex.: prefill, restauracao de draft, ou novo registro carregado apos o mount).
+    // Antes o useState so lia value no mount inicial, descartando qualquer prefill
+    // que chegasse depois.
+    useEffect(() => {
+        const incoming = value?.statuses || {};
+        setStatuses(prev => {
+            // So atualiza se divergir, para nao disparar re-render desnecessario.
+            const prevKeys = Object.keys(prev);
+            const nextKeys = Object.keys(incoming);
+            if (prevKeys.length !== nextKeys.length) return incoming;
+            for (const k of nextKeys) {
+                if (prev[k] !== incoming[k]) return incoming;
+            }
+            return prev;
+        });
+    }, [value]);
+
     // Fetch participants from registry (e.g. source='participantes')
-    const { data: fetchedParticipants } = useDataRegistryAggregated(getRegistrySource(field));
+    // Bug C: agora capturamos loading e error para exibir feedback.
+    const { data: fetchedParticipants, loading, error, isEmptyFromRegistry } = useDataRegistryAggregated(getRegistrySource(field));
 
     const rawParticipants = field.participants || field.rawData || [];
     // Merge and prioritize fetched data if available
@@ -49,16 +83,17 @@ export function PresenceRenderer({ field, value, onChange, readOnly = false }: P
         }
 
         const record = participant as Record<string, unknown>;
-        if (typeof record.id !== "string") {
+        // Bug G: aceita chaves alternativas para id/nome/galpao/funcao.
+        const id = pickString(record, ID_KEYS);
+        if (!id) {
             return [];
         }
 
         return [{
-            id: record.id,
-            nome: typeof record.nome === "string" ? record.nome : undefined,
-            name: typeof record.name === "string" ? record.name : undefined,
-            galpao: typeof record.galpao === "string" ? record.galpao : undefined,
-            funcao: typeof record.funcao === "string" ? record.funcao : undefined,
+            id,
+            nome: pickString(record, NOME_KEYS),
+            galpao: pickString(record, GALPAO_KEYS),
+            funcao: pickString(record, FUNCAO_KEYS),
         }];
     });
 
@@ -101,7 +136,19 @@ export function PresenceRenderer({ field, value, onChange, readOnly = false }: P
             />
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-md p-2">
-                {filteredParticipants.length === 0 && <div className="text-center text-sm text-gray-500 py-4">Nenhum participante encontrado.</div>}
+                {loading && <div className="text-center text-sm text-muted-foreground py-4">Carregando participantes…</div>}
+                {error && !loading && (
+                    <div className="text-center text-sm text-red-600 py-4">
+                        Falha ao carregar participantes: {error}
+                    </div>
+                )}
+                {!loading && !error && filteredParticipants.length === 0 && (
+                    <div className="text-center text-sm text-gray-500 py-4">
+                        {isEmptyFromRegistry
+                            ? "Nenhum participante cadastrado no registry para esta fonte."
+                            : "Nenhum participante encontrado."}
+                    </div>
+                )}
 
                 {filteredParticipants.map(participant => {
                     const pId = participant.id;

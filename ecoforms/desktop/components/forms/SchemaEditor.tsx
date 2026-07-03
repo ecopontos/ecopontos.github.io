@@ -105,13 +105,13 @@ function DataRegistryTypeSelector({ value, onChange }: { value: string; onChange
 }
 
 function DataSourcesTabContent({ formId }: { formId: string }) {
-    const { types, loading: typesLoading } = useDataRegistryTypes();
+    const { types, loading: typesLoading, refetch: refetchTypes } = useDataRegistryTypes();
     const [dataSourceTypes, setDataSourceTypes] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [newType, setNewType] = useState("");
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
+    const reloadDataSourceTypes = () => {
         if (!formId) return;
         let cancelled = false;
         setLoading(true);
@@ -127,6 +127,12 @@ function DataSourcesTabContent({ formId }: { formId: string }) {
                 if (!cancelled) setLoading(false);
             });
         return () => { cancelled = true; };
+    };
+
+    useEffect(() => {
+        const cleanup = reloadDataSourceTypes();
+        return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formId]);
 
     const handleCreateType = async () => {
@@ -136,7 +142,11 @@ function DataSourcesTabContent({ formId }: { formId: string }) {
             const db = await getContainerAsync();
             await db.dataRegistry.create.execute({ tipo: newType.trim(), conteudo: {} });
             setNewType("");
-            alert(`Tipo "${newType}" criado com sucesso.`);
+            // Bug I: invalida a lista de tipos e o resolve de data sources deste form,
+            // senao o novo tipo so aparecia apos remontar/revisitar a aba.
+            refetchTypes();
+            reloadDataSourceTypes();
+            alert(`Tipo criado com sucesso.`);
         } catch (e) {
             alert(`Erro ao criar tipo: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
         } finally {

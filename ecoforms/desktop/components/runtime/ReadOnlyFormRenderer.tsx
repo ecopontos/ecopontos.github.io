@@ -16,6 +16,7 @@ interface FieldDef {
     label?: string;
     options?: { value: string; label: string }[];
     items?: { value: string; label: string }[];
+    categorias?: unknown;
     dataSource?: string;
     source?: string;
     campos?: FormField[];
@@ -185,23 +186,111 @@ function renderFieldValue(
 
         case "checklist":
         case "vistoria_checklist": {
-            const items = field.options || field.items;
-            if (!items) return renderFallback(value);
+            // O renderer salva { items: Record<itemId, {status, obs, fotos}>,
+            // detalhes, resumo, timestamp }. A leitura read-only precisa cruzar o
+            // schema de categorias (estatico ou via registry) com os statuses.
+            const v = value as { items?: Record<string, { status?: string }>; resumo?: { percentual_completo?: number } } | null | undefined;
+            const itemsMap = v && typeof v === "object" && v.items && typeof v.items === "object"
+                ? v.items as Record<string, { status?: string }>
+                : {};
+            const resumo = v && typeof v === "object" && v.resumo;
+
+            // Achata as categorias em lista de {id, descricao} para exibir status.
+            type FlatItem = { id: string; descricao: string; catNome?: string };
+            const flat: FlatItem[] = [];
+            const catsRaw = Array.isArray(field.categorias) ? field.categorias
+                : Array.isArray(field.items) ? field.items
+                : [];
+            for (const c of catsRaw) {
+                if (!c || typeof c !== "object") continue;
+                const cat = c as { id?: string; nome?: string; items?: Array<{ id?: string; descricao?: string }>; subcategorias?: Array<{ nome?: string; items?: Array<{ id?: string; descricao?: string }> }> };
+                if (Array.isArray(cat.items)) {
+                    for (const it of cat.items) {
+                        if (it && typeof it.id === "string" && typeof it.descricao === "string") {
+                            flat.push({ id: it.id, descricao: it.descricao, catNome: cat.nome });
+                        }
+                    }
+                }
+                if (Array.isArray(cat.subcategorias)) {
+                    for (const sub of cat.subcategorias) {
+                        if (Array.isArray(sub.items)) {
+                            for (const it of sub.items) {
+                                if (it && typeof it.id === "string" && typeof it.descricao === "string") {
+                                    flat.push({ id: it.id, descricao: it.descricao, catNome: `${cat.nome ?? ""} > ${sub.nome ?? ""}`.trim() });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (flat.length === 0) {
+                // Sem schema de categorias: mostra ao menos o resumo se houver.
+                if (resumo && typeof resumo === "object") {
+                    const r = resumo as { itens_vistoriados?: number; total_itens?: number; nao_conformidades?: number; percentual_completo?: number };
+                    return (
+                        <div className="text-sm space-y-1">
+                            <span>{r.itens_vistoriados ?? 0}/{r.total_itens ?? 0} vistoriados ({r.percentual_completo ?? 0}%)</span>
+                            {(r.nao_conformidades ?? 0) > 0 && (
+                                <span className="text-red-600"> · {r.nao_conformidades} NC(s)</span>
+                            )}
+                        </div>
+                    );
+                }
+                return renderFallback(value);
+            }
+
+            const statusIcon = (s?: string) => {
+                if (s === "conforme") return <span className="text-green-600 font-bold">✓</span>;
+                if (s === "nao_conforme") return <span className="text-red-600 font-bold">✗</span>;
+                if (s === "na") return <span className="text-muted-foreground">—</span>;
+                return <span className="text-muted-foreground">○</span>;
+            };
+
             return (
                 <div className="space-y-1">
-                    {items.map((item, i) => {
-                        const itemValue = Array.isArray(value)
-                            ? value.includes(item.value)
-                            : String(value) === String(item.value);
+                    {flat.map((item, i) => {
+                        const st = itemsMap[item.id]?.status;
                         return (
                             <div key={i} className="flex items-center gap-2 text-sm">
-                                <span className={itemValue ? "text-green-600" : "text-muted-foreground"}>
-                                    {itemValue ? "✓" : "○"}
-                                </span>
-                                <span>{item.label}</span>
+                                <span>{statusIcon(st)}</span>
+                                <span>{item.descricao}</span>
+                                {item.catNome && <span className="text-xs text-muted-foreground">({item.catNome})</span>}
                             </div>
                         );
                     })}
+                </div>
+            );
+        }
+
+        case "presence":
+        case "presence_list":
+        case "presence_compact":
+        case "presence-compact":
+        case "presence-list": {
+            const v = value as { statuses?: Record<string, string>; summary?: { presente?: number; ausente?: number; desligado?: number }; timestamp?: string } | null | undefined;
+            const statuses = v && typeof v === "object" && v.statuses ? v.statuses : {};
+            const summary = v && typeof v === "object" && v.summary ? v.summary : null;
+            const label = (s?: string) => s === "presente" ? "Presente" : s === "ausente" ? "Ausente" : s === "desligado" ? "Desligado" : "—";
+            const color = (s?: string) => s === "presente" ? "text-green-600" : s === "ausente" ? "text-red-600" : s === "desligado" ? "text-gray-500" : "text-muted-foreground";
+
+            if (Object.keys(statuses).length === 0) {
+                return <span className="text-muted-foreground italic">—</span>;
+            }
+            return (
+                <div className="space-y-1">
+                    {summary && (
+                        <div className="text-xs text-muted-foreground">
+                            {summary.presente ?? 0} presente(s) · {summary.ausente ?? 0} ausente(s) · {summary.desligado ?? 0} desligado(s)
+                        </div>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                        {Object.entries(statuses).map(([id, s], i) => (
+                            <span key={i} className={`text-xs ${color(s)}`}>
+                                {label(s)}
+                            </span>
+                        ))}
+                    </div>
                 </div>
             );
         }

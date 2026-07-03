@@ -2,6 +2,7 @@ import type { DataRegistryRepository } from '../../domain/data-registry/DataRegi
 import type { ClockPort } from '../ports/ClockPort';
 import type { SqlitePort } from '../ports/SqlitePort';
 import { uuidv7 } from 'ecoforms-core';
+import { getFieldDataSource } from './fieldDataSource';
 
 export interface RegistryMapping {
     fieldId: string;
@@ -146,8 +147,9 @@ export class ResolveFormDataSourceTypesUseCase {
 
         const extractFromFields = (fields: Record<string, unknown>[]) => {
             for (const field of fields) {
-                const ds = field.dataSource;
-                if (typeof ds === 'string' && ds.length > 0) {
+                // Bug H: considera tambem o alias legado `source`, alem de `dataSource`.
+                const ds = getFieldDataSource(field);
+                if (ds) {
                     tipos.add(ds);
                 }
                 // Recurse into nested fields (groups)
@@ -193,7 +195,8 @@ export class FindFormsUsingRegistryTypeUseCase {
 
             const checkFields = (fields: Record<string, unknown>[]) => {
                 for (const field of fields) {
-                    const ds = field.dataSource;
+                    // Bug H: considera tambem o alias legado `source`, alem de `dataSource`.
+                    const ds = getFieldDataSource(field);
                     if (ds === tipo) {
                         usesTipo = true;
                         return;

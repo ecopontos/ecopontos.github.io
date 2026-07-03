@@ -36,9 +36,29 @@ export function isFieldEmpty(value: unknown): boolean {
       return Object.keys(obj.statuses as object).length === 0;
     }
 
-    // Campos de checklist
-    if (obj.items && Array.isArray(obj.items)) {
-      return (obj.items as unknown[]).length === 0;
+    // Campos de checklist (vistoria_checklist): o renderer salva `items` como um
+    // Record<itemId, ItemState> (objeto), nao como array. Aceitamos ambas as formas
+    // aqui para robustez: array => length 0; record => nenhuma key vistoriada.
+    if (obj.items !== undefined && obj.items !== null) {
+      if (Array.isArray(obj.items)) {
+        return (obj.items as unknown[]).length === 0;
+      }
+      if (typeof obj.items === 'object') {
+        const items = obj.items as Record<string, unknown>;
+        // Vazio se nao houver itens OU se nenhum tiver status preenchido (conforme/
+        // nao_conforme/na). Um checklist com todos os itens em branco nao conta como
+        // preenchido para validacao required.
+        const entries = Object.values(items);
+        if (entries.length === 0) return true;
+        const anyVistoriado = entries.some(v => {
+          if (v && typeof v === 'object') {
+            const s = (v as Record<string, unknown>).status;
+            return s === 'conforme' || s === 'nao_conforme' || s === 'na';
+          }
+          return false;
+        });
+        return !anyVistoriado;
+      }
     }
 
     // Objeto genérico: verificar se tem propriedades

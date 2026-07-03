@@ -3,7 +3,7 @@ import type { AgendamentoRepository } from '../../../domain/service/AgendamentoR
 import type { ServiceSlotRepository } from '../../../domain/service/ServiceSlotRepository';
 import type { ServiceTypeRepository } from '../../../domain/service/ServiceTypeRepository';
 import type { SyncOutbox } from '../../ports/SyncOutboxPort';
-import type { TaskProjectionService } from '../../task/TaskProjectionService';
+import type { TaskProjectionFormulario, TaskProjectionService } from '../../task/TaskProjectionService';
 import type { NotificacaoService } from './NotificacaoService';
 import { formatDateBR } from '../../../lib/date';
 
@@ -33,15 +33,34 @@ export class AgendamentoEfeitosService {
                 if (ag.clienteEmail) linhas.push(`Email: ${ag.clienteEmail}`);
                 const descricao = linhas.length > 0 ? linhas.join(' · ') : undefined;
 
+                // Repassa o snapshot do formulario preenchido no booking como TarefaFormulario, da
+                // mesma forma que AcceptDemandaUseCase faz no caminho demanda -> task. Sem isso os
+                // campos custom coletados pelo FormRenderer eram descartados e so sobreviviam os
+                // poucos campos hardcoded da descricao acima.
+                const dadosNaoVazios = Object.keys(ag.dadosFormulario).length > 0;
+                const formularios: TaskProjectionFormulario[] = (serviceType.formId && dadosNaoVazios)
+                    ? [{
+                        formRegistryId: serviceType.formId,
+                        formSnapshot:   ag.dadosFormulario,
+                        ordem:          0,
+                        obrigatorio:    true,
+                    }]
+                    : [];
+
+                // O wizard hoje so seta responsavelId; setorId fica nulo. Usa o setor do tipo de
+                // servico como fallback para a task nao nascer sem setor.
+                const setorId = ag.setorId ?? serviceType.setorId ?? null;
+
                 const taskId = await this.taskProjection.project({
                     titulo,
                     descricao,
-                    setorId: ag.setorId ?? null,
+                    setorId,
                     atribuidoPara: ag.responsavelId ?? undefined,
                     prazo: slot.dataFim,
                     criadoPor,
                     origemTipo: 'agendamento',
                     origemId: ag.id,
+                    formularios,
                 });
                 ag.vinculaTask(taskId);
                 await this.agendamentoRepo.save(ag);
