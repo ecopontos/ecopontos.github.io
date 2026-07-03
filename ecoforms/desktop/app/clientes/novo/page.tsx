@@ -14,7 +14,8 @@ import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { categoriasPorTipo, type CategoriaCliente, type Cliente } from "@/types/clientes";
 import { maskCep, fetchCep } from "@/src/lib/cep";
-import { geocodeFromCep, type GeoProvider, type GeoPrecision } from "@/src/lib/geocoding";
+import { geocodeCandidatesFromCep, type GeoProvider, type GeoPrecision, type GeoResult } from "@/src/lib/geocoding";
+import { GeocodeCandidateModal } from "@/components/clientes/GeocodeCandidateModal";
 
 function maskDocument(value: string, tipo: "PF" | "PJ") {
   const digits = value.replace(/\D/g, "");
@@ -59,8 +60,13 @@ export default function NovoClientePage() {
     geocode_display_name: null as string | null,
     geocode_precision: null as GeoPrecision | null,
     geocode_at: null as string | null,
+    geocode_confidence: null as string | null,
+    geocode_validated_at: null as string | null,
     territorial: "",
   });
+  const [geoCandidates, setGeoCandidates] = useState<GeoResult[]>([]);
+  const [geoSourceQuery, setGeoSourceQuery] = useState("");
+  const [geoModalOpen, setGeoModalOpen] = useState(false);
 
   useEffect(() => {
     setForm(prev => ({ ...prev, categoria: "" }));
@@ -92,23 +98,38 @@ export default function NovoClientePage() {
       return;
     }
     setGeoLoading(true);
-    const result = await geocodeFromCep(form.cep, form.endereco, form.numero || null, form.bairro || null, form.cidade || null, form.estado || null);
+    const { candidates, source_query } = await geocodeCandidatesFromCep(
+      form.cep,
+      form.endereco,
+      form.numero || null,
+      form.bairro || null,
+      form.cidade || null,
+      form.estado || null,
+    );
     setGeoLoading(false);
-    if (result) {
-      setForm(prev => ({
-        ...prev,
-        latitude: result.latitude,
-        longitude: result.longitude,
-        geocode_provider: result.provider ?? "nominatim",
-        geocode_source_query: result.source_query ?? null,
-        geocode_display_name: result.display_name ?? null,
-        geocode_precision: result.precision ?? null,
-        geocode_at: new Date().toISOString(),
-      }));
-      toast.success("Coordenadas encontradas");
-    } else {
+    if (candidates.length === 0) {
       toast.error("Não foi possível obter as coordenadas");
+      return;
     }
+    setGeoCandidates(candidates);
+    setGeoSourceQuery(source_query);
+    setGeoModalOpen(true);
+  };
+
+  const handleSelectCandidate = (c: GeoResult) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      geocode_provider: c.provider ?? "nominatim",
+      geocode_source_query: c.source_query ?? null,
+      geocode_display_name: c.display_name ?? null,
+      geocode_precision: c.precision ?? null,
+      geocode_confidence: c.confidence ?? null,
+      geocode_at: new Date().toISOString(),
+      geocode_validated_at: new Date().toISOString(),
+    }));
+    toast.success("Coordenada selecionada");
   };
 
   /** Usuário digitou lat/lng manualmente — marca proveniência como manual, distinta da busca via Nominatim. */
@@ -120,6 +141,8 @@ export default function NovoClientePage() {
       geocode_precision: "manual",
       geocode_source_query: null,
       geocode_display_name: null,
+      geocode_confidence: null,
+      geocode_validated_at: null,
       geocode_at: new Date().toISOString(),
     }));
   };
@@ -132,6 +155,8 @@ export default function NovoClientePage() {
       geocode_precision: "manual",
       geocode_source_query: null,
       geocode_display_name: null,
+      geocode_confidence: null,
+      geocode_validated_at: null,
       geocode_at: new Date().toISOString(),
     }));
   };
@@ -166,6 +191,8 @@ export default function NovoClientePage() {
         geocode_display_name: form.geocode_display_name,
         geocode_precision: form.geocode_precision,
         geocode_at: form.geocode_at,
+        geocode_confidence: form.geocode_confidence,
+        geocode_validated_at: form.geocode_validated_at,
         territorial: form.territorial || null,
         ativo: 1,
         criado_em: now,
@@ -344,6 +371,15 @@ export default function NovoClientePage() {
         <Link href="/clientes"><Button variant="outline">Cancelar</Button></Link>
         <Button onClick={handleSubmit} disabled={loading}><Save className="h-4 w-4 mr-2" />Salvar</Button>
       </div>
+
+      <GeocodeCandidateModal
+        open={geoModalOpen}
+        onOpenChange={setGeoModalOpen}
+        candidates={geoCandidates}
+        sourceQuery={geoSourceQuery}
+        expected={{ cidade: form.cidade, estado: form.estado, cep: form.cep }}
+        onSelect={handleSelectCandidate}
+      />
     </div>
   );
 }

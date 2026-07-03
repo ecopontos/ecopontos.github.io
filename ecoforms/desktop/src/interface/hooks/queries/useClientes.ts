@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getContainerAsync } from '../utils/useContainer';
-import type { Cliente, ClienteContato, ClienteFilter, ClientePjVinculo } from '@/types/clientes';
+import type { Cliente, ClienteContato, ClienteFilter, ClienteImovelVinculoWithDetails, ClientePjVinculo, ImovelDisponivel, VinculoSuggestion } from '@/types/clientes';
 
 type PjVinculoWithDetails = ClientePjVinculo & { pj_nome: string; pj_documento?: string | null; pj_cidade?: string | null; pj_estado?: string | null };
 
@@ -205,6 +205,68 @@ export function usePjUnassignedToPf(pfId: string | null) {
             setLoading(false);
         }
     }, [pfId]);
+
+    useEffect(() => { fetch(); }, [fetch]);
+    return { data, loading, refetch: fetch };
+}
+
+// ── Fase 3: vínculo cliente↔imóvel ──
+
+export function useImoveisByClienteId(clienteId: string | null) {
+    const [data, setData] = useState<ClienteImovelVinculoWithDetails[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetch = useCallback(async () => {
+        if (!clienteId) { setData([]); setLoading(false); return; }
+        setLoading(true);
+        try {
+            const c = await getContainerAsync();
+            const rows = await c.clienteRepository.findImoveisByClienteId(clienteId);
+            setData(rows);
+        } finally {
+            setLoading(false);
+        }
+    }, [clienteId]);
+
+    useEffect(() => { fetch(); }, [fetch]);
+    return { data, loading, refetch: fetch };
+}
+
+export function useImoveisDisponiveis(clienteId: string | null, search?: string) {
+    const [data, setData] = useState<ImovelDisponivel[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetch = useCallback(async () => {
+        if (!clienteId) { setData([]); setLoading(false); return; }
+        setLoading(true);
+        try {
+            const c = await getContainerAsync();
+            const rows = await c.clienteRepository.findImoveisDisponiveis(clienteId, search);
+            setData(rows);
+        } finally {
+            setLoading(false);
+        }
+    }, [clienteId, search]);
+
+    useEffect(() => { fetch(); }, [fetch]);
+    return { data, loading, refetch: fetch };
+}
+
+export function useSugestoesVinculo(clienteId: string | null) {
+    const [data, setData] = useState<VinculoSuggestion[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetch = useCallback(async () => {
+        if (!clienteId) { setData([]); setLoading(false); return; }
+        setLoading(true);
+        try {
+            const c = await getContainerAsync();
+            const rows = await c.clienteRepository.suggestImoveisForCliente(clienteId);
+            setData(rows);
+        } finally {
+            setLoading(false);
+        }
+    }, [clienteId]);
 
     useEffect(() => { fetch(); }, [fetch]);
     return { data, loading, refetch: fetch };

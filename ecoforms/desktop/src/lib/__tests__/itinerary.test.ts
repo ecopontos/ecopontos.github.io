@@ -7,7 +7,6 @@ describe("deriveCoordOrigem", () => {
             deriveCoordOrigem({
                 latitude: null,
                 longitude: null,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: null,
                 terreno_centroid_lng: null,
             }),
@@ -19,35 +18,109 @@ describe("deriveCoordOrigem", () => {
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: null,
                 terreno_centroid_lng: null,
             }),
         ).toBe("cliente_latlng");
     });
 
-    it("retorna terreno_centroid quando o centroide veio do terreno cadastrado no cliente (sem override do roteiro)", () => {
+    it("retorna terreno_centroid quando o centroide veio do terreno cadastrado no cliente", () => {
         expect(
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
-                roteiro_terreno_id: null,
                 terreno_centroid_lat: -23.55,
                 terreno_centroid_lng: -46.63,
             }),
         ).toBe("terreno_centroid");
     });
 
-    it("retorna roteiro_terreno_override quando roteiro_clientes.terreno_id sobrescreveu o terreno do cliente", () => {
+    it("retorna ponto_operacional quando há ponto operacional, mesmo com centroide também presente (precedência)", () => {
         expect(
             deriveCoordOrigem({
                 latitude: -23.55,
                 longitude: -46.63,
-                roteiro_terreno_id: "terreno-override-1",
-                terreno_centroid_lat: -23.55,
-                terreno_centroid_lng: -46.63,
+                ponto_operacional_lat: -23.55,
+                ponto_operacional_lng: -46.63,
+                terreno_centroid_lat: -23.54,
+                terreno_centroid_lng: -46.62,
             }),
-        ).toBe("roteiro_terreno_override");
+        ).toBe("ponto_operacional");
+    });
+
+    it("retorna parada_ponto_operacional quando há override explícito de ponto na parada (precedência máxima)", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_ponto_operacional_lat: -23.55,
+                parada_ponto_operacional_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_ponto_operacional");
+    });
+
+    it("retorna parada_ponto_operacional quando o imovel_id da parada resolve para o ponto operacional principal desse imóvel", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_ponto_operacional_lat: -23.55,
+                parada_imovel_ponto_operacional_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_ponto_operacional");
+    });
+
+    it("retorna parada_imovel_centroid quando o imovel_id da parada não tem ponto principal, cai no centroide desse imóvel", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_centroid_lat: -23.55,
+                parada_imovel_centroid_lng: -46.63,
+                ponto_operacional_lat: -23.54,
+                ponto_operacional_lng: -46.62,
+                terreno_centroid_lat: -23.53,
+                terreno_centroid_lng: -46.61,
+            }),
+        ).toBe("parada_imovel_centroid");
+    });
+
+    it("cai para ponto_operacional (vínculo automático) quando não há override de parada", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                ponto_operacional_lat: -23.55,
+                ponto_operacional_lng: -46.63,
+                terreno_centroid_lat: -23.54,
+                terreno_centroid_lng: -46.62,
+            }),
+        ).toBe("ponto_operacional");
+    });
+
+    it("retorna parada_ponto_operacional (não parada_imovel_centroid) quando o imóvel da parada tem tanto ponto principal quanto centroide (precedência)", () => {
+        expect(
+            deriveCoordOrigem({
+                latitude: -23.55,
+                longitude: -46.63,
+                parada_imovel_ponto_operacional_lat: -23.55,
+                parada_imovel_ponto_operacional_lng: -46.63,
+                parada_imovel_centroid_lat: -23.54,
+                parada_imovel_centroid_lng: -46.62,
+                ponto_operacional_lat: -23.53,
+                ponto_operacional_lng: -46.61,
+                terreno_centroid_lat: -23.52,
+                terreno_centroid_lng: -46.60,
+            }),
+        ).toBe("parada_ponto_operacional");
     });
 });
 

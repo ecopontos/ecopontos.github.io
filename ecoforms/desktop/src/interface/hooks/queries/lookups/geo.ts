@@ -14,6 +14,13 @@ import {
   TERRENOS_CLEAR_TERRENO_ID_ROTEIRO_CLIENTES,
   TERRENO_SOFT_DELETE,
   ROTEIRO_CLIENTES_ITINERARIO,
+  TERRENO_BY_ID,
+  PONTO_OP_BY_IMOVEL,
+  PONTO_OP_INSERT,
+  PONTO_OP_UPDATE,
+  PONTO_OP_DELETE,
+  PONTO_OP_CLEAR_PRINCIPAL,
+  PONTO_OP_SET_PRINCIPAL,
 } from '@/src/infrastructure/persistence/sqlite/queries/terrenos';
 import {
   GEO_LAYERS_LIST,
@@ -179,6 +186,64 @@ export async function fetchExecucaoGeo(execucaoId: string): Promise<Record<strin
 export async function fetchIntercorrenciasGeo(execucaoId: string): Promise<Record<string, unknown>[]> {
   const c = await getContainerAsync();
   return c.sqlite.query<Record<string, unknown>>(INTERCORRENCIAS_GEO.sql, [execucaoId]);
+}
+
+// ── Fase 4: pontos operacionais do imóvel (terreno) ──
+
+export async function fetchTerrenoById(id: string): Promise<Record<string, unknown> | null> {
+  const c = await getContainerAsync();
+  const rows = await c.sqlite.query<Record<string, unknown>>(TERRENO_BY_ID.sql, [id]);
+  return rows[0] ?? null;
+}
+
+export async function fetchPontosOperacionaisByImovel(imovelId: string): Promise<Record<string, unknown>[]> {
+  const c = await getContainerAsync();
+  return c.sqlite.query<Record<string, unknown>>(PONTO_OP_BY_IMOVEL.sql, [imovelId]);
+}
+
+export async function insertPontoOperacional(args: {
+  id: string;
+  imovel_id: string;
+  tipo: string | null;
+  latitude: number;
+  longitude: number;
+  principal: boolean;
+  origem: string | null;
+  observacao: string | null;
+}): Promise<void> {
+  const c = await getContainerAsync();
+  // Garante unicidade do principal: se for principal, desmarca os outros do mesmo imóvel.
+  if (args.principal) {
+    await c.sqlite.execute(PONTO_OP_CLEAR_PRINCIPAL.sql, [args.imovel_id]);
+  }
+  await c.sqlite.execute(PONTO_OP_INSERT.sql, [
+    args.id, args.imovel_id, args.tipo, args.latitude, args.longitude,
+    args.principal ? 1 : 0, args.origem, args.observacao,
+  ]);
+}
+
+export async function updatePontoOperacional(args: {
+  id: string;
+  tipo: string | null;
+  latitude: number;
+  longitude: number;
+  observacao: string | null;
+}): Promise<void> {
+  const c = await getContainerAsync();
+  await c.sqlite.execute(PONTO_OP_UPDATE.sql, [
+    args.tipo, args.latitude, args.longitude, args.observacao, args.id,
+  ]);
+}
+
+export async function deletePontoOperacional(id: string): Promise<void> {
+  const c = await getContainerAsync();
+  await c.sqlite.execute(PONTO_OP_DELETE.sql, [id]);
+}
+
+export async function setPontoOperacionalPrincipal(id: string, imovelId: string): Promise<void> {
+  const c = await getContainerAsync();
+  await c.sqlite.execute(PONTO_OP_CLEAR_PRINCIPAL.sql, [imovelId]);
+  await c.sqlite.execute(PONTO_OP_SET_PRINCIPAL.sql, [id]);
 }
 
 export async function fetchChecklistGeo(execucaoId: string): Promise<Record<string, unknown>[]> {

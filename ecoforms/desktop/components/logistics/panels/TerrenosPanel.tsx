@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Eye, EyeOff, RefreshCw, Trash2, Filter } from 'lucide-react';
@@ -84,7 +85,9 @@ export function TerrenosPanel({
                     <div key={t.id} className="flex items-center justify-between gap-1 text-xs py-0.5">
                         <div className="flex items-center gap-1 min-w-0">
                             <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: TIPO_CORES[t.tipo] ?? TIPO_CORES.outro }} />
-                            <span className="truncate">{t.nome}</span>
+                            <Link href={`/logistica/terreno/${t.id}`} className="truncate hover:underline" title="Ver detalhes / pontos operacionais">
+                                {t.nome}
+                            </Link>
                         </div>
                         <Button size="icon" variant="ghost" className="h-5 w-5 flex-shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(t)}>
                             <Trash2 className="h-3 w-3" />

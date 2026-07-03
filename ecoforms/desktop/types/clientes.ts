@@ -25,11 +25,11 @@ const CATEGORIAS_PF = [
   'Outro',
 ] as const;
 
-const CATEGORIAS_CLIENTE = [...CATEGORIAS_PJ, ...CATEGORIAS_PF] as const;
+const _CATEGORIAS_CLIENTE = [...CATEGORIAS_PJ, ...CATEGORIAS_PF] as const;
 
 export type CategoriaPJ = typeof CATEGORIAS_PJ[number];
 
-export type CategoriaCliente = typeof CATEGORIAS_CLIENTE[number];
+export type CategoriaCliente = typeof _CATEGORIAS_CLIENTE[number];
 
 export function categoriasPorTipo(tipo: 'PF' | 'PJ'): readonly string[] {
   return tipo === 'PF' ? CATEGORIAS_PF : CATEGORIAS_PJ;
@@ -108,4 +108,112 @@ export interface ClienteFilter {
   tipo?: 'PF' | 'PJ';
   ativo?: boolean;
   searchTerm?: string;
+}
+
+// ── Fase 3 — georreferenciamento: vínculo cliente↔imóvel (terreno) ──
+
+export const TIPOS_RELACAO_VINCULO = [
+  'proprietario',
+  'ocupante',
+  'responsavel',
+  'sindico',
+  'gestor',
+  'contribuinte',
+  'ponto_coleta',
+  'contato',
+] as const;
+
+export type TipoRelacaoVinculo = typeof TIPOS_RELACAO_VINCULO[number];
+
+export const ORIGENS_VINCULO = [
+  'manual',
+  'importacao',
+  'codigo_cadastral',
+  'geocode_inside_polygon',
+  'gps_inside_polygon',
+  'fiscalizacao',
+  'sync',
+] as const;
+
+export type OrigemVinculo = typeof ORIGENS_VINCULO[number];
+
+export type ConfiancaVinculo = 'alta' | 'media' | 'baixa';
+
+export interface ClienteImovelVinculo {
+  id: string;
+  cliente_id: string;
+  imovel_id: string; // FK para terrenos.id
+  tipo_relacao?: TipoRelacaoVinculo | null;
+  principal: number; // SQLite INTEGER 0|1
+  confianca?: ConfiancaVinculo | null;
+  origem?: OrigemVinculo | null;
+  valido_de?: string | null;
+  valido_ate?: string | null;
+  criado_em?: string | null;
+  atualizado_em?: string | null;
+}
+
+/** Vínculo enriquecido com dados do imóvel para exibição na UI. */
+export interface ClienteImovelVinculoWithDetails extends ClienteImovelVinculo {
+  imovel_nome: string;
+  imovel_codigo_cadastral?: string | null;
+  imovel_bairro?: string | null;
+  imovel_cidade?: string | null;
+  imovel_estado?: string | null;
+}
+
+/** Sugestão de vínculo gerada por heurística (código cadastral / PIP / proximidade). */
+export interface VinculoSuggestion {
+  imovel_id: string;
+  imovel_nome: string;
+  imovel_codigo_cadastral?: string | null;
+  imovel_bairro?: string | null;
+  motivo: 'codigo_cadastral' | 'ponto_no_poligono' | 'proximidade';
+  distancia_m?: number | null;
+  confianca: ConfiancaVinculo;
+}
+
+/** Imóvel (terreno) disponível para vinculação, com campos mínimos para o picker. */
+export interface ImovelDisponivel {
+  id: string;
+  nome: string;
+  codigo_cadastral?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+}
+
+// ── Fase 4 — georreferenciamento: pontos operacionais ──
+
+export const PONTO_OPERACIONAL_TIPOS = [
+  'entrada',
+  'portaria',
+  'coleta',
+  'referencia',
+  'acesso_servico',
+  'vistoria',
+] as const;
+
+export type PontoOperacionalTipo = typeof PONTO_OPERACIONAL_TIPOS[number];
+
+export const ORIGENS_PONTO = [
+  'manual',
+  'gps',
+  'centroide',
+  'importacao',
+] as const;
+
+export type OrigemPonto = typeof ORIGENS_PONTO[number];
+
+export interface PontoOperacional {
+  id: string;
+  imovel_id: string; // FK para terrenos.id
+  tipo?: PontoOperacionalTipo | null;
+  latitude: number;
+  longitude: number;
+  principal: number; // SQLite INTEGER 0|1
+  origem?: OrigemPonto | null;
+  observacao?: string | null;
+  criado_em?: string | null;
+  atualizado_em?: string | null;
 }

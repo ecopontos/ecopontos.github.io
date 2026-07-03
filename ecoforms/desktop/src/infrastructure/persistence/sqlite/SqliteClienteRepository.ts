@@ -1,5 +1,6 @@
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
-import type { CategoriaCliente, Cliente, ClienteContato, ClienteFilter, ClientePjVinculo } from '../../../../types/clientes';
+import type { CategoriaCliente, Cliente, ClienteContato, ClienteFilter, ClienteImovelVinculoWithDetails, ClientePjVinculo, ConfiancaVinculo, ImovelDisponivel, OrigemVinculo, TipoRelacaoVinculo, VinculoSuggestion } from '../../../../types/clientes';
+import { pointInPolygon, haversineMeters } from '../../../lib/geometry';
 import type { ClienteRepository } from '../../../domain/cliente/ClienteRepository';
 
 interface ClienteRow {
@@ -247,6 +248,261 @@ export class SqliteClienteRepository implements ClienteRepository {
             'UPDATE cliente_pj_vinculo SET funcao = ? WHERE id = ?',
             [funcao, vinculoId]
         );
+    }
+
+    // ── Fase 3: vínculo N:N cliente↔imóvel (terreno) ──
+
+    async findImoveisByClienteId(clienteId: string): Promise<ClienteImovelVinculoWithDetails[]> {
+        const rows = await this.db.query<Omit<ClienteImovelVinculoWithDetails, 'principal' | 'confianca'> & { principal: number; confianca: string | null }>(
+            `SELECT v.id, v.cliente_id, v.imovel_id, v.tipo_relacao, v.principal, v.confianca,
+                    v.origem, v.valido_de, v.valido_ate, v.criado_em, v.atualizado_em,
+                    t.nome            AS imovel_nome,
+                    t.codigo_cadastral AS imovel_codigo_cadastral,
+                    t.bairro           AS imovel_bairro,
+                    t.cidade           AS imovel_cidade,
+                    t.estado           AS imovel_estado
+             FROM cliente_imovel_vinculos v
+             JOIN terrenos t ON t.id = v.imovel_id
+             WHERE v.cliente_id = ?
+             ORDER BY v.principal DESC, t.nome ASC`,
+            [clienteId]
+        );
+        return rows.map((r) => ({
+            id: r.id,
+            cliente_id: r.cliente_id,
+            imovel_id: r.imovel_id,
+            tipo_relacao: (r.tipo_relacao ?? null) as TipoRelacaoVinculo | null,
+            principal: r.principal,
+            confianca: (r.confianca ?? null) as ConfiancaVinculo | null,
+            origem: (r.origem ?? null) as OrigemVinculo | null,
+            valido_de: r.valido_de ?? null,
+            valido_ate: r.valido_ate ?? null,
+            criado_em: r.criado_em ?? null,
+            atualizado_em: r.atualizado_em ?? null,
+            imovel_nome: r.imovel_nome,
+            imovel_codigo_cadastral: r.imovel_codigo_cadastral ?? null,
+            imovel_bairro: r.imovel_bairro ?? null,
+            imovel_cidade: r.imovel_cidade ?? null,
+            imovel_estado: r.imovel_estado ?? null,
+        }));
+    }
+
+    async findImoveisDisponiveis(clienteId: string, search?: string): Promise<ImovelDisponivel[]> {
+        const like = search ? `%${search}%` : null;
+        const rows = await this.db.query<{ id: string; nome: string; codigo_cadastral: string | null; bairro: string | null; cidade: string | null; estado: string | null }>(
+            `SELECT t.id, t.nome, t.codigo_cadastral, t.bairro, t.cidade, t.estado
+             FROM terrenos t
+             WHERE t.ativo = 1
+               AND t.id NOT IN (SELECT imovel_id FROM cliente_imovel_vinculos WHERE cliente_id = ?)
+               ${like ? 'AND (t.nome LIKE ? OR t.codigo_cadastral LIKE ? OR t.bairro LIKE ?)' : ''}
+             ORDER BY t.nome
+             LIMIT 100`,
+            like ? [clienteId, like, like, like] : [clienteId]
+        );
+        return rows.map((r) => ({
+            id: r.id,
+            nome: r.nome,
+            codigo_cadastral: r.codigo_cadastral ?? null,
+            bairro: r.bairro ?? null,
+            cidade: r.cidade ?? null,
+            estado: r.estado ?? null,
+        }));
+    }
+
+    async linkClienteToImovel(
+        clienteId: string,
+        imovelId: string,
+        tipo_relacao?: TipoRelacaoVinculo | null,
+        principal = false,
+        confianca?: ConfiancaVinculo | null,
+        origem?: OrigemVinculo | null,
+    ): Promise<void> {
+        const id = `cvinc-${clienteId}-${imovelId}`;
+        await this.db.execute(
+            `INSERT OR IGNORE INTO cliente_imovel_vinculos
+                (id, cliente_id, imovel_id, tipo_relacao, principal, confianca, origem, criado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+            [id, clienteId, imovelId, tipo_relacao ?? null, principal ? 1 : 0, confianca ?? null, origem ?? 'manual']
+        );
+        // Sincroniza a coluna legada clientes.terreno_id quando o vínculo é principal,
+        // mantendo as leituras de mapa/logística (CLIENTES_GEO, ROTEIRO_CLIENTES_ITINERARIO)
+        // funcionando sem precisar migrá-las neste PR.
+        if (principal) {
+            // Garante que este vínculo esteja marcado como principal mesmo quando o
+            // INSERT OR IGNORE acima não fez nada (vínculo cliente↔imóvel já existia).
+            await this.db.execute(
+                `UPDATE cliente_imovel_vinculos SET principal = 1, atualizado_em = datetime('now') WHERE id = ?`,
+                [id]
+            );
+            // Garante unicidade do principal: desmarca outros principais do mesmo cliente
+            // (mesmo padrão de updateVinculoImovel). Sem isso, CLIENTES_GEO,
+            // ROTEIRO_CLIENTES_ITINERARIO e demais JOINs em `principal = 1` duplicam linhas.
+            await this.db.execute(
+                `UPDATE cliente_imovel_vinculos SET principal = 0 WHERE cliente_id = ? AND id != ?`,
+                [clienteId, id]
+            );
+            await this.db.execute(
+                `UPDATE clientes SET terreno_id = ?, atualizado_em = datetime('now') WHERE id = ?`,
+                [imovelId, clienteId]
+            );
+        }
+    }
+
+    async unlinkClienteFromImovel(vinculoId: string): Promise<void> {
+        // Antes de remover, descobre se era o vínculo principal do cliente.
+        const rows = await this.db.query<{ cliente_id: string; imovel_id: string; principal: number }>(
+            'SELECT cliente_id, imovel_id, principal FROM cliente_imovel_vinculos WHERE id = ?',
+            [vinculoId]
+        );
+        const v = rows[0];
+        await this.db.execute('DELETE FROM cliente_imovel_vinculos WHERE id = ?', [vinculoId]);
+        // Se era o principal e não há outro vínculo principal, limpa a coluna legada.
+        if (v?.principal) {
+            const remaining = await this.db.query<{ cnt: number }>(
+                'SELECT COUNT(*) as cnt FROM cliente_imovel_vinculos WHERE cliente_id = ? AND principal = 1',
+                [v.cliente_id]
+            );
+            if ((remaining[0]?.cnt ?? 0) === 0) {
+                await this.db.execute(
+                    `UPDATE clientes SET terreno_id = NULL, atualizado_em = datetime('now') WHERE id = ?`,
+                    [v.cliente_id]
+                );
+            }
+        }
+    }
+
+    async updateVinculoImovel(vinculoId: string, update: { tipo_relacao?: TipoRelacaoVinculo | null; principal?: boolean; confianca?: ConfiancaVinculo | null }): Promise<void> {
+        const sets: string[] = [];
+        const params: (string | number | null)[] = [];
+        if (update.tipo_relacao !== undefined) { sets.push('tipo_relacao = ?'); params.push(update.tipo_relacao ?? null); }
+        if (update.confianca !== undefined) { sets.push('confianca = ?'); params.push(update.confianca ?? null); }
+        if (update.principal !== undefined) { sets.push('principal = ?'); params.push(update.principal ? 1 : 0); }
+        if (sets.length === 0) return;
+        sets.push("atualizado_em = datetime('now')");
+        params.push(vinculoId);
+        await this.db.execute(
+            `UPDATE cliente_imovel_vinculos SET ${sets.join(', ')} WHERE id = ?`,
+            params
+        );
+        // Se mudou o status de principal, sincroniza a coluna legada clientes.terreno_id.
+        if (update.principal !== undefined) {
+            const rows = await this.db.query<{ cliente_id: string; imovel_id: string }>(
+                'SELECT cliente_id, imovel_id FROM cliente_imovel_vinculos WHERE id = ?',
+                [vinculoId]
+            );
+            const v = rows[0];
+            if (v && update.principal) {
+                // Garante unicidade do principal: desmarca outros principais do mesmo cliente.
+                await this.db.execute(
+                    `UPDATE cliente_imovel_vinculos SET principal = 0 WHERE cliente_id = ? AND id != ?`,
+                    [v.cliente_id, vinculoId]
+                );
+                await this.db.execute(
+                    `UPDATE clientes SET terreno_id = ?, atualizado_em = datetime('now') WHERE id = ?`,
+                    [v.imovel_id, v.cliente_id]
+                );
+            } else if (v && !update.principal) {
+                // Desmarcado como principal: se não sobrar outro principal para o cliente,
+                // limpa a coluna legada (mesmo comportamento de unlinkClienteFromImovel).
+                const remaining = await this.db.query<{ cnt: number }>(
+                    'SELECT COUNT(*) as cnt FROM cliente_imovel_vinculos WHERE cliente_id = ? AND principal = 1',
+                    [v.cliente_id]
+                );
+                if ((remaining[0]?.cnt ?? 0) === 0) {
+                    await this.db.execute(
+                        `UPDATE clientes SET terreno_id = NULL, atualizado_em = datetime('now') WHERE id = ?`,
+                        [v.cliente_id]
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Sugere imóveis para vinculação usando 3 heurísticas (Fase 3, diretriz 4):
+     *   1. código cadastral — `terrenos.codigo_cadastral` bate com `clientes.territorial`
+     *   2. ponto no polígono — lat/lng do cliente cai dentro da poligonal do terreno
+     *   3. proximidade — distância haversine até o centroide (top N mais próximos)
+     * As heurísticas 2 e 3 rodam no cliente sobre `TERRENOS_ATIVOS` (geojson + centroid),
+     * porque o SQLite não tem operações espaciais nativas.
+     */
+    async suggestImoveisForCliente(clienteId: string): Promise<VinculoSuggestion[]> {
+        const cliente = await this.findById(clienteId);
+        if (!cliente) return [];
+
+        const suggestions: VinculoSuggestion[] = [];
+        const seen = new Set<string>();
+
+        // Heurística 1: código cadastral.
+        if (cliente.territorial) {
+            const rows = await this.db.query<{ id: string; nome: string; codigo_cadastral: string | null; bairro: string | null }>(
+                `SELECT id, nome, codigo_cadastral, bairro FROM terrenos
+                 WHERE ativo = 1 AND codigo_cadastral = ?
+                   AND id NOT IN (SELECT imovel_id FROM cliente_imovel_vinculos WHERE cliente_id = ?)`,
+                [cliente.territorial, clienteId]
+            );
+            for (const r of rows) {
+                suggestions.push({
+                    imovel_id: r.id, imovel_nome: r.nome,
+                    imovel_codigo_cadastral: r.codigo_cadastral ?? null,
+                    imovel_bairro: r.bairro ?? null,
+                    motivo: 'codigo_cadastral', distancia_m: null, confianca: 'alta',
+                });
+                seen.add(r.id);
+            }
+        }
+
+        // Heurísticas 2 e 3 exigem lat/lng do cliente e terrenos com geojson/centroid.
+        if (cliente.latitude != null && cliente.longitude != null) {
+            const terrenos = await this.db.query<{ id: string; nome: string; codigo_cadastral: string | null; bairro: string | null; geojson: string; centroid_lat: number | null; centroid_lng: number | null }>(
+                `SELECT id, nome, codigo_cadastral, bairro, geojson, centroid_lat, centroid_lng
+                 FROM terrenos
+                 WHERE ativo = 1
+                   AND id NOT IN (SELECT imovel_id FROM cliente_imovel_vinculos WHERE cliente_id = ?)`,
+                [clienteId]
+            );
+            const point: [number, number] = [cliente.longitude, cliente.latitude];
+
+            // Heurística 2: ponto no polígono.
+            for (const t of terrenos) {
+                if (seen.has(t.id)) continue;
+                try {
+                    const gj = JSON.parse(t.geojson);
+                    if (pointInPolygon(point, gj)) {
+                        suggestions.push({
+                            imovel_id: t.id, imovel_nome: t.nome,
+                            imovel_codigo_cadastral: t.codigo_cadastral ?? null,
+                            imovel_bairro: t.bairro ?? null,
+                            motivo: 'ponto_no_poligono', distancia_m: null, confianca: 'alta',
+                        });
+                        seen.add(t.id);
+                    }
+                } catch {
+                    // geojson malformado — ignora este terreno para PIP.
+                }
+            }
+
+            // Heurística 3: proximidade pelos centroides.
+            const byDist = terrenos
+                .filter((t) => !seen.has(t.id) && t.centroid_lat != null && t.centroid_lng != null)
+                .map((t) => ({
+                    t,
+                    d: haversineMeters(point, [t.centroid_lng!, t.centroid_lat!]),
+                }))
+                .sort((a, b) => a.d - b.d)
+                .slice(0, 5);
+            for (const { t, d } of byDist) {
+                const confianca: ConfiancaVinculo = d <= 100 ? 'alta' : d <= 500 ? 'media' : 'baixa';
+                suggestions.push({
+                    imovel_id: t.id, imovel_nome: t.nome,
+                    imovel_codigo_cadastral: t.codigo_cadastral ?? null,
+                    imovel_bairro: t.bairro ?? null,
+                    motivo: 'proximidade', distancia_m: Math.round(d), confianca,
+                });
+            }
+        }
+
+        return suggestions;
     }
 
     async save(cliente: Cliente): Promise<void> {

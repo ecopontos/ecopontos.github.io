@@ -703,6 +703,14 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     await execute(`CREATE INDEX IF NOT EXISTS idx_roteiro_clientes_cliente ON roteiro_clientes(cliente_id)`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_roteiro_clientes_ordem   ON roteiro_clientes(roteiro_id, ordem)`);
 
+    // ── Fase 3 (logística): override de localização por parada ──
+    // imovel_id: override de qual imóvel resolve esta parada (independente do vínculo principal
+    // do cliente — útil quando o cliente tem mais de um vínculo em cliente_imovel_vinculos).
+    // ponto_operacional_id: override fino de um ponto específico desse imóvel; sempre implica um
+    // imovel_id preenchido junto pela UI (não validado por CHECK — ver plano/spec).
+    await execute(`ALTER TABLE roteiro_clientes ADD COLUMN imovel_id TEXT REFERENCES terrenos(id)`).catch(() => {});
+    await execute(`ALTER TABLE roteiro_clientes ADD COLUMN ponto_operacional_id TEXT REFERENCES imovel_pontos_operacionais(id)`).catch(() => {});
+
     await execute(`
         CREATE TABLE IF NOT EXISTS execucao_coleta (
             id                       TEXT PRIMARY KEY,
@@ -1707,7 +1715,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 30 WHERE id = 'reclamacao' AND prazo_dias_corridos IS NULL`);
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 20 WHERE id = 'solicitacao' AND prazo_dias_corridos IS NULL`);
         await execute(`UPDATE tipos_manifestacao SET prazo_dias_corridos = 30, prazo_urgente_dias = 5 WHERE id = 'denuncia' AND prazo_dias_corridos IS NULL`);
-    } catch (e) { /* silencioso */ }
+    } catch (_e) { /* silencioso */ }
 
     try {
         const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM situacoes`);
@@ -2069,7 +2077,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     try {
         await execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tblRotas_ordem_ativa
             ON rotas (idRoteiro, Ordem) WHERE Inativo = 0`);
-    } catch (e) {
+    } catch (_e) {
         // tabela legada pode não existir — silencioso
     }
 
@@ -2078,7 +2086,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
     // ================================================================
     try {
         await execute(`ALTER TABLE tarefas_anexos RENAME COLUMN criado_em TO created_at`);
-    } catch (e) {
+    } catch (_e) {
         // coluna já renomeada ou não existe — silencioso
     }
 
@@ -2161,6 +2169,100 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             min_lat, max_lat
         )
     `);
+
+    // ── Fase 3 — georreferenciamento: vínculo N:N cliente↔imóvel (terreno) ──
+    // Substitui gradualmente o FK 1:1 `clientes.terreno_id` (ADR-038) por uma relação
+    // com proveniência (tipo_relacao, confianca, origem, vigência). `imovel_id` aponta
+    // para `terrenos.id` — não cria um domínio cadastral paralelo (ver ADR-038 e plano
+    // 2026-07-02-clientes-geolocalizacao-georreferenciamento.md, diretriz 4).
+    await execute(`
+        CREATE TABLE IF NOT EXISTS cliente_imovel_vinculos (
+            id            TEXT PRIMARY KEY,
+            cliente_id    TEXT NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+            imovel_id     TEXT NOT NULL REFERENCES terrenos(id) ON DELETE CASCADE,
+            tipo_relacao  TEXT CHECK(tipo_relacao IN
+                ('proprietario','ocupante','responsavel','sindico','gestor','contribuinte','ponto_coleta','contato')),
+            principal     INTEGER NOT NULL DEFAULT 0,
+            confianca     TEXT CHECK(confianca IN ('alta','media','baixa')),
+            origem        TEXT CHECK(origem IN
+                ('manual','importacao','codigo_cadastral','geocode_inside_polygon','gps_inside_polygon','fiscalizacao','sync')),
+            valido_de     TEXT,
+            valido_ate    TEXT,
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(cliente_id, imovel_id)
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_cliente  ON cliente_imovel_vinculos(cliente_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_imovel    ON cliente_imovel_vinculos(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_cliente_imovel_vinculos_principal ON cliente_imovel_vinculos(cliente_id, principal)`).catch(() => {});
+
+    // Backfill: migra `clientes.terreno_id` existentes para a nova tabela antes de a UI
+    // depender dela. A coluna legada `clientes.terreno_id` é mantida (não removida neste PR)
+    // porque leituras de mapa/logística ainda a consultam; ela é sincronizada por
+    // linkClienteToImovel/unlinkClienteFromImovel quando o vínculo é principal.
+    {
+        const migrated = await query<{ cnt: number }>(
+            "SELECT COUNT(*) as cnt FROM pragma_table_info('cliente_imovel_vinculos') WHERE name='id'"
+        );
+        if ((migrated[0]?.cnt ?? 0) > 0) {
+            await execute(
+                `INSERT OR IGNORE INTO cliente_imovel_vinculos
+                    (id, cliente_id, imovel_id, tipo_relacao, principal, confianca, origem, criado_em, atualizado_em)
+                 SELECT 'cvinc-' || c.id || '-' || c.terreno_id, c.id, c.terreno_id,
+                        'responsavel', 1, 'alta', 'codigo_cadastral', datetime('now'), datetime('now')
+                 FROM clientes c
+                 WHERE c.terreno_id IS NOT NULL AND c.terreno_id != ''`
+            ).catch(() => {});
+        }
+    }
+
+    // ── Fase 4 — georreferenciamento: pontos operacionais do imóvel (terreno) ──
+    // Pontos práticos de acesso/coleta/vistoria, distintos do centroide da poligonal
+    // (que representa o imóvel mas pode ser ruim para operação). `principal` determina
+    // qual ponto a query de logística (CLIENTES_GEO, ROTEIRO_CLIENTES_ITINERARIO) prefere.
+    await execute(`
+        CREATE TABLE IF NOT EXISTS imovel_pontos_operacionais (
+            id            TEXT PRIMARY KEY,
+            imovel_id     TEXT NOT NULL REFERENCES terrenos(id) ON DELETE CASCADE,
+            tipo          TEXT CHECK(tipo IN
+                ('entrada','portaria','coleta','referencia','acesso_servico','vistoria')),
+            latitude      REAL NOT NULL,
+            longitude     REAL NOT NULL,
+            principal     INTEGER NOT NULL DEFAULT 0,
+            origem        TEXT CHECK(origem IN ('manual','gps','centroide','importacao')),
+            observacao    TEXT,
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now')),
+            atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_imovel ON imovel_pontos_operacionais(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_pontos_operacionais_principal ON imovel_pontos_operacionais(imovel_id, principal)`).catch(() => {});
+
+    // ── Fase 5 (parte Desktop) — evidência de GPS de campo ──
+    // Registro de um ponto GPS observado (mobile, futuramente) ou lançado manualmente no
+    // Desktop para fins de teste, a ser comparado contra a poligonal/ponto operacional do
+    // imóvel vinculado. `imovel_id` é nullable porque nem todo cliente tem terreno vinculado
+    // (mesma ressalva das diretrizes 4/5 do plano de georreferenciamento). A interligação real
+    // com a captura do mobile (GeolocationField/GPSField.v2) é trabalho futuro, fora deste PR.
+    await execute(`
+        CREATE TABLE IF NOT EXISTS imovel_gps_evidencias (
+            id            TEXT PRIMARY KEY,
+            imovel_id     TEXT REFERENCES terrenos(id) ON DELETE CASCADE,
+            cliente_id    TEXT NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+            latitude      REAL NOT NULL,
+            longitude     REAL NOT NULL,
+            accuracy      REAL,
+            provider      TEXT CHECK(provider IN ('gps','network','manual','importacao')),
+            altitude      REAL,
+            heading       REAL,
+            capturado_em  TEXT,
+            origem        TEXT CHECK(origem IN ('mobile_campo','manual')),
+            criado_em     TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_gps_evidencias_imovel  ON imovel_gps_evidencias(imovel_id)`).catch(() => {});
+    await execute(`CREATE INDEX IF NOT EXISTS idx_imovel_gps_evidencias_cliente ON imovel_gps_evidencias(cliente_id)`).catch(() => {});
 
     // ================================================================
     // 19b. CAMADAS GEOGRAFICAS GENERICAS — Mapa de Logistica

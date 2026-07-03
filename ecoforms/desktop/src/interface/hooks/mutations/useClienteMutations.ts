@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getContainerAsync } from '../utils/useContainer';
-import type { Cliente, ClienteContato } from '@/types/clientes';
+import type { Cliente, ClienteContato, ConfiancaVinculo, OrigemVinculo, TipoRelacaoVinculo } from '@/types/clientes';
 
 export function useClienteMutations() {
     const [loading, setLoading] = useState(false);
@@ -78,5 +78,37 @@ export function useClienteMutations() {
         });
     }, []);
 
-    return { save, remove, saveContato, removeContato, linkPfToPj, unlinkPfFromPj, updateVinculoFuncao, toggleAtivo, loading, error };
+    // ── Fase 3: vínculo cliente↔imóvel ──
+    const linkClienteToImovel = useCallback(async (
+        clienteId: string,
+        imovelId: string,
+        tipo_relacao?: TipoRelacaoVinculo | null,
+        principal?: boolean,
+        confianca?: ConfiancaVinculo | null,
+        origem?: OrigemVinculo | null,
+    ) => {
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.clienteRepository.linkClienteToImovel(clienteId, imovelId, tipo_relacao ?? null, principal ?? false, confianca ?? null, origem ?? 'manual');
+        });
+    }, []);
+
+    const unlinkClienteFromImovel = useCallback(async (vinculoId: string) => {
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.clienteRepository.unlinkClienteFromImovel(vinculoId);
+        });
+    }, []);
+
+    const updateVinculoImovel = useCallback(async (
+        vinculoId: string,
+        update: { tipo_relacao?: TipoRelacaoVinculo | null; principal?: boolean; confianca?: ConfiancaVinculo | null },
+    ) => {
+        return withLoading(async () => {
+            const c = await getContainerAsync();
+            await c.clienteRepository.updateVinculoImovel(vinculoId, update);
+        });
+    }, []);
+
+    return { save, remove, saveContato, removeContato, linkPfToPj, unlinkPfFromPj, updateVinculoFuncao, toggleAtivo, linkClienteToImovel, unlinkClienteFromImovel, updateVinculoImovel, loading, error };
 }

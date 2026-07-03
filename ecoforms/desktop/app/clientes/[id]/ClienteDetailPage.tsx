@@ -13,15 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useClienteById, usePfContactsByPj, usePfUnassigned, usePjByPfId, usePjUnassignedToPf } from "@/src/interface/hooks/catalog/clientes";
+import { useClienteById, usePfContactsByPj, usePfUnassigned, usePjByPfId, usePjUnassignedToPf, useImoveisByClienteId, useImoveisDisponiveis, useSugestoesVinculo } from "@/src/interface/hooks/catalog/clientes";
 import { useClienteMutations } from "@/src/interface/hooks/catalog/clientes";
 import type { Cliente } from "@/types/clientes";
-import { categoriasPorTipo, type CategoriaCliente, FUNCOES_VINCULO } from "@/types/clientes";
+import { categoriasPorTipo, type CategoriaCliente, FUNCOES_VINCULO, TIPOS_RELACAO_VINCULO, type TipoRelacaoVinculo, type ConfiancaVinculo } from "@/types/clientes";
 import { toast } from "sonner";
 import { uuidv7 } from "ecoforms-core";
 import { maskCep, fetchCep } from "@/src/lib/cep";
-import { geocodeFromCep } from "@/src/lib/geocoding";
+import { geocodeCandidatesFromCep, type GeoResult } from "@/src/lib/geocoding";
 import { formatGeocodeProvenance } from "@/src/lib/geocodeProvenance";
+import { GeocodeCandidateModal } from "@/components/clientes/GeocodeCandidateModal";
 
 function maskPhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -46,7 +47,16 @@ export default function ClienteDetailPage() {
   const { data: pfDisponiveis, loading: loadingDisponiveis, refetch: refetchDisponiveis } = usePfUnassigned();
   const { data: pjVinculados, loading: loadingPjVinculados, refetch: refetchPjVinculados } = usePjByPfId(id);
   const { data: pjDisponiveis, loading: loadingPjDisponiveis, refetch: refetchPjDisponiveis } = usePjUnassignedToPf(id);
-  const { save, linkPfToPj, unlinkPfFromPj, updateVinculoFuncao, toggleAtivo, loading: saving } = useClienteMutations();
+  // Fase 3 — vínculo cliente↔imóvel
+  const { data: imoveisVinculados, loading: loadingImoveis, refetch: refetchImoveis } = useImoveisByClienteId(id);
+  const { data: sugestoes, loading: loadingSugestoes, refetch: refetchSugestoes } = useSugestoesVinculo(id);
+  const [showLinkImovel, setShowLinkImovel] = useState(false);
+  const [searchImovel, setSearchImovel] = useState("");
+  const { data: imoveisDisponiveis, loading: loadingImoveisDisp } = useImoveisDisponiveis(id, searchImovel || undefined);
+  const [novoVinculoTipo, setNovoVinculoTipo] = useState<TipoRelacaoVinculo | "">("");
+  const [novoVinculoPrincipal, setNovoVinculoPrincipal] = useState(false);
+  const [unlinkImovelTarget, setUnlinkImovelTarget] = useState<{ vinculoId: string; imovelNome: string } | null>(null);
+  const { save, linkPfToPj, unlinkPfFromPj, updateVinculoFuncao, toggleAtivo, linkClienteToImovel, unlinkClienteFromImovel, updateVinculoImovel, loading: saving } = useClienteMutations();
 
   const [editMode, setEditMode] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState<string | null>(null);
@@ -68,6 +78,9 @@ export default function ClienteDetailPage() {
   });
   const [cepLoading, setCepLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [geoCandidates, setGeoCandidates] = useState<GeoResult[]>([]);
+  const [geoSourceQuery, setGeoSourceQuery] = useState("");
+  const [geoModalOpen, setGeoModalOpen] = useState(false);
   const [searchPf, setSearchPf] = useState("");
   const [showLinkPj, setShowLinkPj] = useState(false);
   const [searchPj, setSearchPj] = useState("");
@@ -149,7 +162,7 @@ export default function ClienteDetailPage() {
       return;
     }
     setGeoLoading(true);
-    const result = await geocodeFromCep(
+    const { candidates, source_query } = await geocodeCandidatesFromCep(
       form.cep || cliente.cep || "",
       form.endereco || cliente.endereco || "",
       form.numero || cliente.numero || null,
@@ -158,21 +171,29 @@ export default function ClienteDetailPage() {
       form.estado || cliente.estado || null,
     );
     setGeoLoading(false);
-    if (result) {
-      setForm(prev => ({
-        ...prev,
-        latitude: result.latitude,
-        longitude: result.longitude,
-        geocode_provider: result.provider ?? "nominatim",
-        geocode_source_query: result.source_query ?? null,
-        geocode_display_name: result.display_name ?? null,
-        geocode_precision: result.precision ?? null,
-        geocode_at: new Date().toISOString(),
-      }));
-      toast.success("Coordenadas encontradas");
-    } else {
+    if (candidates.length === 0) {
       toast.error("Não foi possível obter as coordenadas");
+      return;
     }
+    setGeoCandidates(candidates);
+    setGeoSourceQuery(source_query);
+    setGeoModalOpen(true);
+  };
+
+  const handleSelectCandidate = (c: GeoResult) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      geocode_provider: c.provider ?? "nominatim",
+      geocode_source_query: c.source_query ?? null,
+      geocode_display_name: c.display_name ?? null,
+      geocode_precision: c.precision ?? null,
+      geocode_confidence: c.confidence ?? null,
+      geocode_at: new Date().toISOString(),
+      geocode_validated_at: new Date().toISOString(),
+    }));
+    toast.success("Coordenada selecionada");
   };
 
   /** Usuário digitou lat/lng manualmente em modo de edição — marca proveniência como manual. */
@@ -184,6 +205,8 @@ export default function ClienteDetailPage() {
       geocode_precision: "manual",
       geocode_source_query: null,
       geocode_display_name: null,
+      geocode_confidence: null,
+      geocode_validated_at: null,
       geocode_at: new Date().toISOString(),
     }));
   };
@@ -196,6 +219,8 @@ export default function ClienteDetailPage() {
       geocode_precision: "manual",
       geocode_source_query: null,
       geocode_display_name: null,
+      geocode_confidence: null,
+      geocode_validated_at: null,
       geocode_at: new Date().toISOString(),
     }));
   };
@@ -282,6 +307,52 @@ export default function ClienteDetailPage() {
     }
   };
 
+  // ── Fase 3: vínculo cliente↔imóvel ──
+  const handleLinkImovel = async (imovelId: string, origem?: string, confiancaSugestao?: ConfiancaVinculo) => {
+    if (!id) return;
+    try {
+      await linkClienteToImovel(
+        id,
+        imovelId,
+        (novoVinculoTipo || null) as TipoRelacaoVinculo | null,
+        novoVinculoPrincipal,
+        confiancaSugestao ?? null,
+        (origem as "manual" | "codigo_cadastral" | "geocode_inside_polygon" | "gps_inside_polygon" | "fiscalizacao" | "importacao" | "sync") ?? "manual",
+      );
+      toast.success("Imóvel vinculado");
+      refetchImoveis();
+      refetchSugestoes();
+      setNovoVinculoTipo("");
+      setNovoVinculoPrincipal(false);
+    } catch {
+      toast.error("Erro ao vincular imóvel");
+    }
+  };
+
+  const confirmUnlinkImovel = async () => {
+    if (!unlinkImovelTarget) return;
+    try {
+      await unlinkClienteFromImovel(unlinkImovelTarget.vinculoId);
+      toast.success("Imóvel desvinculado");
+      refetchImoveis();
+      refetchSugestoes();
+    } catch {
+      toast.error("Erro ao desvincular imóvel");
+    } finally {
+      setUnlinkImovelTarget(null);
+    }
+  };
+
+  const handleTogglePrincipal = async (vinculoId: string, atual: number) => {
+    try {
+      await updateVinculoImovel(vinculoId, { principal: !atual });
+      toast.success(!atual ? "Definido como principal" : "Principal removido");
+      refetchImoveis();
+    } catch {
+      toast.error("Erro ao atualizar vínculo");
+    }
+  };
+
   const handleUnlinkPf = (pfId: string) => {
     setUnlinkTarget(pfId);
   };
@@ -349,6 +420,7 @@ export default function ClienteDetailPage() {
           <TabsTrigger value="dados">Dados</TabsTrigger>
           {isPj && <TabsTrigger value="contatos">Contatos ({contatos.length})</TabsTrigger>}
           {!isPj && <TabsTrigger value="vinculos">Condomínios / PJ ({pjVinculados.length})</TabsTrigger>}
+          <TabsTrigger value="imoveis">Imóveis ({imoveisVinculados.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="space-y-4">
@@ -564,7 +636,17 @@ export default function ClienteDetailPage() {
               {!editMode && (cliente.latitude != null && cliente.longitude != null) && (
                 <div className="space-y-2 md:col-span-2">
                   <Label>Fonte da coordenada</Label>
-                  <p className="text-sm text-muted-foreground">{formatGeocodeProvenance(cliente)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatGeocodeProvenance(cliente)}
+                    {cliente.geocode_confidence && (
+                      <Badge
+                        variant={cliente.geocode_confidence === "alta" ? "default" : cliente.geocode_confidence === "media" ? "secondary" : "destructive"}
+                        className="ml-2 text-[10px]"
+                      >
+                        {cliente.geocode_confidence}
+                      </Badge>
+                    )}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -882,6 +964,184 @@ export default function ClienteDetailPage() {
             </Card>
           </TabsContent>
         )}
+
+        <TabsContent value="imoveis" className="space-y-4">
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <div>
+                <CardTitle>Imóveis / Terrenos</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Imóveis vinculados a este cliente (proprietário, ocupante, responsável, etc.).
+                </p>
+              </div>
+              <Button size="sm" onClick={() => { setShowLinkImovel(!showLinkImovel); setSearchImovel(""); }}>
+                <Plus className="h-4 w-4 mr-1" />Vincular Imóvel
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {showLinkImovel && (
+                <div className="mb-4 p-4 border rounded-md bg-muted/30 space-y-3">
+                  <h3 className="font-medium">Vincular Imóvel</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Input
+                      placeholder="Buscar por nome, código ou bairro..."
+                      value={searchImovel}
+                      onChange={e => setSearchImovel(e.target.value)}
+                    />
+                    <select
+                      value={novoVinculoTipo}
+                      onChange={e => setNovoVinculoTipo(e.target.value as TipoRelacaoVinculo | "")}
+                      className="w-full border rounded-md px-3 py-2"
+                    >
+                      <option value="">Tipo de relação (opcional)</option>
+                      {TIPOS_RELACAO_VINCULO.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-2 border rounded-md px-3 py-2 cursor-pointer">
+                      <input type="checkbox" checked={novoVinculoPrincipal} onChange={e => setNovoVinculoPrincipal(e.target.checked)} />
+                      <span className="text-sm">Principal</span>
+                    </label>
+                  </div>
+                  {loadingImoveisDisp ? (
+                    <p>Carregando...</p>
+                  ) : imoveisDisponiveis.length === 0 ? (
+                    <p className="text-muted-foreground">Nenhum imóvel disponível.</p>
+                  ) : (
+                    <div className="rounded-md border max-h-64 overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Bairro / Cidade</TableHead>
+                            <TableHead className="w-16"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {imoveisDisponiveis.map(t => (
+                            <TableRow key={t.id}>
+                              <TableCell className="font-medium">{t.nome}</TableCell>
+                              <TableCell>{t.codigo_cadastral || "—"}</TableCell>
+                              <TableCell>{[t.bairro, t.cidade].filter(Boolean).join(" / ") || "—"}</TableCell>
+                              <TableCell>
+                                <Button size="sm" variant="ghost" onClick={() => handleLinkImovel(t.id)} disabled={saving}>
+                                  <Link2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => { setShowLinkImovel(false); setSearchImovel(""); }}>Fechar</Button>
+                  </div>
+                </div>
+              )}
+
+              {sugestoes.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Sugestões de vínculo</p>
+                  {loadingSugestoes ? (
+                    <p className="text-sm text-muted-foreground">Analisando...</p>
+                  ) : (
+                    sugestoes.map(s => (
+                      <div key={s.imovel_id} className="flex items-center justify-between gap-3 p-3 border rounded-md bg-muted/20">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{s.imovel_nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {s.imovel_codigo_cadastral || s.imovel_bairro || "—"}
+                            {s.distancia_m != null && ` · ${s.distancia_m} m`}
+                            {` · motivo: ${s.motivo}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={s.confianca === "alta" ? "default" : s.confianca === "media" ? "secondary" : "destructive"} className="text-[10px]">
+                            {s.confianca}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleLinkImovel(
+                              s.imovel_id,
+                              s.motivo === "codigo_cadastral" ? "codigo_cadastral"
+                                : s.motivo === "ponto_no_poligono" ? "geocode_inside_polygon"
+                                : "manual",
+                              s.confianca,
+                            )}
+                            disabled={saving}
+                          >
+                            Vincular
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {loadingImoveis ? (
+                <p>Carregando...</p>
+              ) : imoveisVinculados.length === 0 ? (
+                <p className="text-muted-foreground">Nenhum imóvel vinculado.</p>
+              ) : (
+                <div className="space-y-3">
+                  {imoveisVinculados.map(v => (
+                    <div key={v.id} className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{v.imovel_nome}</span>
+                          {v.tipo_relacao && (
+                            <Badge variant="secondary" className="text-xs shrink-0">{v.tipo_relacao}</Badge>
+                          )}
+                          {v.principal === 1 && (
+                            <Badge className="text-xs shrink-0">principal</Badge>
+                          )}
+                          {v.confianca && (
+                            <Badge variant={v.confianca === "alta" ? "default" : v.confianca === "media" ? "secondary" : "destructive"} className="text-[10px] shrink-0">
+                              {v.confianca}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {[v.imovel_codigo_cadastral, v.imovel_bairro, v.imovel_cidade].filter(Boolean).join(" · ") || "Sem informações"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <select
+                          value={v.tipo_relacao || ""}
+                          onChange={async (e) => {
+                            try {
+                              await updateVinculoImovel(v.id, { tipo_relacao: (e.target.value || null) as TipoRelacaoVinculo | null });
+                              toast.success("Tipo atualizado");
+                              refetchImoveis();
+                            } catch {
+                              toast.error("Erro ao atualizar tipo");
+                            }
+                          }}
+                          className="text-xs border rounded px-1.5 py-1 max-w-[120px]"
+                        >
+                          <option value="">Sem tipo</option>
+                          {TIPOS_RELACAO_VINCULO.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                        <Button size="sm" variant="ghost" onClick={() => handleTogglePrincipal(v.id, v.principal)} title="Definir como principal">
+                          <CheckCircle className={`h-4 w-4 ${v.principal === 1 ? "text-primary" : "text-muted-foreground"}`} />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setUnlinkImovelTarget({ vinculoId: v.id, imovelNome: v.imovel_nome })} title="Desvincular">
+                          <Unlink className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <AlertDialog open={!!unlinkTarget} onOpenChange={(open) => { if (!open) setUnlinkTarget(null); }}>
@@ -907,6 +1167,27 @@ export default function ClienteDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!unlinkImovelTarget} onOpenChange={(open) => { if (!open) setUnlinkImovelTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desvincular imóvel {unlinkImovelTarget?.imovelNome}?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUnlinkImovel}>Desvincular</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <GeocodeCandidateModal
+        open={geoModalOpen}
+        onOpenChange={setGeoModalOpen}
+        candidates={geoCandidates}
+        sourceQuery={geoSourceQuery}
+        expected={{ cidade: form.cidade ?? cliente.cidade, estado: form.estado ?? cliente.estado, cep: form.cep ?? cliente.cep }}
+        onSelect={handleSelectCandidate}
+      />
     </div>
   );
 }

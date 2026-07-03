@@ -26,6 +26,10 @@ export interface RoteiroCliente {
     ativo: number;
     criadoEm: string;
     clienteNome?: string | null;
+    /** Override de qual imóvel resolve esta parada (independente do vínculo principal do cliente). */
+    imovelId?: string | null;
+    /** Override de um ponto operacional específico desse imóvel para esta parada. */
+    pontoOperacionalId?: string | null;
 }
 
 export interface ExecucaoColeta {
@@ -164,6 +168,7 @@ export interface LogisticsRepository {
     removeClienteFromRoteiro(roteiroId: string, clienteId: string): Promise<void>;
     updateClienteOrdem(roteiroId: string, clienteId: string, ordem: number): Promise<void>;
     updateClienteOrdemBatch(roteiroId: string, items: { clienteId: string; ordem: number }[]): Promise<void>;
+    updateParadaLocalizacao(roteiroId: string, clienteId: string, update: { imovelId: string | null; pontoOperacionalId: string | null }): Promise<void>;
 
     // Execucao Coleta
     findAllExecucoes(filter?: ExecucaoFilter): Promise<ExecucaoColeta[]>;

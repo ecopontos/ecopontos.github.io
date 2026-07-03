@@ -7,17 +7,24 @@ import type { QueryDef } from './_types';
 
 export const CLIENTES_GEO: QueryDef = {
   sql: `SELECT c.id, c.nome,
-              COALESCE(t.centroid_lat, c.latitude)  AS latitude,
-              COALESCE(t.centroid_lng, c.longitude) AS longitude,
+              COALESCE(po.latitude, t.centroid_lat, c.latitude)  AS latitude,
+              COALESCE(po.longitude, t.centroid_lng, c.longitude) AS longitude,
               c.tipo, c.categoria, c.endereco,
-              c.terreno_id, t.nome AS terreno_nome
+              cv.imovel_id AS terreno_id, t.nome AS terreno_nome
        FROM clientes c
-       LEFT JOIN terrenos t ON t.id = c.terreno_id
-       WHERE (t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
-         AND (t.centroid_lng IS NOT NULL OR c.longitude IS NOT NULL)
+       LEFT JOIN cliente_imovel_vinculos cv ON cv.cliente_id = c.id AND cv.principal = 1
+       LEFT JOIN terrenos t ON t.id = cv.imovel_id
+       LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = cv.imovel_id
+         AND NOT EXISTS (
+           SELECT 1 FROM imovel_pontos_operacionais po2
+           WHERE po2.imovel_id = po.imovel_id
+             AND (po2.principal > po.principal
+                  OR (po2.principal = po.principal AND po2.criado_em < po.criado_em)))
+       WHERE (po.latitude IS NOT NULL OR t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
+         AND (po.longitude IS NOT NULL OR t.centroid_lng IS NOT NULL OR c.longitude IS NOT NULL)
          AND c.ativo = 1
        ORDER BY c.nome`,
-  description: 'Clientes com posição resolvida (terreno centroid ou cliente lat/lng) — useClientesGeo',
+  description: 'Clientes com posição resolvida via vínculo principal (ponto operacional > terreno centroid > cliente lat/lng) — useClientesGeo',
   params: [],
   use: 'operacional',
   returns: 'ClienteGeo[]',
@@ -125,21 +132,28 @@ export const TERRENO_SOFT_DELETE: QueryDef = {
 
 export const CLIENTES_GEO_IN_VIEWPORT: QueryDef = {
   sql: `SELECT c.id, c.nome,
-              COALESCE(t.centroid_lat, c.latitude)  AS latitude,
-              COALESCE(t.centroid_lng, c.longitude) AS longitude,
+              COALESCE(po.latitude, t.centroid_lat, c.latitude)  AS latitude,
+              COALESCE(po.longitude, t.centroid_lng, c.longitude) AS longitude,
               c.tipo, c.categoria, c.endereco,
-              c.terreno_id, t.nome AS terreno_nome
+              cv.imovel_id AS terreno_id, t.nome AS terreno_nome
        FROM clientes c
-       LEFT JOIN terrenos t ON t.id = c.terreno_id
-       WHERE (t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
-         AND (t.centroid_lng IS NOT NULL OR c.longitude IS NOT NULL)
+       LEFT JOIN cliente_imovel_vinculos cv ON cv.cliente_id = c.id AND cv.principal = 1
+       LEFT JOIN terrenos t ON t.id = cv.imovel_id
+       LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = cv.imovel_id
+         AND NOT EXISTS (
+           SELECT 1 FROM imovel_pontos_operacionais po2
+           WHERE po2.imovel_id = po.imovel_id
+             AND (po2.principal > po.principal
+                  OR (po2.principal = po.principal AND po2.criado_em < po.criado_em)))
+       WHERE (po.latitude IS NOT NULL OR t.centroid_lat IS NOT NULL OR c.latitude IS NOT NULL)
+         AND (po.longitude IS NOT NULL OR t.centroid_lng IS NOT NULL OR c.longitude IS NOT NULL)
          AND c.ativo = 1
-         AND COALESCE(t.centroid_lng, c.longitude) >= ?
-         AND COALESCE(t.centroid_lng, c.longitude) <= ?
-         AND COALESCE(t.centroid_lat, c.latitude)  >= ?
-         AND COALESCE(t.centroid_lat, c.latitude)  <= ?
+         AND COALESCE(po.longitude, t.centroid_lng, c.longitude) >= ?
+         AND COALESCE(po.longitude, t.centroid_lng, c.longitude) <= ?
+         AND COALESCE(po.latitude, t.centroid_lat, c.latitude)  >= ?
+         AND COALESCE(po.latitude, t.centroid_lat, c.latitude)  <= ?
        ORDER BY c.nome`,
-  description: 'Clientes no viewport via bbox filter — useClientesGeoInViewport',
+  description: 'Clientes no viewport via bbox filter (vínculo principal) — useClientesGeoInViewport',
   params: ['min_lng', 'max_lng', 'min_lat', 'max_lat'],
   use: 'operacional',
   returns: 'ClienteGeo[]',
@@ -147,8 +161,22 @@ export const CLIENTES_GEO_IN_VIEWPORT: QueryDef = {
 
 export const CLIENTES_GEO_COUNT: QueryDef = {
   sql: `SELECT COUNT(*) AS count FROM clientes WHERE ativo = 1
-        AND (latitude IS NOT NULL OR terreno_id IN (SELECT id FROM terrenos WHERE centroid_lat IS NOT NULL))`,
-  description: 'Contagem de clientes com posição — decide se usa viewport loading',
+        AND (
+          latitude IS NOT NULL
+          OR EXISTS (
+            SELECT 1 FROM cliente_imovel_vinculos cv
+            JOIN terrenos t ON t.id = cv.imovel_id
+            LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = cv.imovel_id
+              AND NOT EXISTS (
+                SELECT 1 FROM imovel_pontos_operacionais po2
+                WHERE po2.imovel_id = po.imovel_id
+                  AND (po2.principal > po.principal
+                       OR (po2.principal = po.principal AND po2.criado_em < po.criado_em)))
+            WHERE cv.cliente_id = clientes.id AND cv.principal = 1
+              AND (t.centroid_lat IS NOT NULL OR po.latitude IS NOT NULL)
+          )
+        )`,
+  description: 'Contagem de clientes com posição (lat/lng ou vínculo principal com centroide/ponto operacional) — decide viewport loading',
   params: [],
   use: 'medida',
   returns: '{ count: number }',
@@ -156,37 +184,167 @@ export const CLIENTES_GEO_COUNT: QueryDef = {
 
 /**
  * Ordem de fallback usada para resolver a posição (latitude/longitude) de cada parada do
- * itinerário — hoje só existe implícita neste SQL, documentada aqui e em `deriveCoordOrigem`/
- * `deriveMotivoSemLocalizacao` (`desktop/lib/itinerary.ts`):
- *   1. `roteiro_clientes.terreno_id`  — override de terreno específico para esta parada neste roteiro
- *   2. `clientes.terreno_id`          — terreno cadastrado no cliente (usado se não houver override acima)
- *   3. `terrenos.centroid_lat/lng`    — centroide do terreno resolvido em 1 ou 2, se ele tiver centroide calculado
- *   4. `clientes.latitude/longitude`  — coordenada do próprio cliente, usada se o terreno não tiver centroide
+ * itinerário — documentada aqui e em `deriveCoordOrigem`/`deriveMotivoSemLocalizacao`
+ * (`desktop/lib/itinerary.ts`):
+ *   0. `roteiro_clientes.ponto_operacional_id` — override explícito de ponto nesta parada (Fase 3 logística)
+ *   1. `roteiro_clientes.imovel_id` → ponto operacional principal desse imóvel (Fase 3 logística)
+ *   2. `roteiro_clientes.imovel_id` → centroide desse imóvel, se não tiver ponto principal (Fase 3 logística)
+ *   3. `imovel_pontos_operacionais`   — ponto operacional principal do imóvel vinculado (Fase 4 georref)
+ *   4. `cliente_imovel_vinculos`      — vínculo principal do cliente resolve o imóvel (Fase 3 georref)
+ *   5. `clientes.latitude/longitude`  — coordenada do próprio cliente, usada se não houver vínculo/centroide
  * Se nada disso resolver, a parada fica sem localização (latitude/longitude nulos no resultado).
- * As colunas `roteiro_terreno_id`, `terreno_centroid_lat/lng` abaixo são expostas apenas para a UI
- * derivar, no client, a origem da coordenada usada (Fase 1 do plano de logística/roteiros) —
- * não introduzem colunas novas no banco, apenas reexpõem valores já lidos por este JOIN.
+ *
+ * Histórico: até a migração da Fase 3 (follow-up) do georreferenciamento, a resolução passava por
+ * `clientes.terreno_id` (FK 1:1, ADR-038) e por um override `roteiro_clientes.terreno_id` (per-stop)
+ * que nunca foi escrito pelo app — ambos removidos da resolução. Os níveis 0-2 acima são o override
+ * por parada dedicado, reintroduzido como feature real na Fase 3 do plano de logística.
+ *
+ * As colunas `terreno_centroid_lat/lng`, `ponto_operacional_lat/lng`, `parada_*` abaixo são expostas
+ * apenas para a UI derivar, no client, a origem da coordenada usada — não introduzem colunas novas no
+ * banco, apenas reexpõem valores já lidos por este JOIN.
  */
 export const ROTEIRO_CLIENTES_ITINERARIO: QueryDef = {
   sql: `SELECT rc.ordem,
               c.id  AS cliente_id,
               c.nome,
-              COALESCE(t.centroid_lat, c.latitude)  AS latitude,
-              COALESCE(t.centroid_lng, c.longitude) AS longitude,
-              COALESCE(rc.terreno_id, c.terreno_id)  AS terreno_id,
-              t.nome              AS terreno_nome,
-              t.codigo_cadastral,
-              rc.terreno_id       AS roteiro_terreno_id,
-              c.terreno_id        AS cliente_terreno_id,
-              t.centroid_lat      AS terreno_centroid_lat,
-              t.centroid_lng      AS terreno_centroid_lng
+              COALESCE(po_parada.latitude, po_imovel_parada.latitude, t_parada.centroid_lat, po.latitude, t.centroid_lat, c.latitude)  AS latitude,
+              COALESCE(po_parada.longitude, po_imovel_parada.longitude, t_parada.centroid_lng, po.longitude, t.centroid_lng, c.longitude) AS longitude,
+              COALESCE(rc.imovel_id, cv.imovel_id) AS terreno_id,
+              COALESCE(t_parada.nome, t.nome)      AS terreno_nome,
+              COALESCE(t_parada.codigo_cadastral, t.codigo_cadastral) AS codigo_cadastral,
+              t.centroid_lat    AS terreno_centroid_lat,
+              t.centroid_lng    AS terreno_centroid_lng,
+              po.latitude       AS ponto_operacional_lat,
+              po.longitude      AS ponto_operacional_lng,
+              rc.ponto_operacional_id AS parada_ponto_operacional_id,
+              po_parada.latitude AS parada_ponto_operacional_lat,
+              po_parada.longitude AS parada_ponto_operacional_lng,
+              rc.imovel_id      AS parada_imovel_id,
+              po_imovel_parada.latitude AS parada_imovel_ponto_operacional_lat,
+              po_imovel_parada.longitude AS parada_imovel_ponto_operacional_lng,
+              t_parada.centroid_lat AS parada_imovel_centroid_lat,
+              t_parada.centroid_lng AS parada_imovel_centroid_lng
        FROM roteiro_clientes rc
        JOIN clientes c ON c.id = rc.cliente_id
-       LEFT JOIN terrenos t ON t.id = COALESCE(rc.terreno_id, c.terreno_id)
+       LEFT JOIN cliente_imovel_vinculos cv ON cv.cliente_id = c.id AND cv.principal = 1
+       LEFT JOIN terrenos t ON t.id = cv.imovel_id
+       LEFT JOIN imovel_pontos_operacionais po ON po.imovel_id = cv.imovel_id
+         AND NOT EXISTS (
+           SELECT 1 FROM imovel_pontos_operacionais po2
+           WHERE po2.imovel_id = po.imovel_id
+             AND (po2.principal > po.principal
+                  OR (po2.principal = po.principal AND po2.criado_em < po.criado_em)))
+       LEFT JOIN imovel_pontos_operacionais po_parada ON po_parada.id = rc.ponto_operacional_id
+       LEFT JOIN terrenos t_parada ON t_parada.id = rc.imovel_id
+       LEFT JOIN imovel_pontos_operacionais po_imovel_parada ON po_imovel_parada.imovel_id = rc.imovel_id
+         AND NOT EXISTS (
+           SELECT 1 FROM imovel_pontos_operacionais po_imovel_parada2
+           WHERE po_imovel_parada2.imovel_id = po_imovel_parada.imovel_id
+             AND (po_imovel_parada2.principal > po_imovel_parada.principal
+                  OR (po_imovel_parada2.principal = po_imovel_parada.principal AND po_imovel_parada2.criado_em < po_imovel_parada.criado_em)))
        WHERE rc.roteiro_id = ? AND rc.ativo = 1 AND c.ativo = 1
        ORDER BY rc.ordem`,
-  description: 'Paradas de um roteiro com nome, posição e origem da coordenada (raw terreno_id/centroid p/ diagnóstico na UI) — useItinerario',
+  description: 'Paradas de um roteiro com nome, posição e origem da coordenada (override de parada > vínculo principal > cliente lat/lng; raw p/ diagnóstico na UI) — useItinerario',
   params: ['roteiro_id'],
   use: 'operacional',
   returns: 'ItinerarioStop[]',
+};
+
+// ── Fase 4: pontos operacionais do imóvel (terreno) ──
+
+export const TERRENO_BY_ID: QueryDef = {
+  sql: `SELECT id, nome, codigo_cadastral, tipo, geojson,
+               centroid_lat, centroid_lng, area_m2, bairro, logradouro, numero, cidade, estado,
+               observacoes, ativo
+        FROM terrenos WHERE id = ?`,
+  description: 'Um terreno por id (todos os campos) — página de detalhe do terreno',
+  params: ['id'],
+  use: 'operacional',
+  returns: 'TerrenoGeo & { logradouro, numero, observacoes }',
+};
+
+export const PONTO_OP_BY_IMOVEL: QueryDef = {
+  sql: `SELECT id, imovel_id, tipo, latitude, longitude, principal, origem, observacao,
+               criado_em, atualizado_em
+        FROM imovel_pontos_operacionais
+        WHERE imovel_id = ?
+        ORDER BY principal DESC, criado_em ASC`,
+  description: 'Pontos operacionais de um imóvel (terreno) — usePontosOperacionais',
+  params: ['imovel_id'],
+  use: 'operacional',
+  returns: 'PontoOperacional[]',
+};
+
+export const PONTO_OP_INSERT: QueryDef = {
+  sql: `INSERT INTO imovel_pontos_operacionais
+        (id, imovel_id, tipo, latitude, longitude, principal, origem, observacao, criado_em, atualizado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+  description: 'Insere um ponto operacional — insertPontoOperacional',
+  params: ['id', 'imovel_id', 'tipo', 'latitude', 'longitude', 'principal', 'origem', 'observacao'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const PONTO_OP_UPDATE: QueryDef = {
+  sql: `UPDATE imovel_pontos_operacionais
+        SET tipo = ?, latitude = ?, longitude = ?, observacao = ?, atualizado_em = datetime('now')
+        WHERE id = ?`,
+  description: 'Atualiza tipo/coordenada/observação de um ponto operacional — updatePontoOperacional',
+  params: ['tipo', 'latitude', 'longitude', 'observacao', 'id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const PONTO_OP_DELETE: QueryDef = {
+  sql: `DELETE FROM imovel_pontos_operacionais WHERE id = ?`,
+  description: 'Remove um ponto operacional — deletePontoOperacional',
+  params: ['id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+/** Desmarca todos os principais do imóvel antes de promover um novo (garante unicidade). */
+export const PONTO_OP_CLEAR_PRINCIPAL: QueryDef = {
+  sql: `UPDATE imovel_pontos_operacionais SET principal = 0 WHERE imovel_id = ?`,
+  description: 'Desmarca principais do imóvel — setPontoOperacionalPrincipal step 1',
+  params: ['imovel_id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const PONTO_OP_SET_PRINCIPAL: QueryDef = {
+  sql: `UPDATE imovel_pontos_operacionais SET principal = 1, atualizado_em = datetime('now') WHERE id = ?`,
+  description: 'Promove um ponto operacional a principal — setPontoOperacionalPrincipal step 2',
+  params: ['id'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+// ── Fase 5 (parte Desktop): evidência GPS de campo ──
+// A comparação (dentro/fora da poligonal, distância até a referência) é feita client-side
+// via `compareGpsEvidence` (src/lib/gpsEvidence.ts), reaproveitando pointInPolygon/haversineMeters
+// já usados na Fase 3 — por isso GPS_EVIDENCIA_BY_IMOVEL traz o geojson/centroide do terreno junto.
+
+export const GPS_EVIDENCIA_INSERT: QueryDef = {
+  sql: `INSERT INTO imovel_gps_evidencias
+        (id, imovel_id, cliente_id, latitude, longitude, accuracy, provider, altitude, heading, capturado_em, origem, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  description: 'Insere um registro de evidência GPS de campo — insertGpsEvidencia',
+  params: ['id', 'imovel_id', 'cliente_id', 'latitude', 'longitude', 'accuracy', 'provider', 'altitude', 'heading', 'capturado_em', 'origem'],
+  use: 'operacional',
+  returns: 'void',
+};
+
+export const GPS_EVIDENCIA_BY_IMOVEL: QueryDef = {
+  sql: `SELECT ge.id, ge.imovel_id, ge.cliente_id, ge.latitude, ge.longitude, ge.accuracy,
+               ge.provider, ge.altitude, ge.heading, ge.capturado_em, ge.origem, ge.criado_em,
+               t.geojson AS terreno_geojson, t.centroid_lat AS terreno_centroid_lat, t.centroid_lng AS terreno_centroid_lng
+        FROM imovel_gps_evidencias ge
+        LEFT JOIN terrenos t ON t.id = ge.imovel_id
+        WHERE ge.imovel_id = ?
+        ORDER BY ge.criado_em DESC`,
+  description: 'Evidências GPS de um imóvel, com geojson/centroide do terreno para comparação client-side via compareGpsEvidence',
+  params: ['imovel_id'],
+  use: 'operacional',
+  returns: 'GpsEvidenciaRow[]',
 };
