@@ -1,4 +1,4 @@
-# Backend Simplification Progress
+﻿# Backend Simplification Progress
 
 Date: 2026-07-07
 
@@ -34,3 +34,11 @@ Working directory: worktree root
 
 - Status: not run yet
 - Reason: scheduled for Task 9
+
+## Sync Matrix
+
+- Matrix: `docs/backend/2026-07-07-sync-event-matrix.md`
+- Status: created
+- Blocker: no envelope migration until legacy-documented and handler-only decisions are resolved, and an event parity test exists.
+
+
