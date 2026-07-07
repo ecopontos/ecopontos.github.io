@@ -18,8 +18,9 @@ Como o `fetch` usa `mode: 'no-cors'`, o cliente **nunca lê a resposta** do GAS
 1. O GAS não pode sinalizar erros de volta ao app; erros precisam ser
    registrados no próprio GAS para diagnóstico manual.
 2. Falhas de rede no cliente disparam reenvio automático pela fila local
-   (`filaPendente` em `script.js`/`scriptpc.js`), então o mesmo registro pode
-   chegar ao GAS mais de uma vez. O GAS precisa deduplicar.
+   (`filaPendente`, hoje implementada só em `script.js` — ver correção na
+   Parte B), então o mesmo registro pode chegar ao GAS mais de uma vez. O GAS
+   precisa deduplicar.
 
 ### Bug pré-existente identificado
 
@@ -50,9 +51,8 @@ legível.
 
 ## Parte B — Mudanças no cliente (`ecoponto/`)
 
-Duas mudanças pequenas, replicadas nos dois pares de arquivos (`script.js` +
-`configuracao.js`/`.html` para celular, `scriptpc.js` para PC — ambos leem a
-mesma configuração salva em `configuracao.html`):
+Três mudanças, aplicadas em `script.js` (celular) e `scriptpc.js` (PC) —
+ambos leem a mesma configuração salva em `configuracao.html`/`.js`:
 
 1. **Nome do ecoponto em vez do código numérico.**
    `configuracao.js` (`salvarConfiguracao`) passa a salvar também
@@ -73,7 +73,20 @@ mesma configuração salva em `configuracao.html`):
    `idRegistro` se mantém idêntico em todas as tentativas de reenvio do mesmo
    atendimento — permitindo dedup exato no GAS.
 
-Payload enviado ao GAS passa a ter este formato:
+3. **Portar a fila de retry para `scriptpc.js`.**
+   Hoje `scriptpc.js:enviarParaSheets` só faz `console.warn` no `catch` e
+   descarta a tentativa — o registro continua na IndexedDB (`status:
+   'Pendente'`), mas nada tenta reenviá-lo automaticamente; só chega ao Sheets
+   se alguém exportar e importar o CSV manualmente depois. `script.js` já
+   resolve isso com `adicionarFilaPendente`, `enviarPendentes` e
+   `atualizarIndicadorPendentes` (fila em `localStorage.filaPendente`,
+   reenviada no evento `online` e no carregamento da página). Portar essas
+   três funções, idênticas, para `scriptpc.js`, e chamar
+   `adicionarFilaPendente` no `catch` de `enviarParaSheets` (em vez de só
+   logar) — homogeneizando o comportamento offline dos dois clientes antes de
+   depender de dedup por `idRegistro` para cobrir reenvios.
+
+Payload enviado ao GAS passa a ter este formato (igual nas duas variantes):
 
 ```json
 {
