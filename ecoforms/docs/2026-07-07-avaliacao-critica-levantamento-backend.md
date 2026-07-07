@@ -164,3 +164,11 @@ Use o levantamento como base para trabalho em fases, mas com linguagem mais prec
 3. tratar a unificação do sync no `packages/core` como prioridade técnica
 4. revisar docs antes de promover claims quantitativos
 
+## Artefatos de execução
+
+- Plano: `docs/superpowers/plans/2026-07-07-backend-simplification-execution.md`
+- Evidências e progresso: `docs/backend/2026-07-07-backend-simplification-progress.md`
+- Matriz de sync: `docs/backend/2026-07-07-sync-event-matrix.md`
+- Matriz Tauri: `docs/backend/2026-07-07-tauri-command-matrix.md`
+- Inventário da raiz: `docs/backend/2026-07-07-root-artifact-inventory.md`
+- Nenhuma remoção deve ocorrer antes das matrizes de sync, Tauri e raiz.

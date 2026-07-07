@@ -204,3 +204,10 @@ A prioridade técnica não é remover volume por si só, e sim:
 - eliminar delegações vazias
 - tornar o bootstrap e a documentação coerentes com o código atual
 
+## Artefatos de execução
+
+- Plano: `docs/superpowers/plans/2026-07-07-backend-simplification-execution.md`
+- Progresso: `docs/backend/2026-07-07-backend-simplification-progress.md`
+- Matriz de sync: `docs/backend/2026-07-07-sync-event-matrix.md`
+- Matriz Tauri: `docs/backend/2026-07-07-tauri-command-matrix.md`
+- Inventário da raiz: `docs/backend/2026-07-07-root-artifact-inventory.md`
