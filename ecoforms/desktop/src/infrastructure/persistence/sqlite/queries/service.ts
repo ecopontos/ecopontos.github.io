@@ -100,15 +100,15 @@ export const SLOTS_COM_VAGAS_DISPONIVEIS: QueryDef = {
 };
 
 export const TAREFAS_CAMPO_HOJE: QueryDef = {
-    sql: `SELECT t.id, t.titulo, t.status, t.carga, t.agendamento_id,
+    sql: `SELECT t.id, t.titulo, t.status, t.carga, t.origem_id AS agendamento_id,
                  t.atribuido_para, t.prazo
           FROM tarefas t
-          WHERE t.origem = 'booking'
+          WHERE t.origem_tipo = 'agendamento'
             AND t.atribuido_para = ?
             AND date(t.prazo) = date('now')
             AND t.status NOT IN ('concluido', 'cancelado')
           ORDER BY t.prazo ASC`,
-    description: 'Tasks de campo do operador para hoje (origem booking)',
+    description: 'Tasks de campo do operador para hoje (origem_tipo=agendamento)',
     params: ['usuario_id'],
     use: 'operacional',
     returns: 'TarefaCampoRow[]',

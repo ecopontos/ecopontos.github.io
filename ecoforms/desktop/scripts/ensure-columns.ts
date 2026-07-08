@@ -1986,7 +1986,7 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
                 '#3B82F6',
                 'AGD',
                 20,
-                'published',
+                'draft',
                 1,
                 1,
                 '{}',
@@ -1996,6 +1996,17 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
                 datetime('now')
             )
         `);
+
+        // O módulo não expõe visuais funcionais (configuracao vazia; os visuais em
+        // visuais_modulos não são lidos por GetModuleVisuaisUseCase, que consulta
+        // configuracao.visuais). Mantê-lo publicado só duplica "Agendamentos" no menu.
+        // Rebaixa para rascunho em bancos existentes, mas sem sobrescrever um módulo
+        // que já tenha sido configurado (configuracao != '{}') e republicado de propósito.
+        await execute(`
+            UPDATE registro_modulos
+            SET status = 'draft', atualizado_em = datetime('now')
+            WHERE id = 'mod-agendamento' AND status = 'published' AND configuracao = '{}'
+        `).catch(() => {});
 
         // Permissões base do módulo de agendamento
         await execute(`
@@ -2015,58 +2026,14 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
             VALUES ('mod-agendamento', 'campo', 1, 0, 0, 0, 0)
         `);
 
-        // Visuais padrão do módulo de agendamento
+        // Limpeza: os visuais 'vis-agd-*' eram linhas órfãs. GetModuleVisuaisUseCase
+        // monta os visuais a partir de configuracao.visuais (vazio aqui), nunca a partir
+        // de visuais_modulos, então essas linhas nunca eram lidas nem renderizadas.
+        // Remove-as de bancos existentes; não são mais seedadas.
         await execute(`
-            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-            VALUES (
-                'vis-agd-slots',
-                'mod-agendamento',
-                'table',
-                'Slots de Agendamento',
-                '{"source": "janelas_agendamento", "columns": ["titulo", "tipo_prazo", "data_inicio", "data_fim", "capacidade", "vagas_ocupadas", "status"], "filterable": true}',
-                1,
-                NULL,
-                NULL,
-                'synced',
-                0,
-                datetime('now'),
-                datetime('now')
-            )
-        `);
-        await execute(`
-            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-            VALUES (
-                'vis-agd-bookings',
-                'mod-agendamento',
-                'table',
-                'Bookings',
-                '{"source": "tarefas", "filter": "origem = ''booking''", "columns": ["titulo", "status", "prazo", "atribuido_para", "criado_em"], "filterable": true}',
-                0,
-                NULL,
-                NULL,
-                'synced',
-                1,
-                datetime('now'),
-                datetime('now')
-            )
-        `);
-        await execute(`
-            INSERT OR IGNORE INTO visuais_modulos (id, module_id, visual_type, name, config, is_default, user_id, parent_view_id, sync_status, position, criado_em, atualizado_em)
-            VALUES (
-                'vis-agd-kanban',
-                'mod-agendamento',
-                'kanban',
-                'Kanban de Agendamentos',
-                '{"source": "tarefas", "filter": "origem = ''booking''", "groupBy": "status", "columns": ["titulo", "prazo", "atribuido_para"]}',
-                0,
-                NULL,
-                NULL,
-                'synced',
-                2,
-                datetime('now'),
-                datetime('now')
-            )
-        `);
+            DELETE FROM visuais_modulos
+            WHERE module_id = 'mod-agendamento' AND id IN ('vis-agd-slots', 'vis-agd-bookings', 'vis-agd-kanban')
+        `).catch(() => {});
 
         console.log('[Bootstrap] Módulo de agendamento registrado');
     } catch (e) { console.warn('[Seed] módulo agendamento:', e); }

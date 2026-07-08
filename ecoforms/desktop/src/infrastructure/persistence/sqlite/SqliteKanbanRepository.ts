@@ -147,10 +147,10 @@ export class SqliteKanbanRepository implements KanbanRepository {
 
     async findBookingTasksForUser(userId: string): Promise<TarefaCampoRow[]> {
         return this.db.query<TarefaCampoRow>(
-            `SELECT t.id, t.titulo, t.status, t.carga, t.agendamento_id,
+            `SELECT t.id, t.titulo, t.status, t.carga, t.origem_id AS agendamento_id,
                     t.atribuido_para, t.prazo
              FROM tarefas t
-             WHERE t.origem = 'booking'
+             WHERE t.origem_tipo = 'agendamento'
                AND t.atribuido_para = ?
                AND date(t.prazo) = date('now')
                AND t.status NOT IN ('concluido', 'cancelado')
