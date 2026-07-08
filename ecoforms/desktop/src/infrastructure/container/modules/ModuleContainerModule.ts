@@ -18,7 +18,17 @@ import {
     CopyViewToPersonalUseCase,
     SyncPersonalViewUseCase,
 } from '../../../application/visuals/VisualViewUseCases';
-import { GetViewUseCase, GetActiveViewsUseCase, GetViewsByModuleUseCase, GetViewsByPerfilUseCase } from '../../../application/views/ViewUseCases';
+import {
+    GetViewUseCase,
+    GetActiveViewsUseCase,
+    GetViewsByModuleUseCase,
+    GetViewsByPerfilUseCase,
+    CreateModuleDashboardUseCase,
+    UpdateModuleDashboardUseCase,
+    DeleteModuleDashboardUseCase,
+    UpdateModuleDashboardWidgetsUseCase,
+    GetModuleDashboardDataUseCase,
+} from '../../../application/views/ViewUseCases';
 import { GetDecisionUseCase, GetDecisionsByTargetTypeUseCase, GetDecisionsByActionUseCase, GetDecisionsForPerfilUseCase, GetActiveDecisionsUseCase } from '../../../application/decisions/DecisionUseCases';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
 
@@ -53,6 +63,11 @@ export interface ModuleContainerResult {
         getActive: GetActiveViewsUseCase;
         getByModule: GetViewsByModuleUseCase;
         getByPerfil: GetViewsByPerfilUseCase;
+        createModuleDashboard: CreateModuleDashboardUseCase;
+        updateModuleDashboard: UpdateModuleDashboardUseCase;
+        deleteModuleDashboard: DeleteModuleDashboardUseCase;
+        updateModuleDashboardWidgets: UpdateModuleDashboardWidgetsUseCase;
+        getModuleDashboardData: GetModuleDashboardDataUseCase;
     };
     decisions: {
         get: GetDecisionUseCase;
@@ -96,6 +111,11 @@ export function buildModuleContainer(deps: ModuleContainerDependencies): ModuleC
         getActive: new GetActiveViewsUseCase(viewRegistryRepository),
         getByModule: new GetViewsByModuleUseCase(viewRegistryRepository),
         getByPerfil: new GetViewsByPerfilUseCase(viewRegistryRepository),
+        createModuleDashboard: new CreateModuleDashboardUseCase(viewRegistryRepository),
+        updateModuleDashboard: new UpdateModuleDashboardUseCase(viewRegistryRepository),
+        deleteModuleDashboard: new DeleteModuleDashboardUseCase(viewRegistryRepository),
+        updateModuleDashboardWidgets: new UpdateModuleDashboardWidgetsUseCase(viewRegistryRepository),
+        getModuleDashboardData: new GetModuleDashboardDataUseCase(sqlite, viewRegistryRepository),
     };
 
     const decisions = {

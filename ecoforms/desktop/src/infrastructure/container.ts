@@ -138,7 +138,17 @@ import {
 import { TauriSqliteAdapter } from './persistence/sqlite/tauriSqliteAdapter';
 import { SupabaseFileStorage } from './storage/SupabaseFileStorage';
 import { buildModuleContainer } from './container/modules/ModuleContainerModule';
-import { GetViewUseCase, GetActiveViewsUseCase, GetViewsByModuleUseCase, GetViewsByPerfilUseCase } from '../application/views/ViewUseCases';
+import {
+    GetViewUseCase,
+    GetActiveViewsUseCase,
+    GetViewsByModuleUseCase,
+    GetViewsByPerfilUseCase,
+    CreateModuleDashboardUseCase,
+    UpdateModuleDashboardUseCase,
+    DeleteModuleDashboardUseCase,
+    UpdateModuleDashboardWidgetsUseCase,
+    GetModuleDashboardDataUseCase,
+} from '../application/views/ViewUseCases';
 import { GetDecisionUseCase, GetDecisionsByTargetTypeUseCase, GetDecisionsByActionUseCase, GetDecisionsForPerfilUseCase, GetActiveDecisionsUseCase } from '../application/decisions/DecisionUseCases';
 import { GetModuleVisuaisUseCase } from '../application/visuals/GetModuleVisuaisUseCase';
 import {
@@ -222,6 +232,11 @@ export interface ViewRegistryUseCases {
     getActive: GetActiveViewsUseCase;
     getByModule: GetViewsByModuleUseCase;
     getByPerfil: GetViewsByPerfilUseCase;
+    createModuleDashboard: CreateModuleDashboardUseCase;
+    updateModuleDashboard: UpdateModuleDashboardUseCase;
+    deleteModuleDashboard: DeleteModuleDashboardUseCase;
+    updateModuleDashboardWidgets: UpdateModuleDashboardWidgetsUseCase;
+    getModuleDashboardData: GetModuleDashboardDataUseCase;
 }
 
 export interface DecisionRegistryUseCases {

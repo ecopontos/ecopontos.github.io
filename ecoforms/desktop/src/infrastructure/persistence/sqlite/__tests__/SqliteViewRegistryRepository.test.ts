@@ -18,6 +18,8 @@ describe('SqliteViewRegistryRepository', () => {
                     layout: 'grid-2',
                     widgets: '[]',
                     module_type: 'inspecao',
+                    user_id: 'user-1',
+                    is_template: 1,
                     ativo: 1,
                     criado_em: null,
                     atualizado_em: null,
@@ -43,9 +45,13 @@ describe('SqliteViewRegistryRepository', () => {
         }));
 
         expect(dashboard?.moduleType).toBe('inspecao');
+        expect(dashboard?.userId).toBe('user-1');
+        expect(dashboard?.isTemplate).toBe(true);
         expect(queries.join('\n')).toContain('FROM registro_visualizacoes');
         expect(queries.join('\n')).not.toContain('view_registry');
         expect(executes.join('\n')).toContain('INSERT INTO registro_visualizacoes');
         expect(executes.join('\n')).toContain('tipo_modulo');
+        expect(executes.join('\n')).toContain('id_usuario');
+        expect(executes.join('\n')).toContain('modelo');
     });
 });
