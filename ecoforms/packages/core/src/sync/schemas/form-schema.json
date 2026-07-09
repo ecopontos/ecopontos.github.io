@@ -70,7 +70,8 @@
             "occupation-selector",
             "selector-modal",
             "cards-radio",
-            "caixas-avancado"
+            "caixas-avancado",
+            "composite_gallery_collector"
           ]
         },
         "required": {
