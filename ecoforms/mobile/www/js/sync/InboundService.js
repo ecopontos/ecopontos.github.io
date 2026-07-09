@@ -1,6 +1,7 @@
 // ⚠️ ESPELHO de desktop/src/infrastructure/sync/InboundService.ts
 // Alterações aqui devem ser refletidas lá.
 import { buildChecksum, uuidv7 } from '/js/ecoforms-core.js';
+import { assertValidInboundEnvelope } from './EventValidation.js';
 import { sqliteAdapter } from '../adapters/CapacitorSqliteAdapter.js';
 
 const INBOUND_PAGE_SIZE = 50;
@@ -38,6 +39,7 @@ export class InboundService {
               }
 
               const envelope = await this.crypto.decryptJson(row.payload_enc);
+              await assertValidInboundEnvelope(envelope);
               const expectedChecksum = await buildChecksum(envelope.data);
               if (envelope.checksum && envelope.checksum !== expectedChecksum) {
                 result.errors.push(`${row.id}: checksum inválido — possível corrupção ou tampering`);
