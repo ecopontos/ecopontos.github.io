@@ -2,6 +2,7 @@ import type { SqlitePort } from '../../application/ports/SqlitePort';
 import type { OrgConfig, OrgSetor } from './OrgConfigService';
 import type { SyncStoragePort } from './SyncStoragePort';
 import type { LanFileStorage } from '../storage/LanFileStorage';
+import { parseJsonWithValidator, validateOrgConfig } from '../storage/LanJsonCodecs';
 
 const BUCKET = 'sync-bucket';
 
@@ -66,7 +67,8 @@ export class StorageBootstrapService {
             // 1. Tentar baixar config existente
             const blob = await this.storage.download('shared/org_config.json');
             const text = await blob.text();
-            const config = JSON.parse(text) as OrgConfig;
+            const config = parseJsonWithValidator(text, validateOrgConfig);
+            if (!config) throw new Error('org_config.json inválido');
 
             // Já existe — apenas cacheia localmente e espelha na LAN
             await this.cacheConfig(config);

@@ -1,6 +1,7 @@
 import type { SqlitePort } from '../../application/ports/SqlitePort';
 import type { SyncStoragePort } from './SyncStoragePort';
 import type { LanFileStorage } from '../storage/LanFileStorage';
+import { parseJsonWithValidator, validateOrgConfig } from '../storage/LanJsonCodecs';
 
 export interface OrgSetor {
     id: string;
@@ -27,7 +28,8 @@ export class OrgConfigService {
     async loadFromStorage(): Promise<OrgConfig> {
         const blob = await this.storage.download(ORG_CONFIG_PATH);
         const text = await blob.text();
-        const config = JSON.parse(text) as OrgConfig;
+        const config = parseJsonWithValidator(text, validateOrgConfig);
+        if (!config) throw new Error('org_config.json inválido');
         await this.cacheToLocal(config);
         return config;
     }
@@ -37,11 +39,12 @@ export class OrgConfigService {
             `SELECT conteudo FROM registro_dados
              WHERE tipo = 'org_config' AND chave = 'current' LIMIT 1`
         );
-        return rows[0] ? JSON.parse(rows[0].conteudo) : null;
+        return rows[0] ? parseJsonWithValidator(rows[0].conteudo, validateOrgConfig) : null;
     }
 
     async load(): Promise<OrgConfig> {
-        const fromLan = await this.lan?.readJson<OrgConfig>(ORG_CONFIG_PATH);
+        const fromLanRaw = await this.lan?.readJson<unknown>(ORG_CONFIG_PATH);
+        const fromLan = validateOrgConfig(fromLanRaw) ? fromLanRaw : null;
         if (fromLan) {
             await this.cacheToLocal(fromLan);
             return fromLan;

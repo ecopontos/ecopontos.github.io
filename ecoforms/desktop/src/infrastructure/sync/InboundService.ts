@@ -2,7 +2,8 @@
 // Alterações aqui devem ser refletidas lá.
 import type { CryptoLayer } from './CryptoLayer';
 import type { SqlitePort } from '../../application/ports/SqlitePort';
-import { buildChecksum, type EventEnvelope } from './EventEnvelope';
+import { assertValidEventEnvelope, buildChecksum, type EventEnvelope } from './EventEnvelope';
+import { assertValidEventPayload } from './EventPayloadValidators';
 import { uuidv7, type SyncEventIndexPort } from 'ecoforms-core';
 
 export type InboundHandler = (envelope: EventEnvelope) => Promise<void>;
@@ -70,12 +71,14 @@ export class InboundService {
                                 continue;
                             }
 
-                            const envelope = await this.crypto.decryptJson<EventEnvelope>(row.payload_enc);
+                            const envelope = await this.crypto.decryptJson<unknown>(row.payload_enc);
+                            assertValidEventEnvelope(envelope);
                             const expectedChecksum = await buildChecksum(envelope.data);
                             if (envelope.checksum && envelope.checksum !== expectedChecksum) {
                                 result.errors.push(`${row.id}: checksum inválido — possível corrupção ou tampering`);
                                 continue;
                             }
+                            assertValidEventPayload(envelope);
 
                             if (row.seq !== localSeq + 1) {
                                 result.errors.push(`Gap de sequência de ${remoteRoutingId}: esperado ${localSeq + 1}, recebido ${row.seq}`);

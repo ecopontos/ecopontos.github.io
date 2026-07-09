@@ -3,6 +3,7 @@ import type { SuiteHistoryEntry, SuiteQuery, SuiteRepository } from '../../../do
 import type { SuiteStatus } from '../../../domain/suite/SuiteStatus';
 import type { SqlitePort } from '../../../application/ports/SqlitePort';
 import { uuidv7 } from 'ecoforms-core';
+import { parsePersistedJsonRecord } from '../../../application/json/jsonPersistence';
 
 interface SuiteRow {
     id_pacote: string;
@@ -202,14 +203,12 @@ export class SqliteSuiteRepository implements SuiteRepository {
             [slug, slug],
         );
         if (!rows || rows.length === 0) return null;
-        try {
-            const raw = rows[0].conteudo;
-            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-            return typeof parsed === 'string' ? JSON.parse(parsed) : (parsed as Record<string, unknown>);
-        } catch (e) {
-            console.error('[SuiteRepo] Error parsing form template:', e);
+        const parsed = parsePersistedJsonRecord(rows[0].conteudo);
+        if (!parsed) {
+            console.error('[SuiteRepo] Error parsing form template: invalid JSON object');
             return null;
         }
+        return parsed;
     }
 }
 

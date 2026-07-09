@@ -20,7 +20,7 @@ describe('sync contract: stable-stringify (JS ↔ TS)', () => {
 
   it('JS and TS implementations produce identical strings', async () => {
     const { stableStringify: jsFn } = await import('../www/js/sync/stable-stringify.js');
-    const { stableStringify: tsFn } = await import('../../desktop/src/infrastructure/sync/stable-stringify');
+    const { stableStringify: tsFn } = await import('../../packages/core/src/utils/stableStringify');
 
     for (const tc of testCases) {
       const jsResult = jsFn(tc);
@@ -48,7 +48,7 @@ describe('sync contract: buildChecksum (JS ↔ TS)', () => {
 
   it('JS and TS implementations produce identical checksums', async () => {
     const { buildChecksum: jsFn } = await import('../www/js/sync/EventEnvelope.js');
-    const { buildChecksum: tsFn } = await import('../../desktop/src/infrastructure/sync/EventEnvelope');
+    const { buildChecksum: tsFn } = await import('../../packages/core/src/sync/EventEnvelope');
 
     for (const tc of testData) {
       const jsChecksum = await jsFn(tc);
@@ -63,6 +63,15 @@ describe('sync contract: buildChecksum (JS ↔ TS)', () => {
     const checksum1 = await jsFn({ b: 2, a: 1 });
     const checksum2 = await jsFn({ a: 1, b: 2 });
     expect(checksum1).toBe(checksum2);
+  });
+});
+
+describe('sync contract: event type parity', () => {
+  it('mobile bundle exports the canonical core event list', async () => {
+    const { EcoFormsEventTypes: jsTypes } = await import('../www/js/sync/EventEnvelope.js');
+    const { EcoFormsEventTypes: coreTypes } = await import('../../packages/core/src/sync/EventEnvelope');
+
+    expect([...jsTypes].sort()).toEqual([...coreTypes].sort());
   });
 });
 
@@ -94,7 +103,7 @@ describe('sync contract: createEnvelope structure', () => {
   });
 
   it('TS EventEnvelope interface allows device_id to be optional', async () => {
-    const mod = await import('../../desktop/src/infrastructure/sync/EventEnvelope');
+    const mod = await import('../../packages/core/src/sync/EventEnvelope');
     // Verify the type exists (compile-time check; runtime just ensures no crash)
     expect(mod).toBeDefined();
     expect(typeof mod.buildChecksum).toBe('function');

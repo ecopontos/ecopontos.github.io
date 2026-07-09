@@ -7,93 +7,60 @@
 
 import { uuidv7 } from '../utils/uuidv7.js';
 
-export type EcoFormsEventType =
-  | 'demanda.criada'
-  | 'demanda.aceita'
-  | 'demanda.encerrada'
-  | 'demanda.tarefa.criada'
-  | 'demanda.tarefa.concluida'
-  | 'demanda.encaminhada'
-  | 'demanda.reencaminhada'
-  | 'demanda.registro.criado'
-  | 'suite.aprovada'
-  | 'suite.rejeitada'
-  | 'suite.devolvida'
-  | 'suite.solicitada'
-  | 'suite.reencaminhada'
-  | 'crm.cliente.criado'
-  | 'crm.cliente.atualizado'
-  | 'roteiro.criado'
-  | 'roteiro.atualizado'
-  | 'crm.coleta.registrada'
-  | 'client.criado'
-  | 'client.atualizado'
-  | 'ecoponto.remocao.agendada'
-  | 'form_registry.atualizado'
-  | 'data_registry.atualizado'
-  | 'usuario.criado'
-  | 'usuario.atualizado'
-  | 'org.config.atualizado'
-  | 'ecoforms.task.snapshot'
-  | 'ecoforms.registro.criado'
-  | 'ecoforms.tarefa.concluida'
-  | 'ecoforms.anexo.criado'
-  | 'audit.registro'
-  | 'tarefa.criada'
-  | 'task.criada'
-  | 'task.movida'
-  | 'task.concluida'
-  | 'task.atualizada'
-  | 'task.arquivada'
-  | 'task.desarquivada'
-  | 'task.excluida'
-  | 'task.comentario_adicionado'
-  | 'module.publicado'
-  | 'module.arquivado'
-  | 'agendamento.criado'
-  | 'agendamento.confirmado'
-  | 'agendamento.cancelado'
-  | 'agendamento.realizado'
-  | 'agendamento.despachado'
-  | 'agendamento.slot_publicado'
-  | 'agendamento.slot_cancelado'
-  | 'execucao.criada'
-  | 'execucao.status_atualizado'
-  | 'intercorrencia.registrada'
-  | 'intercorrencia.resolvida';
-
-export const EcoFormsEventTypes: EcoFormsEventType[] = [
+export const EcoFormsEventTypes = [
+  'acesso.turno.log',
+  'agendamento.criado',
+  'agendamento.confirmado',
+  'agendamento.cancelado',
+  'agendamento.realizado',
+  'agendamento.despachado',
+  'agendamento.slot_publicado',
+  'agendamento.slot_cancelado',
+  'audit.registro',
+  'client.criado',
+  'client.atualizado',
+  'crm.cliente.criado',
+  'crm.cliente.atualizado',
+  'crm.coleta.registrada',
+  'data_registry.atualizado',
   'demanda.criada',
   'demanda.aceita',
   'demanda.encerrada',
-  'demanda.tarefa.criada',
-  'demanda.tarefa.concluida',
   'demanda.encaminhada',
   'demanda.reencaminhada',
   'demanda.registro.criado',
+  'demanda.tarefa.criada',
+  'demanda.tarefa.concluida',
+  'despacho.registrado',
+  'ecoforms.anexo.criado',
+  'ecoforms.registro.criado',
+  'ecoforms.task.snapshot',
+  'ecoforms.tarefa.concluida',
+  'ecoponto.remocao.agendada',
+  'execucao.criada',
+  'execucao.status_atualizado',
+  'form_registry.atualizado',
+  'instancias_widgets_usuario.created',
+  'instancias_widgets_usuario.updated',
+  'instancias_widgets_usuario.deleted',
+  'intercorrencia.registrada',
+  'intercorrencia.resolvida',
+  'manifestacao.criada',
+  'manifestacao.status_atualizado',
+  'module.publicado',
+  'module.arquivado',
+  'org.config.atualizado',
+  'prazo.adicionado',
+  'resposta.registrada',
+  'roteiro.criado',
+  'roteiro.atualizado',
   'suite.aprovada',
+  'suite.aprovado',
   'suite.rejeitada',
   'suite.devolvida',
   'suite.solicitada',
   'suite.reencaminhada',
-  'crm.cliente.criado',
-  'crm.cliente.atualizado',
-  'roteiro.criado',
-  'roteiro.atualizado',
-  'crm.coleta.registrada',
-  'client.criado',
-  'client.atualizado',
-  'ecoponto.remocao.agendada',
-  'form_registry.atualizado',
-  'data_registry.atualizado',
-  'usuario.criado',
-  'usuario.atualizado',
-  'org.config.atualizado',
-  'ecoforms.task.snapshot',
-  'ecoforms.registro.criado',
-  'ecoforms.tarefa.concluida',
-  'ecoforms.anexo.criado',
-  'audit.registro',
+  'suite.editado',
   'tarefa.criada',
   'task.criada',
   'task.movida',
@@ -103,20 +70,15 @@ export const EcoFormsEventTypes: EcoFormsEventType[] = [
   'task.desarquivada',
   'task.excluida',
   'task.comentario_adicionado',
-  'module.publicado',
-  'module.arquivado',
-  'agendamento.criado',
-  'agendamento.confirmado',
-  'agendamento.cancelado',
-  'agendamento.realizado',
-  'agendamento.despachado',
-  'agendamento.slot_publicado',
-  'agendamento.slot_cancelado',
-  'execucao.criada',
-  'execucao.status_atualizado',
-  'intercorrencia.registrada',
-  'intercorrencia.resolvida',
-];
+  'tramitacao.registrada',
+  'usuario.criado',
+  'usuario.atualizado',
+  'visuais_modulos.created',
+  'visuais_modulos.updated',
+  'visuais_modulos.deleted',
+] as const;
+
+export type EcoFormsEventType = typeof EcoFormsEventTypes[number];
 
 export interface EventEnvelope {
   v: 2;

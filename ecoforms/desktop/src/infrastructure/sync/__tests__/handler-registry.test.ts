@@ -88,9 +88,10 @@ describe('HandlerRegistry manifestacao.criada', () => {
         const [sql, params] = firstCall(db);
         expect(sql).toContain('INSERT OR IGNORE INTO manifestacoes');
         expect(sql).toContain(
-            '(protocolo, tipo_id, origem_id, classificacao_id, situacao_id, assunto, descricao)',
+            '(id, protocolo, tipo_id, origem_id, classificacao_id, situacao_id, assunto, descricao)',
         );
         expect(params).toEqual([
+            'manifestacao-1',
             'OUV-2026-001',
             'tipo-1',
             'origem-1',
@@ -99,6 +100,21 @@ describe('HandlerRegistry manifestacao.criada', () => {
             'Assunto',
             'Descricao',
         ]);
+    });
+
+    it('ignores unknown payload columns and keeps aggregate id authoritative', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler(ManifestacaoCriada)(makeEnvelope(ManifestacaoCriada, 'manifestacao-2', {
+            id: 'payload-id',
+            protocolo: 'OUV-2026-002',
+            coluna_inexistente: 'x',
+        }));
+
+        const [sql, params] = firstCall(db);
+        expect(sql).toContain('(id, protocolo)');
+        expect(sql).not.toContain('coluna_inexistente');
+        expect(params).toEqual(['manifestacao-2', 'OUV-2026-002']);
     });
 });
 
@@ -292,6 +308,36 @@ describe('HandlerRegistry demanda.aceita', () => {
     });
 });
 
+// ── usuario.criado ─────────────────────────────────────────────────────────
+
+describe('HandlerRegistry usuario.criado', () => {
+    it('inserts user with required hash_senha and canonical setor_principal_id', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler('usuario.criado')(makeEnvelope('usuario.criado', 'user-new', {
+            nome: 'Usuario Novo',
+            nome_usuario: 'novo',
+            perfil: 'operador',
+            setor: 'setor-1',
+        }));
+
+        const [sql, params] = firstCall(db);
+        expect(sql).toContain('hash_senha');
+        expect(sql).toContain('setor_principal_id');
+        expect(params).toEqual([
+            'user-new',
+            'Usuario Novo',
+            'novo',
+            '',
+            'operador',
+            1,
+            'setor-1',
+            BASE_TIME,
+            BASE_TIME,
+        ]);
+    });
+});
+
 // ── usuario.atualizado ─────────────────────────────────────────────────────
 
 describe('HandlerRegistry usuario.atualizado', () => {
@@ -329,6 +375,19 @@ describe('HandlerRegistry usuario.atualizado', () => {
         expect(sql).toContain('ativo = ?');
         expect(params[0]).toBe('gerente');
         expect(params[1]).toBe(1);
+    });
+
+    it('updates setor into setor_principal_id', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler('usuario.atualizado')(makeEnvelope('usuario.atualizado', 'user-4', {
+            setor: 'setor-2',
+        }));
+
+        const [sql, params] = firstCall(db);
+        expect(sql).toContain('setor_principal_id = ?');
+        expect(sql).not.toContain('setor = ?');
+        expect(params).toEqual(['setor-2', BASE_TIME, 'user-4']);
     });
 });
 

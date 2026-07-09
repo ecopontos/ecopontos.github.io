@@ -88,6 +88,25 @@ describe('TransportService', () => {
         expect(queue[1].seq).toBe(2);
     });
 
+    it('publish() encadeia eventos pendentes com prev_event_id antes do push', async () => {
+        await transport.publish({ type: 'task.criada', data: { id: 't1' } });
+        await transport.publish({ type: 'task.concluida', data: { tarefa_id: 't1' } });
+
+        const queue = sqlite.getTable('fila_eventos_sync');
+        const first = JSON.parse(queue[0].payload as string) as EventEnvelope;
+        const second = JSON.parse(queue[1].payload as string) as EventEnvelope;
+        expect(first.prev_event_id).toBeNull();
+        expect(second.prev_event_id).toBe(first.id);
+    });
+
+    it('publish() rejeita envelope sem data estruturado', async () => {
+        await expect(
+            transport.publish({ type: 'task.criada', data: null }),
+        ).rejects.toThrow('Invalid EventEnvelope');
+
+        expect(sqlite.getTable('fila_eventos_sync')).toHaveLength(0);
+    });
+
     it('pushPending() envia o evento ao sync_event_index com o seq atribuído pelo servidor', async () => {
         await transport.publish({ type: 'task.criada', data: { id: 't1' } });
         const queue = sqlite.getTable('fila_eventos_sync');
@@ -445,6 +464,57 @@ describe('Correções de gaps', () => {
         expect(called).toBe(false);
     });
 
+
+    it('pull() rejeita payload de domínio malformado antes de chamar handler', async () => {
+        const crypto = await makeCrypto();
+        const { sqlite, index } = makeInfra();
+        const remoteRoutingId = 'setor-campo';
+
+        const envelope = makeEnvelope('task.criada', { titulo: 'Sem id' }, 1, remoteRoutingId);
+        await seedEvent(index, crypto, remoteRoutingId, envelope);
+
+        const inbound = new InboundService(crypto, sqlite, index, ROUTING_ID);
+        let called = false;
+        inbound.on('task.criada', async () => { called = true; });
+
+        const result = await inbound.pull([remoteRoutingId]);
+        expect(result.processed).toBe(0);
+        expect(result.errors.some(e => e.includes('Invalid EventPayload for task.criada'))).toBe(true);
+        expect(called).toBe(false);
+        expect(await getLocalSeq(sqlite, remoteRoutingId)).toBe(0);
+    });
+
+    it('pull() rejeita envelope malformado antes de chamar handler', async () => {
+        const crypto = await makeCrypto();
+        const { sqlite, index } = makeInfra();
+        const remoteRoutingId = 'setor-campo';
+        const payload_enc = await crypto.encryptJson({ id: 'evt-malformado', data: { id: 't1' } });
+
+        index._seed({
+            id: 'evt-malformado',
+            routing_id: remoteRoutingId,
+            routing_type: 'setor',
+            seq: 1,
+            event_type: 'task.criada',
+            aggregate_type: 'task',
+            aggregate_id: 't1',
+            device_id: 'mobile-1',
+            checksum: '',
+            prev_event_id: null,
+            payload_enc,
+            created_at: new Date().toISOString(),
+        });
+
+        const inbound = new InboundService(crypto, sqlite, index, ROUTING_ID);
+        let called = false;
+        inbound.on('task.criada', async () => { called = true; });
+
+        const result = await inbound.pull([remoteRoutingId]);
+        expect(result.processed).toBe(0);
+        expect(result.errors.some(e => e.includes('Invalid EventEnvelope'))).toBe(true);
+        expect(called).toBe(false);
+    });
+
     it('pull() registra gap em log_gaps_sync ao detectar sequência faltante', async () => {
         const crypto = await makeCrypto();
         const { sqlite, index } = makeInfra();
@@ -505,6 +575,9 @@ async function seedEvent(
     routingId: string,
     envelope: EventEnvelope,
 ): Promise<void> {
+    if (!envelope.checksum) {
+        envelope.checksum = await buildChecksum(envelope.data);
+    }
     const payload_enc = await crypto.encryptJson(envelope);
     index._seed({
         id: envelope.id,
