@@ -50,6 +50,7 @@ function getFieldColSpan(field: FormField, globalColumns: number = 1): string {
         'gallery',
         'file',
         'files',
+        'composite_gallery_collector',
 
         // Campos complexos
         'section_header',     // Títulos de seção
