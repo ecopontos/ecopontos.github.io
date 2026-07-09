@@ -119,6 +119,7 @@ describe('DataService — Fase 1: JSON seguro e idempotência', () => {
         // Mock do IndexedDB
         const fakeDb = new FakeIDBDatabase({});
         ds.db = fakeDb;
+        delete window.syncAdapter;
     });
 
     describe('generateUUIDv7', () => {
@@ -150,60 +151,21 @@ describe('DataService — Fase 1: JSON seguro e idempotência', () => {
         });
     });
 
-    describe('syncSingleRecord — idempotência', () => {
-        it('ignora sync se idempotência indica já sincronizado', async () => {
-            const recordUUID = '550e8400-e29b-41d4-a716-446655440000';
-            const recordId = 42;
-
-            // Simular que o registro já foi sincronizado com sucesso
-            ds.db = new FakeIDBDatabase({
-                [recordId]: { id: recordId, uuid: recordUUID, data: { test: 1 }, syncStatus: 'pending' },
-                'idemp_1': { recordUUID: recordUUID, success: true }
-            });
-
-            // Ajustar o mock do index para retornar o registro de idempotência
-            const origTransaction = ds.db.transaction.bind(ds.db);
-            ds.db.transaction = (names, mode) => {
-                const store = new FakeIDBObjectStore({
-                    [recordId]: { id: recordId, uuid: recordUUID, data: { test: 1 }, syncStatus: 'pending' },
-                    'idemp_1': { id: 'idemp_1', recordUUID: recordUUID, success: true }
-                });
-                const tx = new FakeIDBTransaction(store);
-                // Override do objectStore para que index() funcione no store correto
-                tx.objectStore = (n) => store;
-                setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 0);
-                return tx;
-            };
-
-            const result = await ds.syncSingleRecord(recordId, 0, false);
-            expect(result.skipped).toBe(true);
-            expect(result.reason).toBe('already_synced');
+    describe('syncSingleRecord — pipeline de eventos', () => {
+        it('retorna erro controlado quando SyncAdapter não está disponível', async () => {
+            const result = await ds.syncSingleRecord(42, 0, false);
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('SyncAdapter não disponível');
         });
 
-        it('gera UUID se registro não tiver um antes do sync', async () => {
-            const recordId = 99;
-            ds.db = new FakeIDBDatabase({
-                [recordId]: { id: recordId, data: { test: 1 }, syncStatus: 'pending' }
-            });
-
-            ds.db.transaction = (names, mode) => {
-                const store = new FakeIDBObjectStore({
-                    [recordId]: { id: recordId, data: { test: 1 }, syncStatus: 'pending' }
-                });
-                const tx = new FakeIDBTransaction(store);
-                tx.objectStore = (n) => store;
-                setTimeout(() => { if (tx.oncomplete) tx.oncomplete(); }, 0);
-                return tx;
+        it('retorna sucesso quando SyncAdapter está iniciado', async () => {
+            window.syncAdapter = {
+                isStarted: vi.fn(() => true),
             };
 
-            // Vamos apenas garantir que a função não quebre e que o registro receba UUID
-            // Como o mock de Supabase está configurado e idempotência falhará (não há registro),
-            // ele vai tentar sync. Vamos mockar o uploadFilesInRecord para evitar erros.
-            ds.uploadFilesInRecord = vi.fn((r) => Promise.resolve(r));
-            ds._syncViaDirectWrite = vi.fn(() => Promise.resolve());
-
-            const result = await ds.syncSingleRecord(recordId, 0, false);
-            expect(result.success).toBe(true);
+            const result = await ds.syncSingleRecord(99, 0, false);
+            expect(window.syncAdapter.isStarted).toHaveBeenCalled();
+            expect(result).toEqual({ success: true, method: 'event_pipeline' });
         });
     });
 });
@@ -225,6 +187,7 @@ describe('DataService — Fase 2: Controle de Concorrência', () => {
             }
         };
         ds.db = new FakeIDBDatabase({});
+        delete window.syncAdapter;
     });
 
     describe('SyncLock', () => {
@@ -282,31 +245,17 @@ describe('DataService — Fase 2: Controle de Concorrência', () => {
     });
 
     describe('syncPendingData — serialização', () => {
-        it('processa batch sequencialmente (não paralelo)', async () => {
-            const callOrder = [];
-            const records = [
-                { id: 1, uuid: 'a', syncStatus: 'pending' },
-                { id: 2, uuid: 'b', syncStatus: 'pending' },
-                { id: 3, uuid: 'c', syncStatus: 'pending' }
-            ];
+        it('delega sync para SyncAdapter quando iniciado', async () => {
+            window.syncAdapter = {
+                isStarted: vi.fn(() => true),
+                syncNow: vi.fn(() => Promise.resolve({ pushed: 3, errors: ['e1'] })),
+            };
 
-            ds.db = new FakeIDBDatabase({
-                1: records[0],
-                2: records[1],
-                3: records[2]
-            });
+            const result = await ds.syncPendingData();
 
-            ds.getPendingSync = vi.fn(() => Promise.resolve(records));
-            ds.syncSingleRecord = vi.fn(async (id) => {
-                callOrder.push(id);
-                await new Promise(r => setTimeout(r, 10)); // simular latência
-            });
-
-            await ds.syncPendingData();
-
-            // Se fosse paralelo, a ordem poderia variar; sequencial garante ordem
-            expect(callOrder).toEqual([1, 2, 3]);
-            expect(ds.syncSingleRecord).toHaveBeenCalledTimes(3);
+            expect(window.syncAdapter.isStarted).toHaveBeenCalled();
+            expect(window.syncAdapter.syncNow).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ success: true, synced: 3, errors: 1 });
         });
 
         it('adquire e libera lock ao redor do sync', async () => {

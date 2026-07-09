@@ -174,19 +174,20 @@ describe('DataService._quickHash', () => {
 describe('DataService.updateSyncStatus', () => {
     let ds;
     let recordId;
+    let storeData;
 
-    beforeEach(async () => {
+    beforeEach(() => {
+        recordId = 'rec-1';
+        storeData = {
+            [recordId]: makeRecord({ id: recordId, syncStatus: 'pending' }),
+        };
         ds = new DataService();
-        await ds.init();
-        recordId = await ds.store.save(makeRecord({ id: undefined, syncStatus: 'pending' }));
+        ds.db = makeFakeDb(storeData);
     });
-
-    afterEach(() => { ds.store.db.close(); });
 
     it('atualiza syncStatus do registro', async () => {
         await ds.updateSyncStatus(recordId, 'synced');
-        const stored = await ds.store.getById(recordId);
-        expect(stored.syncStatus).toBe('synced');
+        expect(storeData[recordId].syncStatus).toBe('synced');
     });
 });
 
@@ -195,15 +196,14 @@ describe('DataService.updateSyncStatus', () => {
 describe('DataService.getPendingSync', () => {
     let ds;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         ds = new DataService();
-        await ds.init();
-        await ds.store.save(makeRecord({ id: undefined, syncStatus: 'pending' }));
-        await ds.store.save(makeRecord({ id: undefined, syncStatus: 'synced' }));
-        await ds.store.save(makeRecord({ id: undefined, syncStatus: 'pending' }));
+        ds.db = makeFakeDb({
+            'rec-1': makeRecord({ id: 'rec-1', syncStatus: 'pending' }),
+            'rec-2': makeRecord({ id: 'rec-2', syncStatus: 'synced' }),
+            'rec-3': makeRecord({ id: 'rec-3', syncStatus: 'pending' }),
+        });
     });
-
-    afterEach(() => { ds.store.db.close(); });
 
     it('retorna apenas registros com syncStatus pending', async () => {
         const pending = await ds.getPendingSync();
