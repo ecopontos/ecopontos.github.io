@@ -44,6 +44,7 @@ export default class GalleryInconformidadeField extends BaseField {
     this.filaFotos = [];
     this.inconformidadesSelecionadas = [];
     this.observacaoAtual = '';
+    this.editandoId = null;
 
     if (!window.fieldInstances) window.fieldInstances = {};
     window.fieldInstances[this.config.id] = this;
@@ -75,6 +76,7 @@ export default class GalleryInconformidadeField extends BaseField {
     this.filaFotos = [];
     this.inconformidadesSelecionadas = [];
     this.observacaoAtual = '';
+    this.editandoId = null;
     this.updateDOM();
   }
 
@@ -83,6 +85,7 @@ export default class GalleryInconformidadeField extends BaseField {
     this.filaFotos = [];
     this.inconformidadesSelecionadas = [];
     this.observacaoAtual = '';
+    this.editandoId = null;
     this.updateDOM();
   }
 
@@ -168,7 +171,10 @@ export default class GalleryInconformidadeField extends BaseField {
       }
       return false;
     }
-    if (this.value.length + this.filaFotos.length > this.maxFiles) {
+    const currentCount = this.editandoId
+      ? this.value.length - 1
+      : this.value.length;
+    if (currentCount + this.filaFotos.length > this.maxFiles) {
       if (typeof window !== 'undefined' && typeof window.alert === 'function') {
         window.alert(`Limite de ${this.maxFiles} fotos atingido para este campo.`);
       }
@@ -178,6 +184,10 @@ export default class GalleryInconformidadeField extends BaseField {
     const criadoEm = new Date().toISOString();
     const inconformidades = [...this.inconformidadesSelecionadas];
     const observacao = this.observacaoAtual;
+
+    if (this.editandoId) {
+      this.value = this.value.filter((e) => e.id_foto !== this.editandoId);
+    }
 
     this.filaFotos.forEach((foto) => {
       this.value.push({
@@ -198,8 +208,8 @@ export default class GalleryInconformidadeField extends BaseField {
     const index = this.value.findIndex((e) => e.id_foto === idFoto);
     if (index === -1) return;
     const entry = this.value[index];
-    this.value.splice(index, 1);
 
+    this.editandoId = idFoto;
     this.modalAberta = true;
     this.filaFotos = [{ localId: uuidv7(), imagemBase64: entry.imagem }];
     this.inconformidadesSelecionadas = [...(entry.inconformidades || [])];

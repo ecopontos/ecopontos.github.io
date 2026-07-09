@@ -123,4 +123,42 @@ describe('GalleryInconformidadeField', () => {
             { id: 'INC-003', label: 'Sem flag ativo' },
         ]);
     });
+
+    it('editarEvidencia seguido de fecharModal (cancelar) preserva a entrada original', () => {
+        const field = makeField();
+        field._adicionarFotoAFila(makeBase64(100));
+        field.toggleInconformidade('INC-001');
+        field.setObservacao('Observação original');
+        field.salvarEvidencias();
+
+        const original = field.getValue()[0];
+
+        field.editarEvidencia(original.id_foto);
+        field.fecharModal();
+
+        expect(field.getValue()).toHaveLength(1);
+        expect(field.getValue()[0]).toEqual(original);
+    });
+
+    it('editarEvidencia seguido de salvarEvidencias substitui a entrada original (sem duplicar)', () => {
+        const field = makeField();
+        field._adicionarFotoAFila(makeBase64(100));
+        field.toggleInconformidade('INC-001');
+        field.setObservacao('Observação original');
+        field.salvarEvidencias();
+
+        const original = field.getValue()[0];
+
+        field.editarEvidencia(original.id_foto);
+        field.toggleInconformidade('INC-002');
+        field.setObservacao('Observação editada');
+        const ok = field.salvarEvidencias();
+
+        expect(ok).toBe(true);
+        expect(field.getValue()).toHaveLength(1);
+        const updated = field.getValue()[0];
+        expect(updated.id_foto).not.toBe(original.id_foto);
+        expect(updated.inconformidades).toEqual(['INC-001', 'INC-002']);
+        expect(updated.observacao).toBe('Observação editada');
+    });
 });
