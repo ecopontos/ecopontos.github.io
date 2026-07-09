@@ -49,6 +49,19 @@ function extractCaixasData(conteudo: unknown): CaixasData | null {
     return null;
 }
 
+
+const MANIFESTACAO_SYNC_COLUMNS = new Set([
+    "id", "protocolo", "tipo_id", "origem_id", "classificacao_id", "situacao_id",
+    "cliente_id", "obs_solicitante", "solicitante_nome", "solicitante_email",
+    "solicitante_telefone", "assunto", "descricao", "prioridade", "status",
+    "responsavel_id", "setor_id", "anonimo", "sigiloso", "prazo_limite",
+    "cancelamento_motivo", "atribuido_em", "aceite_em", "avaliacao_satisfacao",
+    "avaliacao_comentario", "avaliacao_em", "manifestacao_origem_id", "competencia",
+    "motivo_incompetencia", "orgao_destino", "data_competencia", "subassunto_id",
+    "subunidade_id", "programa_orcamentario_id", "criado_em", "atualizado_em",
+    "encerrado_em",
+]);
+
 async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Promise<void> {
     if (!_createTaskRemocao) return;
 
@@ -305,39 +318,47 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
-    inbound.on('usuario.criado', async (env: EventEnvelope) => {
+    inbound.on("usuario.criado", async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         await db.execute(
             `INSERT OR IGNORE INTO usuarios
-             (id, nome, nome_usuario, perfil, ativo, setor_principal_id, criado_em, atualizado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, nome, nome_usuario, hash_senha, perfil, ativo, setor_principal_id, criado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 env.aggregate.id,
-                d.nome ?? '',
-                d.username ?? '',
-                d.perfil ?? 'operador',
+                d.nome ?? "",
+                d.nome_usuario ?? d.username ?? env.aggregate.id,
+                d.hash_senha ?? "",
+                d.perfil ?? "operador",
                 d.ativo !== false ? 1 : 0,
-                d.setor ?? null,
+                d.setor_principal_id ?? d.setor ?? null,
                 env.time,
                 env.time,
             ],
         );
     });
 
-    inbound.on('usuario.atualizado', async (env: EventEnvelope) => {
+    inbound.on("usuario.atualizado", async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         const fields: string[] = [];
         const values: unknown[] = [];
-        if (d.nome !== undefined) { fields.push('nome = ?'); values.push(d.nome); }
-        if (d.perfil !== undefined) { fields.push('perfil = ?'); values.push(d.perfil); }
-        if (d.ativo !== undefined) { fields.push('ativo = ?'); values.push(d.ativo ? 1 : 0); }
-        if (d.setor !== undefined) { fields.push('setor = ?'); values.push(d.setor); }
+        if (d.nome !== undefined) { fields.push("nome = ?"); values.push(d.nome); }
+        if (d.nome_usuario !== undefined || d.username !== undefined) {
+            fields.push("nome_usuario = ?");
+            values.push(d.nome_usuario ?? d.username);
+        }
+        if (d.perfil !== undefined) { fields.push("perfil = ?"); values.push(d.perfil); }
+        if (d.ativo !== undefined) { fields.push("ativo = ?"); values.push(d.ativo ? 1 : 0); }
+        if (d.setor_principal_id !== undefined || d.setor !== undefined) {
+            fields.push("setor_principal_id = ?");
+            values.push(d.setor_principal_id ?? d.setor);
+        }
         if (fields.length === 0) return;
-        fields.push('atualizado_em = ?');
+        fields.push("atualizado_em = ?");
         values.push(env.time);
         values.push(env.aggregate.id);
         await db.execute(
-            `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`,
+            `UPDATE usuarios SET ${fields.join(", ")} WHERE id = ?`,
             values,
         );
     });
@@ -380,15 +401,18 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
     });
 
     // â”€â”€ Ouvidoria â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    inbound.on('manifestacao.criada', async (env: EventEnvelope) => {
+    inbound.on("manifestacao.criada", async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
-        const id = d.id ?? env.aggregate.id;
-        if (!id) return;
-        const cols = Object.keys(d).join(', ');
-        const placeholders = Object.keys(d).map(() => '?').join(', ');
+        const row: Record<string, unknown> = { id: env.aggregate.id, ...d };
+        row.id = env.aggregate.id;
+        const entries = Object.entries(row).filter(([key]) => MANIFESTACAO_SYNC_COLUMNS.has(key));
+        if (entries.length === 0) return;
+
+        const cols = entries.map(([key]) => key).join(", ");
+        const placeholders = entries.map(() => "?").join(", ");
         await db.execute(
             `INSERT OR IGNORE INTO manifestacoes (${cols}) VALUES (${placeholders})`,
-            Object.values(d),
+            entries.map(([, value]) => value),
         );
     });
 

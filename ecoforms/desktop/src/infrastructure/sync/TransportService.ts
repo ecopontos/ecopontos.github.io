@@ -2,7 +2,7 @@
 // Alterações aqui devem ser refletidas lá.
 import type { CryptoLayer } from './CryptoLayer';
 import type { SqlitePort } from '../../application/ports/SqlitePort';
-import { createEnvelope, buildChecksum, type EcoFormsEventType } from './EventEnvelope';
+import { assertValidEventEnvelope, createEnvelope, buildChecksum, type EcoFormsEventType } from './EventEnvelope';
 import { pushEventToIndex, TRANSPORT_BATCH_SIZE, TRANSPORT_MAX_RETRIES, type SyncEventIndexPort } from 'ecoforms-core';
 
 export interface PushResult {
@@ -39,7 +39,7 @@ export class TransportService {
     // Enfileira um evento para envio. Chamado diretamente pelos use cases com dados completos.
     async publish(params: PublishParams): Promise<void> {
         const nextSeq = await this._nextOutboundSeq();
-        const prevEventId = await this._lastSentEventId();
+        const prevEventId = await this._lastOutboundEventId();
 
         const envelope = createEnvelope(
             {
@@ -58,6 +58,7 @@ export class TransportService {
         );
 
         envelope.checksum = await buildChecksum(envelope.data);
+        assertValidEventEnvelope(envelope);
 
         await this.db.execute(
             `INSERT INTO fila_eventos_sync
@@ -164,10 +165,9 @@ export class TransportService {
         return rows[0]?.seq ?? 1;
     }
 
-    private async _lastSentEventId(): Promise<string | null> {
+    private async _lastOutboundEventId(): Promise<string | null> {
         const rows = await this.db.query<{ id: string }>(
             `SELECT id FROM fila_eventos_sync
-             WHERE situacao = 'sent'
              ORDER BY sequencia DESC
              LIMIT 1`,
         );

@@ -1,4 +1,5 @@
 import type { SqlitePort } from '../../application/ports/SqlitePort';
+import { parsePersistedJsonRecord } from '../json/jsonPersistence';
 
 export class GetFormDefinitionUseCase {
     constructor(private readonly db: SqlitePort) {}
@@ -9,10 +10,6 @@ export class GetFormDefinitionUseCase {
             [formId],
         );
         if (!rows[0]) return null;
-        try {
-            return JSON.parse(rows[0].conteudo);
-        } catch {
-            return null;
-        }
+        return parsePersistedJsonRecord(rows[0].conteudo);
     }
 }

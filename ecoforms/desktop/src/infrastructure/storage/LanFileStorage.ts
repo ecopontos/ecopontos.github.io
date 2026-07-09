@@ -1,4 +1,5 @@
 import type { SqlitePort } from '../../application/ports/SqlitePort';
+import { validateExpectedUsersSeed, validateLanIndex, validateUserSummary } from './LanJsonCodecs';
 
 export interface LanIndexEntry {
     v: number;
@@ -108,7 +109,8 @@ export class LanFileStorage {
 
     /** Lê o index.json de um domínio. Retorna null se LAN não configurada ou ausente. */
     async readIndex(domain: string): Promise<LanIndex | null> {
-        return this.readJson<LanIndex>(`${domain}/index.json`);
+        const index = await this.readJson<unknown>(`${domain}/index.json`);
+        return validateLanIndex(index) ? index : null;
     }
 
     /**
@@ -125,7 +127,7 @@ export class LanFileStorage {
         const root = await this.getLanPath();
         if (!root) return;
 
-        const current: LanIndex = (await this.readJson<LanIndex>(`${domain}/index.json`))
+        const current: LanIndex = (await this.readIndex(domain))
             ?? { last_entity_uuid: '', entities: {} };
 
         const existing = current.entities[entityId];
@@ -157,7 +159,8 @@ export class LanFileStorage {
      * Retorna null se não existe ou inválido.
      */
     async readExpectedUsersSeed(): Promise<ExpectedUsersSeed | null> {
-        return this.readJson<ExpectedUsersSeed>('shared/expected_users.json');
+        const seed = await this.readJson<unknown>('shared/expected_users.json');
+        return validateExpectedUsersSeed(seed) ? seed : null;
     }
 
     /**
@@ -170,8 +173,8 @@ export class LanFileStorage {
 
         const users: UserSummary[] = [];
         for (const entityId of Object.keys(index.entities)) {
-            const user = await this.readJson<{ nome: string; username: string; perfil: string; setor?: string }>(`usuarios/${entityId}.json`);
-            if (user) {
+            const user = await this.readJson<unknown>(`usuarios/${entityId}.json`);
+            if (validateUserSummary(user)) {
                 users.push({
                     id: entityId,
                     nome: user.nome ?? '',

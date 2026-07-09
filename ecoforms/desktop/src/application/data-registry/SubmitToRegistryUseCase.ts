@@ -3,6 +3,7 @@ import type { ClockPort } from '../ports/ClockPort';
 import type { SqlitePort } from '../ports/SqlitePort';
 import { uuidv7 } from 'ecoforms-core';
 import { getFieldDataSource } from './fieldDataSource';
+import { getPersistedFormFields, type JsonRecord } from '../json/jsonPersistence';
 
 export interface RegistryMapping {
     fieldId: string;
@@ -131,21 +132,12 @@ export class ResolveFormDataSourceTypesUseCase {
         const conteudo = rows[0]?.conteudo;
         if (!conteudo) return [];
 
-        let content: unknown;
-        try {
-            content = JSON.parse(conteudo);
-        } catch {
-            return [];
-        }
-
-        if (!content || typeof content !== 'object' || !Array.isArray((content as Record<string, unknown>).campos)) {
-            return [];
-        }
+        const campos = getPersistedFormFields(conteudo);
+        if (campos.length === 0) return [];
 
         const tipos = new Set<string>();
-        const campos = (content as Record<string, unknown>).campos as Record<string, unknown>[];
 
-        const extractFromFields = (fields: Record<string, unknown>[]) => {
+        const extractFromFields = (fields: JsonRecord[]) => {
             for (const field of fields) {
                 // Bug H: considera tambem o alias legado `source`, alem de `dataSource`.
                 const ds = getFieldDataSource(field);
@@ -154,7 +146,7 @@ export class ResolveFormDataSourceTypesUseCase {
                 }
                 // Recurse into nested fields (groups)
                 if (Array.isArray(field.campos)) {
-                    extractFromFields(field.campos as Record<string, unknown>[]);
+                    extractFromFields(field.campos.filter((nested): nested is JsonRecord => typeof nested === 'object' && nested !== null && !Array.isArray(nested)));
                 }
             }
         };
@@ -179,21 +171,12 @@ export class FindFormsUsingRegistryTypeUseCase {
         const result: Array<{ form_id: string; titulo: string }> = [];
 
         for (const row of rows) {
-            let content: unknown;
-            try {
-                content = JSON.parse(row.conteudo);
-            } catch {
-                continue;
-            }
+            const campos = getPersistedFormFields(row.conteudo);
+            if (campos.length === 0) continue;
 
-            if (!content || typeof content !== 'object' || !Array.isArray((content as Record<string, unknown>).campos)) {
-                continue;
-            }
-
-            const campos = (content as Record<string, unknown>).campos as Record<string, unknown>[];
             let usesTipo = false;
 
-            const checkFields = (fields: Record<string, unknown>[]) => {
+            const checkFields = (fields: JsonRecord[]) => {
                 for (const field of fields) {
                     // Bug H: considera tambem o alias legado `source`, alem de `dataSource`.
                     const ds = getFieldDataSource(field);

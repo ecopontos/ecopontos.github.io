@@ -1,4 +1,4 @@
-import { uuidv7 } from 'ecoforms-core';
+import { stableStringify, uuidv7 } from 'ecoforms-core';
 import type { LanFileStorage, LanIndex, UserSummary } from '../storage/LanFileStorage';
 
 /**
@@ -51,7 +51,7 @@ export class LanDomainSyncService {
     }
 
     private async hashJson(data: unknown): Promise<string> {
-        const json = JSON.stringify(data);
+        const json = stableStringify(data);
         const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(json));
         return Array.from(new Uint8Array(buf))
             .map(b => b.toString(16).padStart(2, '0'))

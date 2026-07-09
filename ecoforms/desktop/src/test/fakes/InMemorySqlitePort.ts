@@ -37,6 +37,13 @@ export class InMemorySqlitePort implements SqlitePort {
             return rows.slice(0, 1).map(r => ({ id: r.id })) as T[];
         }
 
+        // SELECT id FROM fila_eventos_sync ORDER BY sequencia DESC LIMIT 1
+        if (/SELECT id FROM fila_eventos_sync/i.test(s) && !/WHERE/i.test(s)) {
+            const rows = this.ensure('fila_eventos_sync')
+                .sort((a, b) => ((b.seq as number) ?? 0) - ((a.seq as number) ?? 0));
+            return rows.slice(0, 1).map(r => ({ id: r.id })) as T[];
+        }
+
         // SELECT id, sequencia AS seq, carga AS payload FROM fila_eventos_sync WHERE situacao = 'pending'
         if (/FROM fila_eventos_sync.*situacao = 'pending'/i.test(s)) {
             const limit = typeof params[0] === 'number' ? (params[0] as number) : 50;
