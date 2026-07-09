@@ -22,6 +22,7 @@ import {
     type QueuedPhoto,
     makeLocalId,
     buildEntriesFromQueue,
+    applyQueueSave,
 } from "@/src/lib/gallery-inconformidade";
 
 interface GalleryInconformidadeRendererProps {
@@ -47,6 +48,7 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
     const [queue, setQueue] = useState<QueuedPhoto[]>([]);
     const [selectedInconformidades, setSelectedInconformidades] = useState<string[]>([]);
     const [observacao, setObservacao] = useState("");
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     const { data: fetchedData } = useDataRegistryAggregated(getRegistrySource(field));
 
@@ -59,6 +61,7 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
         setQueue([]);
         setSelectedInconformidades([]);
         setObservacao("");
+        setEditingId(null);
         setModalOpen(true);
     };
 
@@ -67,6 +70,7 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
         setQueue([]);
         setSelectedInconformidades([]);
         setObservacao("");
+        setEditingId(null);
     };
 
     const addFileToQueue = (file: File) => {
@@ -102,19 +106,20 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
             alert("Adicione ao menos uma foto antes de salvar.");
             return;
         }
-        if (value.length + queue.length > maxFiles) {
+        const currentCount = editingId ? value.length - 1 : value.length;
+        if (currentCount + queue.length > maxFiles) {
             alert(`Limite de ${maxFiles} fotos atingido para este campo.`);
             return;
         }
         const entries = buildEntriesFromQueue(queue, selectedInconformidades, observacao);
-        onChange([...value, ...entries]);
+        onChange(applyQueueSave(value, editingId, entries));
         closeModal();
     };
 
     const editEntry = (idFoto: string) => {
         const entry = value.find((e) => e.id_foto === idFoto);
         if (!entry) return;
-        onChange(value.filter((e) => e.id_foto !== idFoto));
+        setEditingId(idFoto);
         setQueue([{ localId: makeLocalId(), imagemBase64: entry.imagem }]);
         setSelectedInconformidades([...entry.inconformidades]);
         setObservacao(entry.observacao || "");

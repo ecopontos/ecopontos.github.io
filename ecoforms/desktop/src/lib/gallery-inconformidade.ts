@@ -32,3 +32,14 @@ export function buildEntriesFromQueue(
         observacao,
     }));
 }
+
+export function applyQueueSave(
+    existing: GalleryInconformidadeEntry[],
+    editingId: string | null,
+    newEntries: GalleryInconformidadeEntry[],
+): GalleryInconformidadeEntry[] {
+    const base = editingId
+        ? existing.filter((e) => e.id_foto !== editingId)
+        : existing;
+    return [...base, ...newEntries];
+}
