@@ -25,6 +25,7 @@ import RepeatableGroupField from './types/RepeatableGroupField.js';
 import OccupationField from './types/OccupationField.js';
 import VistoriaChecklistField from './types/VistoriaChecklistField.js';
 import HiddenField from './types/HiddenField.js';
+import GalleryInconformidadeField from './types/GalleryInconformidadeField.js';
 import CheckboxField from './types/CheckboxField.v2.js';
 
 const FIELD_TYPE_MAP = {
@@ -95,6 +96,9 @@ const FIELD_TYPE_MAP = {
   'vistoria-checklist': VistoriaChecklistField,
   'unified_checklist': ChecklistField,
   'unified-checklist': ChecklistField,
+
+  composite_gallery_collector: GalleryInconformidadeField,
+  galeria_inconformidades: GalleryInconformidadeField, // alias
 
   // 'occupation-selector-compact': OccupationSelectorCompactField, // REMOVED - Campo não funcional
   // 'occupation_selector_compact': OccupationSelectorCompactField, // REMOVED - Campo não funcional
