@@ -25,7 +25,7 @@ export class EventBus {
 
   async publish(type, data, opts = {}) {
     const seq         = await this._nextSeq();
-    const prevEventId = await this._lastSentEventId();
+    const prevEventId = await this._lastQueuedEventId();
     const checksum    = await buildChecksum(data);
 
     const envelope = createEnvelope(
@@ -116,12 +116,12 @@ export class EventBus {
   }
 
   async markAsSent(eventId) {
+    const seq = await this._queuedEventSeq(eventId);
     await syncRepo.markSent(eventId);
-    const seq = await this._nextSeq();
     await sqliteAdapter.execute(
       `INSERT OR IGNORE INTO sync_device_log (id, device_id, seq, event_id, acked, pushed_at)
        VALUES (?, ?, ?, ?, 0, datetime('now'))`,
-      [uuidv7(), this.routingId, seq, eventId],
+      [uuidv7(), this.routingId, seq ?? await this._nextSeq(), eventId],
     );
   }
 
@@ -157,19 +157,39 @@ export class EventBus {
 
   async _nextSeq() {
     const rows = await sqliteAdapter.query(
-      `SELECT MAX(seq) AS last_seq FROM sync_device_log WHERE device_id = ?`,
+      `SELECT COALESCE(MAX(seq), 0) AS last_seq FROM (
+         SELECT seq FROM sync_device_log WHERE device_id = ?
+         UNION ALL
+         SELECT CAST(json_extract(carga, '$.seq') AS INTEGER) AS seq
+         FROM fila_eventos_sync
+       )`,
       [this.routingId],
     );
     return ((rows[0]?.last_seq) ?? 0) + 1;
   }
 
-  async _lastSentEventId() {
+  async _lastQueuedEventId() {
     const rows = await sqliteAdapter.query(
-      `SELECT event_id FROM sync_device_log WHERE device_id = ?
-       ORDER BY seq DESC LIMIT 1`,
-      [this.routingId],
+      `SELECT id FROM fila_eventos_sync
+       ORDER BY CAST(json_extract(carga, '$.seq') AS INTEGER) DESC, criado_em DESC, id DESC
+       LIMIT 1`,
+      [],
     );
-    return rows[0]?.event_id ?? null;
+    return rows[0]?.id ?? null;
+  }
+
+  async _queuedEventSeq(eventId) {
+    const rows = await sqliteAdapter.query(
+      `SELECT carga FROM fila_eventos_sync WHERE id = ? LIMIT 1`,
+      [eventId],
+    );
+    if (!rows[0]?.carga) return null;
+    try {
+      const envelope = JSON.parse(rows[0].carga);
+      return Number.isInteger(envelope.seq) ? envelope.seq : null;
+    } catch {
+      return null;
+    }
   }
 
   async _isProcessed(eventId) {

@@ -54,14 +54,16 @@ export default defineConfig({
       '@core': path.resolve(__dirname, './www/js/core'),
       '@fields': path.resolve(__dirname, './www/js/fields'),
       '@js': path.resolve(__dirname, './www/js'),
+      '@/src': path.resolve(__dirname, '../desktop/src'),
+      '@/types': path.resolve(__dirname, '../desktop/types'),
       '@': path.resolve(__dirname, './www'),
       '@desktop': path.resolve(__dirname, '../desktop'),
       // ADR-014 Fase A: /js/ecoforms-core.js (browser path) → core source (vitest)
       '/js/ecoforms-core.js': path.resolve(__dirname, '../packages/core/src/index.ts'),
-      'ecoforms-core': path.resolve(__dirname, '../packages/core/src/index.ts'),
       'ecoforms-core/sync': path.resolve(__dirname, '../packages/core/src/sync/index.ts'),
       'ecoforms-core/permissions': path.resolve(__dirname, '../packages/core/src/permissions/index.ts'),
-      'ecoforms-core/utils': path.resolve(__dirname, '../packages/core/src/utils/index.ts')
+      'ecoforms-core/utils': path.resolve(__dirname, '../packages/core/src/utils/index.ts'),
+      'ecoforms-core': path.resolve(__dirname, '../packages/core/src/index.ts')
     }
   }
 });
