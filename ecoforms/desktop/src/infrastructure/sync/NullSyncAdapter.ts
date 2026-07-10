@@ -31,4 +31,8 @@ export class NullSyncAdapter implements SyncPort {
     async processOfflineQueue(): Promise<{ processed: number; failed: number }> {
         return { processed: 0, failed: 0 };
     }
+
+    async ensureReady(): Promise<void> {}
+
+    setKnownRoutingIds(_ids: string[]): void {}
 }

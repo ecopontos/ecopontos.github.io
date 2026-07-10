@@ -8,7 +8,10 @@ export class SyncOutbox implements ISyncOutbox {
         options?: { aggregateId?: string; streamId?: string },
     ): Promise<void> {
         const transport = getTransport();
-        if (!transport) return;
+        if (!transport) {
+            console.warn('[SyncOutbox] transport not ready — event dropped', type);
+            return;
+        }
         await transport.publish({
             type,
             data,

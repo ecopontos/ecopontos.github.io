@@ -278,6 +278,8 @@ export interface Container {
     clock: ClockPort;
     logger: LoggerPort;
     sync: SyncPort;
+    /** True quando as tabelas de sync foram criadas com sucesso. */
+    syncReady: boolean;
     syncTransportService: TransportService | null;
     syncOutbox: SyncOutbox;
     taskRepository: TaskRepository;
@@ -352,6 +354,7 @@ export interface Container {
 let _container: Container | null = null;
 let _columnsEnsured = false;
 let _columnsPromise: Promise<void> | null = null;
+let _columnsReady = false;
 let _dbInitialized = false;
 let _dbInitPromise: Promise<void> | null = null;
 
@@ -408,7 +411,23 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
             await invoke('bootstrap_seed_rbac');
             columnsMigrated = true;
         } catch (e) {
-            console.error('[Container] Column migration FAILED — will retry on next access:', e);
+            // Retry único com backoff. Antes a promise era memoizada mesmo em
+            // falha, impedindo tentativas futuras — resetamos para permitir retry.
+            console.error('[Container] Column migration FAILED — tentando novamente em 500ms:', e);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { ensureColumns } = await import('@/scripts/ensure-columns.ts' as any);
+                await ensureColumns(
+                    (sql: string, params?: unknown[]) => sqlite.query(sql, params, { bootstrap: true }),
+                    (sql: string, params?: unknown[]) => sqlite.execute(sql, params, { bootstrap: true }),
+                );
+                const { invoke } = await import('@tauri-apps/api/core');
+                await invoke('bootstrap_seed_rbac');
+                columnsMigrated = true;
+            } catch (e2) {
+                console.error('[Container] Column migration FAILED after retry — sync indisponível:', e2);
+            }
         }
 
         if (columnsMigrated) {
@@ -436,8 +455,13 @@ async function ensureColumnsIfNeeded(sqlite: SqlitePort, lanFileStorage?: import
             }
 
             _columnsEnsured = true;
+            _columnsReady = true;
         }
-    })();
+    })().catch(e => {
+        // Reset para permitir retry em chamada futura (getContainerAsync).
+        _columnsPromise = null;
+        console.error('[Container] ensureColumnsIfNeeded rejeitou:', e);
+    });
 
     return _columnsPromise;
 }
@@ -624,7 +648,7 @@ function buildContainer(overrides: Partial<Container> = {}, _bootstrap: Containe
     const ecopontoRepository = new SqliteEcopontoRepository(sqlite);
 
     return {
-        sqlite, clock, logger, fileStorage, sync, syncTransportService, syncOutbox,
+        sqlite, clock, logger, fileStorage, sync, get syncReady() { return _columnsReady; }, syncTransportService, syncOutbox,
         taskRepository, suiteRepository, clienteRepository, userRepository,
         dataRegistryRepository, manifestacaoRepository, logisticsRepository,
         projectRepository, taskMetricsRepository, demandaRepository, kanbanRepository,
@@ -684,6 +708,7 @@ export function resetContainer(): void {
     _container = null;
     _columnsEnsured = false;
     _columnsPromise = null;
+    _columnsReady = false;
     _dbInitialized = false;
     _dbInitPromise = null;
 }

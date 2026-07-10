@@ -138,6 +138,13 @@ function validateClientPayload(data: PayloadRecord, errors: string[]): void {
     if (!optionalNumber(data.Inativo)) errors.push('Inativo must be number when present');
 }
 
+function validateAuditPayload(data: PayloadRecord, errors: string[]): void {
+    requireOneString(data, ['action'], 'action', errors);
+    requireOneString(data, ['actor_id'], 'actor_id', errors);
+    requireOneString(data, ['target_table'], 'target_table', errors);
+    assertOptionalString(data, ['actor_perfil', 'target_id'], errors);
+}
+
 export function validateEventPayload(envelope: EventEnvelope): string[] {
     const errors: string[] = [];
     if (!isRecord(envelope.data)) return ['data must be an object'];
@@ -149,6 +156,7 @@ export function validateEventPayload(envelope: EventEnvelope): string[] {
     if (envelope.type.startsWith('suite.')) validateSuitePayload(data, errors);
     if (envelope.type === 'client.criado' || envelope.type === 'client.atualizado') validateClientPayload(data, errors);
     if (envelope.type === 'crm.cliente.criado' || envelope.type === 'crm.cliente.atualizado') validateClientPayload(data, errors);
+    if (envelope.type === 'audit.registro') validateAuditPayload(data, errors);
 
     return errors;
 }

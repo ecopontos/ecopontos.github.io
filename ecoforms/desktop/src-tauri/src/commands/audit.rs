@@ -1,8 +1,7 @@
 use rusqlite::Connection;
-use serde_json::json;
 use crate::uuid_v7::uuid_v7_string;
 
-/// Registra uma entrada de auditoria em log_auditoria e opcionalmente na fila_eventos_sync.
+/// Registra uma entrada de auditoria em log_auditoria (somente local).
 #[allow(clippy::too_many_arguments)]
 pub fn log_audit(
     conn: &Connection,
@@ -35,49 +34,10 @@ pub fn log_audit(
         ],
     ).map_err(|e| format!("Erro ao registrar audit log: {}", e))?;
 
-    // Inserir evento audit.registro na fila_eventos_sync para envio à nuvem
-    let event_id = uuid_v7_string();
-    let envelope = json!({
-        "v": 2,
-        "id": event_id,
-        "type": "audit.registro",
-        "source": {
-            "device_id": "desktop",
-            "routing_id": "default",
-            "routing_type": "setor",
-            "module": "audit",
-            "app_version": env!("CARGO_PKG_VERSION"),
-        },
-        "aggregate": {
-            "type": "audit",
-            "id": audit_id,
-        },
-        "time": now,
-        "schema_version": 1,
-        "seq": 0, // será sobrescrito pelo EventBus ao processar
-        "prev_event_id": null,
-        "correlation_id": null,
-        "causation_id": null,
-        "data": {
-            "action": action,
-            "actor_id": actor_id,
-            "actor_perfil": actor_perfil,
-            "target_table": target_table,
-            "target_id": target_id,
-        },
-        "checksum": "", // o EventBus calcula o checksum ao processar
-    });
-
-    let _ = conn.execute(
-        "INSERT INTO fila_eventos_sync (id, tipo, carga, tipo_agregado, id_agregado, sequencia, situacao, criado_em)
-         VALUES (?1, 'audit.registro', ?2, 'audit', ?3, 0, 'pending', ?4)",
-        [
-            &event_id,
-            &envelope.to_string(),
-            &audit_id,
-            &now,
-        ],
-    );
+    // Auditoria fica apenas local. O enfileiramento em fila_eventos_sync foi
+    // removido: montava um envelope com seq=0/checksum vazio/routing "default"
+    // que chegava inválido ao push (não há EventBus no path desktop).
+    // Para sincronizar auditoria no futuro, emitir via SyncOutbox (bridge TS).
 
     Ok(audit_id)
 }

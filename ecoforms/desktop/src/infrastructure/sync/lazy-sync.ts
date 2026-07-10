@@ -133,6 +133,7 @@ export class LazySyncAdapter implements SyncPort {
         appVersion: string;
         orgId: string;
     } | null = null;
+    private _pendingRoutingIds: string[] | null = null;
 
     constructor(
         private sqlite: SqlitePort,
@@ -165,12 +166,28 @@ export class LazySyncAdapter implements SyncPort {
             this._config.appVersion,
             this._config.orgId
         );
+        // Aplica routing IDs pendentes (setKnownRoutingIds pode ter sido chamado
+        // antes da construção do adapter real — bug latente anterior).
+        if (this._pendingRoutingIds) {
+            this._real.setKnownRoutingIds(this._pendingRoutingIds);
+            this._pendingRoutingIds = null;
+        }
         return this._real;
     }
 
     async syncAll(options?: { forcePush?: boolean }): Promise<SyncResult> {
         const adapter = await this._ensureAdapter();
         return adapter.syncAll(options);
+    }
+
+    /**
+     * Instancia o adapter real (e o TransportService/OrgConfigService associados)
+     * sem disparar um ciclo de sync. Permite que mutações enfileiradas antes do
+     * primeiro syncNow já tenham um transport disponível (evita perda em cold-start).
+     * Pré-requisito: configure() já chamado.
+     */
+    async ensureReady(): Promise<void> {
+        await this._ensureAdapter();
     }
 
     async pushTasks(): Promise<{ sent: number; failed: number; errors: string[] }> {
@@ -212,6 +229,9 @@ export class LazySyncAdapter implements SyncPort {
     setKnownRoutingIds(ids: string[]): void {
         if (this._real) {
             this._real.setKnownRoutingIds(ids);
+        } else {
+            // Guarda para aplicar quando o adapter real for construído.
+            this._pendingRoutingIds = ids;
         }
     }
 }

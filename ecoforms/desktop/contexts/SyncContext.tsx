@@ -68,9 +68,21 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     const isSyncingRef = useRef(false);
     const pendingSyncRef = useRef(false);
     const syncNowRef = useRef<(forcePush?: boolean) => Promise<void>>(() => Promise.resolve());
+    const routingWarnedRef = useRef(false);
 
     const deviceId = getRuntimeDeviceId();
-    const routingId = user?.setores?.[0] ?? 'desktop-default';
+    const routingId = user?.setores?.[0] ?? null;
+
+    // Avisa uma vez por sessão quando routing_id está indefinido.
+    useEffect(() => {
+        if (routingId === null && !routingWarnedRef.current) {
+            routingWarnedRef.current = true;
+            console.warn('[Sync] routing_id indefinido — atribua um setor ao usuário para sincronizar eventos.');
+            toast.warning('Sync indisponível', {
+                description: 'Usuário sem setor atribuído — eventos não serão sincronizados.',
+            });
+        }
+    }, [routingId]);
 
     const syncNow = useCallback(async (forcePush?: boolean) => {
         if (!isOnline) {
@@ -82,6 +94,28 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!sqlite) return;
+
+        const containerNow = getContainer();
+        if (!containerNow.syncReady) {
+            setState(prev => ({
+                ...prev,
+                status: 'error',
+                error: 'Banco de dados não inicializado — reinicie o app.',
+            }));
+            toast.error('Sync indisponível', {
+                description: 'Banco de dados não inicializado — reinicie o app.',
+            });
+            return;
+        }
+
+        if (routingId === null) {
+            setState(prev => ({
+                ...prev,
+                status: 'error',
+                error: 'routing_id indefinido — atribua um setor ao usuário.',
+            }));
+            return;
+        }
 
         if (isSyncingRef.current) {
             pendingSyncRef.current = true;
@@ -99,6 +133,19 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             
             if (syncAdapter instanceof LazySyncAdapter) {
                 syncAdapter.configure(deviceId, routingId, 'setor', '1.0.0', orgId);
+                await syncAdapter.ensureReady();
+            }
+
+            // Popula routing IDs ativos a partir do OrgConfig para habilitar pull/inbound.
+            try {
+                const { getOrgConfigService } = await import('@/src/infrastructure/sync/lazy-sync');
+                const orgConfigService = getOrgConfigService();
+                if (orgConfigService) {
+                    const orgConfig = await orgConfigService.load();
+                    syncAdapter.setKnownRoutingIds(orgConfigService.getActiveRoutingIds(orgConfig));
+                }
+            } catch (e) {
+                console.warn('[Sync] OrgConfig indisponível — inbound desativado neste ciclo:', e);
             }
 
             const result = await syncAdapter.syncAll(forcePush ? { forcePush } : undefined);
@@ -180,6 +227,21 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         syncNowRef.current = syncNow;
     }, [syncNow]);
 
+    // Inicializa o adapter real no mount (configure + ensureReady) para que o
+    // TransportService fique disponível antes do primeiro syncNow, evitando que
+    // mutações enfileiradas em cold-start sejam descartadas pelo SyncOutbox.
+    useEffect(() => {
+        if (!sqlite || !user || routingId === null) return;
+        const container = getContainer();
+        const syncAdapter = container.sync;
+        if (!(syncAdapter instanceof LazySyncAdapter)) return;
+        const orgId = user.org_id ?? 'ecoforms-org-001';
+        syncAdapter.configure(deviceId, routingId, 'setor', '1.0.0', orgId);
+        syncAdapter.ensureReady().catch(e => {
+            console.warn('[Sync] ensureReady falhou no mount — mutações podem ser perdidas até o primeiro sync:', e);
+        });
+    }, [sqlite, user, deviceId, routingId]);
+
     const enableAutoSync = useCallback(() => {
         setState(prev => ({ ...prev, autoSyncEnabled: true }));
         saveSyncAutoEnabled(true);
@@ -231,7 +293,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
     // Bootstrap storage on first mount (first install seeds shared/org_config.json)
     useEffect(() => {
-        if (!isOnline || !sqlite) return;
+        if (!isOnline || !sqlite || routingId === null) return;
 
         const bootstrap = async () => {
             try {

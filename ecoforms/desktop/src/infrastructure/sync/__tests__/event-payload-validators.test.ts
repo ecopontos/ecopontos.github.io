@@ -105,4 +105,46 @@ describe('EventPayloadValidators', () => {
             Cliente: 'Cliente A',
         }))).toEqual([]);
     });
+
+    it('accepts valid audit.registro payload', () => {
+        expect(validateEventPayload(envelope('audit.registro', 'audit-1', {
+            action: 'login',
+            actor_id: 'user-1',
+            actor_perfil: 'admin',
+            target_table: 'usuarios',
+            target_id: 'user-2',
+        }))).toEqual([]);
+    });
+
+    it('accepts audit.registro without optional fields', () => {
+        expect(validateEventPayload(envelope('audit.registro', 'audit-2', {
+            action: 'logout',
+            actor_id: 'user-1',
+            target_table: 'sessoes',
+        }))).toEqual([]);
+    });
+
+    it('rejects audit.registro without action', () => {
+        const errors = validateEventPayload(envelope('audit.registro', 'audit-3', {
+            actor_id: 'user-1',
+            target_table: 'usuarios',
+        }));
+        expect(errors).toContain('action is required');
+    });
+
+    it('rejects audit.registro without actor_id', () => {
+        const errors = validateEventPayload(envelope('audit.registro', 'audit-4', {
+            action: 'login',
+            target_table: 'usuarios',
+        }));
+        expect(errors).toContain('actor_id is required');
+    });
+
+    it('rejects audit.registro without target_table', () => {
+        const errors = validateEventPayload(envelope('audit.registro', 'audit-5', {
+            action: 'login',
+            actor_id: 'user-1',
+        }));
+        expect(errors).toContain('target_table is required');
+    });
 });

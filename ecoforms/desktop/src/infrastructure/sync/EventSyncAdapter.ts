@@ -18,6 +18,10 @@ export class EventSyncAdapter implements SyncPort {
         this.knownRoutingIds = ids;
     }
 
+    async ensureReady(): Promise<void> {
+        // O EventSyncAdapter é construído já configurado — nada a pré-inicializar.
+    }
+
     async syncAll(_options?: { forcePush?: boolean }): Promise<SyncResult> {
         const result: SyncResult = {
             success: true,            synced: {

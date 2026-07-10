@@ -220,8 +220,8 @@ describe('CryptoLayer — formato de wire', () => {
         const firstSession = await makeCrypto(TEST_PASSWORD);
         const blob = await firstSession.encrypt('segredo');
 
+        // Nova instância sem derivar a chave — não há persistência de chave.
         const restarted = new CryptoLayer();
-        await restarted.loadKey();
 
         await expect(restarted.decrypt(blob)).rejects.toThrow('Chave não carregada');
     });
