@@ -36,4 +36,8 @@ export interface SyncPort {
     pullTasks(): Promise<void>;
     getOfflineQueueSize(): Promise<number>;
     processOfflineQueue(): Promise<{ processed: number; failed: number }>;
+    /** Instancia o adapter real sem disparar sync (evita perda em cold-start). */
+    ensureReady(): Promise<void>;
+    /** Define os routing IDs ativos para habilitar pull/inbound. */
+    setKnownRoutingIds(ids: string[]): void;
 }

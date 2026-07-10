@@ -8,7 +8,7 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <ProtectedPage permission="users.view_all" redirectTo="/">
+        <ProtectedPage permission="system.config" redirectTo="/">
             <div className="min-h-full p-6">
                 {children}
             </div>

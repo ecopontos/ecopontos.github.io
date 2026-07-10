@@ -69,13 +69,18 @@ export class LanFileStorage {
         }
     }
 
-    /** Escreve um arquivo. No-op se LAN não configurada. */
+    /** Escreve um arquivo. No-op se LAN não configurada. Re-lança erro de I/O para o caller. */
     async writeFile(relPath: string, data: Uint8Array): Promise<void> {
         const root = await this.getLanPath();
         if (!root) return;
         const b64 = btoa(String.fromCharCode(...data));
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('lan_write_file', { path: relPath, content: b64 });
+        try {
+            const { invoke } = await import('@tauri-apps/api/core');
+            await invoke('lan_write_file', { path: relPath, content: b64 });
+        } catch (e) {
+            console.warn('[LanFileStorage] write failed', relPath, e);
+            throw e;
+        }
     }
 
     /** Lista arquivos em um diretório relativo. Retorna [] se LAN não configurada. */
