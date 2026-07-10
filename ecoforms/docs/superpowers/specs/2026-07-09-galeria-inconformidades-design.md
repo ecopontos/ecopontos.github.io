@@ -1,7 +1,7 @@
 # Campo "Galeria de Evidências Fotográficas com Inconformidades" — Design
 
 **Data:** 2026-07-09 (revisado após review técnico do mesmo dia — achados incorporados, ver §13)
-**Status:** Aprovado (design) — pendente plano de implementação
+**Status:** Implementado — ver `docs/superpowers/plans/2026-07-09-galeria-inconformidades.md` (6 tasks de código + Task 7 de verificação, todas revisadas)
 **Módulo alvo:** `ecoforms/mobile` (Capacitor) e `ecoforms/desktop` (Tauri + Next.js) — fábrica de campos e motor de renderização de formulários
 **Fora de escopo:** criação do módulo/formulário "Vistoria" em si (`tbl_module_registry`). Este design entrega apenas o tipo de campo reutilizável e o catálogo de apoio; o módulo "Vistoria" será montado depois pelo usuário no builder de módulos já existente, usando esse campo.
 

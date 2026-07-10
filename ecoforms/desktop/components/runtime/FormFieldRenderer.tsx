@@ -26,6 +26,8 @@ import { GPSRenderer } from "./fields/GPSRenderer";
 import { PhotoRenderer } from "./fields/PhotoRenderer";
 import { EntityPickerRenderer } from "./fields/EntityPickerRenderer";
 import { RepeatableGroupRenderer } from "./fields/RepeatableGroupRenderer";
+import { GalleryInconformidadeRenderer } from "./fields/GalleryInconformidadeRenderer";
+import type { GalleryInconformidadeEntry } from "@/src/lib/gallery-inconformidade";
 import type { GalleryItem } from "./fields/GalleryRenderer";
 import type { GPSData } from "./fields/GPSRenderer";
 import type { OccupationValue } from "./fields/OccupationRenderer";
@@ -209,6 +211,17 @@ function toRepeatableItems(value: FormFieldValue): RepeatableItem[] {
 
 function fromRepeatableItems(items: RepeatableItem[]): FormFieldObjectValue[] {
     return items.map((item) => ({ ...item }));
+}
+
+function toGalleryInconformidadeEntries(value: FormFieldValue): GalleryInconformidadeEntry[] {
+    return toArrayValue(value).filter((item) => {
+        return !!item && typeof item === "object" && !Array.isArray(item)
+            && "id_foto" in item && typeof (item as Record<string, unknown>).id_foto === "string";
+    }) as unknown as GalleryInconformidadeEntry[];
+}
+
+function fromGalleryInconformidadeEntries(entries: GalleryInconformidadeEntry[]): FormFieldObjectValue[] {
+    return entries.map((entry) => ({ ...entry })) as unknown as FormFieldObjectValue[];
 }
 
 function getNamedValue(value: FormFieldValue): string | null {
@@ -549,6 +562,16 @@ export function FormFieldRenderer({ field, value, onChange, readOnly = false, fo
                         {...(resolvedField.config || {})}
                     />
                 </div>
+            );
+
+        case "composite_gallery_collector":
+            return (
+                <GalleryInconformidadeRenderer
+                    field={resolvedField}
+                    value={toGalleryInconformidadeEntries(value)}
+                    onChange={(nextValue) => onChange(fromGalleryInconformidadeEntries(nextValue))}
+                    readOnly={readOnly}
+                />
             );
 
         case "occupation":

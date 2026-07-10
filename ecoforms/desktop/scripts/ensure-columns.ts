@@ -1805,6 +1805,20 @@ export async function ensureColumns(query: QueryFn, execute: ExecuteFn): Promise
         `);
     } catch (e) { console.warn('[Seed] registro_dados:', e); }
 
+    try {
+        const c = await query<{ n: number }>(`SELECT COUNT(*) as n FROM registro_dados WHERE tipo = 'inconformidades_padrao'`);
+        if (c[0]?.n === 0) {
+            await execute(`INSERT OR IGNORE INTO registro_dados (id, tipo, chave, conteudo) VALUES
+                ('inc-001', 'inconformidades_padrao', 'INC-001', '{"id":"INC-001","label":"Fiação exposta (Alta)","ativo":true}'),
+                ('inc-002', 'inconformidades_padrao', 'INC-002', '{"id":"INC-002","label":"Piso quebrado (Média)","ativo":true}'),
+                ('inc-003', 'inconformidades_padrao', 'INC-003', '{"id":"INC-003","label":"Falta de EPI (Crítica)","ativo":true}'),
+                ('inc-004', 'inconformidades_padrao', 'INC-004', '{"id":"INC-004","label":"Iluminação deficiente (Baixa)","ativo":true}'),
+                ('inc-005', 'inconformidades_padrao', 'INC-005', '{"id":"INC-005","label":"Sinalização ausente (Média)","ativo":true}')
+            `);
+            console.log('[Seed] inconformidades_padrao OK');
+        }
+    } catch (e) { console.warn('[Seed] inconformidades_padrao:', e); }
+
     // ================================================================
     // 18. SERVICE BOOKING ENGINE (ADR-018) — Tipos dinâmicos + Slots
     // ================================================================

@@ -13,7 +13,8 @@ export type FormFieldType =
     | "file" | "camera" | "photo" | "signature" | "location"
     | "hidden" | "group" | "repeatable-group"
     | "presence" | "checklist" | "vistoria_checklist"
-    | "occupation-selector" | "selector-modal" | "cards-radio" | "caixas-avancado";
+    | "occupation-selector" | "selector-modal" | "cards-radio" | "caixas-avancado"
+    | "composite_gallery_collector";
 
 export interface FormFieldContract {
     id: string;
@@ -59,6 +60,7 @@ const VALID_FIELD_TYPES = new Set<string>([
     "hidden", "group", "repeatable-group",
     "presence", "checklist", "vistoria_checklist",
     "occupation-selector", "selector-modal", "cards-radio", "caixas-avancado",
+    "composite_gallery_collector",
 ]);
 
 export interface ValidationError {

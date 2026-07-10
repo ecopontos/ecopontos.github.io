@@ -236,6 +236,7 @@ export function FieldPropertiesPanel({ field, index, allFields, onUpdate }: Fiel
                             <SelectItem value="vistoria_checklist">Vistoria Checklist</SelectItem>
                             <SelectItem value="vistoria-checklist">Vistoria Checklist (Alias)</SelectItem>
                             <SelectItem value="checklist">Checklist (Alias)</SelectItem>
+                            <SelectItem value="composite_gallery_collector">Galeria de Inconformidades</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -403,6 +404,47 @@ export function FieldPropertiesPanel({ field, index, allFields, onUpdate }: Fiel
                     </div>
                     <p className="text-[10px] text-muted-foreground">
                         As categorias/itens do checklist podem vir do Data Registry (Código Fonte acima) ou ser editadas na aba JSON do schema.
+                    </p>
+                </div>
+            )}
+
+            {field.type === 'composite_gallery_collector' && (
+                <div className="space-y-3 border-t pt-3">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Configurações da Galeria de Inconformidades
+                    </Label>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs">Máximo de fotos</Label>
+                        <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={getConfigNumber(field, 'maxFiles', 20)}
+                            onChange={(e) => updateConfig(field, update, 'maxFiles', Math.max(1, Number(e.target.value) || 20))}
+                            className="h-9"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs">Tamanho máximo por foto (KB)</Label>
+                        <Input
+                            type="number"
+                            min={100}
+                            max={20000}
+                            value={getConfigNumber(field, 'maxFileSizeKb', 5000)}
+                            onChange={(e) => updateConfig(field, update, 'maxFileSizeKb', Math.max(100, Number(e.target.value) || 5000))}
+                            className="h-9"
+                        />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor={`gic-gallery-${field.id}`} className="text-sm">Permitir escolher da galeria (mobile)</Label>
+                        <Switch
+                            id={`gic-gallery-${field.id}`}
+                            checked={getConfigBool(field, 'allowGalleryUpload', false)}
+                            onCheckedChange={(checked) => updateConfig(field, update, 'allowGalleryUpload', checked)}
+                        />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                        A lista de inconformidades vem do Código Fonte (Data Registry) selecionado acima, tipo &quot;inconformidades_padrao&quot;.
                     </p>
                 </div>
             )}
