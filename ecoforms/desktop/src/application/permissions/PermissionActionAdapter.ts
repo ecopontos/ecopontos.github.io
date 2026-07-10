@@ -66,7 +66,7 @@ const dataActions = [
   { action: 'VISUALIZAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente'] as UserRole[], scope: 'all' as const },
   { action: 'VISUALIZAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente', 'coordenador', 'campo', 'operador', 'encarregado'] as UserRole[], scope: 'own' as const },
   { action: 'EDITAR' as UniversalAction, entity: 'data', requiredRoles: ['admin'] as UserRole[], scope: 'all' as const },
-  { action: 'EDITAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente', 'coordenador', 'campo', 'operador', 'encarregado'] as UserRole[], scope: 'own' as const, timeWindow: 24 },
+  { action: 'EDITAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente', 'coordenador', 'campo', 'operador', 'encarregado'] as UserRole[], scope: 'own' as const },
   { action: 'EXCLUIR' as UniversalAction, entity: 'data', requiredRoles: ['admin'] as UserRole[] },
   { action: 'EXPORTAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente'] as UserRole[] },
   { action: 'ARQUIVAR' as UniversalAction, entity: 'data', requiredRoles: ['admin', 'gerente'] as UserRole[] },

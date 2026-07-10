@@ -8,6 +8,7 @@
 
 import { User } from "@/types";
 import { initializePermissionRegistry, globalPermissionRegistry, type UserRole } from "@/src/application/permissions/PermissionActionAdapter";
+import { DATA_EDIT_OWN_TIME_WINDOWS } from "ecoforms-core/permissions";
 
 // Inicializar registry na primeira importação
 initializePermissionRegistry();
@@ -157,15 +158,11 @@ export function usePermissions(user: User | null, assignedActiveForms?: string[]
         if (isAdmin() || isManager()) return true;
         const timestamp = dataRecord.criado_em || dataRecord.created_at;
         if (!timestamp) return false;
+        const window = DATA_EDIT_OWN_TIME_WINDOWS[userRole];
+        if (window === undefined) return false;
         const createdAt = new Date(timestamp);
         const hoursAgo = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-        if (userRole === "coordenador") {
-            return hoursAgo <= 48 && dataRecord.user_id === user.id;
-        }
-        if (isOperator() && dataRecord.user_id === user.id) {
-            return hoursAgo <= 24;
-        }
-        return false;
+        return hoursAgo <= window && dataRecord.user_id === user.id;
     };
 
     const canCreateUserWithRole = (role: UserRole): boolean => {
