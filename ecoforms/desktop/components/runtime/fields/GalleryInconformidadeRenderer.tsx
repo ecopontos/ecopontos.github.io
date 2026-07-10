@@ -121,7 +121,7 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
         if (!entry) return;
         setEditingId(idFoto);
         setQueue([{ localId: makeLocalId(), imagemBase64: entry.imagem }]);
-        setSelectedInconformidades([...entry.inconformidades]);
+        setSelectedInconformidades([...(entry.inconformidades || [])]);
         setObservacao(entry.observacao || "");
         setModalOpen(true);
     };
@@ -149,8 +149,8 @@ export function GalleryInconformidadeRenderer({ field, value = [], onChange, rea
                         <div key={entry.id_foto} className="relative group border rounded-md overflow-hidden bg-slate-50">
                             <img src={entry.imagem} alt="Evidência" className="w-full h-24 object-cover" />
                             <div className="p-2 space-y-1">
-                                <div className={cn("text-xs font-semibold", entry.inconformidades.length > 0 ? "text-red-600" : "text-green-600")}>
-                                    {entry.inconformidades.length > 0
+                                <div className={cn("text-xs font-semibold", (entry.inconformidades?.length ?? 0) > 0 ? "text-red-600" : "text-green-600")}>
+                                    {(entry.inconformidades?.length ?? 0) > 0
                                         ? `⚠️ ${entry.inconformidades.length} inconformidade(s)`
                                         : "✅ Sem apontamento"}
                                 </div>
