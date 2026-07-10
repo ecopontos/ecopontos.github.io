@@ -28,10 +28,13 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist"
+    "build": "tsc && node scripts/generate-rbac.mjs",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "gen:rbac": "node scripts/generate-rbac.mjs"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }

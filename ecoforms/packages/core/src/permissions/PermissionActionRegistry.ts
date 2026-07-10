@@ -46,8 +46,28 @@ export interface PermissionActionConfig {
 export class PermissionActionRegistry {
   private store = new Map<string, PermissionActionConfig[]>();
 
+  // Role hierarchy: lower number = higher authority; higher number = subordinate
+  private readonly roleHierarchy: Record<UserRole, number> = {
+    admin: 0,
+    gerente: 1,
+    coordenador: 2,
+    encarregado: 3,
+    operador: 4,
+    campo: 4,
+  };
+
   private key(entity: string, action: UniversalAction): string {
     return `${entity}::${action}`;
+  }
+
+  /**
+   * Check if ownerRole is subordinate to userRole.
+   * Owner is subordinate if their level is > user's level.
+   */
+  private isSubordinate(userRole: UserRole, ownerRole: UserRole): boolean {
+    const userLevel = this.roleHierarchy[userRole];
+    const ownerLevel = this.roleHierarchy[ownerRole];
+    return ownerLevel > userLevel;
   }
 
   register(config: PermissionActionConfig): void {
@@ -86,6 +106,17 @@ export class PermissionActionRegistry {
       if (config.scope) {
         if (config.scope === 'own' && ctx.ownerId && ctx.ownerId !== ctx.userId) {
           return false;
+        }
+        if (config.scope === 'subordinates') {
+          // User can only access resources owned by subordinates (lower authority)
+          if (ctx.ownerId && ctx.ownerId === ctx.userId) {
+            // Can always access own resources
+            return true;
+          }
+          if (ctx.ownerRole && !this.isSubordinate(ctx.userRole, ctx.ownerRole)) {
+            // Owner must be subordinate (higher level number)
+            return false;
+          }
         }
         if (config.scope === 'all') {
           // admin/gerente já coberto por roles; para outros, all implica próprio + subordinados
