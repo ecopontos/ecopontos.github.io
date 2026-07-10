@@ -11,7 +11,7 @@
     "build-css-prod": "tailwindcss -i ./styles/input.css -o ./styles/tailwind.css --minify",
     "concat-css": "node ./scripts/concat-css.js",
     "build-core": "node scripts/build-core.js",
-    "build": "npm run build-core && npm run build-css-prod && npm run concat-css && npm run sync-field-css",
+    "build": "npm --prefix ../packages/core run build && npm run build-core && npm run build-css-prod && npm run concat-css && npm run sync-field-css",
     "dev": "npm run build-css",
     "dev:server": "node dev-server.js",
     "sync-field-css": "node ./scripts/sync-field-css.js",

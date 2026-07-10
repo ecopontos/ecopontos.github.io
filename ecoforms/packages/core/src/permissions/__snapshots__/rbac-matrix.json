@@ -1,0 +1,248 @@
+{
+  "ROLE_HIERARCHY": {
+    "admin": 0,
+    "gerente": 1,
+    "coordenador": 2,
+    "encarregado": 3,
+    "operador": 4,
+    "campo": 4
+  },
+  "PERMISSION_MATRIX": {
+    "users.create": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "users.edit": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "users.delete": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "users.view_all": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "users.change_password": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "campo",
+        "operador",
+        "encarregado"
+      ]
+    },
+    "forms.create": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "forms.edit": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "forms.delete": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "forms.assign": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "forms.fill": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "campo",
+        "operador",
+        "encarregado"
+      ]
+    },
+    "data.view_all": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "data.view_own": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "campo",
+        "operador",
+        "encarregado"
+      ]
+    },
+    "data.edit_all": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "data.edit_own": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "campo",
+        "operador",
+        "encarregado"
+      ]
+    },
+    "data.delete": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "data.export": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "data.archive": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "system.config": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "system.logs": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "system.sync": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "system.device_setup": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "reports.view": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "reports.export": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "activities.manage": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "tasks.reassign": {
+      "roles": [
+        "admin",
+        "gerente",
+        "encarregado"
+      ]
+    },
+    "clients.view": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador"
+      ]
+    },
+    "clients.create": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "clients.edit": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "clients.delete": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "clients.export": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    },
+    "crm.view": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "encarregado"
+      ]
+    },
+    "crm.edit": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador"
+      ]
+    },
+    "ouvidoria.view": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "encarregado"
+      ]
+    },
+    "ouvidoria.create": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador",
+        "encarregado"
+      ]
+    },
+    "ouvidoria.respond": {
+      "roles": [
+        "admin",
+        "gerente",
+        "coordenador"
+      ]
+    },
+    "ouvidoria.close": {
+      "roles": [
+        "admin",
+        "gerente"
+      ]
+    }
+  }
+}
