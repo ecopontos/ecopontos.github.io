@@ -2,17 +2,11 @@
  * Regras puras de controle de acesso (hierarquia de perfis).
  * Tradução para SQL/filtros fica nos repositórios de infraestrutura.
  */
+import { ROLE_HIERARCHY as CORE_ROLE_HIERARCHY, type UserRole } from 'ecoforms-core/permissions';
 
-export type Perfil = 'admin' | 'gerente' | 'coordenador' | 'encarregado' | 'operador' | 'campo';
+export type Perfil = UserRole;
 
-const ROLE_HIERARCHY: Record<Perfil, number> = {
-    admin: 0,
-    gerente: 1,
-    coordenador: 2,
-    encarregado: 3,
-    operador: 4,
-    campo: 4,
-};
+const ROLE_HIERARCHY: Record<Perfil, number> = CORE_ROLE_HIERARCHY;
 
 export function isKnownPerfil(perfil: string): perfil is Perfil {
     return perfil in ROLE_HIERARCHY;
