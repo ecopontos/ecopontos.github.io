@@ -399,73 +399,9 @@ pub fn seed_rbac_tables(conn: &Connection) -> Result<(), String> {
         return Ok(());
     }
 
-    conn.execute(
-        "INSERT INTO perfis (id, nome, descricao) VALUES
-            ('admin','Administrador','Acesso total'),
-            ('gerente','Gerente','Gestao de usuarios e relatorios'),
-            ('coordenador','Coordenador','Coordenacao de equipe'),
-            ('encarregado','Encarregado','Supervisao de campo'),
-            ('operador','Operador','Execucao de tarefas'),
-            ('campo','Campo','Execucao de tarefas')",
-        [],
-    ).map_err(|e| format!("Erro ao seed perfis: {}", e))?;
-
-    conn.execute(
-        "INSERT INTO hierarquia_perfis (perfil, nivel, descricao) VALUES
-            ('admin',0,'Acesso total'),
-            ('gerente',1,'Gestao'),
-            ('coordenador',2,'Coordenacao'),
-            ('encarregado',3,'Supervisao'),
-            ('operador',4,'Execucao'),
-            ('campo',4,'Execucao')",
-        [],
-    ).map_err(|e| format!("Erro ao seed hierarchy: {}", e))?;
-
-    let perms_batches = [
-        "('admin','users.create'),('gerente','users.create')",
-        "('admin','users.edit'),('gerente','users.edit')",
-        "('admin','users.delete')",
-        "('admin','users.view_all'),('gerente','users.view_all')",
-        "('admin','users.change_password'),('gerente','users.change_password'),('coordenador','users.change_password'),('campo','users.change_password'),('operador','users.change_password'),('encarregado','users.change_password')",
-        "('admin','forms.create'),('gerente','forms.create')",
-        "('admin','forms.edit'),('gerente','forms.edit')",
-        "('admin','forms.delete')",
-        "('admin','forms.assign'),('gerente','forms.assign')",
-        "('admin','forms.fill'),('gerente','forms.fill'),('coordenador','forms.fill'),('campo','forms.fill'),('operador','forms.fill'),('encarregado','forms.fill')",
-        "('admin','data.view_all'),('gerente','data.view_all')",
-        "('admin','data.view_own'),('gerente','data.view_own'),('coordenador','data.view_own'),('campo','data.view_own'),('operador','data.view_own'),('encarregado','data.view_own')",
-        "('admin','data.edit_all')",
-        "('admin','data.edit_own'),('gerente','data.edit_own'),('coordenador','data.edit_own'),('campo','data.edit_own'),('operador','data.edit_own'),('encarregado','data.edit_own')",
-        "('admin','data.delete')",
-        "('admin','data.export'),('gerente','data.export')",
-        "('admin','data.archive'),('gerente','data.archive')",
-        "('admin','system.config')",
-        "('admin','system.logs'),('gerente','system.logs')",
-        "('admin','system.sync'),('gerente','system.sync'),('coordenador','system.sync'),('campo','system.sync'),('operador','system.sync'),('encarregado','system.sync')",
-        "('admin','system.device_setup'),('gerente','system.device_setup')",
-        "('admin','reports.view'),('gerente','reports.view')",
-        "('admin','reports.export'),('gerente','reports.export')",
-        "('admin','activities.manage'),('gerente','activities.manage')",
-        "('admin','tasks.reassign'),('gerente','tasks.reassign'),('encarregado','tasks.reassign')",
-        "('admin','clients.view'),('gerente','clients.view'),('coordenador','clients.view')",
-        "('admin','clients.create'),('gerente','clients.create')",
-        "('admin','clients.edit'),('gerente','clients.edit')",
-        "('admin','clients.delete')",
-        "('admin','clients.export'),('gerente','clients.export')",
-        "('admin','crm.view'),('gerente','crm.view'),('coordenador','crm.view'),('encarregado','crm.view')",
-        "('admin','crm.edit'),('gerente','crm.edit'),('coordenador','crm.edit')",
-        "('admin','ouvidoria.view'),('gerente','ouvidoria.view'),('coordenador','ouvidoria.view'),('encarregado','ouvidoria.view')",
-        "('admin','ouvidoria.create'),('gerente','ouvidoria.create'),('coordenador','ouvidoria.create'),('encarregado','ouvidoria.create')",
-        "('admin','ouvidoria.respond'),('gerente','ouvidoria.respond'),('coordenador','ouvidoria.respond')",
-        "('admin','ouvidoria.close'),('gerente','ouvidoria.close')",
-    ];
-
-    for batch in &perms_batches {
-        conn.execute(
-            &format!("INSERT INTO permissoes (perfil, permissao) VALUES {}", batch),
-            [],
-        ).map_err(|e| format!("Erro ao seed permissoes: {}", e))?;
-    }
+    const RBAC_SEED_SQL: &str = include_str!("rbac_seed.sql");
+    conn.execute_batch(RBAC_SEED_SQL)
+        .map_err(|e| format!("Erro ao seed RBAC: {}", e))?;
 
     Ok(())
 }
@@ -587,5 +523,61 @@ mod tests {
         assert_eq!(second.len(), 1);
         assert_eq!(first[0].username, "alice");
         assert_eq!(second[0].id, first[0].id);
+    }
+
+    #[test]
+    fn seed_rbac_tables_restricts_system_sync_to_admin_and_gerente() {
+        let app = make_app(SessionState::new());
+        let db_state = app.state::<DbState>();
+        let conn_guard = db_state.conn.lock().unwrap();
+        let conn = conn_guard.as_ref().unwrap();
+        seed_rbac_tables(conn).unwrap();
+
+        let mut stmt = conn
+            .prepare("SELECT perfil FROM permissoes WHERE permissao = 'system.sync' ORDER BY perfil")
+            .unwrap();
+        let roles: Vec<String> = stmt
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect();
+
+        assert_eq!(roles, vec!["admin".to_string(), "gerente".to_string()]);
+    }
+
+    #[test]
+    fn seed_rbac_tables_sets_campo_and_operador_to_same_level() {
+        let app = make_app(SessionState::new());
+        let db_state = app.state::<DbState>();
+        let conn_guard = db_state.conn.lock().unwrap();
+        let conn = conn_guard.as_ref().unwrap();
+        seed_rbac_tables(conn).unwrap();
+
+        let campo_level: i64 = conn
+            .query_row("SELECT nivel FROM hierarquia_perfis WHERE perfil = 'campo'", [], |row| row.get(0))
+            .unwrap();
+        let operador_level: i64 = conn
+            .query_row("SELECT nivel FROM hierarquia_perfis WHERE perfil = 'operador'", [], |row| row.get(0))
+            .unwrap();
+
+        assert_eq!(campo_level, operador_level);
+        assert_eq!(campo_level, 4);
+    }
+
+    #[test]
+    fn seed_rbac_tables_seeds_36_permission_kinds_across_6_perfis() {
+        let app = make_app(SessionState::new());
+        let db_state = app.state::<DbState>();
+        let conn_guard = db_state.conn.lock().unwrap();
+        let conn = conn_guard.as_ref().unwrap();
+        seed_rbac_tables(conn).unwrap();
+
+        let perfis_count: i64 = conn.query_row("SELECT COUNT(*) FROM perfis", [], |row| row.get(0)).unwrap();
+        let distinct_permissoes: i64 = conn
+            .query_row("SELECT COUNT(DISTINCT permissao) FROM permissoes", [], |row| row.get(0))
+            .unwrap();
+
+        assert_eq!(perfis_count, 6);
+        assert_eq!(distinct_permissoes, 36);
     }
 }
