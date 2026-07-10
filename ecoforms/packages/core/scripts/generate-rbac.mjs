@@ -7,14 +7,14 @@
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const coreRoot = path.resolve(__dirname, '..');
 const monorepoRoot = path.resolve(coreRoot, '../..');
 
 const rbacMatrixPath = path.join(coreRoot, 'dist/permissions/rbac-matrix.js');
-const rbacMatrixUrl = new URL(`file:///${rbacMatrixPath.replace(/\\/g, '/').replace(/^([a-z]):/, '$1')}`).href;
+const rbacMatrixUrl = pathToFileURL(rbacMatrixPath).href;
 
 const { ROLE_HIERARCHY, PERMISSION_MATRIX, ROLE_METADATA } = await import(rbacMatrixUrl);
 
