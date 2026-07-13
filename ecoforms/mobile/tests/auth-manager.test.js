@@ -5,6 +5,12 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Load the generated RBAC matrix into global scope first (auth-manager.js depends on it)
+const rbacMatrixPath = path.resolve(__dirname, '../www/js/rbac-matrix.generated.js');
+if (fs.existsSync(rbacMatrixPath)) {
+    eval(fs.readFileSync(rbacMatrixPath, 'utf-8'));
+}
+
 // Load AuthManager into global scope via eval
 const authManagerPath = path.resolve(__dirname, '../www/js/auth-manager.js');
 if (fs.existsSync(authManagerPath)) {
@@ -175,5 +181,25 @@ describe('AuthManager — perfis e permissões', () => {
         auth.currentUser = makeUser({ perfil: 'gerente' });
         expect(auth.canEditUser(makeUser({ perfil: 'operador' }))).toBe(true);
         expect(auth.canEditUser(makeUser({ id: '99', perfil: 'gerente' }))).toBe(false);
+    });
+
+    it('ROLE_HIERARCHY cobre os 6 perfis canônicos com campo === operador', () => {
+        expect(Object.keys(window.AuthManager.ROLE_HIERARCHY).sort()).toEqual(
+            ['admin', 'campo', 'coordenador', 'encarregado', 'gerente', 'operador'].sort()
+        );
+        expect(window.AuthManager.ROLE_HIERARCHY.campo).toBe(window.AuthManager.ROLE_HIERARCHY.operador);
+    });
+
+    it('hasPermission() nunca retorna true para roles ghost', () => {
+        auth.currentUser = makeUser({ perfil: 'superadmin' });
+        expect(auth.hasPermission('users.create')).toBe(false);
+        expect(auth.hasPermission('system.sync')).toBe(false);
+    });
+
+    it('hasPermission() — coordenador e campo têm data.edit_own (gap corrigido)', () => {
+        auth.currentUser = makeUser({ perfil: 'coordenador' });
+        expect(auth.hasPermission('data.edit_own')).toBe(true);
+        auth.currentUser = makeUser({ perfil: 'campo' });
+        expect(auth.hasPermission('data.edit_own')).toBe(true);
     });
 });

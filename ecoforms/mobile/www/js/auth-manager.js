@@ -688,8 +688,8 @@ class AuthManager {
             return false;
         }
 
-        // Admin, Superadmin e Gerente têm acesso a tudo
-        const fullAccessRoles = ['admin', 'superadmin', 'gerente', 'manager'];
+        // Admin e Gerente têm acesso a tudo
+        const fullAccessRoles = ['admin', 'gerente'];
         if (fullAccessRoles.includes(this.currentUser.perfil)) {
             console.log(`✅ Acesso permitido ao formulário ${formId}: usuário é ${this.currentUser.perfil} (acesso total)`);
             return true;
@@ -738,12 +738,16 @@ class AuthManager {
     /**
      * Mapa de hierarquia de perfis (níveis)
      * Menor = mais permissivo
+     * Fonte: window.ECOFORMS_RBAC.ROLE_HIERARCHY (gerado de packages/core), com
+     * fallback inline idêntico caso o script não tenha carregado.
      */
-    static ROLE_HIERARCHY = {
+    static ROLE_HIERARCHY = (typeof window !== 'undefined' && window.ECOFORMS_RBAC?.ROLE_HIERARCHY) || {
         'admin': 0,
         'gerente': 1,
-        'encarregado': 2,
-        'operador': 3
+        'coordenador': 2,
+        'encarregado': 3,
+        'operador': 4,
+        'campo': 4
     };
 
     /**
@@ -784,74 +788,38 @@ class AuthManager {
     }
 
     /**
-     * Gera cláusula SQL para filtrar registros por acesso
+     * Gera cláusula SQL para filtrar registros por acesso.
+     * Retorna a cláusula e os parâmetros separadamente — o chamador deve
+     * usar bind parameters, nunca interpolar os valores retornados direto na query.
      * @param {string} aliasTabela - Alias da tabela no SQL (ex: 's' para suite)
      * @param {string} aliasUsuario - Alias da tabela de usuários (ex: 'u')
-     * @returns {string} - Cláusula WHERE (sem o WHERE keyword)
+     * @returns {{ clause: string, params: string[] }}
      */
     buildAccessFilterSQL(aliasTabela = 's', aliasUsuario = 'u') {
         if (!this.currentUser?.id || !this.currentUser?.perfil) {
-            return '1=0'; // Bloqueia se não autenticado
+            return { clause: '1=0', params: [] };
         }
 
-        // Admin tem acesso total
         if (this.isAdmin()) {
-            return '1=1';
+            return { clause: '1=1', params: [] };
         }
 
         const accessiblePerfis = this.getSubordinatePerfis();
-        const perfisStr = accessiblePerfis.map(p => `'${p}'`).join(', ');
+        const placeholders = accessiblePerfis.map(() => '?').join(', ');
 
-        return `(
-            ${aliasTabela}.user_id = '${this.currentUser.id}'
-            OR ${aliasUsuario}.perfil IN (${perfisStr})
-        )`;
+        return {
+            clause: `(${aliasTabela}.user_id = ? OR ${aliasUsuario}.perfil IN (${placeholders}))`,
+            params: [this.currentUser.id, ...accessiblePerfis],
+        };
     }
 
     /**
-     * Mapa de permissões por perfil
-     * Define quais perfis podem executar cada ação
+     * Mapa de permissões por perfil — lido de window.ECOFORMS_RBAC.PERMISSION_MATRIX
+     * (gerado de packages/core), com fallback vazio caso o script não tenha carregado.
      */
     getPermissionRoles(permission) {
-        const permissionsMap = {
-            // Usuários
-            'users.create': ['admin', 'superadmin', 'gerente'],
-            'users.edit': ['admin', 'superadmin', 'gerente'],
-            'users.delete': ['admin', 'superadmin'],
-            'users.view_all': ['admin', 'superadmin', 'gerente'],
-            'users.change_password': ['admin', 'superadmin', 'gerente', 'encarregado', 'operador'], // própria senha
-
-            // Formulários
-            'forms.create': ['admin', 'superadmin'],
-            'forms.edit': ['admin', 'superadmin'],
-            'forms.delete': ['admin', 'superadmin'],
-            'forms.assign': ['admin', 'superadmin', 'gerente'],
-            'forms.fill': ['admin', 'superadmin', 'gerente', 'encarregado', 'operador'],
-
-            // Dados
-            'data.view_all': ['admin', 'superadmin', 'gerente'],
-            'data.view_own': ['admin', 'superadmin', 'gerente', 'encarregado', 'operador'],
-            'data.edit_all': ['admin', 'superadmin'],
-            'data.edit_own': ['admin', 'superadmin', 'gerente', 'encarregado', 'operador'],
-            'data.delete': ['admin', 'superadmin'],
-            'data.export': ['admin', 'superadmin', 'gerente'],
-            'data.archive': ['admin', 'superadmin', 'gerente'],
-
-            // Sistema
-            'system.config': ['admin', 'superadmin'],
-            'system.logs': ['admin', 'superadmin', 'gerente'],
-            'system.sync': ['admin', 'superadmin', 'gerente', 'encarregado', 'operador'],
-            'system.device_setup': ['admin', 'superadmin', 'gerente'],
-
-            // Tarefas
-            'tasks.reassign': ['admin', 'superadmin', 'gerente', 'encarregado'],
-
-            // Relatórios
-            'reports.view': ['admin', 'superadmin', 'gerente'],
-            'reports.export': ['admin', 'superadmin', 'gerente']
-        };
-
-        return permissionsMap[permission] || [];
+        const matrix = (typeof window !== 'undefined' && window.ECOFORMS_RBAC?.PERMISSION_MATRIX) || {};
+        return matrix[permission]?.roles || [];
     }
 
     /**
