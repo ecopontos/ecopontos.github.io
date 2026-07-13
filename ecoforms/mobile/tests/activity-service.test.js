@@ -1,72 +1,60 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load ActivityService into global scope via eval (same pattern as auth-manager.test.js)
+const activityServicePath = path.resolve(__dirname, '../www/js/services/ActivityService.js');
+if (fs.existsSync(activityServicePath)) {
+    const src = fs.readFileSync(activityServicePath, 'utf-8');
+    // Patch global objects to avoid reference errors during load
+    if (typeof window === 'undefined') {
+        global.window = {};
+    }
+    if (typeof indexedDB === 'undefined') {
+        global.indexedDB = { open: () => ({ onerror: null, onupgradeneeded: null, onsuccess: null }) };
+    }
+    if (typeof console === 'undefined') {
+        global.console = { log: () => {}, warn: () => {}, error: () => {} };
+    }
+    eval(src);
+}
 
 describe('ActivityService — sem ghost roles', () => {
-    it('hasFormPermission concede acesso total apenas a admin/gerente', () => {
-        // Test the fixed implementation from ActivityService.js
-        function hasFormPermission(user, formId) {
-            if (!formId) return false;
+    let service;
 
-            const fullAccessRoles = ['admin', 'gerente'];
-            if (fullAccessRoles.includes(user?.perfil)) {
-                return true;
-            }
-
-            const allowedForms = Array.isArray(user?.formulariosPermitidos) ? user.formulariosPermitidos : [];
-            return allowedForms.includes('*') || allowedForms.includes(formId);
-        }
-
-        // Ghost roles (superadmin, manager) should NOT have access
-        expect(hasFormPermission({ perfil: 'superadmin' }, 'form-1')).toBe(false);
-        expect(hasFormPermission({ perfil: 'manager' }, 'form-1')).toBe(false);
-        // Real roles (admin, gerente) SHOULD have access
-        expect(hasFormPermission({ perfil: 'admin' }, 'form-1')).toBe(true);
-        expect(hasFormPermission({ perfil: 'gerente' }, 'form-1')).toBe(true);
+    beforeEach(() => {
+        // Create a fresh instance of the REAL ActivityService
+        service = new window.ActivityService();
     });
 
-    it('getTaskVisibilityDiagnostics não reconhece superadmin/manager como admin/gerente', () => {
-        // Test the fixed implementation from ActivityService.js
-        function hasFormPermission(user, formId) {
-            if (!formId) return false;
-            const fullAccessRoles = ['admin', 'gerente'];
-            if (fullAccessRoles.includes(user?.perfil)) return true;
-            const allowedForms = Array.isArray(user?.formulariosPermitidos) ? user.formulariosPermitidos : [];
-            return allowedForms.includes('*') || allowedForms.includes(formId);
-        }
+    it('hasFormPermission concede acesso total apenas a admin/gerente (carregado do arquivo real)', () => {
+        // Ghost roles (superadmin, manager) should NOT have access
+        expect(service.hasFormPermission({ perfil: 'superadmin' }, 'form-1')).toBe(false);
+        expect(service.hasFormPermission({ perfil: 'manager' }, 'form-1')).toBe(false);
 
-        function getTaskVisibilityDiagnostics(task, user) {
-            const validStatus = ['a_fazer', 'em_progresso'].includes(task.status);
-            const isAssignee = task.atribuido_para === user.id;
-            // FIXED CODE (no ghost roles):
-            const isAdmin = user.perfil === 'admin';
-            const isManager = user.perfil === 'gerente';
-            const userSectors = Array.isArray(user.setores) ? user.setores : [];
-            const isInSector = task.setor_id && userSectors.includes(task.setor_id);
-            const canSee = isAssignee || isAdmin || (isManager && isInSector);
-            const hasForm = !!task.form_registry_id;
-            const archived = task.arquivado === true || task.arquivado === 1 || task.arquivado === '1';
-            const notArchived = !archived;
-            const hasPermission = hasForm && hasFormPermission(user, task.form_registry_id);
+        // Real roles (admin, gerente) SHOULD have access
+        expect(service.hasFormPermission({ perfil: 'admin' }, 'form-1')).toBe(true);
+        expect(service.hasFormPermission({ perfil: 'gerente' }, 'form-1')).toBe(true);
+    });
 
-            const reasons = [];
-            if (!validStatus) reasons.push(`status (${task.status})`);
-            if (!canSee) {
-                let reason = 'visibility';
-                if (!isAssignee && !isAdmin) {
-                    if (isManager) reason += ` (Manager NOT in sector: task=${task.setor_id}, user=${userSectors.join(',')})`;
-                    else reason += ` (Not assigned: task.atrib=${task.atribuido_para}, user.id=${user.id})`;
-                }
-                reasons.push(reason);
-            }
-            if (!hasForm) reasons.push('no form');
-            if (!hasPermission && hasForm) reasons.push('acesso (perfil sem visibilidade)');
-            if (archived) reasons.push('arquivado');
-
-            return { reasons, canSee, hasForm, hasPermission };
-        }
-
+    it('getTaskVisibilityDiagnostics não reconhece superadmin/manager como admin/gerente (carregado do arquivo real)', () => {
         // Ghost role (superadmin) should NOT be able to see the task
-        const task = { status: 'a_fazer', atribuido_para: 'other', form_registry_id: null, arquivado: false, setor_id: null };
-        const diag = getTaskVisibilityDiagnostics(task, { id: 'u1', perfil: 'superadmin', setores: [] });
-        expect(diag.canSee).toBe(false);
+        const task = {
+            id: 'task-1',
+            status: 'a_fazer',
+            atribuido_para: 'other',
+            form_registry_id: null,
+            arquivado: false,
+            setor_id: null
+        };
+        const diag = service.getTaskVisibilityDiagnostics(task, {
+            id: 'u1',
+            perfil: 'superadmin',
+            setores: []
+        });
+        expect(diag.visible).toBe(false);
     });
 });

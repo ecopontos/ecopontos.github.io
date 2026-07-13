@@ -600,87 +600,6 @@ class ActivityService {
 
         return this.getLocalActivities();
     }
-                        const taskFolderPath = `${userInboxPath}/${taskId}`;
-                        
-                        console.log(`📂 [ActivityService] Explorando pasta da tarefa: ${taskId}`);
-                        const { data: subItems, error: subError } = await window.globalSupabaseClient
-                            .storage.from(BUCKET).list(taskFolderPath);
-                            
-                        if (!subError && subItems) {
-                            if (!taskGroups[taskId]) taskGroups[taskId] = { base: null, patches: [] };
-                            
-                            subItems.forEach(file => {
-                                const lowerName = file.name.toLowerCase();
-                                const fullPath = `${taskFolderPath}/${file.name}`;
-                                
-                                if (lowerName === 'snapshot.json' || lowerName === 'snapshot.json.gz' || lowerName.endsWith('.snap')) {
-                                    taskGroups[taskId].base = fullPath;
-                                } else if (lowerName === 'patches' && file.id === null) {
-                                    // Se houver subpasta de patches, deveríamos listar ela também se necessário
-                                    // Por enquanto, o modelo Desktop simplificado coloca patches no root se for o caso
-                                }
-                            });
-                        }
-                    } 
-                }
-
-                // Processar cada grupo de tarefa encontrado
-                for (const taskId in taskGroups) {
-                    const group = taskGroups[taskId];
-                    if (!group.base) continue; 
-
-                    // Ordenar patches (se implementado futuramente)
-                    group.patches.sort();
-
-                    const activity = await this.downloadAndProcessSnap(group.base, group.patches);
-                    if (activity) {
-                        allActivities.push(activity);
-                    }
-                }
-                
-                console.log(`📦 [ActivityService] ${allActivities.length} tarefas reconstruídas de ${userInboxPath}`);
-            }
-
-            console.log(`🏁 [ActivityService] Total de atividades pré-cache: ${allActivities.length}`);
-
-            // 2. Listar Snaps Ad Hoc (Pasta Compartilhada)
-            const adhocPath = `shared/adhoc`;
-            const { data: adhocFiles, error: adhocError } = await window.globalSupabaseClient
-                .storage.from(BUCKET).list(adhocPath);
-
-            if (!adhocError && adhocFiles) {
-                console.log(`📦 [ActivityService] Encontrados ${adhocFiles.length} snaps adhoc`);
-                for (const file of adhocFiles) {
-                    // Verificação de permissão Ad Hoc
-                    const formId = file.name.split('.')[0];
-                    if (this.hasFormPermission(user, formId)) {
-                        const snap = await this.downloadAndProcessSnap(`${adhocPath}/${file.name}`);
-                        if (snap) allActivities.push(snap);
-                    }
-                }
-            }
-
-            // 2.1. Processar arquivos de limpeza de tarefas arquivadas/deletadas
-            await this.processTaskCleanupFiles(userInboxPath);
-
-            // 3. Cache base
-            await this.cacheActivities(allActivities);
-            
-            // Retornar apenas tarefas ativas (não arquivadas e não concluídas localmente)
-            const activeActivities = allActivities.filter(activity => {
-                const task = activity.original_task || activity;
-                const archived = task.arquivado === true || task.arquivado === 1 || task.arquivado === '1';
-                const locallyCompleted = this._completedIds.has(task.id || activity.id);
-                return !archived && !locallyCompleted;
-            });
-            
-            return activeActivities;
-
-        } catch (err) {
-            console.error("❌ [ActivityService] Erro no fetchActivities (snaps):", err);
-            return await this.getLocalActivities();
-        }
-    }
 
     /**
      * Auxiliar para baixar, descomprimir e construir atividade a partir de um Snap + Patches + WIP
@@ -1119,5 +1038,8 @@ class ActivityService {
 }
 
 
+// Expose class for testing
+window.ActivityService = ActivityService;
+// Create default instance for runtime use
 window.activityService = new ActivityService();
 
