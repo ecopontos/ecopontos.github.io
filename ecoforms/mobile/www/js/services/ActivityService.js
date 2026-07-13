@@ -97,7 +97,7 @@ class ActivityService {
     hasFormPermission(user, formId) {
         if (!formId) return false;
 
-        const fullAccessRoles = ['admin', 'superadmin', 'gerente', 'manager'];
+        const fullAccessRoles = ['admin', 'gerente'];
         if (fullAccessRoles.includes(user?.perfil)) {
             return true;
         }
@@ -109,8 +109,8 @@ class ActivityService {
     getTaskVisibilityDiagnostics(task, user) {
         const validStatus = ['a_fazer', 'em_progresso'].includes(task.status);
         const isAssignee = task.atribuido_para === user.id;
-        const isAdmin = user.perfil === 'admin' || user.perfil === 'superadmin';
-        const isManager = user.perfil === 'gerente' || user.perfil === 'manager';
+        const isAdmin = user.perfil === 'admin';
+        const isManager = user.perfil === 'gerente';
         const userSectors = Array.isArray(user.setores) ? user.setores : [];
         const isInSector = task.setor_id && userSectors.includes(task.setor_id);
         const canSee = isAssignee || isAdmin || (isManager && isInSector);
