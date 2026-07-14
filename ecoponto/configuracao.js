@@ -12,12 +12,15 @@ function carregarConfiguracao() {
 }
 
 function salvarConfiguracao() {
-    const ecoponto = document.getElementById('ecoponto').value;
+    const ecoponto = document.getElementById('ecoponto');
+    const ecopontoValor = ecoponto.value;
+    const nomeEcoponto = ecoponto.selectedOptions[0].text;
     const nomeFuncionario = document.getElementById('nomeFuncionario').value;
     const matricula = document.getElementById('matricula').value;
     const sheetsUrl = document.getElementById('sheetsUrl').value.trim();
 
-    localStorage.setItem('ecoponto', ecoponto);
+    localStorage.setItem('ecoponto', ecopontoValor);
+    localStorage.setItem('nomeEcoponto', nomeEcoponto);
     localStorage.setItem('nomeFuncionario', nomeFuncionario);
     localStorage.setItem('matricula', matricula);
     localStorage.setItem('sheetsUrl', sheetsUrl);

@@ -1,11 +1,29 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const ecopontosPorId = {
+        '1': 'PEV ITACORUBI',
+        '2': 'PEV CAPOEIRAS',
+        '3': 'PEV MORRO DAS PEDRAS',
+        '4': 'PEV MONTE CRISTO (ARESP)',
+        '5': 'PEV CANASVIEIRAS',
+        '6': 'PEV RIO VERMELHO',
+        '7': 'PEV INGLESES',
+        '8': 'PEV COSTEIRA',
+        '9': 'PEV COLONINHA'
+    };
+
+    function obterNomeEcoponto() {
+        const nomeSalvo = localStorage.getItem('nomeEcoponto');
+        const valorSalvo = localStorage.getItem('ecoponto');
+        return nomeSalvo || ecopontosPorId[valorSalvo] || valorSalvo;
+    }
+
     // Recupera o nome do Ecoponto salvo no localStorage
-    const ecoponto = localStorage.getItem('ecoponto');
+    const nomeEcoponto = obterNomeEcoponto();
     const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
 
     // Verifica se o Ecoponto foi configurado e exibe o nome no HTML
     if (nomeEcopontoDisplay) {
-        nomeEcopontoDisplay.textContent = ecoponto || 'Ecoponto não configurado';
+        nomeEcopontoDisplay.textContent = nomeEcoponto || 'Ecoponto não configurado';
     }
 
     const bairros = [
@@ -155,11 +173,7 @@ setInterval(atualizarDataHora, 60 * 1000);
 
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
-        const ecoponto = localStorage.getItem('ecoponto');
-        const nomeEcopontoDisplay = document.getElementById('nome-ecoponto-display');
-        
-        // Se o nome do Ecoponto estiver disponível, use-o, senão mostre uma mensagem de erro
-        const nomeEcoponto = nomeEcopontoDisplay ? nomeEcopontoDisplay.textContent : ecoponto;
+        const nomeEcoponto = obterNomeEcoponto();
 
         const placa = document.getElementById('placa').value;
         const data = document.getElementById('data').value;
@@ -177,7 +191,12 @@ setInterval(atualizarDataHora, 60 * 1000);
         const agora = new Date();
         const horaAtual = agora.toLocaleTimeString('pt-BR');
 
+        const idRegistro = typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : Date.now() + '-' + Math.random().toString(36).slice(2);
+
         const novoAtendimento = {
+            idRegistro: idRegistro,
             ecoponto: nomeEcoponto,
             placa: placa,
             data: data,
@@ -214,6 +233,8 @@ setInterval(atualizarDataHora, 60 * 1000);
         var url = localStorage.getItem('sheetsUrl');
         if (!url) return;
 
+        garantirIdRegistro(atendimento);
+
         fetch(url, {
             method: 'POST',
             mode: 'no-cors',
@@ -249,6 +270,16 @@ setInterval(atualizarDataHora, 60 * 1000);
         console.warn('Sem conexão. Registro na fila de envio (' + fila.length + ' pendente(s)).');
     }
 
+    function garantirIdRegistro(atendimento) {
+        if (!atendimento.idRegistro) {
+            atendimento.idRegistro = typeof crypto !== 'undefined' && crypto.randomUUID
+                ? crypto.randomUUID()
+                : Date.now() + '-' + Math.random().toString(36).slice(2);
+        }
+        atendimento.ecoponto = ecopontosPorId[atendimento.ecoponto] || atendimento.ecoponto;
+        return atendimento;
+    }
+
     function enviarPendentes() {
         var url = localStorage.getItem('sheetsUrl');
         if (!url) return;
@@ -260,6 +291,7 @@ setInterval(atualizarDataHora, 60 * 1000);
         var restante = [];
 
         var envios = fila.map(function(atendimento) {
+            garantirIdRegistro(atendimento);
             return fetch(url, {
                 method: 'POST',
                 mode: 'no-cors',

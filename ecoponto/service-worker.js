@@ -2,7 +2,7 @@
 
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-const CACHE_NAME = "ecopontos-v3"; // Inclua a versão do cache aqui
+const CACHE_NAME = "ecopontos-v4-20260714";
 
 const URLs_TO_CACHE = [
     '/ecoponto/',
@@ -54,40 +54,30 @@ if (workbox.navigationPreload.isSupported()) {
 }
 
 self.addEventListener('fetch', (event) => {
-    if (event.request.mode === 'navigate') {
-        // Se for uma navegação, tenta buscar da rede, mas faz fallback para a página offline
-        event.respondWith(
-            caches.match(event.request).then((response) => {
-                if (response) {
-                    return response; // Retorna do cache se estiver disponível
+    // POSTs para o Apps Script não podem ser gravados no Cache API.
+    if (event.request.method !== 'GET') return;
+
+    event.respondWith(
+        fetch(event.request).then((networkResponse) => {
+            const mesmaOrigem = new URL(event.request.url).origin === self.location.origin;
+            if (mesmaOrigem && networkResponse.ok) {
+                const copia = networkResponse.clone();
+                return caches.open(CACHE_NAME)
+                    .then((cache) => cache.put(event.request, copia))
+                    .catch(() => undefined)
+                    .then(() => networkResponse);
+            }
+            return networkResponse;
+        }).catch(() => {
+            return caches.match(event.request).then((cachedResponse) => {
+                if (cachedResponse) return cachedResponse;
+                if (event.request.mode === 'navigate') {
+                    return caches.match('/ecoponto/offline.html');
                 }
-                return fetch(event.request).then((networkResponse) => {
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, networkResponse.clone());
-                        return networkResponse;
-                    });
-                }).catch(() => {
-                    // Se a rede falhar, retorna uma página offline
-                    return caches.match('/ecoponto/offline.html');
-                });
-            })
-        );
-    } else {
-        // Para outros pedidos, tenta a rede primeiro e depois o cache
-        event.respondWith(
-            caches.match(event.request).then((response) => {
-                return response || fetch(event.request).then((networkResponse) => {
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, networkResponse.clone());
-                        return networkResponse;
-                    });
-                }).catch(() => {
-                    // Fallback para a página offline caso não haja resposta
-                    return caches.match('/ecoponto/offline.html');
-                });
-            })
-        );
-    }
+                return Response.error();
+            });
+        })
+    );
 });
 
 self.addEventListener('message', (event) => {
