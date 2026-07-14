@@ -62,6 +62,10 @@ const MANIFESTACAO_SYNC_COLUMNS = new Set([
     "encerrado_em",
 ]);
 
+function normalizeTaskStatus(status: unknown): unknown {
+    return status === 'em_andamento' ? 'em_progresso' : status;
+}
+
 async function handleEcopontoCaixasForm(db: SqlitePort, env: EventEnvelope): Promise<void> {
     if (!_createTaskRemocao) return;
 
@@ -198,12 +202,23 @@ export function registerAllHandlers(inbound: InboundService, db: SqlitePort): vo
         );
     });
 
+    inbound.on('task.movida', async (env: EventEnvelope) => {
+        const d = env.data as Record<string, unknown>;
+        const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
+        const novoStatus = normalizeTaskStatus(d.novo_status ?? d.novoStatus ?? d.status);
+        if (!novoStatus) return;
+        await db.execute(
+            `UPDATE tarefas SET status = ?, atualizado_em = ? WHERE id = ?`,
+            [novoStatus, env.time, tarefaId],
+        );
+    });
+
     inbound.on('task.atualizada', async (env: EventEnvelope) => {
         const d = env.data as Record<string, unknown>;
         const tarefaId = d.tarefa_id ?? d.tarefaId ?? env.aggregate.id;
         await db.execute(
             `UPDATE tarefas SET status = ?, atualizado_em = ? WHERE id = ?`,
-            [d.status ?? d.novo_status ?? 'em_progresso', env.time, tarefaId],
+            [normalizeTaskStatus(d.status ?? d.novo_status ?? 'em_progresso'), env.time, tarefaId],
         );
     });
 

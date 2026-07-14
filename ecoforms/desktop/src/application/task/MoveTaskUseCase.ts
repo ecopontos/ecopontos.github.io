@@ -34,7 +34,7 @@ export class MoveTaskUseCase {
         if (input.to === 'em_progresso') {
             await this.sync.write('task.movida', {
                 tarefa_id: task.id,
-                novo_status: 'em_andamento',
+                novo_status: 'em_progresso',
                 demanda_id: task.demandaId ?? null,
             }, { aggregateId: task.id, streamId: task.demandaId ?? undefined });
         } else if (input.to === 'concluido') {

@@ -1,0 +1,6 @@
+# Arquivos gerados pelo pipeline RBAC: o gerador escreve LF; fixar eol=lf
+# evita que o git (com core.autocrlf=true no Windows) os marque como
+# modificados a cada regeneração.
+*.generated.js text eol=lf
+ecoforms/desktop/src-tauri/src/commands/rbac_seed.sql text eol=lf
+ecoforms/packages/core/src/permissions/__snapshots__/*.json text eol=lf

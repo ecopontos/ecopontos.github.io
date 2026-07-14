@@ -268,6 +268,23 @@ describe('HandlerRegistry task.concluida', () => {
 
 // ── task.atualizada ────────────────────────────────────────────────────────
 
+// task.movida
+
+describe('HandlerRegistry task.movida', () => {
+    it('updates tarefas status from novo_status and normalizes legacy em_andamento', async () => {
+        const { db, getHandler } = setup();
+
+        await getHandler('task.movida')(makeEnvelope('task.movida', 'task-2', {
+            tarefa_id: 'task-2',
+            novo_status: 'em_andamento',
+        }));
+
+        const [sql, params] = firstCall(db);
+        expect(sql).toMatch(/UPDATE tarefas SET status = \?, atualizado_em = \? WHERE id = \?/);
+        expect(params).toEqual(['em_progresso', BASE_TIME, 'task-2']);
+    });
+});
+
 describe('HandlerRegistry task.atualizada', () => {
     it('updates tarefas status from payload', async () => {
         const { db, getHandler } = setup();

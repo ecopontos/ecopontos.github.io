@@ -102,7 +102,7 @@ describe('MoveTaskUseCase', () => {
         await sut.execute({ id: 'task-demand', to: 'em_progresso' });
 
         expect(synchronizer.aoMoverTask).toHaveBeenCalledWith('task-demand', 'demanda-1', 'em_progresso');
-        expect(fakeSync.writes.some(w => w.type === 'task.movida')).toBe(true);
+        expect(fakeSync.writes.some(w => w.type === 'task.movida' && w.data['novo_status'] === 'em_progresso')).toBe(true);
     });
 
     it('NÃO deve chamar synchronizer quando tarefa não tem demandaId', async () => {
