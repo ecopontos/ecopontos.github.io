@@ -15,7 +15,7 @@ Data da revisao: `2026-07-14`
 | `ecoforms` | privado | `Plataforma de formularios de campo com apps desktop, mobile e sincronizacao compartilhada` | deixar vazio enquanto privado | `formularios`, `field-data-collection`, `tauri`, `nextjs`, `capacitor`, `sqlite` | ok localmente | conferir description/topics na UI privada e ajustar |
 | `mtr` | privado | `Aplicativo local para manifesto de transporte de residuos` | deixar vazio enquanto privado | `mtr`, `residuos`, `nodejs`, `express`, `desktop-app` | ok localmente | conferir description/topics na UI privada e ajustar |
 | `matching` | privado | `Aplicacao de map matching com preprocessamento de malha e testes automatizados` | deixar vazio enquanto privado | `map-matching`, `geoprocessamento`, `nodejs`, `testing` | ok localmente | conferir description/topics na UI privada e ajustar |
-| `visita` | privado ou nao auditado publicamente | `Experiencia web de visita virtual com panoramas 360 e galeria multimidia` | `https://ecopontos.github.io/visita/` se continuar publicado via Pages de projeto | `visita-virtual`, `panorama-360`, `galeria`, `github-pages` | ok localmente | confirmar visibilidade e aplicar description/topics/homepage |
+| `visita` | privado ou nao auditado publicamente | `Experiencia web de visita virtual com panoramas 360 e galeria multimidia` | deixar vazio ate existir URL publica estavel | `visita-virtual`, `panorama-360`, `galeria` | ok localmente | confirmar visibilidade e aplicar description/topics |
 
 ## Repositorios sob demanda
 
@@ -32,3 +32,4 @@ Data da revisao: `2026-07-14`
 - `topics`: pelo menos `3`, refletindo dominio e stack
 - `homepage`: obrigatoria apenas para apps/sites publicados
 - `README`: obrigatorio quando o repo estiver ativo, publicado ou pronto para retomada
+
