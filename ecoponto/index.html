@@ -149,7 +149,7 @@
 
         #residuos-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
         }
 
@@ -170,6 +170,9 @@
             transition: all 0.15s ease;
             min-height: 52px;
             line-height: 1.2;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            min-width: 0;
         }
 
         .residuo-item:active {
