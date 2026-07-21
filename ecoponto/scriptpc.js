@@ -213,6 +213,7 @@ setInterval(atualizarDataHora, 60 * 1000);
 
         request.onsuccess = function(event) {
             var registroId = event.target.result;
+            novoAtendimento.id = registroId;
             console.log("Atendimento adicionado com sucesso");
             enviarParaSheets(novoAtendimento, registroId);
             document.getElementById("placa").value = '';
@@ -243,6 +244,7 @@ setInterval(atualizarDataHora, 60 * 1000);
         }).then(function() {
             console.log('Enviado para Google Sheets');
             if (registroId) atualizarStatus(registroId, 'Sincronizado');
+            atualizarIndicadorPendentes();
         }).catch(function() {
             adicionarFilaPendente(atendimento);
             atualizarIndicadorPendentes();
@@ -258,6 +260,31 @@ setInterval(atualizarDataHora, 60 * 1000);
             if (registro) {
                 registro.status = novoStatus;
                 objectStore.put(registro);
+            }
+        };
+    }
+
+    function atualizarStatusPorAtendimento(atendimento, novoStatus) {
+        if (atendimento.id) {
+            atualizarStatus(atendimento.id, novoStatus);
+            return;
+        }
+
+        if (!atendimento.idRegistro) return;
+
+        var transaction = db.transaction(["atendimentos"], "readwrite");
+        var objectStore = transaction.objectStore("atendimentos");
+        var request = objectStore.openCursor();
+        request.onsuccess = function(event) {
+            var cursor = event.target.result;
+            if (!cursor) return;
+
+            var registro = cursor.value;
+            if (registro.idRegistro === atendimento.idRegistro) {
+                registro.status = novoStatus;
+                cursor.update(registro);
+            } else {
+                cursor.continue();
             }
         };
     }
@@ -296,6 +323,8 @@ setInterval(atualizarDataHora, 60 * 1000);
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(atendimento)
+            }).then(function() {
+                atualizarStatusPorAtendimento(atendimento, 'Sincronizado');
             }).catch(function() {
                 restante.push(atendimento);
             });
