@@ -201,6 +201,19 @@ setInterval(atualizarDataHora, 60 * 1000);
         });
     }
 
+    function normalizarTexto(texto) {
+        return (texto || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function resolverBairroDigitado(bairroDigitado, bairroSelecionado) {
+        if (bairroSelecionado) return bairroSelecionado;
+        var texto = normalizarTexto(bairroDigitado);
+        var encontrado = bairros.find(function(b) {
+            return normalizarTexto(b) === texto;
+        });
+        return encontrado || '';
+    }
+
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
         const nomeEcoponto = obterNomeEcoponto();
@@ -208,13 +221,29 @@ setInterval(atualizarDataHora, 60 * 1000);
         const placa = document.getElementById('placa').value;
         const data = document.getElementById('data').value;
         const hora = document.getElementById('hora').value;
-        const bairro = document.getElementById('bairro').value;
+        const bairroInput = document.getElementById('bairro-input');
+        const bairroHidden = document.getElementById('bairro');
+
+        // Se o atendente digitou o bairro exatamente mas não clicou na sugestão,
+        // tenta resolver o valor pelo texto digitado antes de bloquear o envio.
+        let bairro = resolverBairroDigitado(bairroInput.value, bairroHidden.value);
+        if (bairro && bairro !== bairroHidden.value) {
+            bairroHidden.value = bairro;
+            bairroInput.value = bairro;
+        }
 
         const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
                                           .map(item => item.dataset.residuo);
 
-        if (!nomeEcoponto || placa === "" || data === "" || hora === "" || bairro === "") {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+        const camposFaltando = [];
+        if (!nomeEcoponto) camposFaltando.push('Ecoponto (configuração)');
+        if (placa === "") camposFaltando.push('Placa');
+        if (data === "") camposFaltando.push('Data');
+        if (hora === "") camposFaltando.push('Hora');
+        if (bairro === "") camposFaltando.push('Bairro (selecione uma opção da lista)');
+
+        if (camposFaltando.length > 0) {
+            alert("Por favor, preencha: " + camposFaltando.join(', '));
             return;
         }
 
