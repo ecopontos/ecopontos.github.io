@@ -171,6 +171,49 @@ atualizarDataHora();
 // Configura o intervalo para atualizar a data e a hora a cada minuto (60.000 milissegundos)
 setInterval(atualizarDataHora, 60 * 1000);
 
+    function verificarPlacaMesmoDia(placa, data) {
+        var placaNormalizada = (placa || '').trim().toUpperCase();
+        return new Promise(function(resolve, reject) {
+            var transaction = db.transaction(["atendimentos"], "readonly");
+            var objectStore = transaction.objectStore("atendimentos");
+            var request = objectStore.openCursor();
+
+            request.onsuccess = function(event) {
+                var cursor = event.target.result;
+                if (!cursor) {
+                    resolve(false);
+                    return;
+                }
+
+                var registro = cursor.value;
+                var mesmaPlaca = (registro.placa || '').trim().toUpperCase() === placaNormalizada;
+                if (mesmaPlaca && registro.data === data) {
+                    resolve(true);
+                    return;
+                }
+
+                cursor.continue();
+            };
+
+            request.onerror = function(event) {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    function normalizarTexto(texto) {
+        return (texto || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function resolverBairroDigitado(bairroDigitado, bairroSelecionado) {
+        if (bairroSelecionado) return bairroSelecionado;
+        var texto = normalizarTexto(bairroDigitado);
+        var encontrado = bairros.find(function(b) {
+            return normalizarTexto(b) === texto;
+        });
+        return encontrado || '';
+    }
+
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
         const nomeEcoponto = obterNomeEcoponto();
@@ -178,56 +221,82 @@ setInterval(atualizarDataHora, 60 * 1000);
         const placa = document.getElementById('placa').value;
         const data = document.getElementById('data').value;
         const hora = document.getElementById('hora').value;
-        const bairro = document.getElementById('bairro').value;
+        const bairroInput = document.getElementById('bairro-input');
+        const bairroHidden = document.getElementById('bairro');
+
+        // Se o atendente digitou o bairro exatamente mas não clicou na sugestão,
+        // tenta resolver o valor pelo texto digitado antes de bloquear o envio.
+        let bairro = resolverBairroDigitado(bairroInput.value, bairroHidden.value);
+        if (bairro && bairro !== bairroHidden.value) {
+            bairroHidden.value = bairro;
+            bairroInput.value = bairro;
+        }
 
         const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
                                           .map(item => item.dataset.residuo);
 
-        if (!nomeEcoponto || placa === "" || data === "" || hora === "" || bairro === "") {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+        const camposFaltando = [];
+        if (!nomeEcoponto) camposFaltando.push('Ecoponto (configuração)');
+        if (placa === "") camposFaltando.push('Placa');
+        if (data === "") camposFaltando.push('Data');
+        if (hora === "") camposFaltando.push('Hora');
+        if (bairro === "") camposFaltando.push('Bairro (selecione uma opção da lista)');
+
+        if (camposFaltando.length > 0) {
+            alert("Por favor, preencha: " + camposFaltando.join(', '));
             return;
         }
 
-        const agora = new Date();
-        const horaAtual = agora.toLocaleTimeString('pt-BR');
+        verificarPlacaMesmoDia(placa, data).then(function(jaRegistrado) {
+            if (jaRegistrado) {
+                alert("Este veículo (placa " + placa.trim().toUpperCase() + ") já possui um registro para esta data. Não é permitido usar o Ecoponto duas vezes no mesmo dia.");
+                return;
+            }
 
-        const idRegistro = typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : Date.now() + '-' + Math.random().toString(36).slice(2);
+            const agora = new Date();
+            const horaAtual = agora.toLocaleTimeString('pt-BR');
 
-        const novoAtendimento = {
-            idRegistro: idRegistro,
-            ecoponto: nomeEcoponto,
-            placa: placa,
-            data: data,
-            hora: hora,
-            bairro: bairro,
-            residuos: residuosSelecionados.join(';'),
-            horaRegistro: horaAtual,
-            status: 'Pendente'
-        };
+            const idRegistro = typeof crypto !== 'undefined' && crypto.randomUUID
+                ? crypto.randomUUID()
+                : Date.now() + '-' + Math.random().toString(36).slice(2);
 
-        var transaction = db.transaction(["atendimentos"], "readwrite");
-        var objectStore = transaction.objectStore("atendimentos");
-        var request = objectStore.add(novoAtendimento);
+            const novoAtendimento = {
+                idRegistro: idRegistro,
+                ecoponto: nomeEcoponto,
+                placa: placa,
+                data: data,
+                hora: hora,
+                bairro: bairro,
+                residuos: residuosSelecionados.join(';'),
+                horaRegistro: horaAtual,
+                status: 'Pendente'
+            };
 
-        request.onsuccess = function(event) {
-            var registroId = event.target.result;
-            novoAtendimento.id = registroId;
-            console.log("Atendimento adicionado com sucesso");
-            enviarParaSheets(novoAtendimento, registroId);
-            document.getElementById("placa").value = '';
-            document.getElementById("data").value = '';
-            document.getElementById("hora").value = '';
-            document.getElementById("bairro").value = '';
-            document.getElementById("bairro-input").value = '';
-            document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
-            atualizarDataHora();
-        };
+            var transaction = db.transaction(["atendimentos"], "readwrite");
+            var objectStore = transaction.objectStore("atendimentos");
+            var request = objectStore.add(novoAtendimento);
 
-        request.onerror = function(event) {
-            console.error("Erro ao adicionar atendimento:", event.target.errorCode);
-        };
+            request.onsuccess = function(event) {
+                var registroId = event.target.result;
+                novoAtendimento.id = registroId;
+                console.log("Atendimento adicionado com sucesso");
+                enviarParaSheets(novoAtendimento, registroId);
+                document.getElementById("placa").value = '';
+                document.getElementById("data").value = '';
+                document.getElementById("hora").value = '';
+                document.getElementById("bairro").value = '';
+                document.getElementById("bairro-input").value = '';
+                document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
+                atualizarDataHora();
+            };
+
+            request.onerror = function(event) {
+                console.error("Erro ao adicionar atendimento:", event.target.errorCode);
+            };
+        }).catch(function(erro) {
+            console.error("Erro ao verificar duplicidade de placa:", erro);
+            alert("Não foi possível verificar registros existentes. Tente novamente.");
+        });
     }
 
     function enviarParaSheets(atendimento, registroId) {
