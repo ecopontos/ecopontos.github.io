@@ -283,12 +283,12 @@
 
     <div class="card">
         <label for="placa">Placa do veículo</label>
-        <input type="text" id="placa" placeholder="ABC1D23" autocomplete="off" inputmode="text" onkeyup="this.value = this.value.toUpperCase();">
+        <input type="text" id="placa" placeholder="ABC1D23" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" onkeyup="this.value = this.value.toUpperCase();">
     </div>
 
     <div class="card">
         <label for="bairro-input">Bairro</label>
-        <input type="text" id="bairro-input" placeholder="Digite para filtrar..." autocomplete="off">
+        <input type="text" id="bairro-input" placeholder="Digite para filtrar..." autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
         <input type="hidden" id="bairro" value="">
         <div id="bairro-lista" class="bairro-lista"></div>
     </div>

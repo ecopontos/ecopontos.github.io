@@ -34,12 +34,12 @@
 <body>
     <img src="logotipo.png" width="250">
     <h2>Atendimento do Ecoponto <span id="nome-ecoponto-display"></span></h2>
-   <p>Placa: <input type="text" id="placa" onkeyup="this.value = this.value.toUpperCase();"></p>
+   <p>Placa: <input type="text" id="placa" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" onkeyup="this.value = this.value.toUpperCase();"></p>
     <p>Data: <input type="date" id="data"></p>
     <p>Hora: <input type="time" id="hora"></p>
     <div>
         <label for="bairro-input">Bairro:</label>
-        <input type="text" id="bairro-input" placeholder="Digite para filtrar..." autocomplete="off">
+        <input type="text" id="bairro-input" placeholder="Digite para filtrar..." autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
         <input type="hidden" id="bairro" value="">
         <div id="bairro-lista" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:180px;overflow-y:auto;"></div>
     </div>
