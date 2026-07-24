@@ -2,7 +2,7 @@
 
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-const CACHE_NAME = "ecopontos-v4-20260714";
+const CACHE_NAME = "ecopontos-v5-20260724";
 
 const URLs_TO_CACHE = [
     '/ecoponto/',
@@ -13,6 +13,8 @@ const URLs_TO_CACHE = [
     '/ecoponto/registros.js',
     '/ecoponto/notificacoes.js',
     '/ecoponto/configuracao.js',
+    '/ecoponto/campos-schema.js',
+    '/ecoponto/campos.js',
     '/ecoponto/logotipo.png',
     '/ecoponto/offline.html',
 ];

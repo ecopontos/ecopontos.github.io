@@ -26,87 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
         nomeEcopontoDisplay.textContent = nomeEcoponto || 'Ecoponto não configurado';
     }
 
-    const bairros = [
-        "Não Informado", "Abraão", "Agronômica", "Armação do Pântano do Sul", "Balneário", "Barra da Lagoa",
-        "Bom Abrigo", "Cachoeira do Bom Jesus", "Cacupé", "Campeche", "Canasvieiras",
-        "Canto", "Caieira", "Capoeiras", "Carianos",
-        "Carvoeira", "Centro", "Coloninha", "Coqueiros", "Córrego Grande",
-        "Costa de Dentro", "Costeira do Pirajubaé", "Daniela", "Estreito", "Ingleses", "Itacorubi", "Itaguaçu",
-        "Jardim Atlântico", "João Paulo", "José Mendes", "Jurerê", "Jurerê Internacional",
-        "Lagoa da Conceição", "Monte Cristo", "Monte Verde", "Morro das Pedras", "Pantanal", "Pântano do Sul",
-        "Ponta das Canas", "Praia Brava", "Ratones", "Ribeirão da Ilha", "Rio Tavares", "Saco dos Limões", "Saco Grande",
-        "Sambaqui", "Santa Mônica", "Santinho", "Santo Antônio de Lisboa", "Tapera", "Trindade",
-        "Vargem Pequena", "Vargem Grande", "Vargem do Bom Jesus", "Rio Vermelho", "Morro do 25", "Serrinha",
-        "Morro da Cruz", "Morro do Horácio", "Morro do Quilombo", "Monte Serrat", "Morro da Queimada"
-    ];
-
-    const residuos = [
-        "Amianto", "Animal", "Cápsula de Café", "Eletrônico", "Entulhos",
-        "Esponja", "Gesso", "Isopor", "Lâmpadas", "Livro/Revista",
-        "Madeiras", "Material de Escrita", "Óleo de Cozinha", "Orgânico",
-        "Pilhas/Baterias", "Pneus", "Podas", "Reciclável", "Roupas/Calçados",
-        "Sucata/Metal", "Vidros", "Volumosos"
-    ];
+    // Campos do formulário: vêm do schema injetado em configuração (mesmo
+    // formato "campos" do formbuilder do ecoforms) ou do schema padrão
+    // embutido, reproduzindo o comportamento original (placa/bairro/resíduos).
+    const schema = EcoformsSchema.obterSchemaAtivo();
+    const camposContainer = document.getElementById('campos-dinamicos');
+    const controllers = EcoformsCampos.renderizarCampos(schema, camposContainer);
 
     let db;
-
-    function inicializarBairros() {
-        var input = document.getElementById('bairro-input');
-        var hidden = document.getElementById('bairro');
-        var lista = document.getElementById('bairro-lista');
-
-        function renderBairros(filtro) {
-            lista.innerHTML = '';
-            var texto = (filtro || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            var filtrados = bairros.filter(function(b) {
-                var normalizado = b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-                return texto === '' || normalizado.indexOf(texto) !== -1;
-            });
-
-            filtrados.forEach(function(bairro) {
-                var btn = document.createElement('div');
-                btn.className = 'bairro-opcao' + (hidden.value === bairro ? ' selecionado' : '');
-                btn.textContent = bairro;
-                btn.addEventListener('click', function() {
-                    hidden.value = bairro;
-                    input.value = bairro;
-                    lista.innerHTML = '';
-                });
-                lista.appendChild(btn);
-            });
-        }
-
-        input.addEventListener('input', function() {
-            hidden.value = '';
-            renderBairros(this.value);
-        });
-
-        input.addEventListener('focus', function() {
-            if (!hidden.value) renderBairros(this.value);
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.card') || (!e.target.closest('#bairro-input') && !e.target.closest('#bairro-lista'))) {
-                lista.innerHTML = '';
-            }
-        });
-    }
-
-    function criarCheckBoxesResiduos() {
-        const container = document.getElementById('residuos-container');
-        residuos.forEach(residuo => {
-            const item = document.createElement('div');
-            item.className = 'residuo-item';
-            item.dataset.residuo = residuo;
-            item.textContent = residuo;
-
-            item.addEventListener('click', function() {
-                this.classList.toggle('selecionado');
-            });
-
-            container.appendChild(item);
-        });
-    }
 
     function inicializarBancoDeDados() {
         return new Promise((resolve, reject) => {
@@ -148,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function atualizarDataHora() {
     const agora = new Date();
-    
+
     // Formata a data no formato YYYY-MM-DD
     const ano = agora.getFullYear();
     const mes = String(agora.getMonth() + 1).padStart(2, '0'); // Mês começa em 0
@@ -201,55 +128,56 @@ setInterval(atualizarDataHora, 60 * 1000);
         });
     }
 
-    function normalizarTexto(texto) {
-        return (texto || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    }
-
-    function resolverBairroDigitado(bairroDigitado, bairroSelecionado) {
-        if (bairroSelecionado) return bairroSelecionado;
-        var texto = normalizarTexto(bairroDigitado);
-        var encontrado = bairros.find(function(b) {
-            return normalizarTexto(b) === texto;
+    // Lê os valores atuais de todos os campos do schema ativo.
+    // Retorna { valores: {[campoId]: valor}, faltando: [labels] }.
+    function coletarValoresCampos() {
+        const valores = {};
+        const faltando = [];
+        schema.campos.forEach(function(campo) {
+            const controller = controllers[campo.id];
+            if (!controller) return;
+            const valor = controller.get();
+            const vazio = valor === '' || valor == null || (Array.isArray(valor) && valor.length === 0);
+            if (campo.required && vazio) {
+                faltando.push(campo.label || campo.id);
+            }
+            valores[campo.id] = valor;
         });
-        return encontrado || '';
+        return { valores: valores, faltando: faltando };
     }
 
     function adicionarAtendimento() {
         // Recupera o nome do Ecoponto salvo no localStorage
         const nomeEcoponto = obterNomeEcoponto();
 
-        const placa = document.getElementById('placa').value;
         const data = document.getElementById('data').value;
         const hora = document.getElementById('hora').value;
-        const bairroInput = document.getElementById('bairro-input');
-        const bairroHidden = document.getElementById('bairro');
 
-        // Se o atendente digitou o bairro exatamente mas não clicou na sugestão,
-        // tenta resolver o valor pelo texto digitado antes de bloquear o envio.
-        let bairro = resolverBairroDigitado(bairroInput.value, bairroHidden.value);
-        if (bairro && bairro !== bairroHidden.value) {
-            bairroHidden.value = bairro;
-            bairroInput.value = bairro;
-        }
-
-        const residuosSelecionados = Array.from(document.querySelectorAll('#residuos-container .selecionado'))
-                                          .map(item => item.dataset.residuo);
+        const coletado = coletarValoresCampos();
+        const valoresCampos = coletado.valores;
 
         const camposFaltando = [];
         if (!nomeEcoponto) camposFaltando.push('Ecoponto (configuração)');
-        if (placa === "") camposFaltando.push('Placa');
+        camposFaltando.push.apply(camposFaltando, coletado.faltando);
         if (data === "") camposFaltando.push('Data');
         if (hora === "") camposFaltando.push('Hora');
-        if (bairro === "") camposFaltando.push('Bairro (selecione uma opção da lista)');
 
         if (camposFaltando.length > 0) {
             alert("Por favor, preencha: " + camposFaltando.join(', '));
             return;
         }
 
-        verificarPlacaMesmoDia(placa, data).then(function(jaRegistrado) {
+        // A verificação de veículo duplicado no dia só se aplica quando o
+        // schema ativo possui um campo "placa" (comportamento original).
+        const temCampoPlaca = schema.campos.some(function(c) { return c.id === 'placa'; });
+        const placaValor = temCampoPlaca ? (valoresCampos.placa || '') : '';
+        const promessaDuplicidade = temCampoPlaca
+            ? verificarPlacaMesmoDia(placaValor, data)
+            : Promise.resolve(false);
+
+        promessaDuplicidade.then(function(jaRegistrado) {
             if (jaRegistrado) {
-                alert("Este veículo (placa " + placa.trim().toUpperCase() + ") já possui um registro para esta data. Não é permitido usar o Ecoponto duas vezes no mesmo dia.");
+                alert("Este veículo (placa " + placaValor.trim().toUpperCase() + ") já possui um registro para esta data. Não é permitido usar o Ecoponto duas vezes no mesmo dia.");
                 return;
             }
 
@@ -263,14 +191,15 @@ setInterval(atualizarDataHora, 60 * 1000);
             const novoAtendimento = {
                 idRegistro: idRegistro,
                 ecoponto: nomeEcoponto,
-                placa: placa,
                 data: data,
                 hora: hora,
-                bairro: bairro,
-                residuos: residuosSelecionados.join(';'),
                 horaRegistro: horaAtual,
                 status: 'Pendente'
             };
+            schema.campos.forEach(function(campo) {
+                const valor = valoresCampos[campo.id];
+                novoAtendimento[campo.id] = Array.isArray(valor) ? valor.join(';') : (valor || '');
+            });
 
             var transaction = db.transaction(["atendimentos"], "readwrite");
             var objectStore = transaction.objectStore("atendimentos");
@@ -281,12 +210,12 @@ setInterval(atualizarDataHora, 60 * 1000);
                 novoAtendimento.id = registroId;
                 console.log("Atendimento adicionado com sucesso");
                 enviarParaSheets(novoAtendimento, registroId);
-                document.getElementById("placa").value = '';
+                schema.campos.forEach(function(campo) {
+                    const controller = controllers[campo.id];
+                    if (controller && controller.reset) controller.reset();
+                });
                 document.getElementById("data").value = '';
                 document.getElementById("hora").value = '';
-                document.getElementById("bairro").value = '';
-                document.getElementById("bairro-input").value = '';
-                document.querySelectorAll('#residuos-container .selecionado').forEach(item => item.classList.remove('selecionado'));
                 atualizarDataHora();
             };
 
@@ -452,18 +381,31 @@ function exportarDadosCSV() {
 
         const maxDataHora = `${maxRegistro.data.replace(/-/g, '')}_${maxRegistro.hora.replace(/:/g, '')}`;
 
+        // Colunas: Ecoponto, campos do schema ativo (na ordem do schema),
+        // seguidos dos campos de sistema fixos (Data/Hora/Hora Registro/Status).
+        const colunas = [{ chave: 'ecoponto', titulo: 'Ecoponto' }]
+            .concat(schema.campos.map(function(campo) {
+                return { chave: campo.id, titulo: campo.label || campo.id };
+            }))
+            .concat([
+                { chave: 'data', titulo: 'Data' },
+                { chave: 'hora', titulo: 'Hora' },
+                { chave: 'horaRegistro', titulo: 'Hora Registro' },
+                { chave: 'status', titulo: 'Status' }
+            ]);
+
         const csvContent = [
-            ['Ecoponto', 'Placa', 'Data', 'Hora', 'Bairro', 'Resíduos', 'Hora Registro', 'Status'],
-            ...naoExportados.map(registro => [
-                registro.ecoponto,
-                registro.placa,
-                registro.data,
-                registro.hora,
-                registro.bairro,
-                `"${registro.residuos.split(';').join(',')}"`,
-                registro.horaRegistro,
-                registro.status || 'Pendente'
-            ])
+            colunas.map(function(c) { return c.titulo; }),
+            ...naoExportados.map(function(registro) {
+                return colunas.map(function(c) {
+                    let valor = registro[c.chave] || (c.chave === 'status' ? 'Pendente' : '');
+                    // Valores multi-seleção são armazenados como "a;b;c".
+                    if (typeof valor === 'string' && valor.indexOf(';') !== -1) {
+                        valor = `"${valor.split(';').join(',')}"`;
+                    }
+                    return valor;
+                });
+            })
         ]
         .map(e => e.join(','))
         .join('\n');
@@ -492,8 +434,6 @@ function exportarDadosCSV() {
 
 
     // Inicializa componentes e configurações
-    inicializarBairros();
-    criarCheckBoxesResiduos();
     inicializarBancoDeDados();
     atualizarDataHora(); // Atualiza data e hora inicialmente
 
