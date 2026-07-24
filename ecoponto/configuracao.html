@@ -126,36 +126,6 @@
         .btn-outline:active {
             background: #e8f5e9;
         }
-
-        .card textarea {
-            width: 100%;
-            padding: 12px;
-            font-size: 13px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: #fff;
-            color: #1a1a1a;
-            resize: vertical;
-        }
-
-        .card textarea:focus {
-            outline: none;
-            border-color: #2e7d32;
-            box-shadow: 0 0 0 3px rgba(46,125,50,0.2);
-        }
-
-        .card .ajuda {
-            font-size: 12px;
-            color: #777;
-            margin-top: 6px;
-        }
-
-        .card .erro {
-            font-size: 13px;
-            color: #c62828;
-            margin-top: 6px;
-        }
     </style>
 </head>
 <body>
@@ -193,14 +163,6 @@
             <label for="sheetsUrl">URL do Google Sheets (Apps Script)</label>
             <input type="text" id="sheetsUrl" name="sheetsUrl" value="https://script.google.com/macros/s/AKfycbwSIAHiMqyaDMezG26fRweVRU9BvU-lAw0x9xFPF1kKKBcAy5nPqJpySzmLg3Wan1dy/exec" placeholder="https://script.google.com/macros/s/.../exec" inputmode="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
-
-        <div class="card">
-            <label for="camposSchema">Campos do formulário (JSON do formbuilder)</label>
-            <textarea id="camposSchema" rows="8" placeholder='Cole aqui o JSON de "campos" exportado do formbuilder do ecoforms. Deixe em branco para usar os campos padrão (Placa, Bairro, Resíduos).'></textarea>
-            <div class="ajuda">Formato: { "campos": [ { "id", "type", "label", "required", "options" }, ... ] }. Tipos suportados: text, select, chips, chips_multiple, date, time.</div>
-            <div class="erro" id="camposSchemaErro"></div>
-            <button class="btn btn-outline" type="button" style="width:100%;margin-top:10px;" onclick="restaurarCamposPadrao()">Restaurar campos padrão</button>
-        </div>
     </form>
 
     <div class="bottom-bar">
@@ -208,7 +170,6 @@
         <a class="btn btn-outline" href="index.html">Voltar</a>
     </div>
 
-    <script src="campos-schema.js"></script>
     <script src="configuracao.js"></script>
 </body>
 </html>
