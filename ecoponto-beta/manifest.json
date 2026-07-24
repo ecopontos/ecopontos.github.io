@@ -1,0 +1,27 @@
+{
+  "name": "Atendimentos em Ecopontos (Beta)",
+  "short_name": "Ecopontos Beta",
+  "version": "1.0.0",
+  "description": "Versão beta do app de atendimentos de ecoponto, com campos configuráveis via schema JSON do formbuilder.",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/ecoponto-beta/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#006b97",
+  "id": "ecopontobetapmf",
+  "dir": "auto",
+  "lang": "pt-BR",
+  "orientation": "portrait",
+  "scope": "/ecoponto-beta/"
+}
