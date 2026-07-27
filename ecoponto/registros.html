@@ -110,6 +110,23 @@
             font-size: 16px;
         }
 
+        .filtro-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .filtro-bar select {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+            color: #1a1a1a;
+            appearance: auto;
+        }
+
         .contador {
             text-align: center;
             font-size: 14px;
@@ -156,6 +173,15 @@
 <body>
     <div class="header">
         <h1>Registros de Atendimentos</h1>
+    </div>
+
+    <div class="filtro-bar">
+        <select id="filtro-mes">
+            <option value="">Todos os meses</option>
+        </select>
+        <select id="filtro-dia" disabled>
+            <option value="">Todos os dias</option>
+        </select>
     </div>
 
     <div class="contador" id="contador"></div>
