@@ -17,6 +17,7 @@ Este repositorio sustenta o site principal publicado em GitHub Pages e concentra
 - `ecoponto/`: modulo operacional mantido no hub
 - `gestaoecoponto/`: assets e telas ligados a gestao
 - `revista/`, `transbordo/`, `transbordoveo/`: frentes ainda publicadas a partir deste repo
+- `volumosos/`: agendamento de coleta de volumosos (cópia publicada; fonte em `ecoforms/volumosos-pwa/`)
 - `docs/`: notas tecnicas e material de consolidacao
 - `INVENTARIO_REPOS.md`: inventario operacional dos repositorios da conta
 
