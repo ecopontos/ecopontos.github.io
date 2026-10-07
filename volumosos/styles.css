@@ -50,6 +50,18 @@ header {
 
 .marca { display: block; font-weight: 700; padding: 10px 0 4px; }
 
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.topo .marca { flex: 1; }
+
+.btn-instalar {
+    background: rgba(255, 255, 255, .15);
+    color: inherit;
+    border-color: rgba(255, 255, 255, .4);
+    font-size: .8rem;
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
 nav { display: flex; gap: 4px; overflow-x: auto; }
 
 nav a {

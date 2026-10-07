@@ -3,6 +3,7 @@ import { FORM_VOLUMOSOS, ORIENTACOES_CIDADAO } from './form-volumosos.js';
 import { buscarCep } from './cep.js';
 import { comprimirFoto } from './fotos.js';
 import { caminhoFoto, enviarFoto, testarConexao } from './drive.js';
+import { planejarExemplo, fotosExemplo, semFotoInterna } from './dados-exemplo.js';
 import { uuidv7 } from './id.js';
 import {
     REGRAS_ABERTURA, ROTULO_SITUACAO, formatarData, gerarDatasProgramacao, hojeLocal,
@@ -656,7 +657,147 @@ async function telaAjustes() {
             h('button', { class: 'btn btn-sec', onclick: () => inputImport.click() }, 'Importar'),
             inputImport));
 
-    main.replaceChildren(h('h1', {}, 'Ajustes'), formDrive, backup);
+    // ── Dados de exemplo ──────────────────────────────────────
+    const temExemplo = (await Promise.all([
+        db.listar('regioes'), db.listar('coletas'), db.listar('agendamentos'),
+    ])).flat().some((r) => r.exemplo);
+
+    /** Gera um JPEG pequeno com o texto "FOTO DE EXEMPLO" + legenda. */
+    async function fotoSintetica(legenda) {
+        const c = document.createElement('canvas');
+        c.width = 640; c.height = 480;
+        const g = c.getContext('2d');
+        g.fillStyle = '#e8e4dc'; g.fillRect(0, 0, c.width, c.height);
+        g.fillStyle = '#8a8578';
+        g.fillRect(60, 220, 160, 200); g.fillRect(260, 180, 140, 240); g.fillRect(440, 260, 140, 160);
+        g.fillStyle = '#5a564d'; g.font = 'bold 40px sans-serif'; g.textAlign = 'center';
+        g.fillText('FOTO DE EXEMPLO', c.width / 2, 120);
+        g.font = '22px sans-serif';
+        g.fillText(String(legenda ?? '').slice(0, 48), c.width / 2, 160);
+        return new Promise((resolve) => c.toBlob(resolve, 'image/jpeg', 0.7));
+    }
+
+    async function carregarExemplo() {
+        const hoje = hojeLocal();
+        const plano = planejarExemplo(hoje);
+        for (const r of plano.regioes) await db.gravar('regioes', r);
+        for (const c of plano.coletas) await db.gravar('coletas', c);
+        for (const a of plano.agendamentos) await db.gravar('agendamentos', semFotoInterna(a));
+        for (const f of fotosExemplo(plano.agendamentos)) {
+            const blob = await fotoSintetica(f.legenda);
+            await db.gravar('fotos', { id: uuidv7(), agendamentoId: f.agendamentoId, blob, nome: f.nome });
+        }
+        toast(`Dados de exemplo carregados: ${plano.regioes.length} regiões, ${plano.coletas.length} coletas, ${plano.agendamentos.length} agendamentos`);
+    }
+
+    async function removerExemplo() {
+        let n = 0;
+        for (const nome of ['fotos', 'agendamentos', 'coletas', 'regioes']) {
+            // fotos não têm `exemplo`: remove as dos agendamentos de exemplo.
+            if (nome === 'fotos') continue;
+            for (const r of await db.listar(nome)) {
+                if (!r.exemplo) continue;
+                if (nome === 'agendamentos') {
+                    for (const f of await db.porIndice('fotos', 'agendamentoId', r.id)) { await db.remover('fotos', f.id); n++; }
+                }
+                await db.remover(nome, r.id); n++;
+            }
+        }
+        toast(`Dados de exemplo removidos (${n} registros)`);
+    }
+
+    const exemplo = h('div', { class: 'card form' },
+        h('h2', {}, 'Dados de exemplo'),
+        h('p', { class: 'ajuda' }, 'Cria 2 regiões fictícias e 4 coletas cobrindo todas as situações (encerrada, aberta, lotada, aguardando), com 6 agendamentos e fotos sintéticas. Serve para demonstrar o app e testar o checklist — nada sobrescreve seus dados reais.'),
+        h('div', { class: 'acoes' },
+            h('button', {
+                class: 'btn btn-sec',
+                onclick: async (e) => {
+                    if (temExemplo && !confirm('Já existem dados de exemplo. Carregar de novo vai duplicá-los. Continuar?')) return;
+                    e.currentTarget.disabled = true;
+                    try { await carregarExemplo(); navegar('#/ajustes'); } catch (err) { toast(err.message, 'erro'); e.currentTarget.disabled = false; }
+                },
+            }, '🎭 Carregar dados de exemplo'),
+            temExemplo ? h('button', {
+                class: 'btn btn-sec',
+                onclick: async (e) => {
+                    if (!confirm('Remover todos os dados de exemplo deste aparelho?')) return;
+                    e.currentTarget.disabled = true;
+                    try { await removerExemplo(); navegar('#/ajustes'); } catch (err) { toast(err.message, 'erro'); e.currentTarget.disabled = false; }
+                },
+            }, 'Remover dados de exemplo') : null));
+
+    main.replaceChildren(h('h1', {}, 'Ajustes'), formDrive, exemplo, backup);
+}
+
+// ── Tela: Ajuda ─────────────────────────────────────────────
+
+function telaAjuda() {
+    const main = $main();
+
+    function secao(titulo, ...filhos) {
+        return h('section', { class: 'card form' }, h('h2', {}, titulo), ...filhos);
+    }
+    function passo(n, titulo, ...detalhes) {
+        return h('li', {}, h('strong', {}, `${n}. ${titulo}`),
+            detalhes.length ? h('div', { class: 'ajuda' }, ...detalhes) : null);
+    }
+
+    main.replaceChildren(
+        h('h1', {}, 'Ajuda do operador'),
+        h('p', { class: 'ajuda' }, 'Guia rápido para quem usa o app no dia a dia. O app funciona offline: tudo fica salvo neste aparelho.'),
+
+        secao('Ordem de trabalho (primeira vez)',
+            h('ol', {},
+                passo(1, 'Regiões', 'Cadastre cada região com seus bairros (um por linha) e a regra de abertura das inscrições. Um bairro só pode pertencer a uma região. Sem bairros cadastrados, a região aceita qualquer bairro digitado.'),
+                passo(2, 'Coletas', 'Programe as coletas por região: data/período, dia(s) da semana, repetição (semanal, quinzenal…) e, se quiser, limite de agendamentos por coleta.'),
+                passo(3, 'Agendar', 'Quando as inscrições abrirem, registre os pedidos dos cidadãos.'),
+                passo(4, 'Checklist', 'No dia da coleta, abra o checklist da coleta e envie ao motorista.')),
+            h('p', { class: 'ajuda' }, 'As inscrições abrem conforme a regra da região (semana anterior ou N dias antes) e sempre encerram na véspera da coleta.')),
+
+        secao('Registrar um agendamento (Agendar)',
+            h('ul', {},
+                h('li', {}, 'Só aparecem as coletas com inscrições abertas hoje. Se não houver nenhuma, a tela mostra as próximas aberturas.'),
+                h('li', {}, 'Preencha os dados como na página do serviço da SMMA: nome completo, CPF, telefone, e-mail (opcional), endereço e descrição dos resíduos com quantidades.'),
+                h('li', {}, 'O CEP consulta o ViaCEP e preenche rua e bairro automaticamente (precisa de internet nesse momento).'),
+                h('li', {}, 'O app valida: CPF com dígito verificador, até 1 m³ por residência e um agendamento por CPF e por endereço em cada coleta.'),
+                h('li', {}, 'Fotos são opcionais (até 5), escolhidas da galeria — geralmente chegam pelo WhatsApp do cidadão.'))),
+
+        secao('Situações de uma coleta',
+            h('ul', {},
+                h('li', {}, h('strong', {}, 'Aguardando'), ' — programada, inscrições ainda não abriram.'),
+                h('li', {}, h('strong', {}, 'Aberta'), ' — aceita agendamentos agora.'),
+                h('li', {}, h('strong', {}, 'Lotada'), ' — atingiu o limite de agendamentos.'),
+                h('li', {}, h('strong', {}, 'Encerrada'), ' — passou da véspera da coleta.'),
+                h('li', {}, h('strong', {}, 'Cancelada'), ' — coleta cancelada (os agendamentos permanecem para consulta).'))),
+
+        secao('No dia da coleta (Checklist)',
+            h('ul', {},
+                h('li', {}, h('strong', {}, '📤 Enviar ao motorista'), ' — compartilha o texto do checklist (compartilhamento do aparelho ou WhatsApp). Os pontos vêm ordenados por bairro e endereço; cancelados ficam de fora.'),
+                h('li', {}, h('strong', {}, '🖨️ Imprimir / Copiar texto'), ' — alternativas para entregar ao motorista.'),
+                h('li', {}, h('strong', {}, '💬 Confirmar ao cidadão'), ' — abre o WhatsApp do solicitante com data, endereço, protocolo e orientações (resíduos na rua só na data agendada). Use "Copiar confirmação" para colar manualmente.'),
+                h('li', {}, h('strong', {}, '✓ Coletado / Não coletado'), ' — marque o resultado em cada ponto durante ou após a coleta; dá para desfazer.'),
+                h('li', {}, h('strong', {}, '☁️ Fotos ao Drive'), ' — se configurado em Ajustes, envia as fotos pendentes ao Google Drive (mostra quantas já foram).'))),
+
+        secao('Backup (importante)',
+            h('ul', {},
+                h('li', {}, 'Os dados ficam só neste aparelho — não há sincronização entre aparelhos.'),
+                h('li', {}, 'Em ', h('a', { href: '#/ajustes' }, 'Ajustes → Backup'), ', exporte regularmente: o arquivo JSON inclui as fotos.'),
+                h('li', {}, 'Para trocar de aparelho ou recuperar dados, use Importar com o arquivo de backup.'))),
+
+        secao('Google Drive (opcional)',
+            h('p', { class: 'ajuda' }, 'Em Ajustes → Google Drive, informe a URL do Web App e a credencial do dispositivo fornecidas pelo administrador (formato deviceId.segredo). Toque em "Testar" para conferir a conexão. Sem isso, o app funciona normalmente — só o botão "Fotos ao Drive" fica indisponível.')),
+
+        secao('Instalar o app no aparelho',
+            h('p', { class: 'ajuda' }, 'Abrindo o app pelo navegador, aparece o botão "⬇️ Instalar app" no topo — toque nele e confirme para instalar como aplicativo (funciona offline e abre em tela própria). Se o botão não aparecer, o app já está instalado ou o navegador não oferece a instalação; no iPhone/iPad, use Compartilhar → "Adicionar à Tela de Início".')),
+
+        secao('Problemas comuns',
+            h('ul', {},
+                h('li', {}, h('strong', {}, 'Não aparece coleta para agendar'), ' — verifique em Coletas se há alguma com inscrições abertas hoje e se a região tem bairros que casam com o endereço.'),
+                h('li', {}, h('strong', {}, 'CEP não preenche o endereço'), ' — a consulta ao ViaCEP precisa de internet; preencha rua/bairro manualmente se estiver offline.'),
+                h('li', {}, h('strong', {}, '"Fotos ao Drive" dá erro'), ' — confira URL e credencial em Ajustes e use o botão "Testar". Se persistir, fale com o administrador do sistema.'),
+                h('li', {}, h('strong', {}, 'App desatualizado'), ' — feche e reabra o app; atualizações são aplicadas automaticamente na próxima abertura.'))),
+    );
 }
 
 // ── Roteamento ──────────────────────────────────────────────
@@ -677,6 +818,7 @@ async function rotear() {
         else if (rota === 'coleta' && partes[1]) await telaChecklist(partes[1]);
         else if (rota === 'regioes') await telaRegioes(params);
         else if (rota === 'ajustes') await telaAjustes();
+        else if (rota === 'ajuda') telaAjuda();
         else location.hash = '#/agendar';
     } catch (err) {
         console.error(err);
@@ -691,3 +833,30 @@ rotear();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Service worker não registrado', err));
 }
+
+// ── Instalação do PWA (só quando rodando no navegador) ──────
+(() => {
+    const botao = document.getElementById('btn-instalar');
+    if (!botao) return;
+    const instalado = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    let pedido = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        pedido = e;
+        if (!instalado) botao.hidden = false;
+    });
+
+    botao.addEventListener('click', async () => {
+        if (!pedido) return;
+        botao.hidden = true;
+        try { await pedido.prompt(); await pedido.userChoice; } catch { /* usuário fechou */ }
+        pedido = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+        botao.hidden = true;
+        pedido = null;
+        toast('App instalado');
+    });
+})();

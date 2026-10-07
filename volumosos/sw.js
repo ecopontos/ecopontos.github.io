@@ -1,6 +1,6 @@
 // Service worker: cache do "app shell" para funcionar offline.
 // Ao alterar qualquer arquivo listado, incremente VERSAO para forçar a atualização.
-const VERSAO = 'volumosos-v3';
+const VERSAO = 'volumosos-v5';
 const ARQUIVOS = [
     './',
     './index.html',
@@ -9,6 +9,7 @@ const ARQUIVOS = [
     './icon.svg',
     './js/app.js',
     './js/cep.js',
+    './js/dados-exemplo.js',
     './js/db.js',
     './js/drive.js',
     './js/form-volumosos.js',
